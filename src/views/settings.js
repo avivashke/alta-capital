@@ -230,6 +230,36 @@ export function renderSettings(root, ui) {
   ));
 }
 
+  // Debug log output - shows recent store events for debugging
+  const events = store.state.events;
+  const maxEvents = 50;
+  const recentEvents = events.slice(0, maxEvents);
+  const logPanel = h('div', { class: 'card', style: { marginTop: '14px', display: 'block' } },
+    h('div', { class: 'card-head' },
+      h('div', {}, h('h2', { text: 'לוגים למפתחים' }), h('div', { class: 'card-sub', text: 'אירועים אחרונים מהאפליקציה' })),
+      h('button', {
+        class: 'btn btn-sm btn-ghost',
+        style: { float: 'right', marginBottom: '4px' },
+        onclick: () => {
+          const current = logPanel.style.display;
+          logPanel.style.display = current === 'none' ? 'block' : 'none';
+        },
+      }, 'הסתיר'),
+    ),
+    h('div', { class: 'card-body', style: { maxHeight: '300px', overflow: 'auto' } },
+      recentEvents.length === 0
+        ? h('div', { class: 'small muted' }, 'אין אירועים להצגה')
+        : h('div', {}, recentEvents.map((e, i) =>
+          h('div', { class: 'row', style: { gap: '4px', fontSize: '12px', marginBottom: '4px' } },
+            h('span', { class: 'tiny muted', style: { width: '120px' }, text: new Date(e.at).toLocaleTimeString('he-IL') }),
+            h('span', { class: 'grow', text: `${e.actor || '—'}: ${e.text || '—'}` }),
+            h('span', { class: 'small muted', text: e.level || '' }),
+          ),
+        )),
+    ),
+  );
+  mount(root, logPanel);
+
 const ENV_HINT = {
   groq: 'GROQ_API_KEY', gemini: 'GEMINI_API_KEY', zai: 'ZAI_API_KEY', openrouter: 'OPENROUTER_API_KEY',
   cloudflare: 'CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID', mistral: 'MISTRAL_API_KEY', nvidia: 'NVIDIA_API_KEY',
