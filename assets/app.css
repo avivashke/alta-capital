@@ -104,7 +104,7 @@ code, .mono { font-family: var(--mono); font-size: 12px; }
   position: sticky; top: 62px; height: calc(100vh - 62px);
   background: linear-gradient(180deg, rgba(12, 18, 25, .7), rgba(8, 12, 17, .2));
 }
-#nav { display: flex; flex-direction: column; gap: 3px; }
+#nav { display: flex; flex-direction: column; gap: 3px; flex: 1; justify-content: space-between; }
 .nav-item {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 11px; border-radius: 10px;
