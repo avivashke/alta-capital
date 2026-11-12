@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-12T18:22:32.282Z",
+ "generatedAt": "2026-11-12T23:49:06.239Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -18,44 +18,44 @@
    "version": null,
    "strategyId": "breakout",
    "params": {
-    "period": 57,
+    "period": 60,
     "atrStop": 3.4000000000000004,
     "rr": 1.8,
     "filter": false
    },
    "metrics": {
-    "returnPct": -1.86,
-    "maxDrawdownPct": 4.46,
-    "sharpe": -8.03,
-    "profitFactor": 0.63,
-    "winRate": 25,
-    "trades": 16,
-    "avgR": -0.083,
-    "expectancy": -4.68,
-    "exposurePct": 51.5,
-    "bestTradePct": 1.445,
-    "worstTradePct": -0.717,
-    "finalEquity": 3680.24,
+    "returnPct": -0.86,
+    "maxDrawdownPct": 3.09,
+    "sharpe": -4.25,
+    "profitFactor": 0.75,
+    "winRate": 28.6,
+    "trades": 14,
+    "avgR": -0.047,
+    "expectancy": -2.67,
+    "exposurePct": 42.2,
+    "bestTradePct": 1.467,
+    "worstTradePct": -0.643,
+    "finalEquity": 3717.76,
     "curvePoints": 721,
-    "totalFees": 80.8003,
-    "barsInMarket": 371
+    "totalFees": 71.5285,
+    "barsInMarket": 304
    },
    "oos": {
-    "returnPct": 2.31,
-    "maxDrawdownPct": 1,
-    "sharpe": 20.47,
-    "profitFactor": 2.59,
-    "winRate": 50,
+    "returnPct": 1.2,
+    "maxDrawdownPct": 1.21,
+    "sharpe": 11.92,
+    "profitFactor": 1.61,
+    "winRate": 37.5,
     "trades": 8,
-    "avgR": 0.18,
-    "expectancy": 10.15,
-    "exposurePct": 57.7,
-    "bestTradePct": 1.507,
-    "worstTradePct": -0.448,
-    "finalEquity": 3836.52,
+    "avgR": 0.09,
+    "expectancy": 4.98,
+    "exposurePct": 37.3,
+    "bestTradePct": 1.497,
+    "worstTradePct": -0.648,
+    "finalEquity": 3795.12,
     "curvePoints": 343,
-    "totalFees": 41.6501,
-    "barsInMarket": 198
+    "totalFees": 41.5503,
+    "barsInMarket": 128
    },
    "bestReturn": null,
    "versions": []
@@ -69,44 +69,44 @@
    "version": null,
    "strategyId": "momentum",
    "params": {
-    "period": 28,
+    "period": 14,
     "threshold": 0.8,
-    "atrStop": 3,
-    "rr": 3
+    "atrStop": 1.6,
+    "rr": 1.6
    },
    "metrics": {
-    "returnPct": -3.19,
-    "maxDrawdownPct": 5.79,
-    "sharpe": -3.89,
-    "profitFactor": 0.64,
-    "winRate": 29.4,
-    "trades": 34,
-    "avgR": -0.065,
-    "expectancy": -4.88,
-    "exposurePct": 33.6,
-    "bestTradePct": 2.804,
-    "worstTradePct": -1.546,
-    "finalEquity": 4840.6,
+    "returnPct": -2.74,
+    "maxDrawdownPct": 4.05,
+    "sharpe": -4.2,
+    "profitFactor": 0.79,
+    "winRate": 34.9,
+    "trades": 43,
+    "avgR": -0.042,
+    "expectancy": -3.19,
+    "exposurePct": 21.1,
+    "bestTradePct": 1.961,
+    "worstTradePct": -1.163,
+    "finalEquity": 4862.82,
     "curvePoints": 721,
-    "totalFees": 218.7528,
-    "barsInMarket": 242
+    "totalFees": 288.9812,
+    "barsInMarket": 152
    },
    "oos": {
-    "returnPct": 1.81,
-    "maxDrawdownPct": 2.81,
-    "sharpe": 4.11,
-    "profitFactor": 1.71,
-    "winRate": 53.8,
-    "trades": 13,
-    "avgR": 0.088,
-    "expectancy": 6.43,
-    "exposurePct": 43.4,
-    "bestTradePct": 2.948,
-    "worstTradePct": -0.722,
-    "finalEquity": 5090.68,
+    "returnPct": 0.65,
+    "maxDrawdownPct": 2.28,
+    "sharpe": 2.07,
+    "profitFactor": 1.1,
+    "winRate": 43.5,
+    "trades": 23,
+    "avgR": 0.021,
+    "expectancy": 1.42,
+    "exposurePct": 28,
+    "bestTradePct": 2.029,
+    "worstTradePct": -1.109,
+    "finalEquity": 5032.6,
     "curvePoints": 343,
-    "totalFees": 89.1047,
-    "barsInMarket": 149
+    "totalFees": 158.8751,
+    "barsInMarket": 96
    },
    "bestReturn": null,
    "versions": [
@@ -127,7 +127,7 @@
    "label": "תוך־יומי · נר שעה",
    "timeframe": "1h",
    "symbol": "BTCUSDT",
-   "status": "dry-run",
+   "status": "live",
    "version": "v1.0",
    "strategyId": "ema_trend",
    "params": {
@@ -138,21 +138,21 @@
     "trendFilter": false
    },
    "metrics": {
-    "returnPct": 8.84,
+    "returnPct": 9.23,
     "maxDrawdownPct": 6.11,
-    "sharpe": 4.23,
-    "profitFactor": 1.77,
-    "winRate": 54.5,
-    "trades": 33,
-    "avgR": 0.173,
-    "expectancy": 16.49,
-    "exposurePct": 66.3,
-    "bestTradePct": 3.397,
-    "worstTradePct": -1.671,
-    "finalEquity": 6802.68,
+    "sharpe": 4.41,
+    "profitFactor": 1.79,
+    "winRate": 56.3,
+    "trades": 32,
+    "avgR": 0.186,
+    "expectancy": 17.76,
+    "exposurePct": 66.4,
+    "bestTradePct": 3.431,
+    "worstTradePct": -1.688,
+    "finalEquity": 6826.75,
     "curvePoints": 721,
-    "totalFees": 263.5711,
-    "barsInMarket": 478
+    "totalFees": 257.3743,
+    "barsInMarket": 479
    },
    "oos": {
     "returnPct": 11.66,
@@ -195,7 +195,7 @@
    "timeframe": "1d",
    "symbol": "BTCUSDT",
    "status": "live",
-   "version": "v1.2",
+   "version": "v1.3",
    "strategyId": "macd_swing",
    "params": {
     "fast": 7,
@@ -205,41 +205,46 @@
     "rr": 4
    },
    "metrics": {
-    "returnPct": 24.13,
+    "returnPct": 24.43,
     "maxDrawdownPct": 4.39,
-    "sharpe": 1.58,
-    "profitFactor": 2.55,
+    "sharpe": 1.59,
+    "profitFactor": 2.57,
     "winRate": 45.8,
     "trades": 24,
-    "avgR": 0.627,
-    "expectancy": 50.14,
+    "avgR": 0.633,
+    "expectancy": 50.77,
     "exposurePct": 27.3,
     "bestTradePct": 6.893,
     "worstTradePct": -1.926,
-    "finalEquity": 6206.32,
+    "finalEquity": 6221.4,
     "curvePoints": 600,
-    "totalFees": 68.6758,
+    "totalFees": 68.6547,
     "barsInMarket": 164
    },
    "oos": {
-    "returnPct": 16.23,
+    "returnPct": 16.51,
     "maxDrawdownPct": 4.54,
-    "sharpe": 1.74,
-    "profitFactor": 3.32,
+    "sharpe": 1.76,
+    "profitFactor": 3.36,
     "winRate": 50,
     "trades": 14,
-    "avgR": 0.741,
-    "expectancy": 57.77,
+    "avgR": 0.753,
+    "expectancy": 58.78,
     "exposurePct": 36.1,
     "bestTradePct": 6.486,
     "worstTradePct": -1.812,
-    "finalEquity": 5811.62,
+    "finalEquity": 5825.74,
     "curvePoints": 285,
-    "totalFees": 46.8248,
+    "totalFees": 46.8051,
     "barsInMarket": 103
    },
-   "bestReturn": 16.23,
+   "bestReturn": 16.51,
    "versions": [
+    {
+     "version": "v1.3",
+     "at": 1794527344063,
+     "oos": 16.51
+    },
     {
      "version": "v1.2",
      "at": 1794507750777,
@@ -272,20 +277,20 @@
     "filter": true
    },
    "metrics": {
-    "returnPct": 16.45,
+    "returnPct": 16.44,
     "maxDrawdownPct": 5.54,
     "sharpe": 0.48,
     "profitFactor": 3.72,
     "winRate": 57.9,
     "trades": 19,
     "avgR": 0.55,
-    "expectancy": 43.25,
+    "expectancy": 43.24,
     "exposurePct": 43.1,
     "bestTradePct": 6.304,
     "worstTradePct": -1.612,
-    "finalEquity": 5822.39,
+    "finalEquity": 5822.19,
     "curvePoints": 420,
-    "totalFees": 10.778,
+    "totalFees": 10.7783,
     "barsInMarket": 181
    },
    "oos": {
@@ -326,6 +331,76 @@
   }
  ],
  "ideas": [
+  {
+   "title": "shivanshsinghal107/Investment-Portfolio",
+   "source": "GitHub",
+   "url": "https://github.com/shivanshsinghal107/Investment-Portfolio",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "nieledran/backtesting-engine",
+   "source": "GitHub",
+   "url": "https://github.com/nieledran/backtesting-engine",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "pawelkn/btester",
+   "source": "GitHub",
+   "url": "https://github.com/pawelkn/btester",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "ACM-Research/online-portfolio-selection",
+   "source": "GitHub",
+   "url": "https://github.com/ACM-Research/online-portfolio-selection",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "StreetJammer/hyperliquid-vault-analyzer",
+   "source": "GitHub",
+   "url": "https://github.com/StreetJammer/hyperliquid-vault-analyzer",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "serkannpolatt/DATA-SCIENCE-FOR-FINANCE",
+   "source": "GitHub",
+   "url": "https://github.com/serkannpolatt/DATA-SCIENCE-FOR-FINANCE",
+   "strategy": "ema_trend",
+   "tested": false
+  },
+  {
+   "title": "JustinGuese/python_tradingbot_framework",
+   "source": "GitHub",
+   "url": "https://github.com/JustinGuese/python_tradingbot_framework",
+   "strategy": "rsi_reversion",
+   "tested": false
+  },
+  {
+   "title": "mrtkp9993/QuantitaveFinanceExamplesPy",
+   "source": "GitHub",
+   "url": "https://github.com/mrtkp9993/QuantitaveFinanceExamplesPy",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "cloudQuant/backtrader",
+   "source": "GitHub",
+   "url": "https://github.com/cloudQuant/backtrader",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "dcajasn/Riskfolio-Lib",
+   "source": "GitHub",
+   "url": "https://github.com/dcajasn/Riskfolio-Lib",
+   "strategy": null,
+   "tested": false
+  },
   {
    "title": "whchien/ai-trader",
    "source": "GitHub",
@@ -465,80 +540,10 @@
    "url": "https://github.com/veighna-global/vnpy_novastrategy",
    "strategy": null,
    "tested": false
-  },
-  {
-   "title": "pierreia/quantGPT",
-   "source": "GitHub",
-   "url": "https://github.com/pierreia/quantGPT",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "0xbet-ai/QuantDesk",
-   "source": "GitHub",
-   "url": "https://github.com/0xbet-ai/QuantDesk",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "oliviermilla/Lucky.jl",
-   "source": "GitHub",
-   "url": "https://github.com/oliviermilla/Lucky.jl",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "xiazhi88/Desic-Terminal",
-   "source": "GitHub",
-   "url": "https://github.com/xiazhi88/Desic-Terminal",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "CacheCarti/Crypto-Strategies",
-   "source": "GitHub",
-   "url": "https://github.com/CacheCarti/Crypto-Strategies",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "wynfred/presso",
-   "source": "GitHub",
-   "url": "https://github.com/wynfred/presso",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "Blave-TW/blave-agent",
-   "source": "GitHub",
-   "url": "https://github.com/Blave-TW/blave-agent",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "51bitquant/howtrader",
-   "source": "GitHub",
-   "url": "https://github.com/51bitquant/howtrader",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "OpenByteInc/QuantDinger",
-   "source": "GitHub",
-   "url": "https://github.com/OpenByteInc/QuantDinger",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "i1ya/freqtrade-strategies",
-   "source": "GitHub",
-   "url": "https://github.com/i1ya/freqtrade-strategies",
-   "strategy": null,
-   "tested": false
   }
  ],
  "sentiment": {
-  "updatedAt": 1794507752279,
+  "updatedAt": 1794527346237,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 28,
@@ -568,7 +573,7 @@
     "technical": -0.5,
     "news": 0,
     "drivers": [],
-    "price": 71770.6
+    "price": 71266.1
    },
    "ETHUSDT": {
     "score": -0.37,
@@ -576,7 +581,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 2014.18
+    "price": 2015.18
    }
   },
   "headlines": [],
@@ -584,22 +589,17 @@
    {
     "name": "ni hao cat",
     "symbol": "MIHAO",
-    "rank": 860
+    "rank": 778
    },
    {
     "name": "Seppuku",
     "symbol": "SEPPUKU",
-    "rank": 824
+    "rank": 818
    },
    {
     "name": "AudaCity",
     "symbol": "DACITYCOIN",
-    "rank": 901
-   },
-   {
-    "name": "Rocco",
-    "symbol": "ROCCO",
-    "rank": 840
+    "rank": 820
    },
    {
     "name": "Bitcoin",
@@ -607,29 +607,34 @@
     "rank": 1
    },
    {
-    "name": "Lighter",
-    "symbol": "LIT",
-    "rank": 81
+    "name": "Pudgy Penguins",
+    "symbol": "PENGU",
+    "rank": 115
+   },
+   {
+    "name": "Zcash",
+    "symbol": "ZEC",
+    "rank": 11
+   },
+   {
+    "name": "Solana",
+    "symbol": "SOL",
+    "rank": 7
    },
    {
     "name": "Pearl",
     "symbol": "PEARL",
-    "rank": 101
+    "rank": 100
    },
    {
-    "name": "Pudgy Penguins",
-    "symbol": "PENGU",
-    "rank": 116
+    "name": "XRP",
+    "symbol": "XRP",
+    "rank": 6
    },
    {
-    "name": "Hyperliquid",
-    "symbol": "HYPE",
-    "rank": 10
-   },
-   {
-    "name": "Quantus",
-    "symbol": "QTC",
-    "rank": 887
+    "name": "Quant",
+    "symbol": "QNT",
+    "rank": 41
    }
   ],
   "newsScore": 0
