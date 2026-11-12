@@ -1,33 +1,31 @@
 {
- "at": "2026-11-12T10:25:47.333Z",
+ "at": "2026-11-12T10:26:04.511Z",
  "summary": [
   {
-   "desk": "desk_1d",
-   "timeframe": "1d",
+   "desk": "desk_1w",
+   "timeframe": "1w",
    "ok": true,
-   "published": true,
+   "published": false,
    "version": "v1.1",
-   "oos": 15.25,
-   "robustness": 94
+   "oos": 2.77,
+   "robustness": 73
   }
  ],
  "stats": {
-  "cycles": 19,
-  "backtests": 2331,
+  "cycles": 20,
+  "backtests": 2466,
   "deployments": 8,
-  "scans": 15,
+  "scans": 18,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 1,
   "deep": false,
-  "durationMs": 4267,
+  "durationMs": 4468,
   "node": "v20.18.0"
  },
  "ai": {
-  "source": "model",
-  "focusDesk": "desk_5m",
-  "strategyId": "breakout",
-  "rationale": "שולחן 5 דקות עם חוסר יציבות; פריצת ערוץ עם חיפוש ממוקד עדיף על מגמת EMA."
+  "ok": false,
+  "reason": "no-model-key"
  }
 }

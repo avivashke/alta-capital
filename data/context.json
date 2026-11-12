@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-12T10:25:47.334Z",
+ "generatedAt": "2026-11-12T10:26:04.512Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -246,7 +246,7 @@
    "label": "סווינג · שנתי (שבועי)",
    "timeframe": "1w",
    "symbol": "ETHUSDT",
-   "status": "dry-run",
+   "status": "live",
    "version": "v1.1",
    "strategyId": "breakout",
    "params": {
@@ -515,7 +515,7 @@
   }
  ],
  "sentiment": {
-  "updatedAt": 1794479147331,
+  "updatedAt": 1794479164508,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 28,
@@ -545,7 +545,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 73597.67
+    "price": 73597.3
    },
    "ETHUSDT": {
     "score": -0.37,
@@ -553,7 +553,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 2052
+    "price": 2051.8
    }
   },
   "headlines": [],

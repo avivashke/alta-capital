@@ -54,6 +54,9 @@ if (llmKey) {
     apiKey: llmKey,
     temperature: Number(process.env.LLM_TEMPERATURE || 0.3),
   };
+} else if (store.state.settings.llm) {
+  // Never reuse a key persisted by an earlier local run; CI must use secrets only.
+  store.state.settings.llm.apiKey = '';
 }
 firm.ensureDeskFields();
 
