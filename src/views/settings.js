@@ -228,7 +228,6 @@ export function renderSettings(root, ui) {
     ),
     notice(DISCLAIMER, 'bad'),
   ));
-}
 
   // Debug log output - shows recent store events for debugging
   const events = store.state.events;
@@ -285,6 +284,7 @@ export function renderSettings(root, ui) {
     ),
   );
   mount(root, activityPanel);
+}
 
 const ENV_HINT = {
   groq: 'GROQ_API_KEY', gemini: 'GEMINI_API_KEY', zai: 'ZAI_API_KEY', openrouter: 'OPENROUTER_API_KEY',
