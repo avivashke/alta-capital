@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "createdAt": "2026-11-12T08:49:40.870Z",
- "lastTickAt": 1794479160535,
+ "lastTickAt": 1794481189948,
  "settings": {
   "autopilot": true,
   "tickSeconds": 7,
@@ -21,6 +21,10 @@
    "model": "mock-1",
    "apiKey": "",
    "temperature": 0.3
+  },
+  "pool": {
+   "entries": [],
+   "updatedAt": null
   },
   "github": {
    "token": "",
@@ -57,22 +61,22 @@
    "bestReturn": null,
    "baselineReturn": null,
    "metrics": {
-    "returnPct": -5.92,
-    "maxDrawdownPct": 6.11,
-    "sharpe": -32.01,
-    "profitFactor": 0.24,
-    "winRate": 26.5,
-    "trades": 34,
-    "avgR": -0.119,
-    "expectancy": -6.53,
-    "exposurePct": 37.5,
-    "bestTradePct": 0.328,
-    "worstTradePct": -0.517,
-    "finalEquity": 3528.01,
+    "returnPct": -6.11,
+    "maxDrawdownPct": 6.2,
+    "sharpe": -33,
+    "profitFactor": 0.21,
+    "winRate": 24.2,
+    "trades": 33,
+    "avgR": -0.127,
+    "expectancy": -6.94,
+    "exposurePct": 36.6,
+    "bestTradePct": 0.327,
+    "worstTradePct": -0.516,
+    "finalEquity": 3521.02,
     "curvePoints": 800,
-    "barsInMarket": 300
+    "barsInMarket": 293
    },
-   "fitness": -6.12,
+   "fitness": -6.33,
    "equity": [
     3750,
     3750,
@@ -93,154 +97,154 @@
     3750,
     3750,
     3750,
-    3749.44,
-    3757.72,
-    3746.13,
-    3743.82,
-    3735.29,
-    3728.64,
-    3726.72,
-    3734.29,
-    3736.11,
-    3739.68,
-    3742.56,
-    3735.94,
-    3730.05,
-    3730.05,
-    3730.05,
-    3723.13,
-    3719.46,
-    3719.46,
-    3719.46,
-    3719.46,
-    3719.46,
-    3719.46,
-    3714.21,
-    3721.83,
-    3720.68,
+    3738.72,
+    3738.72,
+    3727.9,
+    3727.9,
+    3714.87,
+    3725.06,
+    3723.36,
+    3727.15,
+    3734.73,
+    3729.76,
+    3722.67,
+    3722.67,
+    3722.67,
+    3722.67,
     3712.1,
-    3718.67,
-    3722.08,
-    3720.1,
-    3712.33,
-    3712.33,
-    3712.33,
-    3712.33,
-    3712.33,
-    3719.83,
-    3718.36,
-    3695.05,
-    3695.05,
-    3695.05,
-    3697.3,
-    3690.85,
-    3708.93,
-    3708.1,
-    3716.71,
-    3690.97,
-    3690.97,
-    3688.27,
-    3681.49,
-    3679.13,
-    3679.73,
-    3689.06,
-    3698.99,
-    3706.77,
-    3705.27,
-    3706.29,
-    3690.88,
-    3690.88,
-    3688.16,
-    3677.95,
-    3677.95,
-    3677.95,
-    3674.54,
-    3665.02,
-    3648.7,
-    3648.7,
-    3648.7,
-    3648.7,
-    3648.7,
-    3648.7,
-    3648.7,
-    3648.7,
-    3648.7,
-    3648.7,
-    3643.89,
-    3641.93,
-    3634.27,
-    3624.86,
-    3622.55,
-    3632.15,
-    3613.16,
-    3613.16,
-    3613.16,
-    3613.16,
-    3613.16,
-    3613.16,
-    3613.16,
-    3613.16,
-    3613.16,
-    3613.16,
-    3613.16,
-    3601.18,
-    3601.18,
-    3587.58,
-    3594.15,
-    3598.45,
-    3598.45,
-    3590.25,
-    3590.25,
-    3590.25,
-    3590.25,
-    3586.15,
-    3584.4,
-    3579.7,
-    3586.29,
-    3577.35,
-    3577.35,
-    3577.35,
-    3577.35,
-    3577.35,
-    3575.46,
-    3575.32,
-    3564.42,
-    3564.42,
-    3573.54,
-    3583.9,
-    3574.62,
-    3564.04,
-    3566.53,
-    3566.53,
-    3566.53,
-    3566.53,
-    3566.53,
-    3566.53,
-    3566.53,
-    3566.53,
-    3566.53,
-    3566.53,
-    3565.57,
-    3556.58,
-    3554.26,
-    3556.17,
-    3551.97,
-    3546.68,
-    3536.59,
-    3536.59,
-    3536.59,
-    3536.59,
-    3536.59,
-    3536.59,
-    3528.01,
-    3528.01,
-    3528.01
+    3712.1,
+    3712.1,
+    3712.1,
+    3712.1,
+    3712.1,
+    3708.64,
+    3721.73,
+    3710.99,
+    3711.09,
+    3710.09,
+    3716.8,
+    3713.77,
+    3713.94,
+    3704.98,
+    3704.98,
+    3704.98,
+    3704.98,
+    3710.04,
+    3712.67,
+    3715.47,
+    3687.74,
+    3687.74,
+    3700.37,
+    3685.59,
+    3700.02,
+    3706.69,
+    3701.64,
+    3696.02,
+    3683.67,
+    3683.67,
+    3673.9,
+    3673.88,
+    3677.5,
+    3685.22,
+    3686.91,
+    3702.4,
+    3700.08,
+    3695.14,
+    3692.85,
+    3683.58,
+    3680.8,
+    3675.85,
+    3670.67,
+    3670.67,
+    3670.67,
+    3663.23,
+    3655.77,
+    3641.48,
+    3641.48,
+    3641.48,
+    3641.48,
+    3641.48,
+    3641.48,
+    3641.48,
+    3641.48,
+    3641.48,
+    3639.35,
+    3635.94,
+    3628.17,
+    3626.41,
+    3614.31,
+    3623.38,
+    3614.27,
+    3606,
+    3606,
+    3606,
+    3606,
+    3606,
+    3606,
+    3606,
+    3606,
+    3606,
+    3606,
+    3606,
+    3594.05,
+    3592.18,
+    3580.48,
+    3591.32,
+    3591.32,
+    3591.32,
+    3583.14,
+    3583.14,
+    3583.14,
+    3583.14,
+    3572.66,
+    3576.89,
+    3576.33,
+    3577,
+    3570.27,
+    3570.27,
+    3570.27,
+    3570.27,
+    3567.9,
+    3568.94,
+    3557.36,
+    3557.36,
+    3562.42,
+    3566.47,
+    3579.39,
+    3565.55,
+    3559.47,
+    3559.47,
+    3559.47,
+    3559.47,
+    3559.47,
+    3559.47,
+    3559.47,
+    3559.47,
+    3559.47,
+    3559.47,
+    3559.47,
+    3554.57,
+    3549.54,
+    3547.62,
+    3547.65,
+    3539.66,
+    3539.66,
+    3529.59,
+    3529.59,
+    3529.59,
+    3529.59,
+    3529.59,
+    3527.97,
+    3521.02,
+    3521.02,
+    3521.02,
+    3521.02
    ],
    "history": [],
    "dryRunCycles": 0,
    "liveTrades": [],
    "livePnl": 0,
-   "lastRunAt": 1794478848705,
+   "lastRunAt": 1794481189444,
    "generatedCode": null,
    "openTrade": null,
    "ideas": [],
@@ -250,266 +254,266 @@
      "folds": [
       {
        "fold": 1,
-       "from": 1794287100000,
-       "to": 1794334800000,
-       "returnPct": -1.57,
+       "from": 1794289200000,
+       "to": 1794336900000,
+       "returnPct": -1.94,
        "trades": 13,
-       "profitFactor": 0.39,
-       "maxDrawdownPct": 2.02
+       "profitFactor": 0.29,
+       "maxDrawdownPct": 2.11
       },
       {
        "fold": 2,
-       "from": 1794335100000,
-       "to": 1794382800000,
-       "returnPct": -1.92,
-       "trades": 7,
+       "from": 1794337200000,
+       "to": 1794384900000,
+       "returnPct": -2.42,
+       "trades": 10,
        "profitFactor": 0,
-       "maxDrawdownPct": 2.29
+       "maxDrawdownPct": 2.95
       },
       {
        "fold": 3,
-       "from": 1794383100000,
-       "to": 1794430800000,
-       "returnPct": -2.6,
-       "trades": 9,
+       "from": 1794385200000,
+       "to": 1794432900000,
+       "returnPct": -2.17,
+       "trades": 7,
        "profitFactor": 0,
-       "maxDrawdownPct": 2.6
+       "maxDrawdownPct": 2.17
       },
       {
        "fold": 4,
-       "from": 1794431100000,
-       "to": 1794478800000,
-       "returnPct": -1.9,
+       "from": 1794433200000,
+       "to": 1794480900000,
+       "returnPct": -2.08,
        "trades": 10,
-       "profitFactor": 0.22,
-       "maxDrawdownPct": 1.9
+       "profitFactor": 0.2,
+       "maxDrawdownPct": 2.08
       }
      ],
      "consistency": 0,
      "positiveFolds": 0,
      "totalFolds": 4,
-     "avgReturn": -2,
-     "worstReturn": -2.6,
-     "dispersion": 0.37
+     "avgReturn": -2.15,
+     "worstReturn": -2.42,
+     "dispersion": 0.17
     },
     "monteCarlo": {
      "available": true,
      "iterations": 700,
-     "p05": -8.18,
-     "p50": -5.83,
-     "p95": -3.43,
-     "ddP95": 8.26,
+     "p05": -8.14,
+     "p50": -5.99,
+     "p95": -3.66,
+     "ddP95": 8.23,
      "probProfit": 0,
      "ruinProb": 0,
      "histogram": [
       {
-       "from": -10.92,
-       "to": -10.36,
-       "count": 1
+       "from": -9.77,
+       "to": -9.28,
+       "count": 2
       },
       {
-       "from": -10.36,
-       "to": -9.81,
-       "count": 0
+       "from": -9.28,
+       "to": -8.78,
+       "count": 11
       },
       {
-       "from": -9.81,
-       "to": -9.25,
-       "count": 1
+       "from": -8.78,
+       "to": -8.28,
+       "count": 18
       },
       {
-       "from": -9.25,
-       "to": -8.7,
-       "count": 10
-      },
-      {
-       "from": -8.7,
-       "to": -8.14,
-       "count": 27
-      },
-      {
-       "from": -8.14,
-       "to": -7.59,
+       "from": -8.28,
+       "to": -7.79,
        "count": 35
       },
       {
-       "from": -7.59,
-       "to": -7.03,
-       "count": 72
+       "from": -7.79,
+       "to": -7.29,
+       "count": 50
       },
       {
-       "from": -7.03,
-       "to": -6.48,
+       "from": -7.29,
+       "to": -6.8,
+       "count": 81
+      },
+      {
+       "from": -6.8,
+       "to": -6.3,
        "count": 94
       },
       {
-       "from": -6.48,
-       "to": -5.92,
-       "count": 88
+       "from": -6.3,
+       "to": -5.81,
+       "count": 94
       },
       {
-       "from": -5.92,
-       "to": -5.37,
-       "count": 117
+       "from": -5.81,
+       "to": -5.31,
+       "count": 98
       },
       {
-       "from": -5.37,
-       "to": -4.81,
-       "count": 93
-      },
-      {
-       "from": -4.81,
-       "to": -4.26,
+       "from": -5.31,
+       "to": -4.82,
        "count": 76
       },
       {
-       "from": -4.26,
-       "to": -3.7,
-       "count": 40
+       "from": -4.82,
+       "to": -4.32,
+       "count": 53
       },
       {
-       "from": -3.7,
-       "to": -3.15,
-       "count": 24
+       "from": -4.32,
+       "to": -3.83,
+       "count": 37
       },
       {
-       "from": -3.15,
-       "to": -2.59,
-       "count": 16
+       "from": -3.83,
+       "to": -3.33,
+       "count": 31
       },
       {
-       "from": -2.59,
-       "to": -2.04,
-       "count": 4
+       "from": -3.33,
+       "to": -2.84,
+       "count": 11
       },
       {
-       "from": -2.04,
-       "to": -1.49,
+       "from": -2.84,
+       "to": -2.34,
+       "count": 5
+      },
+      {
+       "from": -2.34,
+       "to": -1.85,
+       "count": 2
+      },
+      {
+       "from": -1.85,
+       "to": -1.35,
        "count": 0
       },
       {
-       "from": -1.49,
-       "to": -0.93,
+       "from": -1.35,
+       "to": -0.86,
        "count": 2
       }
      ]
     },
     "sensitivity": {
      "available": true,
-     "baseReturn": -5.92,
-     "mean": -6.34,
-     "sd": 0.61,
-     "sensitivity": 0.09,
+     "baseReturn": -6.11,
+     "mean": -6.54,
+     "sd": 0.57,
+     "sensitivity": 0.08,
      "brokenSamples": 0,
      "samples": [
       {
        "key": "period",
        "factor": 0.85,
-       "returnPct": -7.67,
-       "profitFactor": 0.19,
-       "trades": 40
+       "returnPct": -7.85,
+       "profitFactor": 0.17,
+       "trades": 39
       },
       {
        "key": "period",
        "factor": 1.15,
-       "returnPct": -5.35,
-       "profitFactor": 0.25,
+       "returnPct": -5.73,
+       "profitFactor": 0.22,
        "trades": 32
       },
       {
        "key": "atrStop",
        "factor": 0.85,
-       "returnPct": -6.48,
-       "profitFactor": 0.23,
-       "trades": 37
+       "returnPct": -6.63,
+       "profitFactor": 0.22,
+       "trades": 36
       },
       {
        "key": "atrStop",
        "factor": 1.15,
-       "returnPct": -6.17,
+       "returnPct": -6.31,
        "profitFactor": 0.16,
        "trades": 29
       },
       {
        "key": "rr",
        "factor": 0.85,
-       "returnPct": -5.92,
-       "profitFactor": 0.24,
-       "trades": 34
+       "returnPct": -6.11,
+       "profitFactor": 0.21,
+       "trades": 33
       },
       {
        "key": "rr",
        "factor": 1.15,
-       "returnPct": -6.37,
-       "profitFactor": 0.18,
+       "returnPct": -6.5,
+       "profitFactor": 0.17,
        "trades": 32
       },
       {
        "key": "filter",
        "factor": 0.85,
-       "returnPct": -6.4,
-       "profitFactor": 0.2,
-       "trades": 32
+       "returnPct": -6.59,
+       "profitFactor": 0.17,
+       "trades": 31
       },
       {
        "key": "filter",
        "factor": 1.15,
-       "returnPct": -6.4,
-       "profitFactor": 0.2,
-       "trades": 32
+       "returnPct": -6.59,
+       "profitFactor": 0.17,
+       "trades": 31
       }
      ]
     },
-    "trades": 34,
-    "assessedAt": 1794478849093
+    "trades": 33,
+    "assessedAt": 1794481189946
    },
    "robustness": 26,
    "technical": {
-    "price": 73599.67,
-    "bias": 0,
-    "biasLabel": "ניטרלי",
-    "confidence": 52,
+    "price": 73463.53,
+    "bias": -0.38,
+    "biasLabel": "דובי חזק",
+    "confidence": 67,
     "trend": {
-     "score": -0.1,
-     "label": "דשדוש",
-     "ema20": 73491.87,
-     "ema50": 73541.56,
-     "ema200": 73770.21,
-     "adx": 23.9,
-     "slopePct": 0
+     "score": -0.74,
+     "label": "מגמת ירידה",
+     "ema20": 73489.7,
+     "ema50": 73530.47,
+     "ema200": 73754.44,
+     "adx": 17.6,
+     "slopePct": 0.03
     },
     "momentum": {
-     "score": 0.24,
+     "score": 0,
      "label": "מומנטום חלש",
-     "rsi": 58.2,
-     "macdHist": 22.7386,
-     "roc10": 0.19,
+     "rsi": 46.6,
+     "macdHist": 2.6367,
+     "roc10": 0.1,
      "state": "ניטרלי"
     },
     "volatility": {
-     "atrPct": 0.11,
-     "bbWidthPct": 0.46,
+     "atrPct": 0.09,
+     "bbWidthPct": 0.31,
      "regime": "רגילה"
     },
     "structure": {
-     "position": 0.35,
+     "position": 0.23,
      "support": 73303.39,
-     "resistance": 74142,
-     "distToHighPct": 0.74,
-     "distToLowPct": 0.4
+     "resistance": 74000,
+     "distToHighPct": 0.73,
+     "distToLowPct": 0.22
     },
     "volume": {
-     "score": 0.03,
+     "score": 0,
      "label": "נפח ניטרלי"
     },
     "summary": [
-     "מגמה: דשדוש · ADX 24",
-     "מומנטום: RSI 58 · ROC10 0.2%",
+     "מגמה: ירידה · ADX 18",
+     "מומנטום: RSI 47 · ROC10 0.1%",
      "תנודתיות: רגילה · ATR 0.1% מהמחיר",
-     "מבנה: 35% מהטווח · תמיכה 73303.39 · התנגדות 74142.00",
+     "מבנה: 23% מהטווח · תמיכה 73303.39 · התנגדות 74000.00",
      "נפח: ניטרלי"
     ],
-    "at": 1794479161884
+    "at": 1794481191588
    },
    "oosMetrics": {
     "returnPct": -2.36,
@@ -528,20 +532,20 @@
     "barsInMarket": 82
    },
    "isMetrics": {
-    "returnPct": -4.26,
-    "maxDrawdownPct": 4.54,
-    "sharpe": -30.19,
-    "profitFactor": 0.19,
-    "winRate": 21.7,
-    "trades": 23,
-    "avgR": -0.128,
-    "expectancy": -7.07,
-    "exposurePct": 40.2,
-    "bestTradePct": 0.328,
-    "worstTradePct": -0.467,
-    "finalEquity": 3590.17,
+    "returnPct": -4.23,
+    "maxDrawdownPct": 4.63,
+    "sharpe": -29.75,
+    "profitFactor": 0.21,
+    "winRate": 22.7,
+    "trades": 22,
+    "avgR": -0.131,
+    "expectancy": -7.21,
+    "exposurePct": 39.5,
+    "bestTradePct": 0.327,
+    "worstTradePct": -0.466,
+    "finalEquity": 3591.32,
     "curvePoints": 560,
-    "barsInMarket": 225
+    "barsInMarket": 221
    },
    "lastCandles": 800,
    "aiPlan": {
@@ -558,7 +562,8 @@
     },
     "rationale": "שולחן 5 דקות עם חוסר יציבות; פריצת ערוץ עם חיפוש ממוקד עדיף על מגמת EMA.",
     "at": 1794479143066,
-    "consumed": false
+    "consumed": true,
+    "appliedAt": 1794481189948
    },
    "aiReview": {
     "verdict": "התיק מוטה לשולחנות סווינג; התוך-יומי דורש צמצום חיפוש.",
@@ -1068,51 +1073,51 @@
    },
    "robustness": 83,
    "technical": {
-    "price": 2051.99,
-    "bias": -0.06,
-    "biasLabel": "ניטרלי",
-    "confidence": 55,
+    "price": 2044.55,
+    "bias": -0.41,
+    "biasLabel": "דובי חזק",
+    "confidence": 69,
     "trend": {
-     "score": -0.14,
-     "label": "דשדוש",
-     "ema20": 2048.4,
-     "ema50": 2053.17,
-     "ema200": 2071.36,
-     "adx": 22.4,
+     "score": -0.8,
+     "label": "מגמת ירידה",
+     "ema20": 2047.83,
+     "ema50": 2052.55,
+     "ema200": 2070.79,
+     "adx": 21.6,
      "slopePct": -0.11
     },
     "momentum": {
-     "score": 0.09,
+     "score": -0.01,
      "label": "מומנטום חלש",
-     "rsi": 53.1,
-     "macdHist": 0.5348,
-     "roc10": 0.02,
+     "rsi": 44.1,
+     "macdHist": 0.3192,
+     "roc10": -0.1,
      "state": "ניטרלי"
     },
     "volatility": {
      "atrPct": 0.24,
-     "bbWidthPct": 0.55,
+     "bbWidthPct": 0.54,
      "regime": "נמוכה"
     },
     "structure": {
-     "position": 0.25,
+     "position": 0.12,
      "support": 2037.4,
      "resistance": 2094.73,
-     "distToHighPct": 2.08,
-     "distToLowPct": 0.71
+     "distToHighPct": 2.45,
+     "distToLowPct": 0.35
     },
     "volume": {
-     "score": 0.23,
+     "score": 0.16,
      "label": "נפח תומך"
     },
     "summary": [
-     "מגמה: דשדוש · ADX 22",
-     "מומנטום: RSI 53 · ROC10 0.0%",
+     "מגמה: ירידה · ADX 22",
+     "מומנטום: RSI 44 · ROC10 -0.1%",
      "תנודתיות: נמוכה · ATR 0.2% מהמחיר",
-     "מבנה: 25% מהטווח · תמיכה 2037.40 · התנגדות 2094.73",
+     "מבנה: 12% מהטווח · תמיכה 2037.40 · התנגדות 2094.73",
      "נפח: תומך בכיוון"
     ],
-    "at": 1794479161885
+    "at": 1794481191588
    },
    "oosMetrics": {
     "returnPct": 4.42,
@@ -1149,7 +1154,20 @@
    "lastCandles": 800,
    "dataProvider": null,
    "artifactName": "desk_15m_v1.1_freqtrade.py",
-   "liveSince": 1794473479273
+   "liveSince": 1794473479273,
+   "aiPlan": {
+    "strategyId": "momentum",
+    "paramBias": {},
+    "rationale": "בדיקת fallback בבריכה",
+    "at": 1794481189443,
+    "consumed": false
+   },
+   "aiReview": {
+    "verdict": "ok",
+    "risks": [],
+    "watch": [],
+    "at": 1794481189443
+   }
   },
   {
    "id": "desk_1h",
@@ -1412,51 +1430,51 @@
    "openTrade": null,
    "ideas": [],
    "technical": {
-    "price": 73599.67,
-    "bias": -0.5,
+    "price": 73463.53,
+    "bias": -0.53,
     "biasLabel": "דובי חזק",
-    "confidence": 73,
+    "confidence": 74,
     "trend": {
-     "score": -0.91,
+     "score": -0.92,
      "label": "מגמת ירידה",
-     "ema20": 73804.36,
-     "ema50": 74025.03,
-     "ema200": 75401.19,
-     "adx": 21.4,
-     "slopePct": -0.4
+     "ema20": 73791.4,
+     "ema50": 74019.69,
+     "ema200": 75399.83,
+     "adx": 21.3,
+     "slopePct": -0.42
     },
     "momentum": {
-     "score": -0.16,
+     "score": -0.2,
      "label": "מומנטום חלש",
-     "rsi": 43.8,
-     "macdHist": -48.3356,
-     "roc10": -0.66,
+     "rsi": 40.4,
+     "macdHist": -57.0237,
+     "roc10": -0.85,
      "state": "ניטרלי"
     },
     "volatility": {
      "atrPct": 0.49,
-     "bbWidthPct": 1.98,
+     "bbWidthPct": 2.03,
      "regime": "רגילה"
     },
     "structure": {
-     "position": 0.23,
+     "position": 0.18,
      "support": 72880.64,
      "resistance": 76073.74,
-     "distToHighPct": 3.36,
-     "distToLowPct": 0.98
+     "distToHighPct": 3.55,
+     "distToLowPct": 0.79
     },
     "volume": {
-     "score": 0.04,
+     "score": 0,
      "label": "נפח ניטרלי"
     },
     "summary": [
      "מגמה: ירידה · ADX 21",
-     "מומנטום: RSI 44 · ROC10 -0.7%",
+     "מומנטום: RSI 40 · ROC10 -0.8%",
      "תנודתיות: רגילה · ATR 0.5% מהמחיר",
-     "מבנה: 23% מהטווח · תמיכה 72880.64 · התנגדות 76073.74",
+     "מבנה: 18% מהטווח · תמיכה 72880.64 · התנגדות 76073.74",
      "נפח: ניטרלי"
     ],
-    "at": 1794479162458
+    "at": 1794481191908
    },
    "assessment": {
     "robustness": 61,
@@ -1997,38 +2015,38 @@
    },
    "ideas": [],
    "technical": {
-    "price": 73599.67,
-    "bias": -0.28,
+    "price": 73463.53,
+    "bias": -0.29,
     "biasLabel": "דובי",
     "confidence": 64,
     "trend": {
      "score": -0.3,
      "label": "דשדוש",
-     "ema20": 77070.19,
-     "ema50": 78696.52,
-     "ema200": 76125.09,
+     "ema20": 77057.23,
+     "ema50": 78691.19,
+     "ema200": 76123.74,
      "adx": 22.5,
-     "slopePct": -3.83
+     "slopePct": -3.85
     },
     "momentum": {
-     "score": -0.39,
+     "score": -0.41,
      "label": "מומנטום שלילי",
-     "rsi": 34,
-     "macdHist": -347.8313,
-     "roc10": -4.19,
+     "rsi": 33.6,
+     "macdHist": -356.5194,
+     "roc10": -4.36,
      "state": "ניטרלי"
     },
     "volatility": {
      "atrPct": 3.02,
-     "bbWidthPct": 13.45,
+     "bbWidthPct": 13.53,
      "regime": "רגילה"
     },
     "structure": {
      "position": 0.45,
      "support": 62823.64,
      "resistance": 86620,
-     "distToHighPct": 17.69,
-     "distToLowPct": 14.64
+     "distToHighPct": 17.91,
+     "distToLowPct": 14.48
     },
     "volume": {
      "score": -0.2,
@@ -2036,12 +2054,12 @@
     },
     "summary": [
      "מגמה: דשדוש · ADX 23",
-     "מומנטום: RSI 34 · ROC10 -4.2%",
+     "מומנטום: RSI 34 · ROC10 -4.4%",
      "תנודתיות: רגילה · ATR 3.0% מהמחיר",
      "מבנה: 45% מהטווח · תמיכה 62823.64 · התנגדות 86620.00",
      "נפח: מתנגד לכיוון"
     ],
-    "at": 1794479162459
+    "at": 1794481191908
    },
    "assessment": {
     "robustness": 94,
@@ -2580,38 +2598,38 @@
    },
    "ideas": [],
    "technical": {
-    "price": 2051.99,
+    "price": 2044.56,
     "bias": -0.41,
     "biasLabel": "דובי חזק",
-    "confidence": 68,
+    "confidence": 69,
     "trend": {
      "score": -0.55,
      "label": "מגמת ירידה",
-     "ema20": 2277.85,
-     "ema50": 2386.32,
-     "ema200": 2507.26,
+     "ema20": 2277.14,
+     "ema50": 2386.03,
+     "ema200": 2507.18,
      "adx": 18.7,
-     "slopePct": 7.54
+     "slopePct": 7.51
     },
     "momentum": {
      "score": -0.35,
      "label": "מומנטום שלילי",
-     "rsi": 42.1,
-     "macdHist": -17.3653,
-     "roc10": -18.39,
+     "rsi": 41.9,
+     "macdHist": -17.8395,
+     "roc10": -18.69,
      "state": "ניטרלי"
     },
     "volatility": {
-     "atrPct": 12.67,
-     "bbWidthPct": 61.14,
+     "atrPct": 12.72,
+     "bbWidthPct": 61.4,
      "regime": "רגילה"
     },
     "structure": {
      "position": 0.15,
      "support": 1571.96,
      "resistance": 4780.15,
-     "distToHighPct": 132.95,
-     "distToLowPct": 23.39
+     "distToHighPct": 133.8,
+     "distToLowPct": 23.11
     },
     "volume": {
      "score": 0.08,
@@ -2619,12 +2637,12 @@
     },
     "summary": [
      "מגמה: ירידה · ADX 19",
-     "מומנטום: RSI 42 · ROC10 -18.4%",
+     "מומנטום: RSI 42 · ROC10 -18.7%",
      "תנודתיות: רגילה · ATR 12.7% מהמחיר",
      "מבנה: 15% מהטווח · תמיכה 1571.96 · התנגדות 4780.15",
      "נפח: ניטרלי"
     ],
-    "at": 1794479162459
+    "at": 1794481191909
    },
    "assessment": {
     "robustness": 73,
@@ -2894,7 +2912,7 @@
    "status": "idle",
    "task": "ממתין למחזור הבא",
    "progress": 100,
-   "completed": 20
+   "completed": 21
   },
   {
    "id": "quant",
@@ -2905,7 +2923,7 @@
    "status": "idle",
    "task": "ממתין למחזור הבא",
    "progress": 100,
-   "completed": 20
+   "completed": 21
   },
   {
    "id": "backtest",
@@ -2916,7 +2934,7 @@
    "status": "idle",
    "task": "ממתין למחזור הבא",
    "progress": 100,
-   "completed": 20
+   "completed": 21
   },
   {
    "id": "optimizer",
@@ -2927,7 +2945,7 @@
    "status": "idle",
    "task": "ממתין למחזור הבא",
    "progress": 100,
-   "completed": 20
+   "completed": 21
   },
   {
    "id": "risk",
@@ -2938,7 +2956,7 @@
    "status": "idle",
    "task": "ממתין למחזור הבא",
    "progress": 100,
-   "completed": 20
+   "completed": 21
   },
   {
    "id": "dev",
@@ -2971,7 +2989,7 @@
    "status": "idle",
    "task": "ממתין למחזור הבא",
    "progress": 100,
-   "completed": 20
+   "completed": 21
   },
   {
    "id": "ta",
@@ -2982,10 +3000,46 @@
    "status": "idle",
    "task": "ממתין למחזור הבא",
    "progress": 100,
-   "completed": 20
+   "completed": 21
   }
  ],
  "events": [
+  {
+   "at": 1794481195239,
+   "level": "ok",
+   "actor": "עומר · מודיעין",
+   "text": "מטבעות במגמת חיפוש: SEPPUKU, PENGU, BTC"
+  },
+  {
+   "at": 1794481194905,
+   "level": "ok",
+   "actor": "עומר · מודיעין",
+   "text": "מדד פחד/חמדנות: 28 (Fear)"
+  },
+  {
+   "at": 1794481192850,
+   "level": "ok",
+   "actor": "עומר · מודיעין",
+   "text": "סריקת GitHub (\"algorithmic trading bot\") החזירה 0 רעיונות חדשים"
+  },
+  {
+   "at": 1794481189948,
+   "level": "info",
+   "actor": "נועה · אנליסטית",
+   "text": "תוך־יומי · 5 דקות: נשמרת השערת עבודה (breakout) — ממתינים ל-OOS חיובי לפני פרסום גרסה"
+  },
+  {
+   "at": 1794481189444,
+   "level": "info",
+   "actor": "אוריה · CIO",
+   "text": "פותח מחזור על תוך־יומי · 5 דקות (BTCUSDT · 5m)"
+  },
+  {
+   "at": 1794481189444,
+   "level": "info",
+   "actor": "אוריה · CIO",
+   "text": "החלטת AI: להתמקד ב-תוך־יומי · 15 דקות · מומנטום (ROC) — בדיקת fallback בבריכה"
+  },
   {
    "at": 1794479163889,
    "level": "ok",
@@ -4159,26 +4213,26 @@
  },
  "budget": {
   "github": {
-   "used": 2,
+   "used": 1,
    "total": 10,
-   "resetAt": 1794479205433,
-   "calls": 6
+   "resetAt": 1794481251909,
+   "calls": 7
   },
   "feargreed": {
-   "used": 3,
+   "used": 4,
    "total": 20,
    "resetAt": 1794482452178,
-   "calls": 6
+   "calls": 7
   },
   "coingecko": {
-   "used": 3,
+   "used": 4,
    "total": 15,
    "resetAt": 1794482453812,
-   "calls": 6
+   "calls": 7
   }
  },
  "sentiment": {
-  "updatedAt": 1794479164508,
+  "updatedAt": 1794481196037,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 28,
@@ -4208,7 +4262,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 73597.3
+    "price": 73463.53
    },
    "ETHUSDT": {
     "score": -0.37,
@@ -4216,7 +4270,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 2051.8
+    "price": 2044.55
    }
   },
   "headlines": [],
@@ -4224,7 +4278,7 @@
    {
     "name": "Seppuku",
     "symbol": "SEPPUKU",
-    "rank": 882
+    "rank": 897
    },
    {
     "name": "Pudgy Penguins",
@@ -4232,19 +4286,34 @@
     "rank": 115
    },
    {
-    "name": "ZIG Finance",
-    "symbol": "ZIG",
-    "rank": 418
-   },
-   {
     "name": "Bitcoin",
     "symbol": "BTC",
     "rank": 1
    },
    {
-    "name": "Gram (prev. Toncoin)",
-    "symbol": "GRAM",
-    "rank": 28
+    "name": "ZIG Finance",
+    "symbol": "ZIG",
+    "rank": 421
+   },
+   {
+    "name": "Zcash",
+    "symbol": "ZEC",
+    "rank": 11
+   },
+   {
+    "name": "Pi Network",
+    "symbol": "PI",
+    "rank": 81
+   },
+   {
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "rank": 2
+   },
+   {
+    "name": "Solana",
+    "symbol": "SOL",
+    "rank": 7
    },
    {
     "name": "Pearl",
@@ -4252,24 +4321,9 @@
     "rank": 97
    },
    {
-    "name": "Avalanche",
-    "symbol": "AVAX",
-    "rank": 25
-   },
-   {
-    "name": "Hyperliquid",
-    "symbol": "HYPE",
-    "rank": 10
-   },
-   {
-    "name": "Quantus",
-    "symbol": "QTC",
-    "rank": 850
-   },
-   {
-    "name": "Pi Network",
-    "symbol": "PI",
-    "rank": 81
+    "name": "NEAR Protocol",
+    "symbol": "NEAR",
+    "rank": 22
    }
   ],
   "newsScore": 0
@@ -4279,56 +4333,37 @@
  },
  "remote": null,
  "stats": {
-  "cycles": 20,
-  "backtests": 2466,
+  "cycles": 21,
+  "backtests": 2583,
   "deployments": 8,
-  "scans": 18,
+  "scans": 21,
   "startedAt": 1794473380871
  },
- "updatedAt": "2026-11-12T10:26:04.511Z",
+ "updatedAt": "2026-11-12T10:59:56.041Z",
  "source": "github-actions",
  "runner": {
   "cycles": 1,
   "deep": false,
-  "durationMs": 4468,
+  "durationMs": 6597,
   "node": "v20.18.0"
  },
  "aiDirector": {
-  "at": 1794479143066,
+  "at": 1794481189444,
   "source": "model",
-  "model": "mock-1",
-  "focusDesk": "desk_5m",
-  "focusLabel": "תוך־יומי · 5 דקות",
+  "model": "zai/m2",
+  "focusDesk": "desk_15m",
+  "focusLabel": "תוך־יומי · 15 דקות",
   "plan": {
-   "focusDesk": "desk_5m",
-   "strategyId": "breakout",
-   "paramBias": {
-    "period": [
-     12,
-     30
-    ],
-    "atrStop": [
-     1.5,
-     2.5
-    ]
-   },
-   "rationale": "שולחן 5 דקות עם חוסר יציבות; פריצת ערוץ עם חיפוש ממוקד עדיף על מגמת EMA.",
+   "focusDesk": "desk_15m",
+   "strategyId": "momentum",
+   "paramBias": {},
+   "rationale": "בדיקת fallback בבריכה",
    "review": {
-    "verdict": "התיק מוטה לשולחנות סווינג; התוך-יומי דורש צמצום חיפוש.",
-    "risks": [
-     "רעש גבוה בנרות 5 דקות",
-     "פער בין בקטסט לנייר"
-    ],
-    "watch": [
-     "חוסן אחרי שלושה חידושים",
-     "משך פוזיציה ממוצע"
-    ]
+    "verdict": "ok",
+    "risks": [],
+    "watch": []
    },
-   "nextActions": [
-    "להריץ כיול ממוקד על 5m",
-    "לבדוק dry-run של 15m",
-    "להקטין סיכון לעסקה ל-1%"
-   ]
+   "nextActions": []
   }
  }
 }

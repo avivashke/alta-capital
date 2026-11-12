@@ -4,7 +4,7 @@
 
 import { store } from './store.js';
 import { STRATEGY_IDS, STRATEGIES } from './strategies.js';
-import { chat, hasModelKey } from './llm.js';
+import { chatDetailed, hasModelKey } from './llm.js';
 
 const SYSTEM = `אתה סמנכ"ל ההשקעות של Alta Capital, חברת השקעות שמנוהלת על ידי סוכנים.
 אתה מקבל נתוני בקטסט, חלונות walk-forward, Monte Carlo, ניתוח טכני והיסטוריית גרסאות.
@@ -224,10 +224,11 @@ export async function runAiDirector({ useFallback = false } = {}) {
     applyPlan(plan, { source: 'local-rules' });
     return { ok: true, source: 'local-rules', plan };
   }
-  const model = state.settings.llm.model;
   let reply;
+  let used = null;
   try {
-    reply = await chat({ system: SYSTEM, messages: [{ role: 'user', content: buildPrompt(state) }], maxTokens: 900 });
+    used = await chatDetailed({ system: SYSTEM, messages: [{ role: 'user', content: buildPrompt(state) }], maxTokens: 900 });
+    reply = used.text;
   } catch (err) {
     if (!useFallback) return { ok: false, reason: err.message };
     const plan = localPlan(state);
@@ -242,6 +243,15 @@ export async function runAiDirector({ useFallback = false } = {}) {
     return { ok: true, source: 'local-rules', plan, error: 'invalid-json' };
   }
   const plan = sanitizePlan(parsed, state);
+  const model = used ? `${used.provider}/${used.model}` : null;
   const desk = applyPlan(plan, { source: 'model', model });
-  return { ok: true, source: 'model', plan, desk: desk?.id };
+  return {
+    ok: true,
+    source: 'model',
+    plan,
+    desk: desk?.id,
+    provider: used?.provider || null,
+    model: used?.model || null,
+    attempts: used?.attempts || [],
+  };
 }

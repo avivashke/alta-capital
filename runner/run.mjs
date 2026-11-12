@@ -38,6 +38,7 @@ const { store } = await import('../src/store.js');
 const firm = await import('../src/firm.js');
 const research = await import('../src/research.js');
 const ai = await import('../src/ai.js');
+const { buildPoolFromEnv } = await import('../src/keypool.js');
 const { buildArtifact } = await import('../src/platforms.js');
 
 store.load();
@@ -45,7 +46,16 @@ store.state.settings.autopilot = true;
 if (process.env.GITHUB_TOKEN) store.state.settings.github.token = process.env.GITHUB_TOKEN;
 
 // Model credentials come from GitHub Secrets, never from the repo.
-const llmKey = process.env.LLM_API_KEY || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || '';
+// Every provider key found in the environment joins one pool, so free tiers stack.
+const envPool = buildPoolFromEnv(process.env);
+const llmKey = process.env.LLM_API_KEY || '';
+if (envPool.length) {
+  store.state.settings.pool = { entries: envPool, updatedAt: Date.now() };
+  console.log(`[runner] model pool: ${envPool.map((e) => `${e.provider}/${e.model}`).join(' · ')}`);
+} else {
+  // Never reuse keys persisted by an earlier local run; CI must use secrets only.
+  store.state.settings.pool = { entries: [], updatedAt: Date.now() };
+}
 if (llmKey) {
   store.state.settings.llm = {
     provider: process.env.LLM_PROVIDER || 'openai',
@@ -55,18 +65,21 @@ if (llmKey) {
     temperature: Number(process.env.LLM_TEMPERATURE || 0.3),
   };
 } else if (store.state.settings.llm) {
-  // Never reuse a key persisted by an earlier local run; CI must use secrets only.
   store.state.settings.llm.apiKey = '';
 }
 firm.ensureDeskFields();
 
-let aiResult = { ok: false, reason: llmKey ? 'not-run' : 'no-model-key' };
+let aiResult = { ok: false, reason: (llmKey || envPool.length) ? 'not-run' : 'no-model-key' };
 try {
   // Without a model key we deliberately skip the AI step: local rules would keep
   // re-picking the same desk every 15 minutes and churn the strategy families.
   aiResult = await ai.runAiDirector({ useFallback: false });
   console.log(`[runner] AI director: ${aiResult.ok ? aiResult.source : aiResult.reason}`);
-  if (aiResult.ok) console.log(`[runner] focus: ${aiResult.plan.focusDesk} · ${aiResult.plan.strategyId} · ${aiResult.plan.rationale}`);
+  if (aiResult.ok) {
+    console.log(`[runner] focus: ${aiResult.plan.focusDesk} · ${aiResult.plan.strategyId} · ${aiResult.plan.rationale}`);
+    if (aiResult.provider) console.log(`[runner] answered by ${aiResult.provider}/${aiResult.model}`);
+    for (const attempt of aiResult.attempts || []) console.log(`[runner] fallback from ${attempt.provider}: ${attempt.error}`);
+  }
 } catch (err) {
   console.warn('[runner] AI director failed:', err.message);
   aiResult = { ok: false, reason: err.message };
@@ -136,6 +149,7 @@ for (const desk of store.state.desks) {
 function sanitize(state) {
   const out = JSON.parse(JSON.stringify(state));
   if (out.settings?.llm) out.settings.llm.apiKey = '';
+  for (const entry of out.settings?.pool?.entries || []) entry.key = '';
   if (out.settings?.github) out.settings.github.token = '';
   if (out.settings?.news) out.settings.news.apiKey = '';
   out.advisor = { messages: [] };
@@ -157,7 +171,15 @@ fs.writeFileSync(
     stats: state.stats,
     runner: state.runner,
     ai: aiResult?.ok
-      ? { source: aiResult.source, focusDesk: aiResult.plan.focusDesk, strategyId: aiResult.plan.strategyId, rationale: aiResult.plan.rationale }
+      ? {
+        source: aiResult.source,
+        focusDesk: aiResult.plan.focusDesk,
+        strategyId: aiResult.plan.strategyId,
+        rationale: aiResult.plan.rationale,
+        provider: aiResult.provider || null,
+        model: aiResult.model || null,
+        fallbacks: (aiResult.attempts || []).map((a) => a.provider),
+      }
       : { ok: false, reason: aiResult?.reason },
   }, null, 1),
 );

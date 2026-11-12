@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-12T10:26:04.512Z",
+ "generatedAt": "2026-11-12T10:59:56.042Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -24,20 +24,20 @@
     "filter": false
    },
    "metrics": {
-    "returnPct": -5.92,
-    "maxDrawdownPct": 6.11,
-    "sharpe": -32.01,
-    "profitFactor": 0.24,
-    "winRate": 26.5,
-    "trades": 34,
-    "avgR": -0.119,
-    "expectancy": -6.53,
-    "exposurePct": 37.5,
-    "bestTradePct": 0.328,
-    "worstTradePct": -0.517,
-    "finalEquity": 3528.01,
+    "returnPct": -6.11,
+    "maxDrawdownPct": 6.2,
+    "sharpe": -33,
+    "profitFactor": 0.21,
+    "winRate": 24.2,
+    "trades": 33,
+    "avgR": -0.127,
+    "expectancy": -6.94,
+    "exposurePct": 36.6,
+    "bestTradePct": 0.327,
+    "worstTradePct": -0.516,
+    "finalEquity": 3521.02,
     "curvePoints": 800,
-    "barsInMarket": 300
+    "barsInMarket": 293
    },
    "oos": {
     "returnPct": -2.36,
@@ -515,7 +515,7 @@
   }
  ],
  "sentiment": {
-  "updatedAt": 1794479164508,
+  "updatedAt": 1794481196037,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 28,
@@ -545,7 +545,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 73597.3
+    "price": 73463.53
    },
    "ETHUSDT": {
     "score": -0.37,
@@ -553,7 +553,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 2051.8
+    "price": 2044.55
    }
   },
   "headlines": [],
@@ -561,7 +561,7 @@
    {
     "name": "Seppuku",
     "symbol": "SEPPUKU",
-    "rank": 882
+    "rank": 897
    },
    {
     "name": "Pudgy Penguins",
@@ -569,19 +569,34 @@
     "rank": 115
    },
    {
-    "name": "ZIG Finance",
-    "symbol": "ZIG",
-    "rank": 418
-   },
-   {
     "name": "Bitcoin",
     "symbol": "BTC",
     "rank": 1
    },
    {
-    "name": "Gram (prev. Toncoin)",
-    "symbol": "GRAM",
-    "rank": 28
+    "name": "ZIG Finance",
+    "symbol": "ZIG",
+    "rank": 421
+   },
+   {
+    "name": "Zcash",
+    "symbol": "ZEC",
+    "rank": 11
+   },
+   {
+    "name": "Pi Network",
+    "symbol": "PI",
+    "rank": 81
+   },
+   {
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "rank": 2
+   },
+   {
+    "name": "Solana",
+    "symbol": "SOL",
+    "rank": 7
    },
    {
     "name": "Pearl",
@@ -589,24 +604,9 @@
     "rank": 97
    },
    {
-    "name": "Avalanche",
-    "symbol": "AVAX",
-    "rank": 25
-   },
-   {
-    "name": "Hyperliquid",
-    "symbol": "HYPE",
-    "rank": 10
-   },
-   {
-    "name": "Quantus",
-    "symbol": "QTC",
-    "rank": 850
-   },
-   {
-    "name": "Pi Network",
-    "symbol": "PI",
-    "rank": 81
+    "name": "NEAR Protocol",
+    "symbol": "NEAR",
+    "rank": 22
    }
   ],
   "newsScore": 0

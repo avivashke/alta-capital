@@ -1,31 +1,38 @@
 {
- "at": "2026-11-12T10:26:04.511Z",
+ "at": "2026-11-12T10:59:56.041Z",
  "summary": [
   {
-   "desk": "desk_1w",
-   "timeframe": "1w",
+   "desk": "desk_5m",
+   "timeframe": "5m",
    "ok": true,
    "published": false,
-   "version": "v1.1",
-   "oos": 2.77,
-   "robustness": 73
+   "version": null,
+   "oos": -2.36,
+   "robustness": 26
   }
  ],
  "stats": {
-  "cycles": 20,
-  "backtests": 2466,
+  "cycles": 21,
+  "backtests": 2583,
   "deployments": 8,
-  "scans": 18,
+  "scans": 21,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 1,
   "deep": false,
-  "durationMs": 4468,
+  "durationMs": 6597,
   "node": "v20.18.0"
  },
  "ai": {
-  "ok": false,
-  "reason": "no-model-key"
+  "source": "model",
+  "focusDesk": "desk_15m",
+  "strategyId": "momentum",
+  "rationale": "בדיקת fallback בבריכה",
+  "provider": "zai",
+  "model": "m2",
+  "fallbacks": [
+   "groq"
+  ]
  }
 }

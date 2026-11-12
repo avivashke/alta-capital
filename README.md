@@ -132,6 +132,22 @@ gh variable set LLM_BASE_URL --body "https://openrouter.ai/api/v1"
 gh variable set LLM_PROVIDER --body "openrouter"
 ```
 
+### בריכת מודלים חינמיים
+
+אפשר (ומומלץ) לחבר כמה ספקים במקביל. כל מפתח שנמצא ב-environment נכנס לבריכה:
+`GROQ_API_KEY`, `GEMINI_API_KEY`, `ZAI_API_KEY`, `OPENROUTER_API_KEY`, `MISTRAL_API_KEY`,
+`NVIDIA_API_KEY`, `COHERE_API_KEY`, `XAI_API_KEY`, `DEEPSEEK_API_KEY`, `TOGETHER_API_KEY`,
+`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, ו-`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`.
+לרשימה מפורשת עם מודלים משלך: `LLM_KEYS` (JSON array של `{provider,key,model,baseUrl}`).
+
+הבריכה עובדת לפי least-recently-used, מכבדת RPM/RPD לכל ספק, מכניסה מפתח ל-cooldown
+מעריכי על 429 ומשביתה אותו על 401, ותמיד ממשיכה לספק הבא במקום להיכשל. בדשבורד:
+הגדרות → בריכת מודלים חינמיים (הוספה, בדיקה, סדר עדיפות, קירורים).
+
+רוצה שער מרכזי? הרם [free-api-gateway](https://github.com/DeepakSilaych/free-api-gateway)
+או [llm-keypool](https://github.com/piyush-tyagi-13/llm-keypool) והגדר `LLM_GATEWAY_URL`
+ו-`LLM_GATEWAY_KEY` — הבריכה תשתמש בו כספק אחד.
+
 לפני כל מחזור, סוכן ה-AI קורא את הדוח המלא (מדדים, חלונות, Monte Carlo, ניתוח טכני) ומחזיר
 `focusDesk`, `strategyId`, טווח פרמטרים מצומצם, סקירה ופעולות הבאות. ההחלטה נשמרת ב-
 `data/state.json` ומוצגת במעבדה, והמחזור הבא של אותו שולחן מיישם אותה. בלי מפתח — נפילה

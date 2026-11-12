@@ -25,6 +25,7 @@ export function defaults() {
       feeRate: 0.0004,
       platform: 'freqtrade',
       llm: { provider: 'openai', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', apiKey: '', temperature: 0.4 },
+      pool: { entries: [], updatedAt: null },
       github: { token: '', owner: '', repo: '', path: 'firm/context.json' },
       news: { endpoint: '', apiKey: '' },
     },

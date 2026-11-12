@@ -1,7 +1,9 @@
 import { mount } from '../ui.js';
 import { store } from '../store.js';
 import { LLM_PROVIDERS, PLATFORMS, DISCLAIMER } from '../config.js';
-import { testConnection } from '../llm.js';
+import { testConnection, testPoolEntry } from '../llm.js';
+import { PROVIDERS, PROVIDER_ORDER } from '../providers.js';
+import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
 import { h, notice, toast, openModal, downloadFile, timeAgo, tag } from '../ui.js';
 import { syncFromCloud } from '../remote.js';
 
@@ -110,9 +112,11 @@ export function renderSettings(root, ui) {
     notice('המפתחות נשמרים ב-localStorage של הדפדפן הזה בלבד. אין שרת, אין בסיס נתונים ואין שליחת מפתחות לשום מקום מלבד ספק המודל. אל תעלה קובץ הגדרות עם מפתחות לריפו ציבורי.', 'bad'),
   );
 
+  mount(root, poolCard(ui));
+
   mount(root, h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },
     h('div', { class: 'card' },
-      h('div', { class: 'card-head' }, h('div', {}, h('h2', { text: 'מודל AI' }), h('div', { class: 'card-sub', text: 'OpenAI-compatible, Anthropic או Gemini' }))),
+      h('div', { class: 'card-head' }, h('div', {}, h('h2', { text: 'מודל AI ראשי' }), h('div', { class: 'card-sub', text: 'ברירת מחדל / פרוקסי — הבריכה מעליו קודמת' }))),
       h('div', { class: 'form-grid' },
         field('ספק', provider),
         field('שם מודל', model),
@@ -221,6 +225,147 @@ export function renderSettings(root, ui) {
     ),
     notice(DISCLAIMER, 'bad'),
   ));
+}
+
+const ENV_HINT = {
+  groq: 'GROQ_API_KEY', gemini: 'GEMINI_API_KEY', zai: 'ZAI_API_KEY', openrouter: 'OPENROUTER_API_KEY',
+  cloudflare: 'CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID', mistral: 'MISTRAL_API_KEY', nvidia: 'NVIDIA_API_KEY',
+  cohere: 'COHERE_API_KEY', xai: 'XAI_API_KEY', deepseek: 'DEEPSEEK_API_KEY', together: 'TOGETHER_API_KEY',
+  openai: 'OPENAI_API_KEY', anthropic: 'ANTHROPIC_API_KEY', gateway: 'LLM_GATEWAY_URL + LLM_GATEWAY_KEY', ollama: '—', custom: 'LLM_KEYS (JSON)',
+};
+
+const STATUS_LABEL = {
+  ready: ['מוכן', 'green'], cooling: ['קירור', 'opt'], exhausted: ['נגמר היומי', 'dry'],
+  throttled: ['מגבלת דקה', 'dry'], invalid: ['מפתח פסול', 'red'], disabled: ['מושבת', 'red'],
+};
+
+function poolCard(ui) {
+  const now = Date.now();
+  const stats = poolStats(store.state, now);
+  const entries = poolEntries(store.state);
+
+  const providerSel = h('select', {}, PROVIDER_ORDER.map((k) => h('option', {
+    value: k,
+    selected: k === 'groq',
+  }, PROVIDERS[k].free ? `${PROVIDERS[k].label} · חינם` : PROVIDERS[k].label)));
+  const modelIn = h('input', { type: 'text', list: 'pool-models', placeholder: 'בחר או הקלד שם מודל', dir: 'ltr' });
+  const keyIn = h('input', { type: 'password', placeholder: 'מפתח API', dir: 'ltr', autocomplete: 'off' });
+  const accountIn = h('input', { type: 'text', placeholder: 'Account ID (רק Cloudflare)', dir: 'ltr' });
+  const baseIn = h('input', { type: 'url', placeholder: 'כתובת API (רק gateway/custom)', dir: 'ltr' });
+  const datalist = h('datalist', { id: 'pool-models' }, PROVIDER_ORDER.flatMap((k) => (PROVIDERS[k].models || []).map((m) => h('option', { value: m }))));
+
+  const add = () => {
+    const provider = providerSel.value;
+    const def = PROVIDERS[provider];
+    if (provider === 'cloudflare' && !accountIn.value.trim()) {
+      toast('ל-Cloudflare צריך גם Account ID', 'bad');
+      return;
+    }
+    if (!keyIn.value.trim() && provider !== 'ollama') {
+      toast('חסר מפתח API', 'bad');
+      return;
+    }
+    const res = addPoolEntry(store.state, {
+      provider,
+      model: modelIn.value.trim() || def.models?.[0] || '',
+      key: keyIn.value.trim(),
+      accountId: accountIn.value.trim(),
+      baseUrl: baseIn.value.trim(),
+    });
+    if (res.duplicate) {
+      toast('המפתח הזה כבר בבריכה', 'bad');
+      return;
+    }
+    store.save();
+    store.emit();
+    toast(`${def.label} נוסף לבריכה`, 'ok');
+    ui.rerender();
+  };
+
+  const rows = entries.map((entry, idx) => {
+    const def = PROVIDERS[entry.provider] || { label: entry.provider };
+    const status = entryStatus(entry, now);
+    const [label, color] = STATUS_LABEL[status] || [status, 'dry'];
+    const lim = limitsFor(entry);
+    const cooling = entry.cooldownUntil > now ? Math.ceil((entry.cooldownUntil - now) / 1000) : 0;
+    return h('div', { class: 'row', style: { gap: '10px', padding: '10px 0', borderTop: '1px solid rgba(255,255,255,0.06)', alignItems: 'flex-start' } },
+      h('div', { class: 'grow' },
+        h('div', { class: 'row wrap', style: { gap: '6px' } },
+          h('b', { style: { fontSize: '13px' }, text: def.label }),
+          tag(entry.model || '—', 'dry'),
+          tag(label, color),
+        ),
+        h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: [
+          entry.key ? '••••' + entry.key.slice(-4) : 'ללא מפתח',
+          `${entry.dayCount || 0}${lim.rpd ? '/' + lim.rpd : ''} בקשות היום`,
+          cooling ? `קירור ${cooling}s` : null,
+          entry.lastError ? entry.lastError.slice(0, 90) : null,
+        ].filter(Boolean).join(' · ') }),
+      ),
+      h('div', { class: 'row', style: { gap: '4px' } },
+        h('button', {
+          class: 'btn btn-sm',
+          onclick: async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            btn.textContent = '…';
+            const res = await testPoolEntry(entry.id);
+            toast(res.ok ? `${def.label} ענה: ${res.reply}` : `${def.label}: ${res.error}`, res.ok ? 'ok' : 'bad');
+            ui.rerender();
+          },
+        }, 'בדוק'),
+        h('button', {
+          class: 'btn btn-sm btn-ghost',
+          onclick: () => { entry.enabled = !entry.enabled; if (entry.enabled) { entry.valid = true; entry.cooldownUntil = 0; } store.save(); store.emit(); ui.rerender(); },
+        }, entry.enabled ? 'השבת' : 'הפעל'),
+        h('button', { class: 'btn btn-sm btn-ghost', disabled: idx === 0, onclick: () => { movePoolEntry(store.state, entry.id, -1); store.save(); ui.rerender(); } }, '▲'),
+        h('button', { class: 'btn btn-sm btn-ghost', disabled: idx === entries.length - 1, onclick: () => { movePoolEntry(store.state, entry.id, 1); store.save(); ui.rerender(); } }, '▼'),
+        h('button', { class: 'btn btn-sm btn-danger', onclick: () => { removePoolEntry(store.state, entry.id); store.save(); store.emit(); ui.rerender(); } }, 'הסר'),
+      ),
+    );
+  });
+
+  return h('div', { class: 'card', style: { marginTop: '14px' } },
+    h('div', { class: 'card-head' },
+      h('div', {}, h('h2', { text: 'בריכת מודלים חינמיים' }),
+        h('div', { class: 'card-sub', text: `${stats.total} מפתחות · ${stats.ready} מוכנים · ${stats.requestsToday} בקשות היום · ${stats.providers} ספקים` })),
+      h('div', { class: 'row', style: { gap: '6px' } },
+        tag(stats.ready ? 'בריכה פעילה' : 'אין מפתחות זמינים', stats.ready ? 'live' : 'dry'),
+      ),
+    ),
+    h('p', { class: 'small muted', style: { marginTop: '4px' } },
+      'כל מפתח שנוסף כאן נכנס לתור אחד: הבקשה הולכת למפתח שהכי מזמן לא נוצל, 429 מכניס אותו לקירור מעריכי, 401 משבית אותו, ומגבלות ה-RPM/RPD של כל ספק נאכפות. כשספק נופל — הבקשה ממשיכה לספק הבא, כך שהסוכנים ממשיכים לעבוד גם כשמודל חינמי נגמר.',
+    ),
+    h('div', { class: 'form-grid', style: { marginTop: '12px' } },
+      field('ספק', providerSel),
+      field('מודל', h('div', {}, modelIn, datalist)),
+      field('מפתח API', keyIn),
+      field('Account ID', accountIn),
+      h('div', { class: 'full' }, field('כתובת API (אופציונלי)', baseIn)),
+    ),
+    h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '10px' } },
+      h('button', { class: 'btn btn-sm btn-primary', onclick: add }, '+ הוסף לבריכה'),
+      h('button', {
+        class: 'btn btn-sm',
+        onclick: async () => {
+          const all = poolEntries(store.state);
+          if (!all.length) { toast('הבריכה ריקה', 'bad'); return; }
+          let ok = 0;
+          for (const entry of all) {
+            const res = await testPoolEntry(entry.id);
+            if (res.ok) ok++;
+          }
+          toast(`${ok}/${all.length} מפתחות ענו`, ok ? 'ok' : 'bad');
+          ui.rerender();
+        },
+      }, 'בדוק את כולם'),
+      h('button', { class: 'btn btn-sm btn-ghost', onclick: () => { resetCooldowns(store.state); store.save(); store.emit(); ui.rerender(); } }, 'אפס קירורים'),
+      h('a', { class: 'btn btn-sm btn-ghost', href: 'https://github.com/open-free-llm-api/awesome-freellm-apis', target: '_blank', rel: 'noopener', text: 'רשימת הספקים החינמיים ↗' }),
+    ),
+    rows.length ? h('div', { style: { marginTop: '8px' } }, rows) : h('div', { class: 'small muted', style: { marginTop: '10px' }, text: 'הבריכה ריקה. הוסף מפתח אחד ומעלה — Groq ו-Gemini הם ההתחלה המומלצת.' }),
+    notice('בדפדפן המפתחות נשמרים מקומית בלבד. כדי שהסוכנים בענן ישתמשו בהם, הוסף אותם כסודות בריפו: ' +
+      Object.values(ENV_HINT).filter((v) => v !== '—').slice(0, 8).join(' · ') + ' — הבריכה נבנית מהם אוטומטית.', 'blue'),
+  );
 }
 
 function field(label, input) {

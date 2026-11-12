@@ -1,0 +1,187 @@
+// Provider catalog for the free-model pool.
+// Base URLs and free allowances follow the community list at
+// https://github.com/open-free-llm-api/awesome-freellm-apis — all of them speak
+// the OpenAI chat-completions shape, so one request builder covers the lot.
+
+export const PROVIDER_ORDER = [
+  'groq', 'gemini', 'zai', 'openrouter', 'cloudflare', 'mistral',
+  'nvidia', 'cohere', 'xai', 'deepseek', 'together', 'openai',
+  'anthropic', 'gateway', 'ollama', 'custom',
+];
+
+export const PROVIDERS = {
+  groq: {
+    label: 'Groq',
+    shape: 'openai',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    models: ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b'],
+    free: true,
+    limits: { rpm: 30, rpd: 1000 },
+    keyUrl: 'https://console.groq.com/keys',
+    note: 'מהירות גבוהה מאוד על LPU. 30 בקשות/דקה, ~1,000 ביום.',
+  },
+  gemini: {
+    label: 'Google Gemini',
+    shape: 'openai',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    models: ['gemini-2.5-flash', 'gemini-2.5-flash-lite'],
+    free: true,
+    limits: { rpm: 15, rpd: 500 },
+    keyUrl: 'https://aistudio.google.com/apikey',
+    note: 'הכי נדיב בטוקנים, ותומך בקריאה ישירה מהדפדפן (CORS).',
+  },
+  zai: {
+    label: 'Z.ai (GLM)',
+    shape: 'openai',
+    baseUrl: 'https://api.z.ai/api/paas/v4',
+    models: ['glm-4.5-flash', 'glm-4.6v-flash'],
+    free: true,
+    limits: { rpm: 10, rpd: 200 },
+    keyUrl: 'https://z.ai/manage-apikey/apikey-list',
+    note: 'דגמי Flash חינמיים, כולל ראייה. מתאים כגיבוי שני.',
+  },
+  openrouter: {
+    label: 'OpenRouter',
+    shape: 'openai',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    models: ['z-ai/glm-4.5-air:free', 'meta-llama/llama-3.3-70b-instruct:free', 'deepseek/deepseek-chat-v3:free'],
+    free: true,
+    limits: { rpm: 20, rpd: 50 },
+    keyUrl: 'https://openrouter.ai/keys',
+    note: 'מפתח אחד לעשרות מודלים בחינם (סיומת :free) — 50 בקשות ביום, יותר אחרי טעינה.',
+  },
+  cloudflare: {
+    label: 'Cloudflare Workers AI',
+    shape: 'openai',
+    baseUrl: 'https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1',
+    models: [
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      '@cf/openai/gpt-oss-120b',
+      '@cf/qwen/qwen2.5-coder-32b-instruct',
+    ],
+    free: true,
+    limits: { rpd: 0 },
+    needsAccountId: true,
+    keyUrl: 'https://dash.cloudflare.com/profile/api-tokens',
+    note: '10,000 Neurons ביום. צריך גם Account ID. עובד דרך worker proxy אם הדפדפן חוסם.',
+  },
+  mistral: {
+    label: 'Mistral',
+    shape: 'openai',
+    baseUrl: 'https://api.mistral.ai/v1',
+    models: ['mistral-small-latest', 'open-mistral-nemo'],
+    free: true,
+    limits: { rpm: 5, rpd: 300 },
+    keyUrl: 'https://console.mistral.ai/api-keys',
+    note: 'Free mode לפיתוח, עם מגבלות RPM נמוכות.',
+  },
+  nvidia: {
+    label: 'NVIDIA NIM',
+    shape: 'openai',
+    baseUrl: 'https://integrate.api.nvidia.com/v1',
+    models: ['meta/llama-3.1-70b-instruct', 'z-ai/glm-4.6'],
+    free: true,
+    limits: { rpm: 40, rpd: 1000 },
+    keyUrl: 'https://build.nvidia.com',
+    note: 'גישה חינמית לפרוטוטייפ, נדרש אימות טלפון.',
+  },
+  cohere: {
+    label: 'Cohere',
+    shape: 'openai',
+    baseUrl: 'https://api.cohere.ai/compatibility/v1',
+    models: ['command-r-plus-08-2024', 'command-r7b-12-2024'],
+    free: true,
+    limits: { rpd: 33 },
+    keyUrl: 'https://dashboard.cohere.com/api-keys',
+    note: 'Trial key: 1,000 קריאות בחודש.',
+  },
+  xai: {
+    label: 'xAI (Grok)',
+    shape: 'openai',
+    baseUrl: 'https://api.x.ai/v1',
+    models: ['grok-4-fast-reasoning', 'grok-3-mini'],
+    free: false,
+    limits: { rpm: 60, rpd: 0 },
+    keyUrl: 'https://console.x.ai',
+    note: 'אין שכבת חינם קבועה — קרדיטים ראשוניים ואז בתשלום.',
+  },
+  deepseek: {
+    label: 'DeepSeek',
+    shape: 'openai',
+    baseUrl: 'https://api.deepseek.com/v1',
+    models: ['deepseek-chat'],
+    free: false,
+    limits: {},
+    keyUrl: 'https://platform.deepseek.com/api_keys',
+    note: 'זול מאוד, לא חינם.',
+  },
+  together: {
+    label: 'Together AI',
+    shape: 'openai',
+    baseUrl: 'https://api.together.xyz/v1',
+    models: ['meta-llama/Llama-3.3-70B-Instruct-Turbo'],
+    free: false,
+    limits: {},
+    keyUrl: 'https://api.together.ai/settings/api-keys',
+    note: 'אין שכבת חינם כללית.',
+  },
+  openai: {
+    label: 'OpenAI',
+    shape: 'openai',
+    baseUrl: 'https://api.openai.com/v1',
+    models: ['gpt-4o-mini', 'gpt-5-mini'],
+    free: false,
+    limits: {},
+    keyUrl: 'https://platform.openai.com/api-keys',
+    note: 'בתשלום; משמש כברירת מחדל אם קיים.',
+  },
+  anthropic: {
+    label: 'Anthropic (Claude)',
+    shape: 'anthropic',
+    baseUrl: 'https://api.anthropic.com/v1',
+    models: ['claude-sonnet-4-5', 'claude-haiku-4-5'],
+    free: false,
+    limits: {},
+    keyUrl: 'https://console.anthropic.com/settings/keys',
+    note: 'בתשלום. מתאים אחרי שכבת החינם, כגיבוי איכותי.',
+  },
+  gateway: {
+    label: 'שער מאוחד (self-hosted)',
+    shape: 'openai',
+    baseUrl: '',
+    models: ['auto'],
+    free: true,
+    limits: {},
+    keyUrl: 'https://github.com/DeepakSilaych/free-api-gateway',
+    note: 'אם הרמת free-api-gateway או llm-keypool — הזן כאן את הכתובת והמפתח המאוחד.',
+  },
+  ollama: {
+    label: 'Ollama (מקומי)',
+    shape: 'openai',
+    baseUrl: 'http://localhost:11434/v1',
+    models: ['llama3.1', 'qwen2.5'],
+    free: true,
+    limits: {},
+    keyUrl: 'https://ollama.com',
+    note: 'רץ על המחשב שלך, בלי מפתח ובלי הגבלה.',
+  },
+  custom: {
+    label: 'OpenAI-compatible מותאם',
+    shape: 'openai',
+    baseUrl: '',
+    models: [],
+    free: false,
+    limits: {},
+    keyUrl: '',
+    note: 'כל נקודת קצה שמדברת /v1/chat/completions.',
+  },
+};
+
+export function providerLabel(id) {
+  return PROVIDERS[id]?.label || id;
+}
+
+export function providerBaseUrl(providerId, accountId) {
+  const base = PROVIDERS[providerId]?.baseUrl || '';
+  return base.replace('{account_id}', accountId || '');
+}
