@@ -558,18 +558,13 @@ export async function tick({ reason = 'auto' } = {}) {
     const desk = nextDesk(state);
     state.stats.cycles = (state.stats.cycles || 0) + 1;
     state.lastTickAt = Date.now();
-    const result = await runDeskCycle(desk, {});
+    const result = await runDeskCycle(desk, { deep: (state.stats.cycles||0) % 4 === 0 });
     await tickLive();
     await promoteDryRuns();
-    if ((state.stats.cycles || 0) % 2 === 0) {
-      refreshTechnicals().catch((e) => console.warn('[ta]', e));
-    }
-    if ((state.stats.cycles || 0) % 3 === 0) {
-      scanIfDue().catch((e) => console.warn('[research]', e));
-    }
-    if ((state.stats.cycles || 0) % 5 === 0) {
-      refreshSentiment().catch((e) => console.warn('[sentiment]', e));
-    }
+    // עבודה רציפה: מחקר, ניתוח טכני, סנטימנט ואופטימיזציה בכל מחזור
+    refreshTechnicals({ force: true }).catch((e) => console.warn('[ta]', e));
+    scanIfDue().catch((e) => console.warn('[research]', e));
+    refreshSentiment().catch((e) => console.warn('[sentiment]', e));
     store.save();
     store.emit();
     return { ok: true, desk: desk.id, ...result };

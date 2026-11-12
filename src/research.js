@@ -292,7 +292,12 @@ export async function refreshSentiment() {
 export async function scanIfDue() {
   const b = budget('github');
   if (b.used >= b.total) return { skipped: true };
-  const queries = ['freqtrade strategy', 'trading strategy backtest', 'algorithmic trading bot', 'crypto quant strategy'];
+  const queries = [
+    'freqtrade strategy', 'trading strategy backtest', 'algorithmic trading bot', 'crypto quant strategy',
+    'wd gann trading strategy', 'gann square of 9 trading', 'gann fan angles crypto', 'gann time cycles calendar trading',
+    'gann swing chart technique', 'gann price time geometry', 'gann seasonal time cycles', 'w d gann time and price method',
+    'quantitative trading strategy github open source', 'crypto breakout strategy pine script'
+  ];
   const q = queries[(store.state.stats.scans || 0) % queries.length];
   try {
     return await scanGitHub(q, { quiet: true });

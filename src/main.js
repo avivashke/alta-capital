@@ -172,52 +172,13 @@ function boot() {
   window.addEventListener('hashchange', render);
 
   document.addEventListener('focusout', () => {
-    setTimeout(() => { if (pendingRender) render(); }, 0);
-  });
-
-  document.getElementById('btn-quick-tick')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    btn.disabled = true;
-    try {
-      await tick({ reason: 'manual' });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      btn.disabled = false;
-    }
-  });
-
-  setInterval(() => {
-    updateTopbar();
-    const s = store.state.settings;
-    if (!s.autopilot) return;
-    // When the cloud runner is publishing state, the local tab stays a read-only dashboard.
-    if (store.state.remote?.updatedAt && s.cloudSync) return;
-    const gap = Date.now() - (store.state.lastTickAt || 0);
-    if (gap >= Math.max(3, s.tickSeconds) * 1000) {
-      tick().catch((err) => console.warn('[autopilot]', err));
-    }
-  }, 1000);
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      startMarketFeed();
+      setTimeout(() => {
+    if (store.state.settings.autopilot) {
+      tick({ reason: 'boot' }).catch(() => {});
       const cloudMode = !!(store.state.remote?.updatedAt && store.state.settings.cloudSync);
-      if (cloudMode) syncFromCloud().catch(() => {});
-      else if (store.state.settings.autopilot) catchUp().catch(() => {});
+      if (!cloudMode) catchUp().catch((err) => console.warn('[catchup]', err));
     }
-  });
-
-  syncFromCloud()
-    .then((res) => {
-      if (res?.ok) toast('נטען מצב ההרצה מהענן (GitHub Actions)', 'ok');
-    })
-    .catch((err) => console.warn('[cloud]', err));
-
-  setTimeout(() => {
-    const cloudMode = !!(store.state.remote?.updatedAt && store.state.settings.cloudSync);
-    if (store.state.settings.autopilot && !cloudMode) catchUp().catch((err) => console.warn('[catchup]', err));
-  }, 1300);
+  }, 600);
 }
 
 boot();

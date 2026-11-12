@@ -392,6 +392,48 @@ function tradingviewCard(ui) {
   );
 }
 
+function proxyCard(ui) {
+  const st = store.state.settings;
+  const proxyUrl = h('input', { type: 'url', value: st.cloudflareProxyUrl || '', placeholder: 'https://<worker>.workers.dev/v1 או Cloudflare AI Gateway URL', dir: 'ltr' });
+  const proxyKey = h('input', { type: 'password', value: st.cloudflareProxyKey || '', placeholder: 'מפתח/טוקן ל-Proxy (אם נדרש)', dir: 'ltr', autocomplete: 'off' });
+  const modelIn = h('input', { type: 'text', value: st.cloudflareProxyModel || 'llama-3.1-8b-instant', placeholder: 'מודל דרך Proxy (למשל llama-3.1-8b-instant / @cf/meta/llama-3.3-70b-instruct-fp8-fast)', dir: 'ltr' });
+  const addProxy = () => {
+    const url = proxyUrl.value.trim();
+    if (!url) { toast('הזן כתובת Proxy/Gateway', 'bad'); return; }
+    const res = addPoolEntry(store.state, { provider: 'gateway', model: modelIn.value.trim() || 'auto', key: proxyKey.value.trim(), baseUrl: url, label: 'Cloudflare/AI Proxy' });
+    store.mutate((x) => {
+      x.settings.cloudflareProxyUrl = url;
+      x.settings.cloudflareProxyKey = proxyKey.value.trim();
+      x.settings.cloudflareProxyModel = modelIn.value.trim() || 'auto';
+    });
+    toast(res.duplicate ? 'ה-proxy כבר בבריכה' : 'Proxy נוסף לבריכה — הסוכנים ישתמשו בו', res.duplicate ? 'bad' : 'ok');
+    ui.rerender();
+  };
+  return h('div', { class: 'card', style: { marginTop: '14px' } },
+    h('div', { class: 'card-head' },
+      h('div', {}, h('h2', { text: 'Proxy / Cloudflare AI Gateway (Groq, Workers AI וכו׳)' }),
+        h('div', { class: 'card-sub', text: 'חיבור מודלי AI חינמיים דרך Cloudflare Worker/Proxy — הסוכנים ינתבו אליו אוטומטית' })),
+      tag('proxy', 'live'),
+    ),
+    notice('הגדר כאן כתובת Proxy תואמת OpenAI (/v1/chat/completions), למשל Cloudflare Worker שמעביר ל-Groq או ל-Cloudflare Workers AI ומחזיק את המפתח כסוד בצד השרת. לאחר הוספה הוא נכנס לבריכת המודלים והסוכנים משתמשים בו עם רוטציה ונפילה אוטומטית. ניתן גם להוסיף ישירות Groq/Cloudflare בבריכה למטה.', 'blue'),
+    h('div', { class: 'form-grid', style: { marginTop: '12px' } },
+      h('div', { class: 'full' }, field('כתובת Proxy/Gateway', proxyUrl)),
+      field('מפתח ל-Proxy (אופציונלי)', proxyKey),
+      field('מודל ברירת מחדל', modelIn),
+    ),
+    h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '10px' } },
+      h('button', { class: 'btn btn-sm btn-primary', onclick: addProxy }, 'הוסף Proxy לבריכה'),
+      h('a', { class: 'btn btn-sm btn-ghost', href: 'https://developers.cloudflare.com/ai-gateway/', target: '_blank', rel: 'noopener', text: 'Cloudflare AI Gateway ↗' }),
+      h('a', { class: 'btn btn-sm btn-ghost', href: 'https://console.groq.com/keys', target: '_blank', rel: 'noopener', text: 'מפתח Groq ↗' }),
+      h('a', { class: 'btn btn-sm btn-ghost', href: 'https://developers.cloudflare.com/workers-ai/', target: '_blank', rel: 'noopener', text: 'Workers AI ↗' }),
+    ),
+    h('ul', { class: 'list-clean', style: { marginTop: '8px' } },
+      h('li', { class: 'small muted', text: 'דוגמה ל-Worker: קבל POST ב-/v1/chat/completions והעבר ל-https://api.groq.com/openai/v1 עם Authorization מתוך סוד GROQ_API_KEY ב-Cloudflare.' }),
+      h('li', { class: 'small muted', text: 'ל-24/7 ב-Actions: הוסף Secrets כמו GROQ_API_KEY, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID או LLM_GATEWAY_URL/KEY.' }),
+    ),
+  );
+}
+
 function poolCard(ui) {
   const now = Date.now();
   const stats = poolStats(store.state, now);
