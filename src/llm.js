@@ -5,6 +5,7 @@
 import { LLM_PROVIDERS } from './config.js';
 import { store } from './store.js';
 import { availableEntries, markFailure, markUsed, poolEntries } from './keypool.js';
+import * as webllm from './webllm.js';
 
 const TIMEOUT_MS = 45_000;
 
@@ -107,6 +108,15 @@ function extractText(shape, data) {
 }
 
 async function callEntry(entry, opts) {
+  if (entry?.provider === 'webllm') {
+    const text = await webllm.chat({
+      system: opts.system,
+      messages: opts.messages,
+      maxTokens: opts.maxTokens,
+      temperature: opts.temperature,
+    });
+    return text;
+  }
   const { url, init } = buildRequest(entry, opts);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -145,16 +155,34 @@ export function legacyEntry(state = store.state) {
   };
 }
 
+export function webllmEntry() {
+  if (!webllm.isReady()) return null;
+  return {
+    id: 'webllm',
+    provider: 'webllm',
+    label: 'WebLLM (in-browser)',
+    shape: 'openai',
+    baseUrl: '',
+    model: webllm.currentModelId() || 'webllm',
+    key: '',
+    accountId: null,
+    enabled: true,
+    valid: true,
+    lastUsedAt: null,
+    uses: 0,
+  };
+}
+
 export function candidates(state = store.state) {
   const pool = availableEntries(state);
-  if (pool.length) {
-    const legacy = legacyEntry(state);
-    // A configured paid model stays as the last resort, never the first choice.
-    return legacy && !pool.some((e) => e.key === legacy.key && e.model === legacy.model)
-      ? [...pool, { ...legacy, lastUsedAt: Infinity }]
-      : pool;
-  }
+  const out = pool.slice();
   const legacy = legacyEntry(state);
+  if (legacy && !pool.some((e) => e.key === legacy.key && e.model === legacy.model)) {
+    out.push({ ...legacy, lastUsedAt: Infinity });
+  }
+  const wl = webllmEntry();
+  if (wl) out.push(wl);
+  if (out.length) return out;
   return legacy ? [legacy] : [];
 }
 
@@ -164,11 +192,17 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
   const list = candidates(state);
   if (!list.length) throw new LlmError('אין מודל זמין — הוסף מפתח לבריכת המודלים בהגדרות');
 
+  // Cap the walk so a broken pool cannot hold the cycle forever, but always keep the
+  // unlimited in-browser model as the last resort: it cannot 429.
+  const queue = list.slice(0, 8);
+  const local = list.find((e) => e.provider === 'webllm');
+  if (local && !queue.includes(local)) queue.push(local);
+
   const attempts = [];
-  for (const entry of list.slice(0, 8)) {
+  for (const entry of queue) {
     try {
       const text = await callEntry(entry, { system, messages, maxTokens, temperature });
-      if (entry.id !== 'legacy') markUsed(state, entry);
+      if (entry.id !== 'legacy' && entry.id !== 'webllm') markUsed(state, entry);
       store.save();
       return {
         text,
@@ -180,7 +214,7 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
         attempts,
       };
     } catch (err) {
-      if (entry.id !== 'legacy') markFailure(state, entry, { status: err.status || 0, message: err.message });
+      if (entry.id !== 'legacy' && entry.id !== 'webllm') markFailure(state, entry, { status: err.status || 0, message: err.message });
       attempts.push({ provider: entry.provider, model: entry.model, error: err.message, status: err.status || 0 });
     }
   }
@@ -198,7 +232,7 @@ export function hasModelKey() {
 }
 
 export function poolIsEmpty() {
-  return poolEntries(store.state).length === 0 && !legacyEntry(store.state);
+  return poolEntries(store.state).length === 0 && !legacyEntry(store.state) && !webllm.isReady();
 }
 
 export async function testEntry(entry) {
@@ -210,11 +244,11 @@ export async function testEntry(entry) {
       maxTokens: 20,
       temperature: 0,
     });
-    if (entry.id !== 'legacy') markUsed(state, entry);
+    if (entry.id !== 'legacy' && entry.id !== 'webllm') markUsed(state, entry);
     store.save();
     return { ok: true, reply: (reply || '(ריק)').slice(0, 60) };
   } catch (err) {
-    if (entry.id !== 'legacy') markFailure(state, entry, { status: err.status || 0, message: err.message });
+    if (entry.id !== 'legacy' && entry.id !== 'webllm') markFailure(state, entry, { status: err.status || 0, message: err.message });
     store.save();
     return { ok: false, error: err.message };
   }

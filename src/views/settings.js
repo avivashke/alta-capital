@@ -6,6 +6,7 @@ import { PROVIDERS, PROVIDER_ORDER } from '../providers.js';
 import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, parseCloudflareKeys, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
 import { h, notice, toast, openModal, downloadFile, timeAgo, tag } from '../ui.js';
 import { syncFromCloud } from '../remote.js';
+import * as webllm from '../webllm.js';
 
 export function renderSettings(root, ui) {
   const s = store.state.settings;
@@ -113,6 +114,8 @@ export function renderSettings(root, ui) {
   );
 
   mount(root, poolCard(ui));
+  mount(root, webllmCard(ui));
+  mount(root, tradingviewCard(ui));
 
   mount(root, h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },
     h('div', { class: 'card' },
@@ -231,13 +234,107 @@ const ENV_HINT = {
   groq: 'GROQ_API_KEY', gemini: 'GEMINI_API_KEY', zai: 'ZAI_API_KEY', openrouter: 'OPENROUTER_API_KEY',
   cloudflare: 'CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID', mistral: 'MISTRAL_API_KEY', nvidia: 'NVIDIA_API_KEY',
   cohere: 'COHERE_API_KEY', xai: 'XAI_API_KEY', deepseek: 'DEEPSEEK_API_KEY', together: 'TOGETHER_API_KEY',
-  openai: 'OPENAI_API_KEY', anthropic: 'ANTHROPIC_API_KEY', gateway: 'LLM_GATEWAY_URL + LLM_GATEWAY_KEY', ollama: '—', custom: 'LLM_KEYS (JSON)',
+  openai: 'OPENAI_API_KEY', anthropic: 'ANTHROPIC_API_KEY', gateway: 'LLM_GATEWAY_URL + LLM_GATEWAY_KEY', ollama: '—', webllm: '— (רץ בדפדפן)', custom: 'LLM_KEYS (JSON)',
 };
 
 const STATUS_LABEL = {
   ready: ['מוכן', 'green'], cooling: ['קירור', 'opt'], exhausted: ['נגמר היומי', 'dry'],
   throttled: ['מגבלת דקה', 'dry'], invalid: ['מפתח פסול', 'red'], disabled: ['מושבת', 'red'],
 };
+
+function webllmCard(ui) {
+  const supported = webllm.isSupported();
+  const st = webllm.state();
+  const modelSel = h('select', {}, webllm.WEBLLM_MODELS.map((m) => h('option', { value: m.id, selected: m.id === (st.currentModel || webllm.WEBLLM_MODELS[0].id) }, `${m.label} (${m.size})`)));
+  const statusEl = h('div', { class: 'small muted', text: supported
+    ? (st.engine ? 'מודל טעון: ' + (st.currentModel || '') : 'לא טעון — לחץ "טען מודל" (הורדה חד-פעמית)')
+    : 'הדפדפן לא תומך ב-WebGPU' });
+  const progressEl = h('div', { class: 'bar', style: { marginTop: '6px' } }, h('i', { style: { width: (st.progress * 100).toFixed(0) + '%' } }));
+  const loadBtn = h('button', {
+    class: 'btn btn-sm btn-primary',
+    disabled: !supported || st.loading,
+    onclick: async () => {
+      loadBtn.disabled = true;
+      loadBtn.textContent = 'טוען...';
+      const id = modelSel.value;
+      try {
+        await webllm.loadModel(id, ({ progress: p, text }) => {
+          progressEl.querySelector('i').style.width = (p * 100).toFixed(0) + '%';
+          statusEl.textContent = text || ('טוען ' + (p * 100).toFixed(0) + '%');
+        });
+        toast('מודל WebLLM טעון — inference ללא מגבלה', 'ok');
+      } catch (err) {
+        toast('טעינת מודל נכשלה: ' + err.message, 'bad');
+      } finally {
+        loadBtn.disabled = false;
+        loadBtn.textContent = 'טען מודל';
+        ui.rerender();
+      }
+    },
+  }, 'טען מודל');
+  const unloadBtn = h('button', {
+    class: 'btn btn-sm btn-ghost',
+    disabled: !st.engine,
+    onclick: async () => { await webllm.unload(); toast('מודל שוחרר', ''); ui.rerender(); },
+  }, 'שחרר');
+
+  return h('div', { class: 'card', style: { marginTop: '14px' } },
+    h('div', { class: 'card-head' },
+      h('div', {}, h('h2', { text: 'מודל מקומי בדפדפן (WebLLM)' }),
+        h('div', { class: 'card-sub', text: 'הרצה על ה-GPU של הדפדפן — ללא מפתח, ללא מגבלה, ללא רשת אחרי הורדה' })),
+      tag(st.engine ? 'טעון' : (supported ? 'לא טעון' : 'לא נתמך'), st.engine ? 'live' : 'dry'),
+    ),
+    notice('זהו הפתרון ל"מודלים חינמיים ללא מגבלת API בדפדפן": המודל (1-3B) רץ על ה-GPU שלך דרך WebGPU. אחרי הורדה חד-פעמית (~0.7-2GB) אין קריאות רשת ואין rate limits. האיכות נמוכה ממודלים גדולים בענן, אבל זמינות היא 100%.', 'blue'),
+    h('div', { class: 'form-grid', style: { marginTop: '10px' } },
+      field('מודל', modelSel),
+      h('div', { class: 'full' }, statusEl),
+      h('div', { class: 'full' }, progressEl),
+    ),
+    h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '10px' } },
+      loadBtn, unloadBtn,
+      h('span', { class: 'tiny muted', text: supported ? 'Chrome/Edge 113+ או Safari עדכני' : 'נדרש דפדפן עם WebGPU' }),
+    ),
+    h('div', { class: 'small muted', style: { marginTop: '8px' } },
+      'כשמודל טעון הוא מתווסף אוטומטית לרשימת המועמדים של היועץ ושל סמנכ״ל ההשקעות: קודם הבריכה בענן, ואם כולה נופלת — הדפדפן עצמו עונה. ' +
+      'לריצה 24/7 ללא מגבלות בענן צריך GPU בשרת: הרץ Ollama על runner self-hosted והגדר LLM_BASE_URL=http://localhost:11434/v1.',
+    ),
+  );
+}
+
+function tradingviewCard(ui) {
+  const pineBtn = h('button', {
+    class: 'btn btn-sm btn-primary',
+    onclick: () => {
+      const desk = store.state.desks.find((d) => d.version) || store.state.desks[0];
+      if (!desk || !desk.version) { toast('אין גרסה מאושרת — הרץ מחזור קודם', 'bad'); return; }
+      import('../platforms.js').then(({ buildArtifact }) => {
+        const art = buildArtifact(desk, 'tradingview');
+        downloadFile(art.filename, art.code, 'text/plain');
+        toast('Pine Script הורד — הדבק ב-TradingView Pine Editor', 'ok');
+      }).catch((e) => toast('שגיאה: ' + e.message, 'bad'));
+    },
+  }, 'ייצא Pine Script');
+
+  return h('div', { class: 'card', style: { marginTop: '14px' } },
+    h('div', { class: 'card-head' },
+      h('div', {}, h('h2', { text: 'TradingView · paper trading' }),
+        h('div', { class: 'card-sub', text: 'paper trading - no public order API' })),
+      tag('paper only', 'dry'),
+    ),
+    notice('מגבלת כנות: ל-TradingView אין API פומבי לפקודות, ולכן אי אפשר "לחבר" את חשבון הנייר באופן אוטומטי. מה שכן אפשר: (1) לייצא את האסטרטגיה כ-Pine Script ולהריץ אותה על התרשים — TradingView עצמה תדמה כניסות ויציאות בחשבון הנייר, (2) לשלוח סיגנלים דרך Alerts → Webhook לשרת שלך, (3) לחבר broker לנייר עם API אמיתי (Alpaca/OKX demo) ולראות את התרשימים ב-TradingView.', 'bad'),
+    h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '10px' } },
+      pineBtn,
+      h('button', { class: 'btn btn-sm btn-ghost', onclick: () => {
+        const cmd = 'TradingView Alert -> Webhook URL: https://your-endpoint/alta-signal\nPayload: {"symbol":"{{ticker}}","action":"{{strategy.order.action}}","price":"{{close}}"}';
+        copyText(cmd);
+      } }, 'העתק תבנית alert'),
+      h('a', { class: 'btn btn-sm btn-ghost', href: 'https://www.tradingview.com/support/solutions/43000529348-how-to-set-up-a-webhook/', target: '_blank', rel: 'noopener', text: 'TradingView Webhook guide ↗' }),
+    ),
+    h('div', { class: 'small muted', style: { marginTop: '8px' } },
+      'איך מריצים: בחר "TradingView (Pine Script)" כשפת הפלטפורמה, הרץ מחזורים עד שגרסה עוברת את ספי הקידום, ואז לחץ "ייצא Pine Script" והדבק ב-Pine Editor. הוסף לתרשים ולחץ "Add to chart" — מעכשיו TradingView מדמה כל כניסה ויציאה בחשבון הנייר שלה, בזמן אמת.',
+    ),
+  );
+}
 
 function poolCard(ui) {
   const now = Date.now();
@@ -267,7 +364,7 @@ function poolCard(ui) {
       toast('ל-Cloudflare צריך גם Account ID', 'bad');
       return;
     }
-    if (!keyIn.value.trim() && provider !== 'ollama') {
+    if (!keyIn.value.trim() && provider !== 'ollama' && provider !== 'webllm') {
       toast('חסר מפתח API', 'bad');
       return;
     }

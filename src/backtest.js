@@ -7,12 +7,36 @@ const DEFAULT_CFG = {
   capital: 25000,
   riskPerTrade: 0.015,
   feeRate: 0.0004,
+  makerFee: 0.00025,
+  takerFee: 0.0004,
+  spread: 0.001,
+  impactFactor: 1.0,
+  exchangeFee: 0,
   minTrades: 10,
   barsPerYear: 8760,
 };
 
 function closingSideFee(price, units, fee) {
   return price * units * fee;
+}
+
+function impactCost(units, avgDailyVolume, dailyVolatility, impactFactor) {
+  if (avgDailyVolume <= 0 || dailyVolatility <= 0) return 0;
+  const orderRatio = Math.abs(units) / avgDailyVolume;
+  return impactFactor * dailyVolatility * Math.sqrt(Math.max(0, orderRatio / 20));
+}
+
+function tradeFee(isTaker, price, units, cfg) {
+  const baseFee = isTaker ? cfg.takerFee : cfg.makerFee;
+  const spreadCost = price * cfg.spread * Math.abs(units);
+  const impact = impactCost(
+    units,
+    1000000,
+    0.02,
+    cfg.impactFactor
+  );
+  const exchange = cfg.exchangeFee * price * Math.abs(units);
+  return baseFee * price * Math.abs(units) + spreadCost + impact + exchange;
 }
 
 export function runBacktest(candles, strategyId, params, cfg = {}) {
@@ -31,11 +55,14 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
   let barsInMarket = 0;
   const trades = [];
   const curve = [];
+  let totalFees = 0;
 
-  const closePosition = (i, price, reason) => {
+  const closePosition = (i, price, reason, isTaker) => {
     const gross = pos.dir * (price - pos.entry) * pos.units;
+    const fee = tradeFee(isTaker, price, pos.units, conf);
     const fees = closingSideFee(pos.entry, pos.units, conf.feeRate) + closingSideFee(price, pos.units, conf.feeRate);
-    const pnl = gross - fees;
+    const pnl = gross - fee;
+    totalFees += fee;
     cash += pnl;
     const riskAmount = pos.risk;
     trades.push({
@@ -50,6 +77,7 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
       rMultiple: riskAmount > 0 ? +(pnl / riskAmount).toFixed(3) : 0,
       reason,
       at: candles[i]?.t || null,
+      fee: +fee.toFixed(4),
     });
     pos = null;
   };
@@ -63,16 +91,16 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
       const hitStop = pos.dir > 0 ? c.l <= pos.stop : c.h >= pos.stop;
       const hitTarget = pos.dir > 0 ? c.h >= pos.target : c.l <= pos.target;
       if (hitStop) {
-        closePosition(i, pos.stop, 'stop');
+        closePosition(i, pos.stop, 'stop', true);
         closedThisBar = true;
       } else if (hitTarget) {
-        closePosition(i, pos.target, 'target');
+        closePosition(i, pos.target, 'target', true);
         closedThisBar = true;
       } else if (desired[i] !== pos.dir && desired[i] !== 0) {
-        closePosition(i, c.c, 'flip');
+        closePosition(i, c.c, 'flip', true);
         closedThisBar = true;
       } else if (desired[i] === 0 && i > pos.entryIdx + 1) {
-        closePosition(i, c.c, 'signal');
+        closePosition(i, c.c, 'signal', true);
         closedThisBar = true;
       }
     }
@@ -104,11 +132,12 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
     curve.push({ t: c.t, v: +mtm.toFixed(2) });
   }
 
-  if (pos) closePosition(candles.length - 1, candles[candles.length - 1].c, 'eod');
+  if (pos) closePosition(candles.length - 1, candles[candles.length - 1].c, 'eod', true);
 
-  const metrics = summarize(trades, curve, conf);
+  const metrics = summarize(trades, curve, conf, totalFees);
   metrics.barsInMarket = barsInMarket;
   metrics.exposurePct = +(100 * barsInMarket / candles.length).toFixed(1);
+  metrics.totalFees = +totalFees.toFixed(4);
   return { metrics, curve, trades };
 }
 
@@ -117,10 +146,11 @@ function emptyMetrics() {
     returnPct: 0, maxDrawdownPct: 0, sharpe: 0, profitFactor: 0, winRate: 0,
     trades: 0, avgR: 0, expectancy: 0, exposurePct: 0, barsInMarket: 0,
     bestTradePct: 0, worstTradePct: 0, finalEquity: DEFAULT_CFG.capital, curvePoints: 0,
+    totalFees: 0,
   };
 }
 
-function summarize(trades, curve, conf) {
+function summarize(trades, curve, conf, totalFees = 0) {
   const capital = conf.capital;
   const finalEquity = curve.length ? curve[curve.length - 1].v : capital;
   const returnPct = ((finalEquity / capital) - 1) * 100;
@@ -167,6 +197,7 @@ function summarize(trades, curve, conf) {
     worstTradePct: trades.length ? Math.min(...trades.map((t) => t.pnlPct)) : 0,
     finalEquity: +finalEquity.toFixed(2),
     curvePoints: curve.length,
+    totalFees: +totalFees.toFixed(4),
   };
 }
 

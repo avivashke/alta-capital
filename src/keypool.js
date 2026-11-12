@@ -240,6 +240,18 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
     });
   }
 
+  // A local model has no key and no quota, which is the only way to get a truly
+  // unlimited 24/7 loop: point the runner at Ollama (or any local server).
+  const ollamaUrl = String(env.OLLAMA_BASE_URL || '').trim();
+  if (ollamaUrl) {
+    add({
+      provider: 'ollama',
+      key: '',
+      baseUrl: ollamaUrl.replace(/\/+$/, '') + '/v1',
+      model: env.OLLAMA_MODEL || 'llama3.1',
+    });
+  }
+
   if (env.LLM_GATEWAY_URL) {
     add({
       provider: 'gateway',

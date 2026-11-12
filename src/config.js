@@ -89,6 +89,11 @@ export const PLATFORMS = {
     repo: '',
     blurb: 'מפרט ניטרלי שאפשר לחבר לכל מנוע שרץ על השרת שלך.',
   },
+  tradingview: {
+    label: 'TradingView (Pine Script)', lang: 'Pine Script', license: 'MPL-2.0',
+    repo: 'https://www.tradingview.com',
+    blurb: 'ייצוא אסטרטגיה כ-Pine Script להרצה על TradingView (backtest + paper trading ב-UI).',
+  },
 };
 
 export const RESEARCH_SOURCES = {

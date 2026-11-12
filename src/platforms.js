@@ -276,6 +276,74 @@ function genericJson(desk) {
   return JSON.stringify(spec, null, 2);
 }
 
+function pineScript(desk) {
+  const p = desk.params || {};
+  const sid = desk.strategyId;
+  const tf = desk.tf === '5m' ? '5' : desk.tf === '15m' ? '15' : desk.tf === '1h' ? '60' : desk.tf === '1d' ? 'D' : desk.tf === '1w' ? 'W' : '60';
+  let entryLong = '';
+  let entryShort = '';
+  let indicators = '';
+  if (sid === 'ema_trend') {
+    indicators = `fast = ta.ema(close, ${Math.round(p.fast || 12)})\nslow = ta.ema(close, ${Math.round(p.slow || 48)})\ntrend = ta.ema(close, 200)`;
+    entryLong = `fast > slow${p.trendFilter ? ' and close > trend' : ''}`;
+    entryShort = `fast < slow${p.trendFilter ? ' and close < trend' : ''}`;
+  } else if (sid === 'rsi_reversion') {
+    indicators = `rsi = ta.rsi(close, ${Math.round(p.period || 14)})`;
+    entryLong = `rsi <= ${Math.round(p.oversold || 30)}`;
+    entryShort = `rsi >= ${Math.round(p.overbought || 70)}`;
+  } else if (sid === 'breakout') {
+    indicators = `hi = ta.highest(high, ${Math.round(p.period || 20)})[1]\nlo = ta.lowest(low, ${Math.round(p.period || 20)})[1]`;
+    entryLong = `close > hi`;
+    entryShort = `close < lo`;
+  } else if (sid === 'momentum') {
+    indicators = `roc = ta.roc(close, ${Math.round(p.period || 10)})`;
+    entryLong = `roc > ${Number(p.threshold || 0.5).toFixed(2)}`;
+    entryShort = `roc < -${Number(p.threshold || 0.5).toFixed(2)}`;
+  } else {
+    indicators = `macdLine = ta.macd(close, ${Math.round(p.fast || 12)}, ${Math.round(p.slow || 26)}, ${Math.round(p.signal || 9)})\nhist = macdLine[2]\ntrend = ta.ema(close, 200)`;
+    entryLong = `hist > 0 and close > trend`;
+    entryShort = `hist < 0 and close < trend`;
+  }
+  const atrStop = Number(p.atrStop || 2);
+  const rr = Number(p.rr || 2);
+  return `// ============================================================
+// Alta Capital - auto-generated TradingView strategy
+// Desk: ${desk.label} | ${desk.symbol} | ${desk.tf}
+// Version: ${desk.version || 'v1.0'} | Family: ${desk.strategyId}
+// Backtest: return ${desk.metrics?.returnPct ?? '—'}% | PF ${desk.metrics?.profitFactor ?? '—'} | DD ${desk.metrics?.maxDrawdownPct ?? '—'}%
+// OOS: ${desk.oosMetrics?.returnPct ?? '—'}% | Params: ${JSON.stringify(desk.params || {})}
+// Paste into TradingView: Pine Editor -> Add to chart -> set to paper trading
+// ============================================================
+//@version=5
+strategy("Alta_${desk.id}_${desk.version || 'v1'}", overlay=true, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=10, commission_type=strategy.commission.percent, commission_value=0.04, pyramiding=0)
+
+${indicators}
+atrVal = ta.atr(14)
+
+longCond = ${entryLong}
+shortCond = ${entryShort}
+
+if (longCond)
+    strategy.entry("Long", strategy.long)
+if (shortCond)
+    strategy.entry("Short", strategy.short)
+
+// ATR-based stop / target
+longStop = strategy.position_avg_price - ${atrStop} * atrVal
+longTarget = strategy.position_avg_price + ${atrStop} * atrVal * ${rr}
+shortStop = strategy.position_avg_price + ${atrStop} * atrVal
+shortTarget = strategy.position_avg_price - ${atrStop} * atrVal * ${rr}
+
+if (strategy.position_size > 0)
+    strategy.exit("LX", "Long", stop=longStop, limit=longTarget)
+if (strategy.position_size < 0)
+    strategy.exit("SX", "Short", stop=shortStop, limit=shortTarget)
+
+plot(ta.ema(close, ${Math.round(p.fast || 12)}), "Fast", color=color.new(color.teal, 0))
+plot(ta.ema(close, ${Math.round(p.slow || 48)}), "Slow", color=color.new(color.orange, 0))
+`;
+}
+
 export function buildArtifact(desk, platform = 'freqtrade') {
   const key = PLATFORMS[platform] ? platform : 'freqtrade';
   const code =
@@ -283,10 +351,11 @@ export function buildArtifact(desk, platform = 'freqtrade') {
     key === 'jesse' ? jesse(desk) :
     key === 'octobot' ? octobot(desk) :
     key === 'superalgos' ? superalgos(desk) :
+    key === 'tradingview' ? pineScript(desk) :
     genericJson(desk);
-  const ext = key === 'generic' || key === 'superalgos' ? 'json' : 'py';
+  const ext = key === 'generic' || key === 'superalgos' ? 'json' : key === 'tradingview' ? 'pine' : 'py';
   const filename = `${desk.id}_${desk.version || 'v1.0'}_${key}.${ext}`.replace(/[^a-zA-Z0-9_.-]/g, '_');
-  return { code, filename, platform: key, language: ext === 'json' ? 'json' : 'python' };
+  return { code, filename, platform: key, language: ext === 'pine' ? 'pine' : (ext === 'json' ? 'json' : 'python') };
 }
 
 export function platformInfo(platform) {

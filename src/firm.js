@@ -42,6 +42,11 @@ function cfgFor(desk) {
     capital: allocationFor(desk),
     riskPerTrade: s.riskPerTrade,
     feeRate: s.feeRate,
+    makerFee: s.makerFee,
+    takerFee: s.takerFee,
+    spread: s.spread,
+    impactFactor: s.impactFactor,
+    exchangeFee: s.exchangeFee,
     minTrades: gateSettings(desk).minTrades,
     barsPerYear: BARS_PER_YEAR[desk.tf] || 8760,
   };

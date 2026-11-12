@@ -17,8 +17,9 @@
 | אסטרטגיות | `src/strategies.js` | EMA, RSI, Donchian, מומנטום, MACD |
 | נתוני שוק | `src/market.js` | Binance → Kraken → Coinbase, ונפילה לנתוני הדגמה |
 | מחקר | `src/research.js` | GitHub Search, Fear & Greed, CoinGecko, Reddit, חדשות |
-| ייצוא קוד | `src/platforms.js` | Freqtrade, Jesse, OctoBot, Superalgos, JSON |
+| ייצוא קוד | `src/platforms.js` | Freqtrade, Jesse, OctoBot, Superalgos, TradingView (Pine), JSON |
 | יועץ | `src/advisor.js`, `src/llm.js` | OpenAI-compatible / Anthropic / Gemini + מצב כללים מקומי |
+| מודל בדפדפן | `src/webllm.js` | WebLLM על WebGPU — inference ללא מפתח וללא מגבלה |
 | ממשק | `src/views/*` | סקירה, שולחנות, צוות, מעבדה, גרסאות, מחקר, סנטימנט, יועץ, הגדרות, מדריך |
 
 חמישה שולחנות לפי טווח זמן: 5 דקות, 15 דקות, נר שעה, יומי (סווינג חודשי), שבועי (סווינג שנתי).
@@ -146,6 +147,26 @@ gh variable set LLM_PROVIDER --body "openrouter"
 מעריכי על 429 ומשביתה אותו על 401, ותמיד ממשיכה לספק הבא במקום להיכשל. בדשבורד:
 הגדרות → בריכת מודלים חינמיים (הוספה, בדיקה, סדר עדיפות, קירורים).
 
+### בלי מגבלת API בכלל
+
+לכל ספק חינמי יש תקרה. שני המסלולים היחידים בלי תקרה הם מודל שרץ אצלך:
+
+**בדפדפן — WebLLM על WebGPU.** הגדרות → *מודל מקומי בדפדפן (WebLLM)* → בחר מודל (1B ≈ 0.7GB)
+→ **טען מודל**. ההורדה חד-פעמית, ואחריה כל inference רץ על ה-GPU שלך: אין מפתח, אין rate limit ואין
+קריאת רשת. המודל מתווסף אוטומטית לרשימת המועמדים אחרי הבריכה, כך שגם אם כל הספקים נגמרו — היועץ
+והמנכ״ל ממשיכים לענות. דרוש Chrome/Edge 113+ או Safari עדכני.
+
+**על השרת — Ollama.** לריצה 24/7 בלי מכסה צריך GPU בשרת, ולכן runner בבעלותך:
+
+```bash
+ollama pull qwen2.5:7b && ollama serve
+gh variable set OLLAMA_BASE_URL --body "http://127.0.0.1:11434"
+gh variable set OLLAMA_MODEL --body "qwen2.5:7b"
+```
+
+וה-workflow צריך `runs-on: self-hosted`. ה-runner מוסיף את Ollama לבריכה כספק בלי מפתח ובלי מכסה;
+אם הוא לא זמין, השורה נכשלת והבריכה ממשיכה לספק הבא.
+
 רוצה שער מרכזי? הרם [free-api-gateway](https://github.com/DeepakSilaych/free-api-gateway)
 או [llm-keypool](https://github.com/piyush-tyagi-13/llm-keypool) והגדר `LLM_GATEWAY_URL`
 ו-`LLM_GATEWAY_KEY` — הבריכה תשתמש בו כספק אחד.
@@ -161,8 +182,32 @@ gh variable set LLM_PROVIDER --body "openrouter"
 
 ---
 
+## עמלות מסחר
+
+הבקטסט והמערכת כוללות כעת חישוב עמלות רב-רכיבי המבוסס על מודל `virattt/ai-hedge-fund`:
+
+- ** עמלת Maker/Taker** — `makerFee: 0.00025` (0.025%) ו‑`takerFee: 0.0004` (0.04%) ברירת מחדל
+- **spread** — `spread: 0.001` (0.1%) על כל עסקה, המחושב כ‑`price × spread × |units|`
+- **Impact cost** — על פי נוסחת virattt: `impactFactor × dailyVolatility × sqrt(|units| / (avgDailyVolume / 20))`. ברירת מחדל: `impactFactor: 1.0`, `dailyVolatility: 2%`, `avgDailyVolume: 1M`
+- **exchangeFee** — עמלת בורסה נוספת (`exchangeFee: 0` ברירת מחדל)
+- **feeRate** — שומר על תאימות לאחור (0.0004 = 0.04%)
+
+כל עמלה מתווספת ל‑`PnL` של העסקה ומסומנת בשדה `fee` בפירוט העסקאות. הסיכום כולל כעת `totalFees` המציג את העמלות הכוללות שגבתה המערכת.
+
+## TradingView וחשבון paper trading
+
+**ל-TradingView אין API ציבורי לפקודות.** paper trading שם הוא כלי UI, ולכן אי אפשר לחבר את החשבון
+באופן אוטומטי — לא מהמערכת הזו ולא מאף בוט. שלושה מסלולים, לפי מה שבאמת צריך:
+
+1. **Pine Script (מומלץ).** בחר `TradingView (Pine Script)` בפלטפורמת היעד, או הגדרות → *ייצא Pine Script*.
+   מקבלים קובץ `.pine` עם אותם פרמטרים של הגרסה המקודמת. הדבקה ב-Pine Editor → Add to chart,
+   ו-TradingView מריצה את האסטרטגיה ומדמה כל כניסה ויציאה בחשבון הנייר שלה בזמן אמת.
+2. **Alerts → Webhook.** חד-כיווני: TradingView מודיעה לשרת שלך על סיגנל. דורש תוכנית בתשלום.
+3. **ברוקר נייר עם API אמיתי** (Alpaca paper / OKX demo) לפקודות בפועל, כשה-charts נשארים ב-TradingView.
+
 ## מגבלות
 
+* אין חיבור לבורסה ואין שליחת פקודות — לא מ-TradingView ולא לשום מקום אחר.
 * GitHub Pages סטטי: בלי ה־workflow הסוכנים פועלים רק כשהדף פתוח. עם `firm.yml` הם רצים בענן כל 15 דקות.
 * אין ביצוע פקודות אמיתי, אין מפתחות בורסה, אין ניהול כסף.
 * בקטסט + אופטימיזציה = סיכון מובנה ל־overfitting; OOS הוא בלם חלקי בלבד.

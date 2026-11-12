@@ -6,7 +6,7 @@
 export const PROVIDER_ORDER = [
   'groq', 'gemini', 'zai', 'openrouter', 'cloudflare', 'mistral',
   'nvidia', 'cohere', 'xai', 'deepseek', 'together', 'openai',
-  'anthropic', 'gateway', 'ollama', 'custom',
+  'anthropic', 'gateway', 'ollama', 'webllm', 'custom',
 ];
 
 export const PROVIDERS = {
@@ -166,6 +166,16 @@ export const PROVIDERS = {
     limits: {},
     keyUrl: 'https://ollama.com',
     note: 'רץ על המחשב שלך, בלי מפתח ובלי הגבלה.',
+  },
+  webllm: {
+    label: 'WebLLM (in-browser, no limits)',
+    shape: 'openai',
+    baseUrl: '',
+    models: ['Llama-3.2-1B-Instruct-q4f16_1-MLC'],
+    free: true,
+    limits: {},
+    keyUrl: '',
+    note: 'מודל שרץ בתוך הדפדפן על ה-GPU (WebGPU). ללא מפתח, ללא מגבלה, ללא רשת אחרי הורדה. מודלים קטנים (1-3B).',
   },
   custom: {
     label: 'OpenAI-compatible מותאם',
