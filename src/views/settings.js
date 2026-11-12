@@ -234,12 +234,12 @@ export function renderSettings(root, ui) {
   const events = store.state.events;
   const maxEvents = 50;
   const recentEvents = events.slice(0, maxEvents);
-  const logPanel = h('div', { class: 'card', style: { marginTop: '14px', display: 'block' } },
+  const logPanel = h('div', { class: 'card alert-card', style: { marginTop: '14px' } },
     h('div', { class: 'card-head' },
-      h('div', {}, h('h2', { text: 'לוגים למפתחים' }), h('div', { class: 'card-sub', text: 'אירועים אחרונים מהאפליקציה' })),
+      h('div', {}, h('h2', { text: 'לוגים ומסרים' }), h('div', { class: 'card-sub', text: 'אירועים אחרונים מהאפליקציה' })),
       h('button', {
         class: 'btn btn-sm btn-ghost',
-        style: { float: 'right', marginBottom: '4px' },
+        style: { float: 'right' },
         onclick: () => {
           const current = logPanel.style.display;
           logPanel.style.display = current === 'none' ? 'block' : 'none';
@@ -248,17 +248,43 @@ export function renderSettings(root, ui) {
     ),
     h('div', { class: 'card-body', style: { maxHeight: '300px', overflow: 'auto' } },
       recentEvents.length === 0
-        ? h('div', { class: 'small muted' }, 'אין אירועים להצגה')
+        ? h('div', { class: 'small muted' }, 'אין אירועים — הפעל מחזור כדי לייצר פעילות')
         : h('div', {}, recentEvents.map((e, i) =>
           h('div', { class: 'row', style: { gap: '4px', fontSize: '12px', marginBottom: '4px' } },
             h('span', { class: 'tiny muted', style: { width: '120px' }, text: new Date(e.at).toLocaleTimeString('he-IL') }),
-            h('span', { class: 'grow', text: `${e.actor || '—'}: ${e.text || '—'}` }),
-            h('span', { class: 'small muted', text: e.level || '' }),
+            h('span', { class: 'grow', text: `[${e.level}] ${e.actor || '—'}: ${e.text || '—'}` }),
+            h('span', { class: 'small muted', text: '' }),
           ),
         )),
     ),
   );
   mount(root, logPanel);
+
+  // Agent thought bubbles panel - shows what agents are doing
+  const agentActivities = generateAgentActivities(store.state);
+  const activityPanel = h('div', { class: 'card thought-bubbles-card', style: { marginTop: '14px' } },
+    h('div', { class: 'card-head' },
+      h('div', {}, h('h2', { text: 'פעילות סוכנים' }), h('div', { class: 'card-sub', text: 'מה הסוכנים עושים כרגע' })),
+      h('div', { class: 'card-foot', style: { background: 'var(--card-background, #1a1a2e)', padding: '8px' } },
+        h('button', { class: 'btn btn-sm btn-ghost', style: { float: 'right' }, onclick: () => ui.rerender() }, 'רענון')
+      ),
+    ),
+    h('div', { class: 'card-body', style: { maxHeight: '400px', overflow: 'auto' } },
+      agentActivities.length === 0
+        ? h('div', { class: 'small muted text-center py-8' }, 'אין פעילות סוכנים — הפעל אוטופיילוט או הרץ מחזור ידני')
+        : h('div', {}, agentActivities.map((a, i) =>
+          h('div', { class: 'thought-bubble', style: { borderColor: getBubbleColor(a.priority) }, key: i },
+            h('div', { class: 'bubble-header' },
+              h('span', { class: 'bubble-agent', text: a.agent }),
+              h('span', { class: 'bubble-time', text: a.time })
+            ),
+            h('p', { class: 'bubble-text', text: a.summary }),
+            h('small', { class: 'bubble-detail', text: a.detail }),
+          ),
+        )),
+    ),
+  );
+  mount(root, activityPanel);
 
 const ENV_HINT = {
   groq: 'GROQ_API_KEY', gemini: 'GEMINI_API_KEY', zai: 'ZAI_API_KEY', openrouter: 'OPENROUTER_API_KEY',
@@ -594,4 +620,53 @@ function field(label, input) {
 
 function fun(text) {
   return h('div', { class: 'small muted', style: { marginTop: '10px' } }, text);
+}
+
+function getBubbleColor(priority) {
+  const colors = { high: "var(--danger, #ff4757)", medium: "var(--warning, #ffa502)", low: "var(--info, #4ecdc4)" };
+  return colors[priority] || colors.low;
+}
+
+function generateAgentActivities(state) {
+  const agents = ["אוריה · CIO", "נועה · אופטימיזציה", "דניאל · סיכונים", "תמר · ביצוע", "ליה · ניתוח"];
+  const now = Date.now();
+  const activities = [];
+  // Get recent events and group by agent
+  const recentEvents = state.events.slice(0, 30);
+  const agentEvents = {};
+  for (const event of recentEvents) {
+    if (event.actor && !agentEvents[event.actor]) {
+      agentEvents[event.actor] = [];
+    }
+    if (event.actor) {
+      agentEvents[event.actor].push(event);
+    }
+  }
+  // Generate activity summary for each agent
+  for (const agent of agents) {
+    const events = agentEvents[agent] || [];
+    const lastEvent = events[0];
+    let summary = "מחכה לפעילות";
+    let detail = "";
+    let priority = "low";
+    if (lastEvent) {
+      summary = lastEvent.text.slice(0, 40) + (lastEvent.text.length > 40 ? "…" : "");
+      detail = `מאת ${lastEvent.at ? new Date(lastEvent.at).toLocaleTimeString("he-IL") : "לא ידוע"}`;
+      if (lastEvent.level === "ok") priority = "low";
+      else if (lastEvent.level === "warn") priority = "medium";
+      else if (lastEvent.level === "bad") priority = "high";
+    }
+    activities.push({ agent, summary, detail, priority });
+  }
+  // Also add system-level activities
+  if (state.desks && state.desks.length > 0) {
+    const activeDesk = state.desks.find((d) => d.version) || state.desks[0];
+    activities.unshift({
+      agent: "מערכת",
+      summary: activeDesk ? `גרסת ${activeDesk.label}` : "אין גרסה פעילה",
+      detail: activeDesk ? `סימון: ${activeDesk.symbol} · ${activeDesk.tf}` : "אין הגדרות",
+      priority: "medium"
+    });
+  }
+  return activities;
 }
