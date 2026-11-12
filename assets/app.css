@@ -536,7 +536,7 @@ details.acc p, details.acc li { font-size: 12px; color: var(--muted); }
   .topbar { padding: 0 14px; }
   .brand em { display: none; }
   .sidebar { position: static; height: auto; border-left: none; border-bottom: 1px solid var(--line); padding: 10px 12px; }
-  #nav { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 4px; }
+  #nav { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 4px; justify-content: flex-start; flex: 0 0 auto; }
   .nav-item { width: auto; white-space: nowrap; font-size: 12px; }
   .nav-item span.ic { display: none; }
   .nav-sep, .sidebar-foot { display: none; }
