@@ -139,6 +139,8 @@ gh variable set LLM_PROVIDER --body "openrouter"
 `NVIDIA_API_KEY`, `COHERE_API_KEY`, `XAI_API_KEY`, `DEEPSEEK_API_KEY`, `TOGETHER_API_KEY`,
 `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, ו-`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`.
 לרשימה מפורשת עם מודלים משלך: `LLM_KEYS` (JSON array של `{provider,key,model,baseUrl}`).
+לכמה חשבונות Cloudflare: `CLOUDFLARE_KEYS` (JSON של `{accountId,token,model}` או שורות
+`ACCOUNT_ID,TOKEN`) — כל חשבון מוסיף 10,000 Neurons ליום משלו, והבריכה מסובבת ביניהם.
 
 הבריכה עובדת לפי least-recently-used, מכבדת RPM/RPD לכל ספק, מכניסה מפתח ל-cooldown
 מעריכי על 429 ומשביתה אותו על 401, ותמיד ממשיכה לספק הבא במקום להיכשל. בדשבורד:

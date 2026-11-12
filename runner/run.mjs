@@ -38,7 +38,7 @@ const { store } = await import('../src/store.js');
 const firm = await import('../src/firm.js');
 const research = await import('../src/research.js');
 const ai = await import('../src/ai.js');
-const { buildPoolFromEnv } = await import('../src/keypool.js');
+const { buildPoolFromEnv, mergePoolUsage } = await import('../src/keypool.js');
 const { buildArtifact } = await import('../src/platforms.js');
 
 store.load();
@@ -50,8 +50,10 @@ if (process.env.GITHUB_TOKEN) store.state.settings.github.token = process.env.GI
 const envPool = buildPoolFromEnv(process.env);
 const llmKey = process.env.LLM_API_KEY || '';
 if (envPool.length) {
+  // Carry yesterday's counters/cooldowns over so rotation continues across runs.
+  mergePoolUsage(store.state, envPool);
   store.state.settings.pool = { entries: envPool, updatedAt: Date.now() };
-  console.log(`[runner] model pool: ${envPool.map((e) => `${e.provider}/${e.model}`).join(' · ')}`);
+  console.log(`[runner] model pool: ${envPool.map((e) => `${e.label}/${e.model}`).join(' · ')}`);
 } else {
   // Never reuse keys persisted by an earlier local run; CI must use secrets only.
   store.state.settings.pool = { entries: [], updatedAt: Date.now() };
@@ -77,7 +79,7 @@ try {
   console.log(`[runner] AI director: ${aiResult.ok ? aiResult.source : aiResult.reason}`);
   if (aiResult.ok) {
     console.log(`[runner] focus: ${aiResult.plan.focusDesk} · ${aiResult.plan.strategyId} · ${aiResult.plan.rationale}`);
-    if (aiResult.provider) console.log(`[runner] answered by ${aiResult.provider}/${aiResult.model}`);
+    if (aiResult.provider) console.log(`[runner] answered by ${aiResult.entryLabel || aiResult.provider}/${aiResult.model}`);
     for (const attempt of aiResult.attempts || []) console.log(`[runner] fallback from ${attempt.provider}: ${attempt.error}`);
   }
 } catch (err) {
@@ -178,6 +180,7 @@ fs.writeFileSync(
         rationale: aiResult.plan.rationale,
         provider: aiResult.provider || null,
         model: aiResult.model || null,
+        accountId: aiResult.accountId || null,
         fallbacks: (aiResult.attempts || []).map((a) => a.provider),
       }
       : { ok: false, reason: aiResult?.reason },

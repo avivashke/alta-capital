@@ -60,10 +60,12 @@ export const PROVIDERS = {
       '@cf/qwen/qwen2.5-coder-32b-instruct',
     ],
     free: true,
-    limits: { rpd: 0 },
+    // 10,000 Neurons per account per day ≈ 200 chat calls, so the budget is per key:
+    // adding another Cloudflare account adds another daily allowance to the pool.
+    limits: { rpd: 200 },
     needsAccountId: true,
     keyUrl: 'https://dash.cloudflare.com/profile/api-tokens',
-    note: '10,000 Neurons ביום. צריך גם Account ID. עובד דרך worker proxy אם הדפדפן חוסם.',
+    note: '10,000 Neurons ליום לכל חשבון. צריך גם Account ID — הוסף כמה חשבונות כדי להכפיל את המכסה היומית.',
   },
   mistral: {
     label: 'Mistral',

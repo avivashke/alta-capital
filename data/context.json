@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-12T10:59:56.042Z",
+ "generatedAt": "2026-11-12T11:12:31.129Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -63,49 +63,48 @@
    "label": "תוך־יומי · 15 דקות",
    "timeframe": "15m",
    "symbol": "ETHUSDT",
-   "status": "live",
-   "version": "v1.1",
-   "strategyId": "macd_swing",
+   "status": "optimizing",
+   "version": null,
+   "strategyId": "momentum",
    "params": {
-    "fast": 18,
-    "slow": 42,
-    "signal": 14,
-    "atrStop": 3.7,
-    "rr": 4
+    "period": 13,
+    "threshold": 2.4,
+    "atrStop": 3.3000000000000003,
+    "rr": 3.6
    },
    "metrics": {
-    "returnPct": 3.07,
-    "maxDrawdownPct": 3.2,
-    "sharpe": 4.18,
-    "profitFactor": 1.57,
-    "winRate": 27.8,
-    "trades": 18,
-    "avgR": 0.117,
-    "expectancy": 8.54,
-    "exposurePct": 36.3,
-    "bestTradePct": 3.892,
-    "worstTradePct": -1.459,
-    "finalEquity": 5153.65,
+    "returnPct": 1.86,
+    "maxDrawdownPct": 1.11,
+    "sharpe": 4.92,
+    "profitFactor": 2.88,
+    "winRate": 20,
+    "trades": 5,
+    "avgR": 0.251,
+    "expectancy": 18.59,
+    "exposurePct": 4.6,
+    "bestTradePct": 2.847,
+    "worstTradePct": -0.32,
+    "finalEquity": 5092.93,
     "curvePoints": 800,
-    "barsInMarket": 290
+    "barsInMarket": 37
    },
    "oos": {
-    "returnPct": 4.42,
-    "maxDrawdownPct": 1.84,
-    "sharpe": 9.72,
-    "profitFactor": 3.63,
-    "winRate": 33.3,
-    "trades": 9,
-    "avgR": 0.327,
-    "expectancy": 24.55,
-    "exposurePct": 38.2,
-    "bestTradePct": 3.943,
-    "worstTradePct": -0.446,
-    "finalEquity": 5220.99,
+    "returnPct": -0.4,
+    "maxDrawdownPct": 0.4,
+    "sharpe": -9.32,
+    "profitFactor": 0,
+    "winRate": 0,
+    "trades": 2,
+    "avgR": -0.133,
+    "expectancy": -9.94,
+    "exposurePct": 2.1,
+    "bestTradePct": -0.132,
+    "worstTradePct": -0.266,
+    "finalEquity": 4980.12,
     "curvePoints": 380,
-    "barsInMarket": 145
+    "barsInMarket": 8
    },
-   "bestReturn": 4.42,
+   "bestReturn": null,
    "versions": [
     {
      "version": "v1.1",
@@ -124,50 +123,55 @@
    "label": "תוך־יומי · נר שעה",
    "timeframe": "1h",
    "symbol": "BTCUSDT",
-   "status": "optimizing",
-   "version": "v1.1",
-   "strategyId": "macd_swing",
+   "status": "dry-run",
+   "version": "v1.0",
+   "strategyId": "ema_trend",
    "params": {
-    "fast": 6,
-    "slow": 39,
-    "signal": 11,
-    "atrStop": 1.5,
-    "rr": 3.9
+    "fast": 30,
+    "slow": 24,
+    "atrStop": 2.8,
+    "rr": 2.3,
+    "trendFilter": false
    },
    "metrics": {
-    "returnPct": 1.84,
-    "maxDrawdownPct": 7.87,
-    "sharpe": 0.99,
-    "profitFactor": 1.14,
-    "winRate": 33.3,
+    "returnPct": 12.57,
+    "maxDrawdownPct": 5.75,
+    "sharpe": 5.36,
+    "profitFactor": 2.07,
+    "winRate": 58.3,
     "trades": 36,
-    "avgR": 0.035,
-    "expectancy": 3.06,
-    "exposurePct": 36.9,
-    "bestTradePct": 3.239,
-    "worstTradePct": -1.145,
-    "finalEquity": 6365.2,
+    "avgR": 0.223,
+    "expectancy": 21.69,
+    "exposurePct": 69.3,
+    "bestTradePct": 3.496,
+    "worstTradePct": -1.633,
+    "finalEquity": 7035.78,
     "curvePoints": 800,
-    "barsInMarket": 295
+    "barsInMarket": 554
    },
    "oos": {
-    "returnPct": 9.15,
-    "maxDrawdownPct": 1.94,
-    "sharpe": 7.6,
-    "profitFactor": 4.6,
-    "winRate": 61.5,
-    "trades": 13,
-    "avgR": 0.453,
-    "expectancy": 43.58,
-    "exposurePct": 29.2,
-    "bestTradePct": 3.845,
-    "worstTradePct": -0.864,
-    "finalEquity": 6821.83,
+    "returnPct": 11.66,
+    "maxDrawdownPct": 1.88,
+    "sharpe": 11.36,
+    "profitFactor": 5.74,
+    "winRate": 66.7,
+    "trades": 15,
+    "avgR": 0.494,
+    "expectancy": 48.27,
+    "exposurePct": 56.1,
+    "bestTradePct": 3.467,
+    "worstTradePct": -1.62,
+    "finalEquity": 6978.98,
     "curvePoints": 380,
-    "barsInMarket": 111
+    "barsInMarket": 213
    },
-   "bestReturn": 9.15,
+   "bestReturn": 11.66,
    "versions": [
+    {
+     "version": "v1.0",
+     "at": 1794481947653,
+     "oos": 11.66
+    },
     {
      "version": "v1.1",
      "at": 1794473479329,
@@ -515,7 +519,7 @@
   }
  ],
  "sentiment": {
-  "updatedAt": 1794481196037,
+  "updatedAt": 1794481951125,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 28,
@@ -545,7 +549,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 73463.53
+    "price": 73410.01
    },
    "ETHUSDT": {
     "score": -0.37,
@@ -553,7 +557,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 2044.55
+    "price": 2043.02
    }
   },
   "headlines": [],
@@ -561,7 +565,7 @@
    {
     "name": "Seppuku",
     "symbol": "SEPPUKU",
-    "rank": 897
+    "rank": 874
    },
    {
     "name": "Pudgy Penguins",
@@ -569,14 +573,14 @@
     "rank": 115
    },
    {
+    "name": "ZIG Finance",
+    "symbol": "ZIG",
+    "rank": 420
+   },
+   {
     "name": "Bitcoin",
     "symbol": "BTC",
     "rank": 1
-   },
-   {
-    "name": "ZIG Finance",
-    "symbol": "ZIG",
-    "rank": 421
    },
    {
     "name": "Zcash",
@@ -584,19 +588,9 @@
     "rank": 11
    },
    {
-    "name": "Pi Network",
-    "symbol": "PI",
-    "rank": 81
-   },
-   {
     "name": "Ethereum",
     "symbol": "ETH",
     "rank": 2
-   },
-   {
-    "name": "Solana",
-    "symbol": "SOL",
-    "rank": 7
    },
    {
     "name": "Pearl",
@@ -604,9 +598,19 @@
     "rank": 97
    },
    {
-    "name": "NEAR Protocol",
-    "symbol": "NEAR",
-    "rank": 22
+    "name": "XRP",
+    "symbol": "XRP",
+    "rank": 6
+   },
+   {
+    "name": "Pi Network",
+    "symbol": "PI",
+    "rank": 81
+   },
+   {
+    "name": "Chainlink",
+    "symbol": "LINK",
+    "rank": 17
    }
   ],
   "newsScore": 0

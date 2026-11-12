@@ -3,7 +3,7 @@ import { store } from '../store.js';
 import { LLM_PROVIDERS, PLATFORMS, DISCLAIMER } from '../config.js';
 import { testConnection, testPoolEntry } from '../llm.js';
 import { PROVIDERS, PROVIDER_ORDER } from '../providers.js';
-import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
+import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, parseCloudflareKeys, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
 import { h, notice, toast, openModal, downloadFile, timeAgo, tag } from '../ui.js';
 import { syncFromCloud } from '../remote.js';
 
@@ -253,6 +253,12 @@ function poolCard(ui) {
   const accountIn = h('input', { type: 'text', placeholder: 'Account ID (רק Cloudflare)', dir: 'ltr' });
   const baseIn = h('input', { type: 'url', placeholder: 'כתובת API (רק gateway/custom)', dir: 'ltr' });
   const datalist = h('datalist', { id: 'pool-models' }, PROVIDER_ORDER.flatMap((k) => (PROVIDERS[k].models || []).map((m) => h('option', { value: m }))));
+  const cfBulk = h('textarea', {
+    rows: '3',
+    dir: 'ltr',
+    placeholder: 'ACCOUNT_ID,TOKEN\nACCOUNT_ID,TOKEN,MODEL',
+    style: { width: '100%', fontFamily: 'ui-monospace, monospace', fontSize: '12px' },
+  });
 
   const add = () => {
     const provider = providerSel.value;
@@ -282,6 +288,23 @@ function poolCard(ui) {
     ui.rerender();
   };
 
+  const addBulk = () => {
+    const list = parseCloudflareKeys(cfBulk.value);
+    if (!list.length) {
+      toast('לא זוהו חשבונות — כל שורה: ACCOUNT_ID,TOKEN', 'bad');
+      return;
+    }
+    let added = 0;
+    for (const item of list) {
+      const res = addPoolEntry(store.state, { provider: 'cloudflare', accountId: item.accountId, key: item.key, model: item.model });
+      if (!res.duplicate) added++;
+    }
+    store.save();
+    store.emit();
+    toast(`${added}/${list.length} חשבונות נוספו`, added ? 'ok' : 'bad');
+    ui.rerender();
+  };
+
   const rows = entries.map((entry, idx) => {
     const def = PROVIDERS[entry.provider] || { label: entry.provider };
     const status = entryStatus(entry, now);
@@ -297,6 +320,7 @@ function poolCard(ui) {
         ),
         h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: [
           entry.key ? '••••' + entry.key.slice(-4) : 'ללא מפתח',
+          entry.accountId ? 'acct ' + entry.accountId.slice(0, 8) + '…' : null,
           `${entry.dayCount || 0}${lim.rpd ? '/' + lim.rpd : ''} בקשות היום`,
           cooling ? `קירור ${cooling}s` : null,
           entry.lastError ? entry.lastError.slice(0, 90) : null,
@@ -342,6 +366,11 @@ function poolCard(ui) {
       field('מפתח API', keyIn),
       field('Account ID', accountIn),
       h('div', { class: 'full' }, field('כתובת API (אופציונלי)', baseIn)),
+      h('div', { class: 'full' }, field('Cloudflare — כמה חשבונות בבת אחת (ACCOUNT_ID,TOKEN בכל שורה)', cfBulk)),
+    ),
+    h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '8px' } },
+      h('button', { class: 'btn btn-sm', onclick: addBulk }, '+ הוסף חשבונות Cloudflare'),
+      h('span', { class: 'tiny muted', text: 'לכל חשבון מכסה יומית נפרדת של 10,000 Neurons — הבריכה תסובב ביניהם.' }),
     ),
     h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '10px' } },
       h('button', { class: 'btn btn-sm btn-primary', onclick: add }, '+ הוסף לבריכה'),

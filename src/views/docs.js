@@ -107,6 +107,8 @@ export function renderDocs(root) {
     commandBlock('gh secret set GROQ_API_KEY'),
     commandBlock('gh secret set GEMINI_API_KEY'),
     commandBlock('gh secret set ZAI_API_KEY'),
+    h('p', { class: 'small muted', text: 'כמה חשבונות Cloudflare (כל חשבון = 10,000 Neurons ליום):' }),
+    commandBlock("gh secret set CLOUDFLARE_KEYS --body '[{\"accountId\":\"abc123\",\"token\":\"cf_...\"},{\"accountId\":\"def456\",\"token\":\"cf_...\"}]'"),
     h('p', { class: 'small muted', text: 'או רשימה מפורשת עם מודלים ובסיסי-URL משלך:' }),
     commandBlock("gh secret set LLM_KEYS --body '[{\"provider\":\"groq\",\"key\":\"gsk_...\",\"model\":\"llama-3.3-70b-versatile\"}]'"),
     h('p', { class: 'small muted', style: { marginTop: '10px' } },

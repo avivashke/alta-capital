@@ -252,6 +252,8 @@ export async function runAiDirector({ useFallback = false } = {}) {
     desk: desk?.id,
     provider: used?.provider || null,
     model: used?.model || null,
+    accountId: used?.accountId || null,
+    entryLabel: used?.label || null,
     attempts: used?.attempts || [],
   };
 }

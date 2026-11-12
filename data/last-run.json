@@ -1,38 +1,36 @@
 {
- "at": "2026-11-12T10:59:56.041Z",
+ "at": "2026-11-12T11:12:31.128Z",
  "summary": [
   {
-   "desk": "desk_5m",
-   "timeframe": "5m",
+   "desk": "desk_1h",
+   "timeframe": "1h",
    "ok": true,
-   "published": false,
-   "version": null,
-   "oos": -2.36,
-   "robustness": 26
+   "published": true,
+   "version": "v1.0",
+   "oos": 11.66,
+   "robustness": 94
   }
  ],
  "stats": {
-  "cycles": 21,
-  "backtests": 2583,
-  "deployments": 8,
-  "scans": 21,
+  "cycles": 23,
+  "backtests": 2811,
+  "deployments": 9,
+  "scans": 27,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 1,
   "deep": false,
-  "durationMs": 6597,
+  "durationMs": 4019,
   "node": "v20.18.0"
  },
  "ai": {
   "source": "model",
-  "focusDesk": "desk_15m",
-  "strategyId": "momentum",
-  "rationale": "בדיקת fallback בבריכה",
-  "provider": "zai",
-  "model": "m2",
-  "fallbacks": [
-   "groq"
-  ]
+  "focusDesk": "desk_1h",
+  "strategyId": "ema_trend",
+  "rationale": "בדיקת רוטציה בין חשבונות Cloudflare",
+  "provider": "cloudflare",
+  "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "fallbacks": []
  }
 }

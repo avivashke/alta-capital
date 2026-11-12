@@ -37,13 +37,17 @@ export function addPoolEntry(state, input = {}, now = Date.now()) {
   const def = PROVIDERS[provider];
   const key = String(input.key || '').trim();
   const model = String(input.model || def.models?.[0] || '').trim();
+  const accountId = String(input.accountId || '').trim();
   const entry = {
     id: makeId(),
     provider,
-    label: def.label,
+    // Several Cloudflare accounts can coexist; the label tells them apart.
+    label: input.label || (provider === 'cloudflare' && accountId
+      ? `Cloudflare · ${accountId.slice(0, 8)}`
+      : def.label),
     shape: def.shape || 'openai',
     baseUrl: String(input.baseUrl || providerBaseUrl(provider, input.accountId) || '').trim(),
-    accountId: String(input.accountId || '').trim(),
+    accountId,
     model,
     key,
     enabled: input.enabled !== false,
@@ -60,7 +64,8 @@ export function addPoolEntry(state, input = {}, now = Date.now()) {
     failStreak: 0,
     lastError: '',
   };
-  const duplicate = pool.entries.find((e) => e.provider === provider && e.model === model && e.key && e.key === key);
+  const duplicate = pool.entries.find((e) => e.provider === provider && e.model === model
+    && (e.accountId || '') === accountId && e.key && e.key === key);
   if (duplicate) return { entry: duplicate, duplicate: true };
   pool.entries.push(entry);
   pool.updatedAt = now;
@@ -218,6 +223,13 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
     add({ provider, key: value, model: env[`${provider.toUpperCase()}_MODEL`] || '' });
   }
 
+  // Cloudflare: one free allowance per account, so several accounts are supported.
+  // CLOUDFLARE_KEYS='[{"accountId":"abc","token":"cf_..."},{"accountId":"def","token":"cf_..."}]'
+  // or plain lines: "abc,cf_...,@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+  const cfList = parseCloudflareKeys(env.CLOUDFLARE_KEYS || '');
+  for (const item of cfList) {
+    add({ provider: 'cloudflare', accountId: item.accountId, key: item.key, model: item.model });
+  }
   const cfToken = String(env.CLOUDFLARE_API_TOKEN || env.CF_API_TOKEN || '').trim();
   if (cfToken) {
     add({
@@ -259,6 +271,65 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
   }
 
   return state.settings.pool.entries;
+}
+
+// The published state keeps the pool with blank keys, so the next CI run can inherit
+// yesterday's usage: without this every fresh env pool would restart at the first key
+// and the Cloudflare accounts would never rotate.
+export const poolIdentity = (entry) => `${entry.provider}|${entry.accountId || ''}|${entry.model}`;
+
+export function mergePoolUsage(state, fresh, now = Date.now()) {
+  const previous = new Map(poolEntries(state).map((e) => [poolIdentity(e), e]));
+  const today = dayKey(now);
+  for (const entry of fresh) {
+    const old = previous.get(poolIdentity(entry));
+    if (!old) continue;
+    entry.lastUsedAt = old.lastUsedAt ?? null;
+    entry.uses = old.uses || 0;
+    entry.day = today;
+    entry.dayCount = old.day === today ? (old.dayCount || 0) : 0;
+    entry.minuteStart = old.minuteStart || 0;
+    entry.minuteCount = old.minuteCount || 0;
+    entry.cooldownUntil = (old.cooldownUntil || 0) > now ? old.cooldownUntil : 0;
+    entry.failStreak = old.failStreak || 0;
+    entry.valid = old.valid !== false;
+    entry.enabled = old.enabled !== false;
+    entry.lastError = old.lastError || '';
+  }
+  return fresh;
+}
+
+// Accepts both a JSON array and line based input, because pasting two accounts from
+// the Cloudflare dashboard should not require hand-writing JSON.
+export function parseCloudflareKeys(text = '') {
+  const raw = String(text || '').trim();
+  if (!raw) return [];
+  if (raw.startsWith('[') || raw.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(raw);
+      const list = Array.isArray(parsed) ? parsed : [parsed];
+      return list
+        .map((x) => ({
+          accountId: String(x.accountId || x.account || x.id || '').trim(),
+          key: String(x.token || x.key || x.apiToken || '').trim(),
+          model: String(x.model || '').trim(),
+        }))
+        .filter((x) => x.accountId && x.key);
+    } catch {
+      return [];
+    }
+  }
+  const out = [];
+  for (const line of raw.split(/[\n;]+/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const parts = trimmed.split(/[,\t]+/).map((s) => s.trim()).filter(Boolean);
+    if (parts.length < 2) continue;
+    const [accountId, key, model] = parts;
+    if (!accountId || !key) continue;
+    out.push({ accountId, key, model: model || '' });
+  }
+  return out;
 }
 
 export function poolProviderOrder() {

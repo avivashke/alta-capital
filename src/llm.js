@@ -175,6 +175,8 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
         entryId: entry.id,
         provider: entry.provider,
         model: entry.model,
+        accountId: entry.accountId || null,
+        label: entry.label || entry.provider,
         attempts,
       };
     } catch (err) {
