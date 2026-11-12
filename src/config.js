@@ -145,6 +145,8 @@ export const NAV = [
   { id: 'bots', label: 'גרסאות ובוטים', icon: '⌥' },
   { id: 'research', label: 'מחקר וסריקה', icon: '⌁' },
   { id: 'sentiment', label: 'סנטימנט וחדשות', icon: '◉' },
+  { id: 'portfolio', label: 'תיק מסחר', icon: '💼' },
+  { id: 'charts', label: 'גרפים ואינדיקטורים', icon: '📈' },
   { id: 'advisor', label: 'יועץ AI', icon: '✦' },
   { id: 'settings', label: 'הגדרות ומפתחות', icon: '⚙' },
   { id: 'docs', label: 'מדריך הקמה', icon: '❯' },

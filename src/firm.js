@@ -25,7 +25,7 @@ let paperPortfolio = null;
 // לקוח Binance Testnet — מוגדר רק אם יש מפתחות API בהגדרות
 let binanceClient = null;
 
-function ensurePaperPortfolio() {
+export function ensurePaperPortfolio() {
   if (!paperPortfolio) {
     const s = store.state.settings;
     paperPortfolio = createPaperPortfolio(s);
@@ -37,6 +37,14 @@ function ensurePaperPortfolio() {
     }
   }
   return paperPortfolio;
+}
+
+export function getPaperPortfolio() {
+  return paperPortfolio;
+}
+
+export function getBinanceClient() {
+  return binanceClient;
 }
 
 function isBacktestProfitableAfterFeesAndTax(metrics) {
@@ -106,6 +114,9 @@ function idleAgents() {
     }
     a.status = 'idle';
     a.task = 'ממתין למחזור הבא';
+    a.speech = null;
+    a.speechType = 'speak';
+    a.thinking = null;
   }
 }
 
@@ -153,10 +164,10 @@ export async function runDeskCycle(desk, opts = {}) {
 
   desk.lastRunAt = Date.now();
   if (desk.status !== 'live') desk.status = 'optimizing';
-  setAgent('quant', { status: 'busy', task: `בונה השערה · ${desk.label}`, progress: 20 });
-  setAgent('backtest', { status: 'busy', task: `טוען ${desk.symbol} ${desk.tf} ומריץ walk-forward`, progress: 10 });
-  setAgent('optimizer', { status: 'busy', task: 'מכייל פרמטרים', progress: 4 });
-  setAgent('intel', { status: 'busy', task: 'מצליב עם ממצאי מחקר', progress: 30 });
+  setAgent('quant', { status: 'busy', task: `בונה השערה · ${desk.label}`, progress: 20, speech: `סורקת דפוסים על ${desk.label} · מחפשת כיווני כניסה`, speechType: 'speak' });
+  setAgent('backtest', { status: 'busy', task: `טוען ${desk.symbol} ${desk.tf} ומריץ walk-forward`, progress: 10, speech: `מוריד נרות היסטוריים מ-Binance · מריץ בקטסט על ${desk.tf}`, speechType: 'speak' });
+  setAgent('optimizer', { status: 'busy', task: 'מכייל פרמטרים', progress: 4, thinking: 'בודקת אלפי שילובי פרמטרים ומחפשת את היציב ביותר', speechType: 'think' });
+  setAgent('intel', { status: 'busy', task: 'מצליב עם ממצאי מחקר', progress: 30, speech: 'מצלבת סימני מודיעין מרשתות וחדשות עם הנתונים הטכניים', speechType: 'speak' });
   store.log('info', 'אוריה · CIO', `פותח מחזור על ${desk.label} (${desk.symbol} · ${desk.tf})`);
   liveEmit(true);
 
@@ -214,7 +225,7 @@ export async function runDeskCycle(desk, opts = {}) {
     const ev = result.best.evaluation;
 
     // Statistical hardening before anything is allowed to become a version.
-    setAgent('ta', { status: 'busy', task: `קוראת מגמה, מומנטום ומבנה · ${desk.tf}`, progress: 45 });
+    setAgent('ta', { status: 'busy', task: `קוראת מגמה, מומנטום ומבנה · ${desk.tf}`, progress: 45, thinking: 'מזהה רמות תמיכה והתנגדות, בודקת מומנטום ומבנה מחיר', speechType: 'think' });
     const assessment = assessStrategy({
       candles,
       strategyId: desk.strategyId,
@@ -241,7 +252,7 @@ export async function runDeskCycle(desk, opts = {}) {
       status: 'busy',
       task: `בודק DD ${ev.full.maxDrawdownPct}% · PF ${ev.full.profitFactor}`,
       progress: 60,
-    });
+      speech: `מגן על ההון · בודק.Drawdown ${ev.full.maxDrawdownPct}% ו-Profit Factor ${ev.full.profitFactor}`, speechType: 'speak' });
 
     if (publish) {
       const improvement = prevReturn == null ? null : +(ev.oos.returnPct - prevReturn).toFixed(2);
@@ -263,7 +274,7 @@ export async function runDeskCycle(desk, opts = {}) {
         status: 'busy',
         task: `אורז ${desk.version} ל־${s.platform}`,
         progress: 70,
-      });
+        speech: `מייצא קוד לבוט ${desk.version} לפלטפורמה ${s.platform}`, speechType: 'speak' });
       const artifact = buildArtifact(desk, s.platform);
       desk.generatedCode = artifact.code;
       desk.artifactName = artifact.filename;
@@ -335,7 +346,7 @@ export async function runDeskCycle(desk, opts = {}) {
     } else if (desk.version && gateCheck.ok && oosPositive && robustOk) {
       desk.dryRunCycles = (desk.dryRunCycles || 0) + 1;
       desk.status = 'dry-run';
-      setAgent('exec', { status: 'busy', task: `dry-run ${desk.dryRunCycles}/3 · ${desk.version}`, progress: 80 });
+      setAgent('exec', { status: 'busy', task: `dry-run ${desk.dryRunCycles}/3 · ${desk.version}`, progress: 80, speech: `מריצת dry-run למחזור ${desk.dryRunCycles}/3 לפני אישור מסחר חי על נייר`, speechType: 'speak' });
       store.log('info', 'תמר · ביצוע', `${desk.label}: dry-run ${desk.dryRunCycles}/3 · ${desk.version}`);
       if (desk.dryRunCycles >= 3) {
         desk.status = 'live';
@@ -351,7 +362,7 @@ export async function runDeskCycle(desk, opts = {}) {
       status: 'busy',
       task: publish ? `מאשר ${desk.version} ומקצה הון` : 'מעדיף להמתין לשיפור מובהק',
       progress: 90,
-    });
+      speech: publish ? `מאשר ${desk.version} ומקצה הון לשולחן ${desk.label}` : 'מעדיף להמתין לשיפור מובהק לפני קידום גרסה', speechType: 'speak' });
     if (aiPlan) {
       desk.aiPlan = { ...aiPlan, consumed: true, appliedAt: Date.now() };
     }

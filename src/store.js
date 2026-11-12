@@ -89,6 +89,7 @@ export const store = {
     if (!this.state.agents?.length) {
       this.state.agents = AGENT_ROSTER.map((a) => ({
         ...a, status: 'idle', task: 'ממתין למחזור הראשון', progress: 0, completed: 0,
+        speech: null, speechType: 'speak', thinking: null,
       }));
     }
     if (!this.state.desks?.length) {
@@ -144,6 +145,30 @@ export const store = {
   log(level, actor, text) {
     this.state.events.unshift({ at: Date.now(), level, actor, text });
     if (this.state.events.length > 350) this.state.events.length = 350;
+  },
+
+  setAgentSpeech(agentId, { speech = null, speechType = 'speak', thinking = null, status = null, task = null, progress = null }) {
+    const agent = this.state.agents.find((a) => a.id === agentId);
+    if (!agent) return;
+    if (speech !== null) agent.speech = speech;
+    if (speechType !== null) agent.speechType = speechType;
+    if (thinking !== null) agent.thinking = thinking;
+    if (status !== null) agent.status = status;
+    if (task !== null) agent.task = task;
+    if (progress !== null) agent.progress = progress;
+    this.save();
+    this.emit();
+  },
+
+  clearAgentSpeech(agentId) {
+    const agent = this.state.agents.find((a) => a.id === agentId);
+    if (!agent) return;
+    agent.speech = null;
+    agent.speechType = 'speak';
+    agent.thinking = null;
+    if (agent.status === 'busy') agent.status = 'idle';
+    this.save();
+    this.emit();
   },
 
   reset() {

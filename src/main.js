@@ -18,6 +18,8 @@ import { renderSentiment } from './views/sentiment.js';
 import { renderAdvisor } from './views/advisor.js';
 import { renderSettings } from './views/settings.js';
 import { renderDocs } from './views/docs.js';
+import { renderPortfolio } from './views/portfolio.js';
+import { renderCharts } from './views/charts.js';
 
 const VIEWS = {
   overview: renderOverview,
@@ -30,6 +32,8 @@ const VIEWS = {
   advisor: renderAdvisor,
   settings: renderSettings,
   docs: renderDocs,
+  portfolio: renderPortfolio,
+  charts: renderCharts,
 };
 
 const ui = {
