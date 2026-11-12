@@ -115,19 +115,28 @@ function setAgent(id, patch) {
 }
 
 function idleAgents() {
+  const now = Date.now();
   for (const a of store.state.agents) {
     if (a.status === 'busy') {
       a.completed = (a.completed || 0) + 1;
       a.progress = 100;
+      a.speech = a.task ? ('סיים: ' + a.task) : 'מחזור הושלם';
+      a.speechType = 'speak';
+      a.thinking = null;
+      a.thoughtUntil = now + 45000; // השארת מחשבה/עדכון גלוי למשך זמן
+      a.lastActive = now;
+    } else {
+      // fade old completed thought after window
+      if (a.thoughtUntil && now > a.thoughtUntil) {
+        a.speech = null;
+        a.thinking = null;
+        a.thoughtUntil = 0;
+      }
     }
     a.status = 'idle';
-    a.task = 'ממתין למחזור הבא';
-    a.speech = null;
-    a.speechType = 'speak';
-    a.thinking = null;
+    if (!a.task || a.task.indexOf('ממתין') === 0) a.task = 'סורק שוק, מחקר ומיטוב מתמשך';
   }
 }
-
 function downsample(values, maxPoints = 160) {
   if (!values || values.length <= maxPoints) return values || [];
   const step = values.length / maxPoints;
