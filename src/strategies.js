@@ -146,7 +146,7 @@ export const STRATEGIES = {
         return 0;
       });
     },
-  },,
+  },
   gann_swing_sq9: {
     label: 'גאן רמות מחיר (Square of 9)',
     blurb: 'מסחר סביב רמות תמיכה/התנגדות בסגנון גאן Square-of-9 עם אישור כיוון וניהול סיכון ATR.',
