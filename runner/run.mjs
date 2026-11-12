@@ -59,7 +59,9 @@ firm.ensureDeskFields();
 
 let aiResult = { ok: false, reason: llmKey ? 'not-run' : 'no-model-key' };
 try {
-  aiResult = await ai.runAiDirector({ useFallback: !llmKey });
+  // Without a model key we deliberately skip the AI step: local rules would keep
+  // re-picking the same desk every 15 minutes and churn the strategy families.
+  aiResult = await ai.runAiDirector({ useFallback: false });
   console.log(`[runner] AI director: ${aiResult.ok ? aiResult.source : aiResult.reason}`);
   if (aiResult.ok) console.log(`[runner] focus: ${aiResult.plan.focusDesk} · ${aiResult.plan.strategyId} · ${aiResult.plan.rationale}`);
 } catch (err) {

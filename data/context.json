@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-12T10:20:54.781Z",
+ "generatedAt": "2026-11-12T10:25:47.334Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -186,49 +186,54 @@
    "timeframe": "1d",
    "symbol": "BTCUSDT",
    "status": "live",
-   "version": "v1.0",
+   "version": "v1.1",
    "strategyId": "macd_swing",
    "params": {
-    "fast": 8,
-    "slow": 28,
-    "signal": 9,
-    "atrStop": 1.8,
+    "fast": 6,
+    "slow": 20,
+    "signal": 7,
+    "atrStop": 1.2,
     "rr": 4
    },
    "metrics": {
-    "returnPct": 16.39,
+    "returnPct": 19.97,
     "maxDrawdownPct": 4.71,
-    "sharpe": 1.42,
-    "profitFactor": 4.21,
-    "winRate": 50,
-    "trades": 16,
-    "avgR": 0.65,
-    "expectancy": 51.13,
-    "exposurePct": 27.8,
-    "bestTradePct": 6.352,
-    "worstTradePct": -1.657,
-    "finalEquity": 5819.36,
+    "sharpe": 1.28,
+    "profitFactor": 2.23,
+    "winRate": 44,
+    "trades": 25,
+    "avgR": 0.508,
+    "expectancy": 39.86,
+    "exposurePct": 27.7,
+    "bestTradePct": 6.766,
+    "worstTradePct": -1.85,
+    "finalEquity": 5998.45,
     "curvePoints": 600,
-    "barsInMarket": 167
+    "barsInMarket": 166
    },
    "oos": {
-    "returnPct": 9.12,
-    "maxDrawdownPct": 4.27,
-    "sharpe": 1.53,
-    "profitFactor": 2.63,
-    "winRate": 46.2,
-    "trades": 13,
-    "avgR": 0.466,
-    "expectancy": 34.99,
-    "exposurePct": 35.8,
-    "bestTradePct": 6.051,
-    "worstTradePct": -1.591,
-    "finalEquity": 5455.97,
+    "returnPct": 15.25,
+    "maxDrawdownPct": 4.7,
+    "sharpe": 1.57,
+    "profitFactor": 3.03,
+    "winRate": 46.7,
+    "trades": 15,
+    "avgR": 0.655,
+    "expectancy": 50.7,
+    "exposurePct": 36.1,
+    "bestTradePct": 6.535,
+    "worstTradePct": -1.786,
+    "finalEquity": 5762.36,
     "curvePoints": 285,
-    "barsInMarket": 102
+    "barsInMarket": 103
    },
-   "bestReturn": 9.12,
+   "bestReturn": 15.25,
    "versions": [
+    {
+     "version": "v1.1",
+     "at": 1794479143828,
+     "oos": 15.25
+    },
     {
      "version": "v1.0",
      "at": 1794473399949,
@@ -510,7 +515,7 @@
   }
  ],
  "sentiment": {
-  "updatedAt": 1794478854775,
+  "updatedAt": 1794479147331,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 28,
@@ -540,7 +545,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 73522.68
+    "price": 73597.67
    },
    "ETHUSDT": {
     "score": -0.37,
@@ -548,7 +553,7 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 2047.68
+    "price": 2052
    }
   },
   "headlines": [],
