@@ -362,10 +362,74 @@ function poolCard(ui) {
       h('button', { class: 'btn btn-sm btn-ghost', onclick: () => { resetCooldowns(store.state); store.save(); store.emit(); ui.rerender(); } }, 'אפס קירורים'),
       h('a', { class: 'btn btn-sm btn-ghost', href: 'https://github.com/open-free-llm-api/awesome-freellm-apis', target: '_blank', rel: 'noopener', text: 'רשימת הספקים החינמיים ↗' }),
     ),
+    helpBlock(providerSel),
     rows.length ? h('div', { style: { marginTop: '8px' } }, rows) : h('div', { class: 'small muted', style: { marginTop: '10px' }, text: 'הבריכה ריקה. הוסף מפתח אחד ומעלה — Groq ו-Gemini הם ההתחלה המומלצת.' }),
     notice('בדפדפן המפתחות נשמרים מקומית בלבד. כדי שהסוכנים בענן ישתמשו בהם, הוסף אותם כסודות בריפו: ' +
       Object.values(ENV_HINT).filter((v) => v !== '—').slice(0, 8).join(' · ') + ' — הבריכה נבנית מהם אוטומטית.', 'blue'),
   );
+}
+
+function helpBlock(providerSel) {
+  const keyLink = h('a', {
+    class: 'btn btn-sm btn-ghost',
+    href: PROVIDERS[providerSel.value]?.keyUrl || '#',
+    target: '_blank',
+    rel: 'noopener',
+    text: keyLabel(providerSel.value),
+  });
+  const note = h('div', { class: 'small muted', text: PROVIDERS[providerSel.value]?.note || '' });
+  const envName = h('code', { text: ENV_HINT[providerSel.value] || '—' });
+  providerSel.addEventListener('change', () => {
+    const p = providerSel.value;
+    const def = PROVIDERS[p] || {};
+    keyLink.href = def.keyUrl || '#';
+    keyLink.textContent = keyLabel(p);
+    note.textContent = def.note || '';
+    envName.textContent = ENV_HINT[p] || '—';
+  });
+
+  const step = (title, body) => h('li', { style: { marginBottom: '10px' } },
+    h('b', { style: { fontSize: '13px' }, text: title }),
+    body,
+  );
+
+  return h('details', { style: { marginTop: '12px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '10px 12px' } },
+    h('summary', { style: { cursor: 'pointer', fontSize: '13px' }, text: 'איך מחברים מודל — הוראות צעד אחר צעד' }),
+    h('ol', { class: 'list-clean', style: { marginTop: '10px' } },
+      step('1. הנפק מפתח אצל הספק', h('div', {},
+        h('div', { class: 'small muted', text: 'בחר ספק למעלה ולחץ על הקישור. ההרשמה חינמית ולא דורשת כרטיס אשראי אצל Groq, Gemini, Z.ai, OpenRouter ו-Cloudflare.' }),
+        h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '6px' } }, keyLink),
+        note,
+      )),
+      step('2. הוסף אותו לבריכה', h('div', { class: 'small muted' },
+        'הדבק את המפתח בשדה "מפתח API", בחר מודל (אפשר להקליד ידנית), ולחץ "+ הוסף לבריכה". לחץ "בדוק" כדי לוודא שהמפתח עונה, ואם לא — השגיאה תופיע ליד השורה. מפתח אחד מספיק כדי להתחיל; כל מפתח נוסף מגדיל את התקרה היומית.',
+      )),
+      step('3. אותו מפתח לענן (24/7)', h('div', {},
+        h('div', { class: 'small muted', text: 'הבוט שרץ ב-GitHub Actions לא רואה את הדפדפן. הוסף את המפתח כסוד בריפו בשם המדויק:' }),
+        h('div', { class: 'row wrap', style: { gap: '6px', margin: '6px 0' } }, h('span', { class: 'small', text: 'שם הסוד:' }), envName),
+        h('pre', { class: 'code', text: 'gh secret set GROQ_API_KEY' }),
+        h('div', { class: 'small muted', text: 'או בדפדפן: Settings → Secrets and variables → Actions → New repository secret. שם הסוד חייב להיות בדיוק כמו בטבלה, אחרת הבריכה לא תזהה אותו.' }),
+      )),
+      step('4. בדוק שזה עבד', h('div', { class: 'small muted' },
+        'הרץ את Firm loop ידנית וחפש בלוג את השורה model pool: … ואת answered by … ב-data/last-run.json. אם ספק נכשל תמיד תופיע שורת fallback from … עם הסיבה.',
+      )),
+    ),
+    h('div', { style: { marginTop: '6px' } },
+      h('div', { class: 'small', style: { marginBottom: '4px' }, text: 'רוצה רשימה מפורשת עם מודלים שונים לאותו ספק? השתמש בסוד אחד:' }),
+      h('pre', { class: 'code', text: 'LLM_KEYS=[{"provider":"groq","key":"gsk_...","model":"llama-3.3-70b-versatile"},\n          {"provider":"cloudflare","key":"cf_...","accountId":"...","model":"@cf/meta/llama-3.3-70b-instruct-fp8-fast"}]' }),
+    ),
+    h('ul', { class: 'list-clean', style: { marginTop: '8px' } },
+      h('li', { class: 'small muted', text: 'הבריכה בוחרת את המפתח שהכי מזמן לא נוצל, מכבדת RPM/RPD, ומדלגת אוטומטית על מפתח בקירור או כזה שנגמרה לו המכסה היומית.' }),
+      h('li', { class: 'small muted', text: 'ספקים כמו Groq ו-NVIDIA חוסמים קריאה ישירה מהדפדפן (CORS) — הבדיקה כאן תחזיר שגיאת רשת, אבל הריצה בענן תקינה. Gemini ו-OpenRouter עובדים גם כאן.' }),
+      h('li', { class: 'small muted', text: 'כל המפתחות נשמרים מקומית בדפדפן הזה, וה-runner מנקה אותם מ-data/state.json לפני כל commit.' }),
+    ),
+  );
+}
+
+function keyLabel(providerId) {
+  const def = PROVIDERS[providerId];
+  if (!def?.keyUrl) return 'אין דף מפתחות לספק הזה';
+  return `הנפק מפתח ${def.label} ↗`;
 }
 
 function field(label, input) {
