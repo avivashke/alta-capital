@@ -1,6 +1,6 @@
 // The firm: orchestration of desks, agents, optimization cycles, versioning and paper execution.
 
-import { BARS_PER_YEAR, DESKS } from './config.js';
+import { BARS_PER_YEAR, DESKS, BINANCE_TESTNET, PAPER_TRADING } from './config.js';
 import { store } from './store.js';
 import { getCandles, lastPrice, startQuotes } from './market.js';
 import { STRATEGIES } from './strategies.js';
@@ -11,12 +11,53 @@ import { atr } from './indicators.js';
 import { assessStrategy } from './stats.js';
 import { analyze } from './ta.js';
 import { scanIfDue, refreshSentiment } from './research.js';
+import { createBinanceClient } from './binance_testnet.js';
+import { createPaperPortfolio } from './paper_portfolio.js';
 
 const LIMITS = { '5m': 800, '15m': 800, '1h': 800, '1d': 600, '1w': 420 };
 const ROUNDS = { intraday: { rounds: 26, climb: 12 }, swing: { rounds: 30, climb: 14 } };
 
 let lastEmit = 0;
 let ticking = false;
+
+// מנוע תיק דמה גלובלי — מופעל רק לאחר בדיקת עבר רווחית
+let paperPortfolio = null;
+// לקוח Binance Testnet — מוגדר רק אם יש מפתחות API בהגדרות
+let binanceClient = null;
+
+function ensurePaperPortfolio() {
+  if (!paperPortfolio) {
+    const s = store.state.settings;
+    paperPortfolio = createPaperPortfolio(s);
+    binanceClient = createBinanceClient(s);
+    if (binanceClient.apiKey && binanceClient.apiSecret) {
+      console.log('[firm] Binance Testnet client initialized');
+    } else {
+      console.log('[firm] Binance Testnet client running in simulation mode (no API keys)');
+    }
+  }
+  return paperPortfolio;
+}
+
+function isBacktestProfitableAfterFeesAndTax(metrics) {
+  if (!metrics) return false;
+  const s = store.state.settings;
+  const returnPct = metrics.returnPct || 0;
+  const totalFees = metrics.totalFees || 0;
+  const trades = metrics.trades || 0;
+
+  // בדיקת סף רווחיות אחרי עמלות (אומדן מס)
+  const estimatedTax = Math.max(0, returnPct) * (PAPER_TRADING.taxRate / 100);
+  const netReturnPct = returnPct - (totalFees * 100) - estimatedTax;
+
+  return (
+    netReturnPct > PAPER_TRADING.minBacktestReturnPct &&
+    trades >= PAPER_TRADING.minBacktestTrades &&
+    (metrics.profitFactor || 0) >= PAPER_TRADING.minProfitFactor &&
+    (metrics.maxDrawdownPct || 100) <= PAPER_TRADING.maxDrawdownPct
+  );
+}
+
 
 function liveEmit(force = false) {
   const now = Date.now();
@@ -330,7 +371,7 @@ export async function runDeskCycle(desk, opts = {}) {
 
 // --- live paper execution -------------------------------------------------
 
-function closePaperTrade(desk, price, reason) {
+async function closePaperTrade(desk, price, reason) {
   const t = desk.openTrade;
   if (!t) return;
   const pct = t.dir > 0 ? ((price - t.entry) / t.entry) * 100 : ((t.entry - price) / t.entry) * 100;
@@ -341,6 +382,32 @@ function closePaperTrade(desk, price, reason) {
     pct: +sized.toFixed(3), reason, bars: 0,
   });
   if (desk.liveTrades.length > 25) desk.liveTrades.length = 25;
+
+  // סגירה גם ב-Binance Testnet אם יש לקוח מוגדר ופקודה פתוחה שם
+  const pf = ensurePaperPortfolio();
+  if (binanceClient && binanceClient.apiKey && binanceClient.apiSecret && t.binanceOrderId) {
+    try {
+      const side = t.dir > 0 ? 'SELL' : 'BUY';
+      const qty = t.binanceQuantity;
+      await binanceClient.createMarketOrder({
+        symbol: desk.symbol,
+        side,
+        quantity: qty,
+      });
+      pf.sell({
+        symbol: desk.symbol,
+        price,
+        quantity: qty,
+        timestamp: Date.now(),
+        isTaker: true,
+      });
+      store.log('info', 'תמר · ביצוע',
+        `${desk.label}: פקודת סגירה בוצעה ב-Binance Testnet · ${side} ${qty}`);
+    } catch (err) {
+      console.warn('[firm] binance close failed', desk.id, err.message);
+    }
+  }
+
   store.log(sized >= 0 ? 'ok' : 'warn', 'תמר · ביצוע',
     `${desk.label}: סגירת פוזיציית נייר ${t.dir > 0 ? 'לונג' : 'שורט'} · ${sized.toFixed(2)}% (${reason})`);
   desk.openTrade = null;
@@ -390,6 +457,40 @@ export async function tickLive() {
         }
       } else if (dir !== 0 && s.autopilot) {
         const stopDist = stopMult * a;
+        const pf = ensurePaperPortfolio();
+        const capitalUsdt = Math.min(s.capital || 100000, pf.cash);
+        const riskAmount = capitalUsdt * Number(s.riskPerTrade || 0.015);
+        const stopDistance = Math.abs(price - (dir > 0 ? price - stopDist : price + stopDist));
+        const quantity = stopDistance > 0 ? riskAmount / stopDistance : 0;
+
+        let binanceOrderId = null;
+        let binanceQuantity = 0;
+
+        // ביצוע פקודה אמת ב-Binance Testnet אם מוגדרו מפתחות API
+        if (binanceClient && binanceClient.apiKey && binanceClient.apiSecret && quantity > 0) {
+          try {
+            const side = dir > 0 ? 'BUY' : 'SELL';
+            const order = await binanceClient.createMarketOrder({
+              symbol: desk.symbol,
+              side,
+              quantity: Number(quantity).toFixed(6),
+            });
+            binanceOrderId = order.orderId || null;
+            binanceQuantity = Number(order.executedQty || quantity);
+            pf.buy({
+              symbol: desk.symbol,
+              price,
+              quantity: binanceQuantity,
+              timestamp: Date.now(),
+              isTaker: true,
+            });
+            store.log('info', 'תמר · ביצוע',
+              `${desk.label}: פקודת קנייה בוצעה ב-Binance Testnet · ${side} ${binanceQuantity} @ ${price.toFixed(2)}`);
+          } catch (err) {
+            console.warn('[firm] binance open failed', desk.id, err.message);
+          }
+        }
+
         desk.openTrade = {
           dir,
           entry: price,
@@ -398,6 +499,8 @@ export async function tickLive() {
           at: Date.now(),
           sizeFactor: Math.min(1, s.riskPerTrade / 0.015),
           markPct: 0,
+          binanceOrderId,
+          binanceQuantity,
         };
         store.log('info', 'תמר · ביצוע', `${desk.label}: פתיחת פוזיציית נייר ${dir > 0 ? 'לונג' : 'שורט'} ב־${price.toFixed(2)}`);
       }
@@ -407,15 +510,27 @@ export async function tickLive() {
   }
 }
 
-export function promoteDryRuns() {
+export async function promoteDryRuns() {
   const s = store.state.settings;
+  const pf = ensurePaperPortfolio();
+
   for (const desk of store.state.desks) {
     if (desk.status !== 'dry-run') continue;
-    if (desk.dryRunCycles >= 3 && desk.metrics && passesGates(desk.metrics, gateSettings(desk)).ok) {
+
+    const gatesOk = passesGates(desk.metrics, gateSettings(desk)).ok;
+    const profitableAfterFees = isBacktestProfitableAfterFeesAndTax(desk.metrics);
+
+    if (desk.dryRunCycles >= PAPER_TRADING.dryRunCyclesBeforeLive && gatesOk && profitableAfterFees) {
       desk.status = 'live';
       desk.liveSince = Date.now();
+      pf.activate({
+        reason: `אסטרטגיה ${desk.strategyId} על ${desk.label} הרוויחה ${desk.metrics.returnPct}% בבקטסט אחרי עמלות`,
+      });
       store.log('ok', 'אוריה · CIO',
-        `${desk.label}: אושרה להרצה חיה על נייר — ${desk.version} · ${desk.metrics.returnPct}% בבקטסט`);
+        `${desk.label}: אושרה למסחר דמה על Binance Testnet — ${desk.version} · ${desk.metrics.returnPct}% נטו בבקטסט`);
+    } else if (desk.dryRunCycles >= PAPER_TRADING.dryRunCyclesBeforeLive && gatesOk && !profitableAfterFees) {
+      store.log('warn', 'אוריה · CIO',
+        `${desk.label}: עברה גדרות אך אינה רווחית אחרי עמלות ומס — לא תופעל במסחר דמה`);
     }
   }
 }
@@ -434,7 +549,7 @@ export async function tick({ reason = 'auto' } = {}) {
     state.lastTickAt = Date.now();
     const result = await runDeskCycle(desk, {});
     await tickLive();
-    promoteDryRuns();
+    await promoteDryRuns();
     if ((state.stats.cycles || 0) % 2 === 0) {
       refreshTechnicals().catch((e) => console.warn('[ta]', e));
     }
