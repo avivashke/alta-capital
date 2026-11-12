@@ -99,7 +99,7 @@ export function renderSettings(root, ui) {
         h('p', { text: 'כאן מחברים מודל, מגדירים סיכון, בוחרים פלטפורמת בוט ומחברים את זיכרון החברה לריפו GitHub.' }),
       ),
       h('div', { class: 'head-actions' },
-        h('button', { class: 'btn btn-primary', onclick: save }, 'שמור הגדרות'),
+        h('button', { class: 'btn btn-primary', onclick: save }, 'שמור הכל'),
         h('button', {
           class: 'btn',
           onclick: async () => {
@@ -128,6 +128,10 @@ export function renderSettings(root, ui) {
         h('div', { class: 'full' }, field('מפתח API (נשמר מקומית)', keyInput)),
       ),
       notice('ספקים שחוסמים בקשות דפדפן (CORS) לא יעבדו ישירות מהאתר. במצב כזה אפשר להריץ פרוקסי מקומי, או להשתמש ב-OpenRouter/Groq/Gemini שתומכים בקריאה מהדפדפן.', 'blue'),
+      h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '12px' } },
+        h('button', { class: 'btn btn-primary btn-sm', onclick: save }, 'שמור הגדרות API'),
+        h('button', { class: 'btn btn-sm', onclick: async () => { save(); try { const r = await testConnection(); toast('המודל ענה: ' + r, 'ok'); } catch (err) { toast('כשל בחיבור: ' + err.message, 'bad'); } } }, 'שמור ובדוק חיבור'),
+      ),
     ),
 
     h('div', { class: 'card' },
@@ -477,9 +481,9 @@ function poolCard(ui) {
       toast('המפתח הזה כבר בבריכה', 'bad');
       return;
     }
-    store.save();
+    store.save(true);
     store.emit();
-    toast(`${def.label} נוסף לבריכה`, 'ok');
+    toast(`${def.label} נוסף לבריכה ונשמר`, 'ok');
     ui.rerender();
   };
 
@@ -494,9 +498,9 @@ function poolCard(ui) {
       const res = addPoolEntry(store.state, { provider: 'cloudflare', accountId: item.accountId, key: item.key, model: item.model });
       if (!res.duplicate) added++;
     }
-    store.save();
+    store.save(true);
     store.emit();
-    toast(`${added}/${list.length} חשבונות נוספו`, added ? 'ok' : 'bad');
+    toast(`${added}/${list.length} חשבונות נוספו ונשמרו`, added ? 'ok' : 'bad');
     ui.rerender();
   };
 
@@ -535,11 +539,11 @@ function poolCard(ui) {
         }, 'בדוק'),
         h('button', {
           class: 'btn btn-sm btn-ghost',
-          onclick: () => { entry.enabled = !entry.enabled; if (entry.enabled) { entry.valid = true; entry.cooldownUntil = 0; } store.save(); store.emit(); ui.rerender(); },
+          onclick: () => { entry.enabled = !entry.enabled; if (entry.enabled) { entry.valid = true; entry.cooldownUntil = 0; } store.save(true); store.emit(); ui.rerender(); },
         }, entry.enabled ? 'השבת' : 'הפעל'),
-        h('button', { class: 'btn btn-sm btn-ghost', disabled: idx === 0, onclick: () => { movePoolEntry(store.state, entry.id, -1); store.save(); ui.rerender(); } }, '▲'),
-        h('button', { class: 'btn btn-sm btn-ghost', disabled: idx === entries.length - 1, onclick: () => { movePoolEntry(store.state, entry.id, 1); store.save(); ui.rerender(); } }, '▼'),
-        h('button', { class: 'btn btn-sm btn-danger', onclick: () => { removePoolEntry(store.state, entry.id); store.save(); store.emit(); ui.rerender(); } }, 'הסר'),
+        h('button', { class: 'btn btn-sm btn-ghost', disabled: idx === 0, onclick: () => { movePoolEntry(store.state, entry.id, -1); store.save(true); ui.rerender(); } }, '▲'),
+        h('button', { class: 'btn btn-sm btn-ghost', disabled: idx === entries.length - 1, onclick: () => { movePoolEntry(store.state, entry.id, 1); store.save(true); ui.rerender(); } }, '▼'),
+        h('button', { class: 'btn btn-sm btn-danger', onclick: () => { removePoolEntry(store.state, entry.id); store.save(true); store.emit(); ui.rerender(); } }, 'הסר'),
       ),
     );
   });
@@ -583,7 +587,7 @@ function poolCard(ui) {
           ui.rerender();
         },
       }, 'בדוק את כולם'),
-      h('button', { class: 'btn btn-sm btn-ghost', onclick: () => { resetCooldowns(store.state); store.save(); store.emit(); ui.rerender(); } }, 'אפס קירורים'),
+      h('button', { class: 'btn btn-sm btn-ghost', onclick: () => { resetCooldowns(store.state); store.save(true); store.emit(); ui.rerender(); } }, 'אפס קירורים'),
       h('a', { class: 'btn btn-sm btn-ghost', href: 'https://github.com/open-free-llm-api/awesome-freellm-apis', target: '_blank', rel: 'noopener', text: 'רשימת הספקים החינמיים ↗' }),
     ),
     helpBlock(providerSel),

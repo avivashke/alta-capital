@@ -119,15 +119,17 @@ export const store = {
     }
   },
 
-  save() {
+  save(immediate = false) {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
+    const write = () => {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
       } catch (err) {
         console.warn('[store] save failed (quota?)', err);
       }
-    }, 300);
+    };
+    if (immediate) write();
+    else saveTimer = setTimeout(write, 300);
   },
 
   subscribe(fn) {
@@ -143,7 +145,7 @@ export const store = {
 
   mutate(fn) {
     fn(this.state);
-    this.save();
+    this.save(true);
     this.emit();
   },
 
