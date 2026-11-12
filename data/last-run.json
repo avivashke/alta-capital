@@ -1,15 +1,6 @@
 {
- "at": "2026-11-12T08:51:23.225Z",
+ "at": "2026-11-12T10:20:54.780Z",
  "summary": [
-  {
-   "desk": "desk_1h",
-   "timeframe": "1h",
-   "ok": true,
-   "published": false,
-   "version": "v1.0",
-   "oos": 8.6,
-   "robustness": 63
-  },
   {
    "desk": "desk_1d",
    "timeframe": "1d",
@@ -24,9 +15,9 @@
    "timeframe": "1w",
    "ok": true,
    "published": true,
-   "version": "v1.0",
-   "oos": 2.06,
-   "robustness": 72
+   "version": "v1.1",
+   "oos": 2.77,
+   "robustness": 73
   },
   {
    "desk": "desk_5m",
@@ -34,39 +25,45 @@
    "ok": true,
    "published": false,
    "version": null,
-   "oos": -1.01,
-   "robustness": 34
+   "oos": -2.36,
+   "robustness": 26
   },
   {
    "desk": "desk_15m",
    "timeframe": "15m",
    "ok": true,
-   "published": false,
-   "version": "v1.0",
-   "oos": 2.91,
-   "robustness": 85
+   "published": true,
+   "version": "v1.1",
+   "oos": 4.42,
+   "robustness": 83
   },
   {
    "desk": "desk_1h",
    "timeframe": "1h",
    "ok": true,
-   "published": true,
+   "published": false,
    "version": "v1.1",
    "oos": 9.15,
    "robustness": 61
   }
  ],
  "stats": {
-  "cycles": 13,
-  "backtests": 1578,
-  "deployments": 5,
-  "scans": 9,
+  "cycles": 18,
+  "backtests": 2196,
+  "deployments": 7,
+  "scans": 12,
   "startedAt": 1794473380871
  },
  "runner": {
-  "cycles": 6,
+  "cycles": 5,
   "deep": false,
-  "durationMs": 6068,
+  "durationMs": 6967,
   "node": "v20.18.0"
+ },
+ "ai": {
+  "source": "model",
+  "focusDesk": "desk_5m",
+  "strategyId": "breakout",
+  "rationale": "שולחן 5 דקות עם חוסר יציבות; פריצת ערוץ עם חיפוש ממוקד עדיף על מגמת EMA."
  }
 }

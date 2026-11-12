@@ -2,7 +2,8 @@ import { mount } from '../ui.js';
 import { store } from '../store.js';
 import { STRATEGIES, STRATEGY_IDS } from '../strategies.js';
 import { marketState } from '../market.js';
-import { h, pct, num, chart, section, statusTag, tag, notice, empty, openModal } from '../ui.js';
+import { h, pct, num, chart, section, statusTag, tag, notice, empty, openModal, timeAgo, toast } from '../ui.js';
+import { runAiDirector } from '../ai.js';
 import { metricsTable, gateList, strategyName } from './shared.js';
 import { runDeskCycle, resetDesk, switchStrategy } from '../firm.js';
 
@@ -109,6 +110,7 @@ export function renderLab(root, ui) {
         ),
         statsCard(desk),
         technicalCard(desk),
+        aiDirectorCard(desk, ui),
         h('div', { class: 'card' },
           h('div', { class: 'card-head' },
             h('div', {}, h('h2', { text: 'שערי סיכון וקידום' }), h('div', { class: 'card-sub', text: `סף שיפור: ${s.promotionDelta}% · OOS נדרש חיובי` })),
@@ -190,6 +192,66 @@ function statsCard(desk) {
     h('div', { class: 'tiny muted', style: { marginTop: '8px' } },
       `רגישות פרמטרים ${sens.sensitivity ?? '—'} (נמוך = יציב יותר) · סטיית תשואה ${sens.sd ?? '—'} נק׳ · דגימות שנשברו ${sens.brokenSamples ?? 0}`,
     ),
+  );
+}
+
+function aiDirectorCard(desk, ui) {
+  const state = store.state;
+  const director = state.aiDirector;
+  const plan = desk.aiPlan;
+  const review = desk.aiReview;
+  return h('div', { class: 'card' },
+    h('div', { class: 'card-head' },
+      h('div', {}, h('h2', { text: 'החלטת הסוכן החכם' }),
+        h('div', { class: 'card-sub', text: director
+          ? `${director.source === 'model' ? 'מודל ' + (director.model || '') : 'כללים מקומיים'} · ${timeAgo(director.at)}`
+          : 'טרם התקבלה החלטה' })),
+      h('button', {
+        class: 'btn btn-sm',
+        onclick: async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true;
+          btn.textContent = 'חושב…';
+          try {
+            const res = await runAiDirector({ useFallback: true });
+            toast(res.ok ? 'התקבלה החלטה חדשה' : String(res.reason), res.ok ? 'ok' : 'bad');
+          } catch (err) {
+            toast(err.message, 'bad');
+          }
+          ui.rerender();
+        },
+      }, 'בקש החלטה'),
+    ),
+    plan
+      ? h('div', {},
+        h('div', { class: 'row wrap', style: { gap: '6px' } },
+          tag(STRATEGIES[plan.strategyId]?.label || plan.strategyId, 'green'),
+          plan.paramBias && Object.keys(plan.paramBias).length
+            ? tag(Object.entries(plan.paramBias).map(([k, v]) => `${k} ${v[0]}–${v[1]}`).join(' · '))
+            : null,
+          plan.consumed ? tag('הוחל במחזור האחרון', 'dry') : tag('ממתין למחזור הבא', 'opt'),
+        ),
+        h('div', { class: 'small muted', style: { marginTop: '8px' }, text: plan.rationale || '' }),
+      )
+      : h('div', { class: 'small muted', text: 'אין תוכנית פתוחה. בקש החלטה — המודל בוחר שולחן, משפחת אסטרטגיה וטווח פרמטרים למחזור הבא.' }),
+    review
+      ? h('div', { style: { marginTop: '10px' } },
+        h('div', { class: 'small', text: review.verdict || '' }),
+        (review.risks || []).length
+          ? h('ul', { class: 'list-clean', style: { marginTop: '6px' } }, review.risks.map((r) => h('li', {},
+            h('span', { class: 'bul red', text: '!' }), h('span', { class: 'grow', text: r }),
+          )))
+          : null,
+      )
+      : null,
+    director?.plan?.nextActions?.length
+      ? h('div', { style: { marginTop: '10px' } },
+        h('div', { class: 'tiny muted', text: 'הפעולות הבאות לפי ה-AI' }),
+        h('ul', { class: 'list-clean', style: { marginTop: '4px' } }, director.plan.nextActions.map((a) => h('li', {},
+          h('span', { class: 'bul', text: '→' }), h('span', { class: 'grow', text: a }),
+        ))),
+      )
+      : null,
   );
 }
 

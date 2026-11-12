@@ -120,6 +120,23 @@ npm run firm:deep   # כולל כיול מעמיק
 הדשבורד טוען את `data/state.json` אוטומטית ומציג "ענן 24/7 · פעיל". במצב הזה האוטופיילוט המקומי כבוי
 כדי שלא ירוצו שני מנועים על אותו מצב.
 
+### מודל לסוכנים בענן
+
+הסוכנים מקבלים "אינטיליגציה" מהמודל דרך GitHub Secrets — המפתח לא נכנס לריפו:
+
+```bash
+gh secret set OPENAI_API_KEY          # או LLM_API_KEY
+gh variable set LLM_MODEL --body "gpt-4o-mini"
+# אופציונלי לספק אחר (OpenAI-compatible):
+gh variable set LLM_BASE_URL --body "https://openrouter.ai/api/v1"
+gh variable set LLM_PROVIDER --body "openrouter"
+```
+
+לפני כל מחזור, סוכן ה-AI קורא את הדוח המלא (מדדים, חלונות, Monte Carlo, ניתוח טכני) ומחזיר
+`focusDesk`, `strategyId`, טווח פרמטרים מצומצם, סקירה ופעולות הבאות. ההחלטה נשמרת ב-
+`data/state.json` ומוצגת במעבדה, והמחזור הבא של אותו שולחן מיישם אותה. בלי מפתח — נפילה
+לכללים מקומיים, והמערכת ממשיכה לעבוד.
+
 הגנה: הריפו ציבורי, אבל רק לך יש הרשאת כתיבה; ה־workflow מנקה מפתחות לפני פרסום; הדשבורד חסר נתיב
 כתיבה לשרת, וכל שינוי של מבקר נשמר רק בדפדפן שלו. להגנה על הענף עצמו — Branch protection על `main`
 עם `github-actions[bot]` ברשימת ה־bypass. לתוכן לא פומבי — ריפו פרטי עם GitHub Pro.

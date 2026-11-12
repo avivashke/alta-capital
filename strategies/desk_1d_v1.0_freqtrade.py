@@ -2,11 +2,11 @@
 # Alta Capital — auto-generated strategy artifact
 # Desk: סווינג · חודשי (יומי) · BTCUSDT · 1d
 # Version: v1.0 · Strategy family: macd_swing
-# Backtest: return 16.36% · PF 4.2 · DD 4.71% · trades 16
+# Backtest: return 16.39% · PF 4.21 · DD 4.71% · trades 16
 # OOS: 9.12% · Sharpe 1.42
 # Params: {"fast":8,"slow":28,"signal":9,"atrStop":1.8,"rr":4}
 # Target platform: Freqtrade
-# Generated: 2026-11-12T08:51:23.223Z
+# Generated: 2026-11-12T10:20:54.778Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:

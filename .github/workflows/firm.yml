@@ -39,6 +39,11 @@ jobs:
       - name: Run agent cycles
         env:
           GITHUB_TOKEN: ${{ secrets.FIRM_GITHUB_TOKEN }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY || secrets.OPENAI_API_KEY || secrets.ANTHROPIC_API_KEY }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          LLM_TEMPERATURE: ${{ vars.LLM_TEMPERATURE }}
         run: node runner/run.mjs --cycles=${{ github.event.inputs.cycles || 5 }} ${{ github.event.inputs.deep == 'true' && '--deep' || '' }}
 
       - name: Publish state

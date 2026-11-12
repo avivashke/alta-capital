@@ -119,6 +119,23 @@ export async function runDeskCycle(desk, opts = {}) {
       limit: LIMITS[desk.tf] || 700,
       force: !!opts.focus,
     });
+
+    // AI director decision, consumed once by the next cycle on this desk.
+    const aiPlan = desk.aiPlan && !desk.aiPlan.consumed ? desk.aiPlan : null;
+    if (aiPlan?.strategyId && STRATEGIES[aiPlan.strategyId] && aiPlan.strategyId !== desk.strategyId) {
+      store.log('info', 'אוריה · CIO',
+        `${desk.label}: עוברים למשפחה ${STRATEGIES[aiPlan.strategyId].label} לפי החלטת הסוכן החכם`);
+      desk.strategyId = aiPlan.strategyId;
+      desk.params = null;
+      desk.version = null;
+      desk.bestReturn = null;
+      desk.baselineReturn = null;
+      desk.metrics = null;
+      desk.oosMetrics = null;
+      desk.assessment = null;
+      desk.equity = [];
+      desk.dryRunCycles = 0;
+    }
     if (!desk.strategyId) desk.strategyId = pickStrategy(desk);
 
     const baseRounds = ROUNDS[desk.kind] || ROUNDS.intraday;
@@ -127,6 +144,7 @@ export async function runDeskCycle(desk, opts = {}) {
       strategyId: desk.strategyId,
       cfg,
       seed: desk.params,
+      spaceOverride: aiPlan?.paramBias || null,
       rounds: opts.deep ? baseRounds.rounds * 2 : baseRounds.rounds,
       climb: opts.deep ? baseRounds.climb * 2 : baseRounds.climb,
       onProgress: ({ done, total }) => {
@@ -288,6 +306,10 @@ export async function runDeskCycle(desk, opts = {}) {
       task: publish ? `מאשר ${desk.version} ומקצה הון` : 'מעדיף להמתין לשיפור מובהק',
       progress: 90,
     });
+    if (aiPlan) {
+      desk.aiPlan = { ...aiPlan, consumed: true, appliedAt: Date.now() };
+    }
+
     idleAgents();
     liveEmit(true);
     return { ok: true, published: publish, evaluation: ev };

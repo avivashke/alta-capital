@@ -37,12 +37,35 @@ const deep = args.includes('--deep');
 const { store } = await import('../src/store.js');
 const firm = await import('../src/firm.js');
 const research = await import('../src/research.js');
+const ai = await import('../src/ai.js');
 const { buildArtifact } = await import('../src/platforms.js');
 
 store.load();
 store.state.settings.autopilot = true;
 if (process.env.GITHUB_TOKEN) store.state.settings.github.token = process.env.GITHUB_TOKEN;
+
+// Model credentials come from GitHub Secrets, never from the repo.
+const llmKey = process.env.LLM_API_KEY || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || '';
+if (llmKey) {
+  store.state.settings.llm = {
+    provider: process.env.LLM_PROVIDER || 'openai',
+    baseUrl: process.env.LLM_BASE_URL || 'https://api.openai.com/v1',
+    model: process.env.LLM_MODEL || 'gpt-4o-mini',
+    apiKey: llmKey,
+    temperature: Number(process.env.LLM_TEMPERATURE || 0.3),
+  };
+}
 firm.ensureDeskFields();
+
+let aiResult = { ok: false, reason: llmKey ? 'not-run' : 'no-model-key' };
+try {
+  aiResult = await ai.runAiDirector({ useFallback: !llmKey });
+  console.log(`[runner] AI director: ${aiResult.ok ? aiResult.source : aiResult.reason}`);
+  if (aiResult.ok) console.log(`[runner] focus: ${aiResult.plan.focusDesk} · ${aiResult.plan.strategyId} · ${aiResult.plan.rationale}`);
+} catch (err) {
+  console.warn('[runner] AI director failed:', err.message);
+  aiResult = { ok: false, reason: err.message };
+}
 
 const started = Date.now();
 const summary = [];
@@ -123,7 +146,15 @@ fs.writeFileSync(stateFile, JSON.stringify(state, null, 1));
 fs.writeFileSync(path.join(dataDir, 'context.json'), JSON.stringify(research.buildContextDocument(), null, 1));
 fs.writeFileSync(
   path.join(dataDir, 'last-run.json'),
-  JSON.stringify({ at: state.updatedAt, summary, stats: state.stats, runner: state.runner }, null, 1),
+  JSON.stringify({
+    at: state.updatedAt,
+    summary,
+    stats: state.stats,
+    runner: state.runner,
+    ai: aiResult?.ok
+      ? { source: aiResult.source, focusDesk: aiResult.plan.focusDesk, strategyId: aiResult.plan.strategyId, rationale: aiResult.plan.rationale }
+      : { ok: false, reason: aiResult?.reason },
+  }, null, 1),
 );
 
 const okCount = summary.filter((s) => s.ok).length;

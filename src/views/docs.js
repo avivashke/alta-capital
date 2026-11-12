@@ -83,6 +83,27 @@ export function renderDocs(root) {
     notice('מפתחות לא נכתבים לשום קובץ בריפו ולא נשלחים לשרת שלנו (אין כזה). הם נשלחים ישירות לספק המודל.', 'blue'),
   )));
 
+  mount(root, card('מודל לסוכנים בענן (GitHub Actions)', h('div', {},
+    h('p', { class: 'small muted' },
+      'המפתח שהזנת בדשבורד נשמר בדפדפן שלך בלבד. הסוכנים שרצים בענן צריכים מפתח ב-GitHub Secrets — אחרת הם עובדים בכללים מקומיים בלבד.',
+    ),
+    h('div', { class: 'steps' },
+      step('צור secret', h('div', {},
+        h('p', { class: 'small muted', text: 'Settings → Secrets and variables → Actions → New repository secret, בשם OPENAI_API_KEY (או LLM_API_KEY). או בטרמינל:' }),
+        commandBlock('gh secret set OPENAI_API_KEY'),
+      )),
+      step('בחר מודל', h('div', {},
+        commandBlock('gh variable set LLM_MODEL --body "gpt-4o-mini"'),
+      )),
+      step('ספק אחר (OpenRouter, Groq, וכו\')', h('div', {},
+        commandBlock('gh variable set LLM_BASE_URL --body "https://openrouter.ai/api/v1"'),
+        commandBlock('gh variable set LLM_PROVIDER --body "openrouter"'),
+      )),
+      step('וודא שזה עובד', h('p', { class: 'small muted', text: 'חזור על הרצת Firm loop, ואז בדוק ב-data/last-run.json שמופיע "ai": { "source": "model" } יחד עם focusDesk ו-strategyId.' })),
+    ),
+    notice('אם המודל לא זמין או מחזיר JSON לא תקין, הסוכן נופל לבחירה בכללים מקומיים והמערכת ממשיכה לעבוד. ההחלטה שלו מוצגת במעבדה ומיושמת במחזור הבא של אותו שולחן.', 'blue'),
+  )));
+
   mount(root, card('מנוע הרווחיות והגרסאות', h('div', {},
     h('div', { class: 'table-wrap' }, h('table', {},
       h('thead', {}, h('tr', {}, h('th', { text: 'שולחן' }), h('th', { text: 'טווח' }), h('th', { text: 'אופק' }), h('th', { text: 'מנדט' }))),
@@ -149,6 +170,13 @@ export function renderDocs(root) {
     commandBlock('npm run firm'),
     commandBlock('npm run firm:deep'),
     notice('GitHub מריץ cron לכל היותר כל 5 דקות, ולפעמים באיחור של כמה דקות תחת עומס. אם הריפו לא פעיל 60 יום, GitHub משבית את ה-schedule — מספיק commit קטן כדי להחזיר.', 'blue'),
+    h('h3', { style: { marginTop: '14px' }, text: 'פתרון תקלות' }),
+    h('ul', { class: 'list-clean' },
+      li('Workflow לא מופיע ב-Actions: צריך שיהיה קובץ בתיקיית .github/workflows על ענף main, ואז Actions → Firm loop (24/7).'),
+      li('הריצה נכשלת ב-Publish state: Settings → Actions → General → Workflow permissions → Read and write.'),
+      li('האתר לא מתעדכן: Settings → Pages → Source חייב להיות Deploy from a branch (main / root), כי פרסתם מהענף ולא מ-Actions.'),
+      li('רוצים שהדשבורד לא יהיה פומבי: ריפו פרטי + GitHub Pro, או Cloudflare Access מול דומיין משלך.'),
+    ),
   )));
 }
 
