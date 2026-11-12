@@ -116,7 +116,7 @@ function errorBox(err) {
   return h('div', { class: 'card', style: { borderColor: 'rgba(240,91,91,.4)' } },
     h('h2', { text: 'שגיאה ברינדור המסך' }),
     h('div', { class: 'small muted', text: String(err?.message || err) }),
-    h('div', { class: 'small muted', style: { marginTop: '8px' }, text: 'פתח את קונסולת הדפדפן (Cmd+Option+J) כדי לראות את ה-stack. שאר המסכים ממשיכים לעבוד.' }),
+    h('div', { class: 'small muted', style: { marginTop: '8px' }, text: 'פתח את קונסולת הדפדפן (F12) כדי לראות את ה-stack. שאר המסכים ממשיכים לעבוד.' }),
     h('button', { class: 'btn btn-sm', style: { marginTop: '10px' }, onclick: () => ui.go('overview') }, 'חזור לסקירה'),
   );
 }
@@ -172,7 +172,49 @@ function boot() {
   window.addEventListener('hashchange', render);
 
   document.addEventListener('focusout', () => {
-      setTimeout(() => {
+    setTimeout(() => { if (pendingRender) render(); }, 0);
+  });
+
+  document.getElementById('btn-quick-tick')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+      await tick({ reason: 'manual' });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  setInterval(() => {
+    updateTopbar();
+    const s = store.state.settings;
+    if (!s.autopilot) return;
+    const cloudMode = !!(store.state.remote?.updatedAt && s.cloudSync);
+    const gap = Date.now() - (store.state.lastTickAt || 0);
+    const interval = Math.max(3, Number(s.tickSeconds || 4)) * 1000;
+    if (gap >= interval) {
+      tick({ reason: cloudMode ? 'local-nudge' : 'auto' }).catch((err) => console.warn('[autopilot]', err));
+    }
+  }, 1000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      startMarketFeed();
+      const cloudMode = !!(store.state.remote?.updatedAt && store.state.settings.cloudSync);
+      if (cloudMode) syncFromCloud().catch(() => {});
+      else if (store.state.settings.autopilot) catchUp().catch(() => {});
+    }
+  });
+
+  syncFromCloud()
+    .then((res) => {
+      if (res?.ok) toast('נטען מצב ההרצה מהענן (GitHub Actions)', 'ok');
+    })
+    .catch((err) => console.warn('[cloud]', err));
+
+  setTimeout(() => {
     if (store.state.settings.autopilot) {
       tick({ reason: 'boot' }).catch(() => {});
       const cloudMode = !!(store.state.remote?.updatedAt && store.state.settings.cloudSync);
