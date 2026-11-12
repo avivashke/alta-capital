@@ -589,3 +589,64 @@ td{font-size:15px;font-weight:500}
 .sidebar-foot .mini-stat span{font-size:13px}
 .sidebar-foot .mini-stat b{font-size:16px}
 .foot-note{font-size:12px;line-height:1.5}
+
+/* 3D Team Scene */
+.team3d-card{overflow:hidden}
+.team3d-stage{position:relative;height:520px;border-radius:16px;margin-top:8px;overflow:hidden;background:radial-gradient(120% 100% at 50% 0%, #162235 0%, #0b111a 55%, #070b12 100%);border:1px solid var(--line);perspective:1200px}
+.team3d-room{position:absolute;inset:0;transform-style:preserve-3d}
+.team3d-floor{position:absolute;left:-20%;right:-20%;bottom:-30%;height:75%;background:linear-gradient(180deg, rgba(46,204,113,.08), rgba(88,166,255,.03) 40%, rgba(0,0,0,0));transform:rotateX(72deg) translateZ(-40px);transform-origin:bottom;box-shadow:inset 0 0 80px rgba(46,204,113,.08)}
+.team3d-grid{position:absolute;left:-20%;right:-20%;bottom:-30%;height:75%;transform:rotateX(72deg) translateZ(-38px);transform-origin:bottom;background-image:linear-gradient(rgba(88,166,255,.18) 1px, transparent 1px),linear-gradient(90deg, rgba(88,166,255,.18) 1px, transparent 1px);background-size:46px 46px;opacity:.35;animation:gridMove 18s linear infinite}
+@keyframes gridMove{from{background-position:0 0,0 0}to{background-position:0 46px,46px 0}}
+.team3d-holo{position:absolute;left:50%;top:44%;width:220px;height:220px;transform:translate(-50%,-50%) rotateX(68deg);transform-style:preserve-3d}
+.holo-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(46,204,113,.45);box-shadow:0 0 24px rgba(46,204,113,.25), inset 0 0 18px rgba(46,204,113,.12);animation:spin 10s linear infinite}
+.holo-ring.r2{inset:28px;border-color:rgba(88,166,255,.45);animation-duration:7s;animation-direction:reverse}
+.holo-core{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px;border-radius:50%;background:radial-gradient(circle, #7ef0ff, #2ecc71 60%, rgba(0,0,0,0));box-shadow:0 0 30px rgba(46,204,113,.8);animation:pulse 2.2s ease-in-out infinite}
+.holo-label{position:absolute;left:50%;bottom:-18px;transform:translateX(-50%) rotateX(-68deg);font-size:13px;font-weight:700;color:#cfe9ff;white-space:nowrap;text-shadow:0 0 10px rgba(88,166,255,.6)}
+@keyframes spin{to{transform:rotateZ(360deg)}}
+@keyframes pulse{0%,100%{transform:scale(0.9);opacity:.8}50%{transform:scale(1.15);opacity:1}}
+.agent3d{position:absolute;transform:translate(-50%,-50%) translateZ(var(--z,0));transform-style:preserve-3d;width:170px;animation:floatY 4.5s ease-in-out infinite;animation-delay:var(--delay,0s)}
+.agent3d.is-busy{animation-duration:3.2s}
+@keyframes floatY{0%,100%{transform:translate(-50%,-50%) translateZ(var(--z,0)) translateY(0)}50%{transform:translate(-50%,-50%) translateZ(var(--z,0)) translateY(-8px)}}
+.agent3d-shadow{position:absolute;left:50%;bottom:-8px;width:56px;height:14px;margin-left:-28px;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(6px);transform:rotateX(80deg)}
+.agent3d.is-busy .agent3d-shadow{animation:shadowPulse 1.2s ease-in-out infinite}
+@keyframes shadowPulse{0%,100%{transform:rotateX(80deg) scale(1);opacity:.45}50%{transform:rotateX(80deg) scale(.75);opacity:.25}}
+.agent3d-figure{position:relative;width:54px;height:78px;margin:0 auto;transform-style:preserve-3d;animation:idleBob 3.4s ease-in-out infinite;animation-delay:var(--delay,0s)}
+.agent3d.is-busy .agent3d-figure{animation:workMove 1.1s ease-in-out infinite}
+@keyframes idleBob{0%,100%{transform:translateY(0) rotateY(-8deg)}50%{transform:translateY(-3px) rotateY(8deg)}}
+@keyframes workMove{0%,100%{transform:translateY(0) rotateY(-12deg) scale(1)}25%{transform:translateY(-6px) rotateY(10deg) scale(1.02)}50%{transform:translateY(0) rotateY(12deg) scale(1)}75%{transform:translateY(-4px) rotateY(-10deg) scale(1.02)}}
+.agent3d .a-head{position:absolute;left:50%;top:0;width:34px;height:34px;margin-left:-17px;border-radius:50%;background:linear-gradient(160deg,#223247,#121a25);border:2px solid rgba(88,166,255,.45);display:flex;align-items:center;justify-content:center;font-size:16px;color:#e6edf3;box-shadow:0 6px 16px rgba(0,0,0,.4), inset 0 0 10px rgba(88,166,255,.15);z-index:3}
+.agent3d.is-busy .a-head{border-color:rgba(46,204,113,.7);box-shadow:0 0 18px rgba(46,204,113,.35), 0 6px 16px rgba(0,0,0,.4)}
+.agent3d .a-body{position:absolute;left:50%;top:30px;width:30px;height:30px;margin-left:-15px;border-radius:10px 10px 12px 12px;background:linear-gradient(180deg,#2a3a52,#182231);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 18px rgba(0,0,0,.35)}
+.agent3d.is-busy .a-body{background:linear-gradient(180deg,#1f4a38,#162a24);border-color:rgba(46,204,113,.35)}
+.agent3d .a-arm,.agent3d .a-leg{position:absolute;background:#223047;border-radius:6px}
+.agent3d .a-arm{top:34px;width:8px;height:22px;transform-origin:top center}
+.agent3d .a-arm.left{left:6px;transform:rotate(18deg)}
+.agent3d .a-arm.right{right:6px;transform:rotate(-18deg)}
+.agent3d.is-busy .a-arm.left{animation:armL .8s ease-in-out infinite}
+.agent3d.is-busy .a-arm.right{animation:armR .8s ease-in-out infinite}
+@keyframes armL{0%,100%{transform:rotate(18deg)}50%{transform:rotate(-25deg)}}
+@keyframes armR{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(25deg)}}
+.agent3d .a-leg{bottom:0;width:9px;height:20px}
+.agent3d .a-leg.left{left:14px}
+.agent3d .a-leg.right{right:14px}
+.agent3d.is-busy .a-leg.left{animation:step .8s ease-in-out infinite}
+.agent3d.is-busy .a-leg.right{animation:step .8s ease-in-out infinite .4s}
+@keyframes step{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.agent3d-bubble{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);width:220px;max-width:220px;background:rgba(15,22,32,.96);border:1px solid var(--line);border-radius:12px;padding:8px 10px;box-shadow:0 10px 24px rgba(0,0,0,.35);backdrop-filter:blur(4px)}
+.agent3d-bubble::after{content:'';position:absolute;left:50%;bottom:-7px;width:12px;height:12px;margin-left:-6px;background:rgba(15,22,32,.96);border-left:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(-45deg)}
+.agent3d-bubble.think{border-color:rgba(167,139,250,.45)}
+.agent3d-bubble.work,.agent3d-bubble.speak{border-color:rgba(46,204,113,.45)}
+.agent3d-bubble .bubble-kind{font-size:11px;font-weight:800;color:var(--muted);margin-bottom:2px}
+.agent3d-bubble.work .bubble-kind,.agent3d-bubble.speak .bubble-kind{color:var(--green)}
+.agent3d-bubble.think .bubble-kind{color:#a78bfa}
+.agent3d-bubble .bubble-text{font-size:13px;line-height:1.35;color:var(--text);max-height:3.9em;overflow:hidden}
+.agent3d-tag{margin-top:6px;text-align:center}
+.agent3d-tag b{display:block;font-size:14px;font-weight:800;color:var(--text)}
+.agent3d-tag span{display:block;font-size:12px;color:var(--muted)}
+.agent3d-action{margin:6px auto 0;width:160px}
+.agent3d-action .act-text{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;margin-bottom:4px}
+.agent3d-action .act-bar{height:6px;border-radius:999px;background:#16202c;overflow:hidden;border:1px solid var(--line-soft)}
+.agent3d-action .act-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#2ecc71,#58a6ff);box-shadow:0 0 10px rgba(46,204,113,.45);transition:width .4s ease}
+.agent3d-action.idle{text-align:center}
+@media (max-width: 1100px){.team3d-stage{height:720px}.agent3d{width:150px}.agent3d-bubble{width:180px}}
+@media (max-width: 760px){.team3d-stage{height:900px}.team3d-holo{top:18%}.agent3d{width:46%;transform:translate(-50%,-50%)}.agent3d-bubble{width:160px;bottom:88px}}
