@@ -3,16 +3,25 @@
 // לא מסחר בכסף אמת. משתמש במפתחות API מסביבת הבדיקה של Binance.
 // תיעוד: https://developers.binance.com/docs/binance-spot-api-docs/testnet
 
-import crypto from 'node:crypto';
-
 const TESTNET_BASE = 'https://testnet.binance.vision/api/v3';
 
 // עמלת ברירת מחדל של Binance (ניתן לשנות בהגדרות)
 const DEFAULT_MAKER_FEE = 0.001; // 0.1%
 const DEFAULT_TAKER_FEE = 0.001; // 0.1%
 
-function hmacSign(secret, queryString) {
-  return crypto.createHmac('sha256', secret).update(queryString).digest('hex');
+const enc = new TextEncoder();
+async function hmacSign(secret, queryString) {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) throw new Error('Web Crypto API לא זמין בדפדפן/סביבה זו');
+  const key = await subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await subtle.sign('HMAC', key, enc.encode(queryString));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 function buildQuery(params) {
@@ -54,7 +63,7 @@ export class BinanceTestnet {
     let queryString = buildQuery(queryParams);
 
     if (requireSignature) {
-      const signature = hmacSign(this.apiSecret, queryString);
+      const signature = await hmacSign(this.apiSecret, queryString);
       queryString += `&signature=${encodeURIComponent(signature)}`;
     }
 
