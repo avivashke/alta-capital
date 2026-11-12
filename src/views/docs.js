@@ -110,7 +110,7 @@ export function renderDocs(root) {
     h('p', { class: 'small muted', text: 'כמה חשבונות Cloudflare (כל חשבון = 10,000 Neurons ליום):' }),
     commandBlock("gh secret set CLOUDFLARE_KEYS --body '[{\"accountId\":\"abc123\",\"token\":\"cf_...\"},{\"accountId\":\"def456\",\"token\":\"cf_...\"}]'"),
     h('p', { class: 'small muted', text: 'או רשימה מפורשת עם מודלים ובסיסי-URL משלך:' }),
-    commandBlock("gh secret set LLM_KEYS --body '[{\"provider\":\"groq\",\"key\":\"gsk_...\",\"model\":\"llama-3.3-70b-versatile\"}]'"),
+    commandBlock("gh secret set LLM_KEYS --body '[{\"provider\":\"groq\",\"key\":\"gsk_...\",\"model\":\"llama-3.1-8b-instant\"}]'"),
     h('p', { class: 'small muted', style: { marginTop: '10px' } },
       'רוצה שער אחד שמרכז הכל? הרם את DeepakSilaych/free-api-gateway או piyush-tyagi-13/llm-keypool, ואז הגדר LLM_GATEWAY_URL ו-LLM_GATEWAY_KEY — הבריכה תשתמש בו כספק אחד עם מפתח מאוחד.',
     ),

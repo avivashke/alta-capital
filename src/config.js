@@ -52,13 +52,13 @@ export const STRATEGY_LABELS = {
 
 export const LLM_PROVIDERS = {
   openai: { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', shape: 'openai', keyHint: 'sk-...' },
-  openrouter: { label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', model: 'openai/gpt-4o-mini', shape: 'openai', keyHint: 'sk-or-...' },
-  groq: { label: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', model: 'llama-3.3-70b-versatile', shape: 'openai', keyHint: 'gsk_...' },
+  openrouter: { label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', model: 'anthropic/claude-haiku-4.5', shape: 'openai', keyHint: 'sk-or-...' },
+  groq: { label: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', model: 'llama-3.1-8b-instant', shape: 'openai', keyHint: 'gsk_...' },
   deepseek: { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat', shape: 'openai', keyHint: 'sk-...' },
   together: { label: 'Together', baseUrl: 'https://api.together.xyz/v1', model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo', shape: 'openai', keyHint: '...' },
   mistral: { label: 'Mistral', baseUrl: 'https://api.mistral.ai/v1', model: 'mistral-large-latest', shape: 'openai', keyHint: '...' },
   anthropic: { label: 'Anthropic (Claude)', baseUrl: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-5', shape: 'anthropic', keyHint: 'sk-ant-...' },
-  gemini: { label: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta', model: 'gemini-2.0-flash', shape: 'gemini', keyHint: 'AIza...' },
+  gemini: { label: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta', model: 'gemini-3.8-flash', shape: 'gemini', keyHint: 'AIza...' },
   ollama: { label: 'Ollama (מקומי)', baseUrl: 'http://localhost:11434/v1', model: 'llama3.1', shape: 'openai', keyHint: 'ללא מפתח' },
   custom: { label: 'OpenAI-compatible מותאם', baseUrl: '', model: '', shape: 'openai', keyHint: '...' },
 };
