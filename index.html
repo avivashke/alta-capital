@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alta Capital · חדר מסחר של סוכנים</title>
+  <meta name="description" content="חברת השקעות אוטונומית: סוכני מחקר, בקטסט ואופטימיזציה שמאתרים אסטרטגיות מסחר, מייעלים אותן ומעבירים אותן לבוטים בקוד פתוח." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b1017'/%3E%3Cpath d='M6 23 L13 12 L19 19 L26 8' stroke='%232ecc71' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./assets/app.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="26" height="26"><path d="M5 23 L12 12 L18 19 L27 7" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span>
+          <strong>ALTA CAPITAL</strong>
+          <em>חברת השקעות בניהול סוכנים</em>
+        </span>
+      </div>
+      <div class="topbar-actions">
+        <span class="pill" id="pill-data" title="מקור נתוני השוק">—</span>
+        <span class="pill" id="pill-autopilot">אוטופיילוט</span>
+        <span class="pill pill-quiet" id="pill-tick">—</span>
+        <button class="btn btn-ghost btn-sm" id="btn-quick-tick">הרץ מחזור</button>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      <nav id="nav" aria-label="ניווט ראשי"></nav>
+      <div class="sidebar-foot">
+        <div class="mini-stat"><span>מחזורים</span><b id="foot-cycles">0</b></div>
+        <div class="mini-stat"><span>בקטסטים</span><b id="foot-backtests">0</b></div>
+        <div class="foot-note">הרצה על נייר בלבד. אין ביצוע פקודות בשוק אמיתי.</div>
+      </div>
+    </aside>
+
+    <main id="view" class="view" tabindex="-1"></main>
+  </div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <div id="modal-root"></div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

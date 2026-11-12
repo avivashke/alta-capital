@@ -1,0 +1,15 @@
+{
+  "name": "alta-capital",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Agent-run trading research desk: backtests, walk-forward hardening, versioned bot artifacts and a 24/7 runner.",
+  "scripts": {
+    "dev": "ruby -run -e httpd . -p 8080",
+    "firm": "node runner/run.mjs --cycles=5",
+    "firm:deep": "node runner/run.mjs --cycles=5 --deep"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,168 @@
+import { mount } from '../ui.js';
+import { h, commandBlock, notice, tag, openModal, copyText } from '../ui.js';
+import { DESKS, PLATFORMS, LLM_PROVIDERS } from '../config.js';
+
+export function renderDocs(root) {
+  mount(root, 
+    h('div', { class: 'page-head' },
+      h('div', {},
+        h('div', { class: 'eyebrow', text: 'Setup guide' }),
+        h('h1', { text: 'מדריך הקמה והפעלה' }),
+        h('p', { text: 'הכל רץ מדפדפן, בלי שרת ובלי התקנות. שני מסלולים: העלאה דרך ממשק GitHub בלי טרמינל, או טרמינל במקבוק.' }),
+      ),
+    ),
+    notice('המערכת היא מחקר ובקטסטים בלבד. היא לא שולחת פקודות לבורסה ולא מחזיקה כסף. כל הרצה "חיה" היא על נייר.', 'bad'),
+  );
+
+  mount(root, card('מה בדיוק בנינו', h('div', {},
+    h('ul', { class: 'list-clean' },
+      li('חמישה שולחנות מסחר לפי טווח זמן: 5 דקות, 15 דקות, שעה, יומי (סווינג חודשי) ושבועי (סווינג שנתי).'),
+      li('צוות של 8 סוכנים עם תפקידים: מחקר, בקטסט, אופטימיזציה, סיכונים, פיתוח, ביצוע, מודיעין וניהול.'),
+      li('מנוע בקטסט אמיתי על נרות מ-Binance/Kraken/Coinbase (עם נפילה לנתוני הדגמה אם ה-CORS נחסם), כולל עמלות, סטופ ATR וסיזינג לפי סיכון.'),
+      li('אופטימיזציה: דגימה אקראית + טיפוס מקומי, עם חלוקת 70/30 ל-in-sample / out-of-sample.'),
+      li('ניהול גרסאות אוטומטי: כל שיפור של אחוז אחד ב-OOS שמייצר גרסה חדשה, קוד לבוט ורישום ביומן.'),
+      li('מעבר מ-dry-run להרצת נייר חיה אחרי 3 מחזורים נקיים ושערי סיכון.'),
+      li('סורק מחקר: GitHub Search, Fear & Greed, CoinGecko Trending, Reddit ו-endpoint חדשות.'),
+      li('יועץ AI על המודל שלך (OpenAI-compatible / Anthropic / Gemini), עם מצב כללים מקומי בלי מפתח.'),
+    ),
+  )));
+
+  mount(root, card('דרישות מקדימות (macOS)', h('div', {},
+    h('p', { class: 'small muted', text: 'אין צורך ב-Node, ב-npm או ב-build. צריך דפדפן, ו-git רק אם בוחרים במסלול הטרמינל.' }),
+    h('div', { class: 'row wrap', style: { gap: '6px' } }, tag('Safari / Chrome'), tag('git (אופציונלי)'), tag('Ruby — שרת מקומי') ),
+    h('p', { class: 'small muted', style: { marginTop: '10px' }, text: 'בדיקת git:' }),
+    commandBlock('git --version'),
+    h('p', { class: 'small muted', text: 'אם git לא מותקן, מקבוק יציע להתקין את כלי הפיתוח של Xcode — או:' }),
+    commandBlock('xcode-select --install'),
+  )));
+
+  mount(root, card('הרצה מקומית', h('div', { class: 'steps' },
+    step('פתח טרמינל בתיקיית הפרויקט', h('div', {}, commandBlock('cd ~/path/to/alta-capital'))),
+    step('הרץ שרת סטטי מקומי', h('div', {},
+      commandBlock('ruby -run -e httpd . -p 8080'),
+      h('p', { class: 'small muted', text: 'Ruby מותקן בכל מקבוק, ולכן זו הפקודה הבטוחה. אלטרנטיבה: python3 -m http.server 8080 (דורש כלי פיתוח של Xcode).' }),
+      h('p', { class: 'small muted', text: 'חשוב: אסור לפתוח את index.html ישירות (file://) — מודולי ES נחסמים. צריך שרת.' }),
+    )),
+    step('פתח בדפדפן', h('div', {}, commandBlock('open http://localhost:8080'))),
+    step('הפעל את הסוכנים', h('p', { class: 'small muted', text: 'האוטופיילוט דלוק כברירת מחדל. אפשר להריץ מחזור ידני בכפתור "הרץ מחזור" בסרגל העליון.' })),
+  )));
+
+  mount(root, card('העלאה ל-GitHub Pages', h('div', {},
+    h('h3', { text: 'מסלול A — בלי טרמינל (הכי פשוט)' }),
+    h('div', { class: 'steps' },
+      step('צור ריפו ציבורי', h('p', { class: 'small muted', text: 'GitHub → New repository → שם כמו alta-capital → Public → Create.' })),
+      step('העלה את הקבצים', h('p', { class: 'small muted', text: 'בדף הריפו: Add file → Upload files → גרור את כל תוכן התיקייה (כולל assets, src ו-index.html) → Commit changes.' })),
+      step('הפעל Pages', h('p', { class: 'small muted', text: 'Settings → Pages → Source: Deploy from a branch → Branch: main, folder: / (root) → Save.' })),
+      step('פתח את האתר', h('p', { class: 'small muted', text: 'כעבור דקה: https://<USERNAME>.github.io/<REPO>/' })),
+    ),
+    h('h3', { style: { marginTop: '18px' }, text: 'מסלול B — טרמינל' }),
+    h('p', { class: 'small muted', text: 'בתיקיית הפרויקט:' }),
+    commandBlock('git init -b main'),
+    commandBlock('git add .'),
+    commandBlock('git commit -m "Alta Capital: agent-run trading research desk"'),
+    commandBlock('git remote add origin https://github.com/<USERNAME>/<REPO>.git'),
+    commandBlock('git push -u origin main'),
+    h('p', { class: 'small muted', text: 'או עם GitHub CLI:' }),
+    commandBlock('brew install gh'),
+    commandBlock('gh auth login'),
+    commandBlock('gh repo create alta-capital --public --source=. --push'),
+    h('h3', { style: { marginTop: '18px' }, text: 'עדכון אוטומטי דרך Actions' }),
+    h('p', { class: 'small muted', text: 'הפרויקט כולל .github/workflows/pages.yml שמפרסם בכל push ל-main. אחרי ה-push: Settings → Pages → Source: GitHub Actions.' }),
+    notice('הריפו ציבורי = הקוד גלוי. זה בסדר: אין בו מפתחות. המפתחות שאתה מזין בדשבורד נשמרים ב-localStorage של הדפדפן שלך בלבד.', 'blue'),
+  )));
+
+  mount(root, card('חיבור מודל AI', h('div', {},
+    h('ol', { class: 'list-clean' },
+      li('צור מפתח אצל ספק: OpenAI, OpenRouter, Groq, DeepSeek, Anthropic או Gemini.'),
+      li('בדשבורד: הגדרות ומפתחות → מודל AI → בחר ספק, הזן מפתח ובחר מודל.'),
+      li('לחץ "שמור ובדוק מודל" — אם הספק חוסם CORS תקבל שגיאה, ואז אפשר להשתמש ב-OpenRouter/Groq/Gemini.'),
+    ),
+    h('div', { class: 'row wrap', style: { gap: '6px', marginTop: '8px' } },
+      Object.entries(LLM_PROVIDERS).map(([k, p]) => tag(p.label)),
+    ),
+    notice('מפתחות לא נכתבים לשום קובץ בריפו ולא נשלחים לשרת שלנו (אין כזה). הם נשלחים ישירות לספק המודל.', 'blue'),
+  )));
+
+  mount(root, card('מנוע הרווחיות והגרסאות', h('div', {},
+    h('div', { class: 'table-wrap' }, h('table', {},
+      h('thead', {}, h('tr', {}, h('th', { text: 'שולחן' }), h('th', { text: 'טווח' }), h('th', { text: 'אופק' }), h('th', { text: 'מנדט' }))),
+      h('tbody', {}, DESKS.map((d) => h('tr', {},
+        h('td', { text: d.label }), h('td', { class: 'mono', text: d.tf }), h('td', { text: d.horizon }), h('td', { class: 'small muted', text: d.mandate }),
+      ))),
+    )),
+    h('p', { class: 'small muted', style: { marginTop: '10px' } },
+      'כל מחזור: שליפת נרות → אופטימיזציה עם זרע מהגרסה הקיימת → הערכת 70/30 → walk-forward על 4 חלונות → Monte Carlo על רצף העסקאות → רגישות פרמטרים ±15% → ציון חוסן 0-100. ' +
+      'רק אם ה-OOS השתפר ב־0.1% לפחות (ברירת מחדל) וגם החוסן עומד בסף — נפתחת גרסה חדשה ומיוצא קוד לפלטפורמה. אחרי 3 מחזורי dry-run נקיים השולחן עובר להרצת נייר חיה.',
+    ),
+    h('div', { class: 'row wrap', style: { gap: '6px' } },
+      Object.values(PLATFORMS).map((p) => p.repo ? h('a', { class: 'btn btn-sm btn-ghost', href: p.repo, target: '_blank', rel: 'noreferrer' }, `${p.label} ↗`) : null),
+    ),
+  )));
+
+  mount(root, card('מהאתר לבוט אמיתי', h('div', { class: 'steps' },
+    step('הורד את הקוד', h('p', { class: 'small muted', text: 'גרסאות ובוטים → בחר שולחן ופלטפורמה → "הורדה".' })),
+    step('התקן את הפלטפורמה', h('div', {}, commandBlock('git clone https://github.com/freqtrade/freqtrade.git'), commandBlock('cd freqtrade && ./setup.sh -i'))),
+    step('הרץ בקטסט מקומי', h('div', {}, commandBlock('freqtrade backtesting --strategy AltaDesk_1h --config user_data/config.json'))),
+    step('הרץ dry-run עם כסף מדומה', h('div', {}, commandBlock('freqtrade trade --strategy AltaDesk_1h --config user_data/config.json'))),
+    step('השווה לנתונים כאן', h('p', { class: 'small muted', text: 'אם התוצאות החיות רחוקות מהבקטסט — חזור לכאן, החלף משפחת אסטרטגיה או הורד סיכון, והרץ כיול מחדש.' })),
+  )));
+
+  mount(root, card('מגבלות שחייבים להכיר', h('div', {},
+    h('ul', { class: 'list-clean' },
+      li('בלי ה-workflow, האתר סטטי והסוכנים רצים רק כשהטאב פתוח. עם Firm loop (24/7) הם רצים בענן כל 15 דקות גם כשהמחשב סגור.'),
+      li('אין חיבור לבורסה, אין מפתחות מסחר ואין שליחת פקודות. המעבר ל"חי" הוא סימולציה.'),
+      li('נתוני נרות עשויים להיחסם לפי מדינה (Binance) ואז נעשה שימוש ב-Kraken/Coinbase, ואם כולם נכשלים — בנתוני הדגמה.'),
+      li('בקטסט עם אופטימיזציה נוטה ל-overfitting. לכן יש OOS, שערי סיכון ומינימום עסקאות — אבל גם הם לא מבטיחים דבר.'),
+      li('סנטימנט מרשתות הוא פרוקסי רועש. הוא משמש כשכבת אזהרה, לא כאות כניסה.'),
+      li('מסחר ממונף עלול להפסיד את כל ההון. זו מערכת מחקר, לא ייעוץ השקעות.'),
+    ),
+  )));
+
+  mount(root, card('24/7 מוגן — הסוכנים רצים ב-GitHub Actions', h('div', {},
+    h('p', { class: 'small muted' },
+      'האתר נשאר סטטי, אבל מנוע החברה רץ ב-workflow מתוזמן: כל 15 דקות GitHub מרים Node, מריץ מחזור סוכנים על חמישה שולחנות, כותב data/state.json ו-strategies/, והדשבורד קורא משם. ' +
+      'ככה הסוכנים ממשיכים לעבוד כשהמחשב סגור, בלי שרת ובלי עלות.',
+    ),
+    h('div', { class: 'steps' },
+      step('דחוף את הפרויקט', h('div', {},
+        commandBlock('git init -b main && git add . && git commit -m "Alta Capital: agents + 24/7 runner"'),
+        commandBlock('gh repo create alta-capital --public --source=. --push'),
+      )),
+      step('אפשר Pages', h('p', { class: 'small muted', text: 'Settings → Pages → Source: GitHub Actions. ה-workflow pages.yml יפרסם בכל push.' })),
+      step('הרץ את ה-workflow פעם אחת', h('p', { class: 'small muted', text: 'Actions → Firm loop (24/7) → Run workflow. מרגע זה ה-cron (כל 15 דקות) פעיל.' })),
+      step('וודא שהמצב נכתב', h('p', { class: 'small muted', text: 'אחרי ריצה מוצלחת יופיעו data/state.json, data/context.json ו-strategies/. בדשבורד יופיע "ענן 24/7 · פעיל".' })),
+      step('הגן על הענף', h('div', {},
+        h('p', { class: 'small muted', text: 'Settings → Branches → Add branch protection rule עבור main: Require a pull request before merging. ואז Settings → Actions → General → Workflow permissions: Read and write. אם ההגנה חוסמת את הדחיפה של הבוט, הוסף את github-actions[bot] ל-Bypass list (או צור PAT והגדר אותו כ-secret בשם FIRM_GITHUB_TOKEN).' }),
+        commandBlock('gh secret set FIRM_GITHUB_TOKEN'),
+      )),
+    ),
+    h('h3', { style: { marginTop: '16px' }, text: 'מה מוגן ומה לא' }),
+    h('ul', { class: 'list-clean' },
+      li('הדשבורד הציבורי הוא לקריאה בלבד: אין בו שרת, אין נתיב כתיבה, וכל שינוי של מבקר נשמר רק בדפדפן שלו.'),
+      li('את המצב המשותף כותב רק ה-workflow, שמורשה לכתוב לריפו שלך — זרים יכולים רק לפתוח fork או PR, לא לדחוף.'),
+      li('מפתחות API לא נכנסים לריפו: ה-runner מנקה אותם לפני כתיבת state.json, והם חיים רק ב-localStorage שלך.'),
+      li('אם אתה רוצה שגם התוכן עצמו לא יהיה פומבי — ריפו פרטי + GitHub Pro (Pages לריפו פרטי), או Cloudflare Access מעל הדומיין.'),
+      li('אבטחה אמיתית לדשבורד סטטי היא בלתי אפשרית בלי שרת אימות. אל תסתמך על הסתרת כפתורים כאבטחה.'),
+    ),
+    h('h3', { style: { marginTop: '16px' }, text: 'הרצה מקומית של אותו runner' }),
+    h('p', { class: 'small muted', text: 'דורש Node 20+. על המקבוק אפשר להתקין עם brew install node, ואז:' }),
+    commandBlock('npm run firm'),
+    commandBlock('npm run firm:deep'),
+    notice('GitHub מריץ cron לכל היותר כל 5 דקות, ולפעמים באיחור של כמה דקות תחת עומס. אם הריפו לא פעיל 60 יום, GitHub משבית את ה-schedule — מספיק commit קטן כדי להחזיר.', 'blue'),
+  )));
+}
+
+function card(title, body) {
+  return h('div', { class: 'card', style: { marginBottom: '14px' } },
+    h('h2', { style: { marginBottom: '10px' }, text: title }),
+    body,
+  );
+}
+
+function step(title, body) {
+  return h('div', { class: 'step' }, h('div', { class: 'body' }, h('b', { text: title }), body));
+}
+
+function li(text) {
+  return h('li', {}, h('span', { class: 'bul', text: '•' }), h('span', { class: 'grow', text }));
+}
