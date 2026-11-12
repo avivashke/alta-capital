@@ -1,36 +1,67 @@
 {
- "at": "2026-11-12T11:12:31.128Z",
+ "at": "2026-11-12T18:22:32.281Z",
  "summary": [
+  {
+   "desk": "desk_1d",
+   "timeframe": "1d",
+   "ok": true,
+   "published": true,
+   "version": "v1.2",
+   "oos": 16.23,
+   "robustness": 95
+  },
+  {
+   "desk": "desk_1w",
+   "timeframe": "1w",
+   "ok": true,
+   "published": true,
+   "version": "v1.2",
+   "oos": 3.28,
+   "robustness": 74
+  },
+  {
+   "desk": "desk_5m",
+   "timeframe": "5m",
+   "ok": true,
+   "published": false,
+   "version": null,
+   "oos": 2.31,
+   "robustness": 47
+  },
+  {
+   "desk": "desk_15m",
+   "timeframe": "15m",
+   "ok": true,
+   "published": false,
+   "version": null,
+   "oos": 1.81,
+   "robustness": 41
+  },
   {
    "desk": "desk_1h",
    "timeframe": "1h",
    "ok": true,
-   "published": true,
+   "published": false,
    "version": "v1.0",
    "oos": 11.66,
-   "robustness": 94
+   "robustness": 85
   }
  ],
  "stats": {
-  "cycles": 23,
-  "backtests": 2811,
-  "deployments": 9,
-  "scans": 27,
+  "cycles": 28,
+  "backtests": 3432,
+  "deployments": 11,
+  "scans": 30,
   "startedAt": 1794473380871
  },
  "runner": {
-  "cycles": 1,
+  "cycles": 5,
   "deep": false,
-  "durationMs": 4019,
-  "node": "v20.18.0"
+  "durationMs": 1831,
+  "node": "v20.20.2"
  },
  "ai": {
-  "source": "model",
-  "focusDesk": "desk_1h",
-  "strategyId": "ema_trend",
-  "rationale": "בדיקת רוטציה בין חשבונות Cloudflare",
-  "provider": "cloudflare",
-  "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-  "fallbacks": []
+  "ok": false,
+  "reason": "no-model-key"
  }
 }

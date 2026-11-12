@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-12T11:12:31.129Z",
+ "generatedAt": "2026-11-12T18:22:32.282Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -18,42 +18,44 @@
    "version": null,
    "strategyId": "breakout",
    "params": {
-    "period": 27,
-    "atrStop": 2.2,
-    "rr": 1.2,
+    "period": 57,
+    "atrStop": 3.4000000000000004,
+    "rr": 1.8,
     "filter": false
    },
    "metrics": {
-    "returnPct": -6.11,
-    "maxDrawdownPct": 6.2,
-    "sharpe": -33,
-    "profitFactor": 0.21,
-    "winRate": 24.2,
-    "trades": 33,
-    "avgR": -0.127,
-    "expectancy": -6.94,
-    "exposurePct": 36.6,
-    "bestTradePct": 0.327,
-    "worstTradePct": -0.516,
-    "finalEquity": 3521.02,
-    "curvePoints": 800,
-    "barsInMarket": 293
+    "returnPct": -1.86,
+    "maxDrawdownPct": 4.46,
+    "sharpe": -8.03,
+    "profitFactor": 0.63,
+    "winRate": 25,
+    "trades": 16,
+    "avgR": -0.083,
+    "expectancy": -4.68,
+    "exposurePct": 51.5,
+    "bestTradePct": 1.445,
+    "worstTradePct": -0.717,
+    "finalEquity": 3680.24,
+    "curvePoints": 721,
+    "totalFees": 80.8003,
+    "barsInMarket": 371
    },
    "oos": {
-    "returnPct": -2.36,
-    "maxDrawdownPct": 2.36,
-    "sharpe": -38.46,
-    "profitFactor": 0.28,
-    "winRate": 28.6,
-    "trades": 14,
-    "avgR": -0.113,
-    "expectancy": -6.31,
-    "exposurePct": 21.6,
-    "bestTradePct": 0.301,
-    "worstTradePct": -0.537,
-    "finalEquity": 3661.63,
-    "curvePoints": 380,
-    "barsInMarket": 82
+    "returnPct": 2.31,
+    "maxDrawdownPct": 1,
+    "sharpe": 20.47,
+    "profitFactor": 2.59,
+    "winRate": 50,
+    "trades": 8,
+    "avgR": 0.18,
+    "expectancy": 10.15,
+    "exposurePct": 57.7,
+    "bestTradePct": 1.507,
+    "worstTradePct": -0.448,
+    "finalEquity": 3836.52,
+    "curvePoints": 343,
+    "totalFees": 41.6501,
+    "barsInMarket": 198
    },
    "bestReturn": null,
    "versions": []
@@ -67,42 +69,44 @@
    "version": null,
    "strategyId": "momentum",
    "params": {
-    "period": 13,
-    "threshold": 2.4,
-    "atrStop": 3.3000000000000003,
-    "rr": 3.6
+    "period": 28,
+    "threshold": 0.8,
+    "atrStop": 3,
+    "rr": 3
    },
    "metrics": {
-    "returnPct": 1.86,
-    "maxDrawdownPct": 1.11,
-    "sharpe": 4.92,
-    "profitFactor": 2.88,
-    "winRate": 20,
-    "trades": 5,
-    "avgR": 0.251,
-    "expectancy": 18.59,
-    "exposurePct": 4.6,
-    "bestTradePct": 2.847,
-    "worstTradePct": -0.32,
-    "finalEquity": 5092.93,
-    "curvePoints": 800,
-    "barsInMarket": 37
+    "returnPct": -3.19,
+    "maxDrawdownPct": 5.79,
+    "sharpe": -3.89,
+    "profitFactor": 0.64,
+    "winRate": 29.4,
+    "trades": 34,
+    "avgR": -0.065,
+    "expectancy": -4.88,
+    "exposurePct": 33.6,
+    "bestTradePct": 2.804,
+    "worstTradePct": -1.546,
+    "finalEquity": 4840.6,
+    "curvePoints": 721,
+    "totalFees": 218.7528,
+    "barsInMarket": 242
    },
    "oos": {
-    "returnPct": -0.4,
-    "maxDrawdownPct": 0.4,
-    "sharpe": -9.32,
-    "profitFactor": 0,
-    "winRate": 0,
-    "trades": 2,
-    "avgR": -0.133,
-    "expectancy": -9.94,
-    "exposurePct": 2.1,
-    "bestTradePct": -0.132,
-    "worstTradePct": -0.266,
-    "finalEquity": 4980.12,
-    "curvePoints": 380,
-    "barsInMarket": 8
+    "returnPct": 1.81,
+    "maxDrawdownPct": 2.81,
+    "sharpe": 4.11,
+    "profitFactor": 1.71,
+    "winRate": 53.8,
+    "trades": 13,
+    "avgR": 0.088,
+    "expectancy": 6.43,
+    "exposurePct": 43.4,
+    "bestTradePct": 2.948,
+    "worstTradePct": -0.722,
+    "finalEquity": 5090.68,
+    "curvePoints": 343,
+    "totalFees": 89.1047,
+    "barsInMarket": 149
    },
    "bestReturn": null,
    "versions": [
@@ -134,20 +138,21 @@
     "trendFilter": false
    },
    "metrics": {
-    "returnPct": 12.57,
-    "maxDrawdownPct": 5.75,
-    "sharpe": 5.36,
-    "profitFactor": 2.07,
-    "winRate": 58.3,
-    "trades": 36,
-    "avgR": 0.223,
-    "expectancy": 21.69,
-    "exposurePct": 69.3,
-    "bestTradePct": 3.496,
-    "worstTradePct": -1.633,
-    "finalEquity": 7035.78,
-    "curvePoints": 800,
-    "barsInMarket": 554
+    "returnPct": 8.84,
+    "maxDrawdownPct": 6.11,
+    "sharpe": 4.23,
+    "profitFactor": 1.77,
+    "winRate": 54.5,
+    "trades": 33,
+    "avgR": 0.173,
+    "expectancy": 16.49,
+    "exposurePct": 66.3,
+    "bestTradePct": 3.397,
+    "worstTradePct": -1.671,
+    "finalEquity": 6802.68,
+    "curvePoints": 721,
+    "totalFees": 263.5711,
+    "barsInMarket": 478
    },
    "oos": {
     "returnPct": 11.66,
@@ -190,49 +195,56 @@
    "timeframe": "1d",
    "symbol": "BTCUSDT",
    "status": "live",
-   "version": "v1.1",
+   "version": "v1.2",
    "strategyId": "macd_swing",
    "params": {
-    "fast": 6,
-    "slow": 20,
-    "signal": 7,
-    "atrStop": 1.2,
+    "fast": 7,
+    "slow": 22,
+    "signal": 6,
+    "atrStop": 1.3,
     "rr": 4
    },
    "metrics": {
-    "returnPct": 19.97,
-    "maxDrawdownPct": 4.71,
-    "sharpe": 1.28,
-    "profitFactor": 2.23,
-    "winRate": 44,
-    "trades": 25,
-    "avgR": 0.508,
-    "expectancy": 39.86,
-    "exposurePct": 27.7,
-    "bestTradePct": 6.766,
-    "worstTradePct": -1.85,
-    "finalEquity": 5998.45,
+    "returnPct": 24.13,
+    "maxDrawdownPct": 4.39,
+    "sharpe": 1.58,
+    "profitFactor": 2.55,
+    "winRate": 45.8,
+    "trades": 24,
+    "avgR": 0.627,
+    "expectancy": 50.14,
+    "exposurePct": 27.3,
+    "bestTradePct": 6.893,
+    "worstTradePct": -1.926,
+    "finalEquity": 6206.32,
     "curvePoints": 600,
-    "barsInMarket": 166
+    "totalFees": 68.6758,
+    "barsInMarket": 164
    },
    "oos": {
-    "returnPct": 15.25,
-    "maxDrawdownPct": 4.7,
-    "sharpe": 1.57,
-    "profitFactor": 3.03,
-    "winRate": 46.7,
-    "trades": 15,
-    "avgR": 0.655,
-    "expectancy": 50.7,
+    "returnPct": 16.23,
+    "maxDrawdownPct": 4.54,
+    "sharpe": 1.74,
+    "profitFactor": 3.32,
+    "winRate": 50,
+    "trades": 14,
+    "avgR": 0.741,
+    "expectancy": 57.77,
     "exposurePct": 36.1,
-    "bestTradePct": 6.535,
-    "worstTradePct": -1.786,
-    "finalEquity": 5762.36,
+    "bestTradePct": 6.486,
+    "worstTradePct": -1.812,
+    "finalEquity": 5811.62,
     "curvePoints": 285,
+    "totalFees": 46.8248,
     "barsInMarket": 103
    },
-   "bestReturn": 15.25,
+   "bestReturn": 16.23,
    "versions": [
+    {
+     "version": "v1.2",
+     "at": 1794507750777,
+     "oos": 16.23
+    },
     {
      "version": "v1.1",
      "at": 1794479143828,
@@ -251,48 +263,55 @@
    "timeframe": "1w",
    "symbol": "ETHUSDT",
    "status": "live",
-   "version": "v1.1",
+   "version": "v1.2",
    "strategyId": "breakout",
    "params": {
     "period": 10,
-    "atrStop": 1.3,
+    "atrStop": 1.7,
     "rr": 4,
-    "filter": false
+    "filter": true
    },
    "metrics": {
-    "returnPct": 33.42,
-    "maxDrawdownPct": 4.49,
-    "sharpe": 0.81,
-    "profitFactor": 3.41,
-    "winRate": 50,
-    "trades": 26,
-    "avgR": 0.768,
-    "expectancy": 64.25,
-    "exposurePct": 47.9,
-    "bestTradePct": 7.831,
-    "worstTradePct": -2.088,
-    "finalEquity": 6670.89,
+    "returnPct": 16.45,
+    "maxDrawdownPct": 5.54,
+    "sharpe": 0.48,
+    "profitFactor": 3.72,
+    "winRate": 57.9,
+    "trades": 19,
+    "avgR": 0.55,
+    "expectancy": 43.25,
+    "exposurePct": 43.1,
+    "bestTradePct": 6.304,
+    "worstTradePct": -1.612,
+    "finalEquity": 5822.39,
     "curvePoints": 420,
-    "barsInMarket": 201
+    "totalFees": 10.778,
+    "barsInMarket": 181
    },
    "oos": {
-    "returnPct": 2.77,
-    "maxDrawdownPct": 4.14,
-    "sharpe": 0.23,
-    "profitFactor": 1.67,
-    "winRate": 40,
-    "trades": 10,
-    "avgR": 0.195,
-    "expectancy": 13.79,
-    "exposurePct": 41.7,
-    "bestTradePct": 6.032,
-    "worstTradePct": -1.608,
-    "finalEquity": 5138.3,
+    "returnPct": 3.28,
+    "maxDrawdownPct": 2.46,
+    "sharpe": 0.33,
+    "profitFactor": 3.48,
+    "winRate": 66.7,
+    "trades": 9,
+    "avgR": 0.243,
+    "expectancy": 18.17,
+    "exposurePct": 48.2,
+    "bestTradePct": 3.319,
+    "worstTradePct": -0.53,
+    "finalEquity": 5163.98,
     "curvePoints": 199,
-    "barsInMarket": 83
+    "totalFees": 4.171,
+    "barsInMarket": 96
    },
-   "bestReturn": 2.77,
+   "bestReturn": 3.28,
    "versions": [
+    {
+     "version": "v1.2",
+     "at": 1794507750965,
+     "oos": 3.28
+    },
     {
      "version": "v1.1",
      "at": 1794478848705,
@@ -519,7 +538,7 @@
   }
  ],
  "sentiment": {
-  "updatedAt": 1794481951125,
+  "updatedAt": 1794507752279,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 28,
@@ -544,12 +563,12 @@
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.37,
+    "score": -0.29,
     "bias": "דובי",
-    "technical": -0.7,
+    "technical": -0.5,
     "news": 0,
     "drivers": [],
-    "price": 73410.01
+    "price": 71770.6
    },
    "ETHUSDT": {
     "score": -0.37,
@@ -557,25 +576,30 @@
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 2043.02
+    "price": 2014.18
    }
   },
   "headlines": [],
   "trending": [
    {
+    "name": "ni hao cat",
+    "symbol": "MIHAO",
+    "rank": 860
+   },
+   {
     "name": "Seppuku",
     "symbol": "SEPPUKU",
-    "rank": 874
+    "rank": 824
    },
    {
-    "name": "Pudgy Penguins",
-    "symbol": "PENGU",
-    "rank": 115
+    "name": "AudaCity",
+    "symbol": "DACITYCOIN",
+    "rank": 901
    },
    {
-    "name": "ZIG Finance",
-    "symbol": "ZIG",
-    "rank": 420
+    "name": "Rocco",
+    "symbol": "ROCCO",
+    "rank": 840
    },
    {
     "name": "Bitcoin",
@@ -583,34 +607,29 @@
     "rank": 1
    },
    {
-    "name": "Zcash",
-    "symbol": "ZEC",
-    "rank": 11
-   },
-   {
-    "name": "Ethereum",
-    "symbol": "ETH",
-    "rank": 2
+    "name": "Lighter",
+    "symbol": "LIT",
+    "rank": 81
    },
    {
     "name": "Pearl",
     "symbol": "PEARL",
-    "rank": 97
+    "rank": 101
    },
    {
-    "name": "XRP",
-    "symbol": "XRP",
-    "rank": 6
+    "name": "Pudgy Penguins",
+    "symbol": "PENGU",
+    "rank": 116
    },
    {
-    "name": "Pi Network",
-    "symbol": "PI",
-    "rank": 81
+    "name": "Hyperliquid",
+    "symbol": "HYPE",
+    "rank": 10
    },
    {
-    "name": "Chainlink",
-    "symbol": "LINK",
-    "rank": 17
+    "name": "Quantus",
+    "symbol": "QTC",
+    "rank": 887
    }
   ],
   "newsScore": 0
