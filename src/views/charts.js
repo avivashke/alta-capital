@@ -1,4 +1,4 @@
-﻿import { mount, h, num, notice } from '../ui.js';
+import { mount, h, num, notice } from '../ui.js';
 import { store } from '../store.js';
 import { marketState, getCandles, lastPrice } from '../market.js';
 import { ema, rsi, macd, donchian } from '../indicators.js';
