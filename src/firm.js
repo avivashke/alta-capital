@@ -103,7 +103,15 @@ function cfgFor(desk) {
 
 function setAgent(id, patch) {
   const agent = store.state.agents.find((a) => a.id === id);
-  if (agent) Object.assign(agent, patch);
+  if (!agent) return;
+  Object.assign(agent, patch);
+  agent.lastActive = Date.now();
+  // keep visible thought/action for UI: if task/progress updated during busy work, reflect as speech when no explicit speech
+  if (agent.status === 'busy' && !agent.speech && agent.task) {
+    agent.speech = agent.task;
+    agent.speechType = 'status';
+  }
+  if (agent.thinking) agent.speechType = 'think';
 }
 
 function idleAgents() {
@@ -165,9 +173,9 @@ export async function runDeskCycle(desk, opts = {}) {
   desk.lastRunAt = Date.now();
   if (desk.status !== 'live') desk.status = 'optimizing';
   setAgent('quant', { status: 'busy', task: `בונה השערה · ${desk.label}`, progress: 20, speech: `סורקת דפוסים על ${desk.label} · מחפשת כיווני כניסה`, speechType: 'speak' });
-  setAgent('backtest', { status: 'busy', task: `טוען ${desk.symbol} ${desk.tf} ומריץ walk-forward`, progress: 10, speech: `מוריד נרות היסטוריים מ-Binance · מריץ בקטסט על ${desk.tf}`, speechType: 'speak' });
-  setAgent('optimizer', { status: 'busy', task: 'מכייל פרמטרים', progress: 4, thinking: 'בודקת אלפי שילובי פרמטרים ומחפשת את היציב ביותר', speechType: 'think' });
-  setAgent('intel', { status: 'busy', task: 'מצליב עם ממצאי מחקר', progress: 30, speech: 'מצלבת סימני מודיעין מרשתות וחדשות עם הנתונים הטכניים', speechType: 'speak' });
+  setAgent('backtest', { status: 'busy', task: `טוען ${desk.symbol} ${desk.tf} ומריץ walk-forward`, progress: 10, thinking: `מכין חלונות walk-forward על ${desk.symbol} ${desk.tf}, מחשב תשואה/Sharpe/DD ויציבות בין מקטעים`, speech: `מריץ בקטסט וולידציה על ${desk.tf}`, speechType: 'speak' });
+  setAgent('optimizer', { status: 'busy', task: 'מיטוב פרמטרים מתמטי', progress: 4, thinking: 'מריץ חיפוש פרמטרים (grid/random) + hill-climb מקומי, בודק רגישות ומונע overfitting מול OOS', speechType: 'think' });
+  setAgent('intel', { status: 'busy', task: 'סורק GitHub/חדשות לאסטרטגיות ומיטוב', progress: 30, thinking: 'מחפש ריפו של אופטימיזציה, Walk-Forward, גאן (זוויות/זמן/לוח שנה) ואסטרטגיות רווחיות ליישום', speech: 'סורק מקורות מידע ומחלץ רעיונות לשיפור', speechType: 'speak' });
   store.log('info', 'אוריה · CIO', `פותח מחזור על ${desk.label} (${desk.symbol} · ${desk.tf})`);
   liveEmit(true);
 

@@ -22,7 +22,7 @@ const SLOTS = [
 ];
 
 function short(text, n = 38) {
-  const t = String(text || '').replace(/s+/g, ' ').trim();
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
   return t.length > n ? t.slice(0, n - 1) + '…' : t;
 }
 
@@ -35,8 +35,7 @@ function actionInfo(agent) {
   if (agent.focus) parts.push('תחום אחריות: ' + agent.focus);
   if (agent.lastActive) parts.push('עודכן: ' + timeAgo(agent.lastActive));
   if (agent.completed) parts.push('משימות שהושלמו: ' + agent.completed);
-  const full = parts.join('
-') || agent.focus || 'במעקב ומוכן לפעולה';
+  const full = parts.join('\n') || agent.focus || 'במעקב ומוכן לפעולה';
   const kind = agent.thinking ? 'think' : (agent.speech ? (agent.speechType || 'speak') : (busy ? 'work' : 'idle'));
   const headline = agent.thinking || agent.speech || agent.task || agent.focus || (busy ? 'עובד על מחקר ומיטוב…' : 'מוכן לפעולה');
   return { full, kind, headline, busy };
@@ -63,23 +62,19 @@ function teamScene(agents) {
         const progress = Math.max(0, Math.min(100, Number(agent.progress || (busy ? 45 : 0))));
         const since = agent.lastActive ? timeAgo(agent.lastActive) : '';
         const titleDetail = agent.name + ' · ' + agent.role
-          + (agent.focus ? ('
-תחום: ' + agent.focus) : '')
-          + (since ? ('
-פעילות אחרונה: ' + since) : '')
-          + '
-משימות שהושלמו: ' + (agent.completed || 0);
-        const processDetail = info.full + (busy ? ('
-התקדמות: ' + progress + '%') : '');
+          + (agent.focus ? ('\nתחום: ' + agent.focus) : '')
+          + (since ? ('\nפעילות אחרונה: ' + since) : '')
+          + '\nמשימות שהושלמו: ' + (agent.completed || 0);
+        const processDetail = info.full + (busy ? ('\nהתקדמות: ' + progress + '%') : '');
         return h('div', {
           class: 'agent3d ' + (busy ? 'is-busy' : 'is-idle'),
-          style: { left: pos.x + '%', top: pos.y + '%', '--z': pos.z + 'px', '--delay': (i * 0.8) + 's', '--dur': (busy ? 7 : 11) + 's' },
+          style: { left: pos.x + '%', top: pos.y + '%', '--z': pos.z + 'px', '--delay': (i * 0.9) + 's', '--dur': (busy ? 8 : 12) + 's' },
           title: titleDetail,
         },
           h('div', { class: 'agent3d-shadow' }),
           h('div', { class: 'agent3d-bubble ' + info.kind, title: processDetail },
             h('div', { class: 'bubble-kind', text: info.kind === 'think' ? 'מחשבה' : info.kind === 'speak' ? 'עדכון' : busy ? 'פעולה' : 'מוכן' }),
-            h('div', { class: 'bubble-text', text: short(info.headline, 44) }),
+            h('div', { class: 'bubble-text', text: short(info.headline, 40) }),
             h('div', { class: 'bubble-hover', text: info.full }),
           ),
           h('div', { class: 'agent3d-figure' },
@@ -89,11 +84,11 @@ function teamScene(agents) {
             h('div', { class: 'a-leg left' }), h('div', { class: 'a-leg right' }),
           ),
           h('div', { class: 'agent3d-tag' },
-            h('b', { class: 'a-name', text: short(agent.name, 14), title: titleDetail }),
-            h('span', { class: 'a-role', text: short(agent.role, 22), title: titleDetail }),
+            h('b', { class: 'a-name', text: short(agent.name, 12), title: titleDetail }),
+            h('span', { class: 'a-role', text: short(agent.role, 18), title: titleDetail }),
           ),
           h('div', { class: 'agent3d-action ' + (busy ? 'active' : 'idle'), title: processDetail },
-            h('div', { class: 'act-text', text: short(busy ? (agent.task || info.headline) : (agent.focus || 'במעקב וסריקה'), 30) }),
+            h('div', { class: 'act-text', text: short(busy ? (agent.task || info.headline) : (agent.focus || 'במעקב וסריקה'), 28) }),
             h('div', { class: 'act-bar' }, h('i', { style: { width: progress + '%' } })),
           ),
         );
@@ -125,7 +120,7 @@ export function renderAgents(root, ui) {
     h('div', { class: 'card-head' },
       h('div', {},
         h('h2', { text: 'חלל עבודה תלת־ממדי · שידור חי' }),
-        h('div', { class: 'card-sub', text: 'תוויות מקוצרות לנראות נקייה; העבר עכבר על שם, תפקיד, בועה או תהליך כדי לראות פירוט מלא ומחשבות.' }),
+        h('div', { class: 'card-sub', text: 'תצוגה מרווחת וסייברית. תוויות מקוצרות לנראות נקייה; העבר עכבר על שם, תפקיד, בועה או תהליך כדי לראות פירוט מלא ומחשבות.' }),
       ),
       h('span', { class: 'pill pill-sim', text: 'LIVE' }),
     ),
@@ -177,14 +172,13 @@ function detailedAgent(agent) {
   const busy = agent.status === 'busy';
   const info = actionInfo(agent);
   const progress = Math.max(0, Math.min(100, Number(agent.progress || 0)));
-  const full = info.full + (busy ? ('
-התקדמות: ' + progress + '%') : '');
+  const full = info.full + (busy ? ('\nהתקדמות: ' + progress + '%') : '');
   return h('div', { class: 'agent-detail ' + (busy ? 'busy' : ''), title: full },
     h('div', { class: 'av', text: agent.icon || '☻' }),
     h('div', { class: 'grow' },
       h('div', { class: 'who' }, h('b', { text: agent.name }), h('span', { text: ' · ' + agent.role })),
       h('div', { class: 'small', text: busy ? (agent.task || info.headline) : (agent.focus || 'במעקב') }),
-      h('div', { class: 'small muted', style: { marginTop: '4px', whiteSpace: 'pre-wrap' }, text: short(info.full, 220) }),
+      h('div', { class: 'small muted', style: { marginTop: '4px', whiteSpace: 'pre-wrap' }, text: short(info.full.replace(/\n/g, ' · '), 180) }),
       busy ? h('div', { class: 'act-bar', style: { marginTop: '6px' } }, h('i', { style: { width: progress + '%' } })) : null,
     ),
     h('div', { class: 'tiny muted mono', text: agent.lastActive ? timeAgo(agent.lastActive) : '' }),
