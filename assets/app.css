@@ -98,26 +98,27 @@ code, .mono { font-family: var(--mono); font-size: 12px; }
 
 .sidebar {
   grid-area: side;
-  padding: 18px 12px 14px;
+  padding: 14px 10px 12px;
   border-left: 1px solid var(--line);
-  display: flex; flex-direction: column; justify-content: space-between; gap: 18px;
+  display: flex; flex-direction: column; gap: 12px;
   position: sticky; top: 62px; height: calc(100vh - 62px);
+  overflow-y: auto; overflow-x: hidden;
   background: linear-gradient(180deg, rgba(12, 18, 25, .7), rgba(8, 12, 17, .2));
 }
-#nav { display: flex; flex-direction: column; gap: 3px; flex: 1; justify-content: space-between; }
+#nav { display: flex; flex-direction: column; gap: 4px; }
 .nav-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 9px 11px; border-radius: 10px;
+  padding: 10px 12px; border-radius: 10px;
   border: 1px solid transparent; background: none; color: var(--muted);
   font-family: inherit; font-size: 13px; text-align: right; cursor: pointer;
   width: 100%; transition: background .15s, color .15s, border-color .15s;
 }
-.nav-item span.ic { width: 18px; text-align: center; opacity: .9; }
+.nav-item span.ic { width: 18px; text-align: center; opacity: .9; flex-shrink: 0; }
 .nav-item:hover { background: var(--panel); color: var(--text); }
 .nav-item.active { background: linear-gradient(90deg, rgba(46,204,113,.14), rgba(46,204,113,.02)); color: var(--text); border-color: rgba(46,204,113,.22); }
 .nav-item.active span.ic { color: var(--green); }
-.nav-sep { height: 1px; background: var(--line-soft); margin: 8px 6px; }
-.sidebar-foot { border-top: 1px solid var(--line); padding-top: 12px; }
+.nav-sep { height: 1px; background: var(--line-soft); margin: 6px 4px; }
+.sidebar-foot { border-top: 1px solid var(--line); padding-top: 12px; margin-top: auto; }
 .mini-stat { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); padding: 2px 4px; }
 .mini-stat b { color: var(--text); font-family: var(--mono); }
 .foot-note { margin-top: 10px; font-size: 10px; color: var(--muted-2); line-height: 1.5; padding: 0 4px; }
