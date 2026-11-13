@@ -1,16 +1,15 @@
-// src/paper_portfolio.js
-// מנוע תיק דמה (Paper Trading) עם $100,000 וירטואליים.
-// מחשב עמלות Binance אמיתיות ומס רווחי הון בישראל (25%).
-// סימולציה בלבד — אינו מבטיח רווח, אינו מחבר לכסף אמת.
+// מנוע תיק נייר (Paper Trading) — ברירת מחדל $100,000.
+// מחשב עמלות ומס רווחי הון (25% בישראל) על רווח ממומש.
+// סימולציה בלבד — לא מחובר לכסף אמיתי.
 
-const מיסרווחי_הון_ישראל = 0.25; // 25% מס רווחי הון לפי חוק מס הכנסה
+const TAX_RATE_IL = 0.25;
 
 export class PaperPortfolio {
   constructor({
     initialBalance = 100000,
     makerFee = 0.001,
     takerFee = 0.001,
-    taxRate = מיסרווחי_הון_ישראל,
+    taxRate = TAX_RATE_IL,
   } = {}) {
     this.initialBalance = initialBalance;
     this.cash = initialBalance;
@@ -24,14 +23,14 @@ export class PaperPortfolio {
     this.isActive = false;
   }
 
-  activate({ reason = 'בדיקת עבר עברה את הסף' } = {}) {
+  activate({ reason = 'בדיקת עבר/אישור הפעלה' } = {}) {
     this.isActive = true;
-    this.log(`תיק הדמה הופעל: ${reason}`);
+    this.log(`תיק דמה הופעל: ${reason}`);
   }
 
-  deactivate({ reason = 'נעצר על ידי משתמש' } = {}) {
+  deactivate({ reason = 'נעצר' } = {}) {
     this.isActive = false;
-    this.log(`תיק הדמה הושבת: ${reason}`);
+    this.log(`תיק דמה הושבת: ${reason}`);
   }
 
   log(text) {
@@ -46,116 +45,7 @@ export class PaperPortfolio {
 
   buy({ symbol, price, quantity, timestamp = Date.now(), isTaker = true }) {
     if (!this.isActive) {
-      return { success: false, error: 'תיק הדמה לא פעיל — יש לעבור בדיקת עבר רווחית קודם' };
-    }
-
-    const notional = price * quantity;
-    const fee = this.feeAmount(isTaker, price, quantity);
-    const totalCost = notional + fee;
-
-    if (totalCost > this.cash) {
-      return { success: false, error: 'אין מספיק מזומן בתיק הדמה' };
-    }
-
-    this.cash -= totalCost;
-
-    const existing = this.positions[symbol];
-    if (existing) {
-      const totalCostBefore = existing.quantity * existing.averageEntryPrice;
-      const newQuantity = existing.quantity + quantity;
-      existing.averageEntryPrice = (totalCostBefore + notional + fee) / newQuantity;
-      existing.quantity = newQuantity;
-    } else {
-      this.positions[symbol] = {
-        quantity,
-        averageEntryPrice: (notional + fee) / quantity,
-      };
-    }
-
-    const trade = {
-      timestamp,
-      symbol,
-      side: 'BUY',
-      price,
-      quantity,
-      notional,
-      fee,
-      cashAfter: this.cash,
-    };
-    this.trades.push(trade);
-    return { success: true, trade };
-  }
-
-  sell({ symbol, price, quantity, timestamp = Date.now(), isTaker = true }) {
-    if (!this.isActive) {
-      return { success: false, error: 'תיק הדמה לא פעיל — יש לעבור בדיקת עבר רווחית קודם' };
-    }
-
-    const existing = this.positions[symbol];
-    if (!existing || existing.quantity < quantity) {
-      return { success: false, error: 'אין כמות מספיקה למכירה בתיק הדמה' };
-    }
-
-    const notional = price * quantity;
-    const fee = this.feeAmount(isTaker, price, quantity);
-    const netProceeds = notional - fee;
-    this.cash += netProceeds;
-
-    const costOfSold = quantity * existing.averageEntryPrice;
-    const realizedPnL = netProceeds - costOfSold;
-
-    let tax = 0;
-    if (realizedPnL > 0) {
-      const taxableGain = Math.max(0, realizedPnL - this.capitalLossesCarryForward);
-      tax = taxableGain * this.taxRate;
-      this.capitalLossesCarryForward = Math.max(0, this.capitalLossesCarryForward - realizedPnL);
-      this.taxAccumulated += tax;
-      this.cash -= tax;
-    } else if (realizedPnL < 0) {
-      this.capitalLossesCarryForward += Math.abs(realizedPnL);
-    }
-
-    existing.quantity -= quantity;
-    if (existing.quantity <= 0) {
-      delete this.positions[symbol];
-    }
-
-    const trade = {
-      timestamp,
-      symbol,
-      side: 'SELL',
-      price,
-      quantity,
-      notional,
-      fee,
-      realizedPnL,
-      tax,
-      cashAfter: this.cash,
-    };
-    this.trades.push(trade);
-    return { success: true, trade, realizedPnL, tax };
-  }
-
-  getEquity(currentPrices = {}) {
-    let positionsValue = 0;
-    for (const [symbol, pos] of Object.entries(this.positions)) {
-      const currentPrice = currentPrices[symbol] ?? pos.averageEntryPrice;
-      positionsValue += pos.quantity * currentPrice;
-    }
-    return this.cash + positionsValue;
-  }
-
-  getReport(currentPrices = {}) {
-    const equity = this.getEquity(currentPrices);
-    const grossPnL = equity - this.initialBalance;
-
-    const totalFees = this.trades.reduce((sum, t) => sum + (t.fee || 0), 0);
-    const totalTax = this.taxAccumulated;
-
-    const netPnL = grossPnL - totalFees - totalTax;
-    const returnPct = (netPnL / this.initialBalance) * 100;
-
-    return {
+      return {
       initialBalance: this.initialBalance,
       equity: Math.round(equity * 100) / 100,
       cash: Math.round(this.cash * 100) / 100,
@@ -168,6 +58,7 @@ export class PaperPortfolio {
       openPositions: Object.keys(this.positions).length,
       taxAccumulated: Math.round(this.taxAccumulated * 100) / 100,
       isActive: this.isActive,
+      positions: { ...this.positions },
     };
   }
 
@@ -179,11 +70,11 @@ export class PaperPortfolio {
 
 export function createPaperPortfolio(settings = {}) {
   const paper = settings.paperTrading || {};
+  const initial = Number(paper.initialBalance) || Number(settings.capital) || 100000;
   return new PaperPortfolio({
-    initialBalance: paper.initialBalance ?? 100000,
+    initialBalance: initial,
     makerFee: paper.makerFee ?? 0.001,
     takerFee: paper.takerFee ?? 0.001,
-    taxRate: paper.taxRate ?? מיסרווחי_הון_ישראל,
+    taxRate: paper.taxRate ?? TAX_RATE_IL,
   });
 }
-

@@ -128,9 +128,9 @@ async function callEntry(entry, opts) {
     const data = await res.json();
     return extractText(entry.shape || 'openai', data);
   } catch (err) {
-    if (err?.name === 'AbortError') throw new LlmError('מודל לא ענה בזמן', 408);
+    if (err?.name === 'AbortError') throw new LlmError('הפרוקסי לא ענה בזמן (timeout)', 408);
     if (err instanceof LlmError) throw err;
-    throw new LlmError(err?.message || 'שגיאת רשת', 0);
+    throw new LlmError(err?.message || 'שגיאת רשת בחיבור לפרוקסי Cloudflare', 0);
   } finally {
     clearTimeout(timer);
   }
@@ -138,67 +138,28 @@ async function callEntry(entry, opts) {
 
 // The single configured model is just another entry, so one code path serves both.
 export function legacyEntry(state = store.state) {
-  const cfg = state.settings?.llm;
-  if (!cfg) return null;
-  const def = LLM_PROVIDERS[cfg.provider] || LLM_PROVIDERS.openai;
-  const key = (cfg.apiKey || '').trim();
-  if (!key && cfg.provider !== 'ollama') return null;
-  return {
-    id: 'legacy',
-    provider: cfg.provider || 'openai',
-    label: def.label,
-    shape: def.shape || 'openai',
-    baseUrl: (cfg.baseUrl || def.baseUrl || '').trim(),
-    model: (cfg.model || def.model || '').trim(),
-    key,
-    accountId: cfg.accountId || '',
-    enabled: true,
-    valid: true,
-  };
+  // מושבת: המערכת עובדת כרגע רק עם פרוקסי Cloudflare Worker
+  return null;
 }
 
 export function webllmEntry() {
-  if (!webllm.isReady()) return null;
-  return {
-    id: 'webllm',
-    provider: 'webllm',
-    label: 'WebLLM (in-browser)',
-    shape: 'openai',
-    baseUrl: '',
-    model: webllm.currentModelId() || 'webllm',
-    key: '',
-    accountId: null,
-    enabled: true,
-    valid: true,
-    lastUsedAt: null,
-    uses: 0,
-  };
+  // מושבת: המערכת עובדת כרגע רק עם פרוקסי Cloudflare Worker
+  return null;
 }
 
 export function candidates(state = store.state) {
-  const pool = availableEntries(state);
-  const out = pool.slice();
-  const legacy = legacyEntry(state);
-  if (legacy && !pool.some((e) => e.key === legacy.key && e.model === legacy.model)) {
-    out.push({ ...legacy, lastUsedAt: Infinity });
-  }
-  const wl = webllmEntry();
-  if (wl) out.push(wl);
-  if (out.length) return out;
-  return legacy ? [legacy] : [];
+  // רק חיבורי פרוקסי Cloudflare/Worker (gateway)
+  return availableEntries(state).filter((e) =>
+    e.provider === 'gateway' || /workers\.dev|cloudflare/i.test(e.baseUrl || '') || /\/chat(\/completions)?$/i.test(e.baseUrl || '')
+  );
 }
 
 export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
   const state = store.state;
   const temperature = Number(state.settings?.llm?.temperature ?? 0.4);
   const list = candidates(state);
-  if (!list.length) throw new LlmError('אין מודל זמין — הוסף מפתח לבריכת המודלים בהגדרות');
-
-  // Cap the walk so a broken pool cannot hold the cycle forever, but always keep the
-  // unlimited in-browser model as the last resort: it cannot 429.
+  if (!list.length) throw new LlmError('לא הוגדר פרוקסי Cloudflare Worker פעיל. בהגדרות > חיבור AI לסוכנים הזן כתובת Worker, בחר מודל ושמור.', 0);
   const queue = list.slice(0, 8);
-  const local = list.find((e) => e.provider === 'webllm');
-  if (local && !queue.includes(local)) queue.push(local);
 
   const attempts = [];
   for (const entry of queue) {
@@ -221,7 +182,7 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
     }
   }
   store.save();
-  throw new LlmError('כל המודלים בבריכה נכשלו · ' + attempts.map((a) => `${a.provider}: ${a.error}`).join(' | '));
+  throw new LlmError('כל הנסיונות להתחבר לפרוקסי Cloudflare נכשלו · ' + attempts.map((a) => `${a.provider}: ${a.error}`).join(' | '));
 }
 
 export async function chat(opts) {

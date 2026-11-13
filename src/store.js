@@ -14,7 +14,7 @@ export function defaults() {
     settings: {
       autopilot: true,
       tickSeconds: 4,
-      capital: 25000,
+      capital: 100000,
       riskPerTrade: 0.015,
       maxDrawdown: 0.3,
       minTrades: 10,
@@ -89,6 +89,46 @@ export const store = {
     }
     this.ensureTeam();
     return this.state;
+  },
+
+  ensureCloudflareProxy() {
+    const st = this.state?.settings;
+    if (!st) return;
+    const url = (st.cloudflareProxyUrl || 'https://alta-groq.avivashke95.workers.dev/v1').trim() || 'https://alta-groq.avivashke95.workers.dev/v1';
+    const model = (st.cloudflareProxyModel || 'openai/gpt-oss-120b').trim() || 'openai/gpt-oss-120b';
+    st.cloudflareProxyUrl = url;
+    st.cloudflareProxyModel = model;
+    if (!st.pool || !Array.isArray(st.pool.entries)) st.pool = { entries: [], updatedAt: null };
+    // keep only/ensure our embedded gateway proxy as available default
+    const exists = st.pool.entries.find((e) => e.provider === 'gateway' && (e.baseUrl || '').replace(/\/+$/,'') === url.replace(/\/+$/,''));
+    if (!exists) {
+      st.pool.entries = [{
+        id: 'cf_proxy_default',
+        provider: 'gateway',
+        label: 'Cloudflare Worker Proxy (Alta)',
+        shape: 'openai',
+        baseUrl: url,
+        accountId: '',
+        model,
+        key: st.cloudflareProxyKey || '',
+        enabled: true,
+        valid: true,
+        weight: 1,
+        addedAt: Date.now(),
+        lastUsedAt: null,
+        uses: 0,
+        day: new Date().toISOString().slice(0,10),
+        dayCount: 0,
+        minuteStart: 0,
+        minuteCount: 0,
+        cooldownUntil: 0,
+        failStreak: 0,
+        lastError: '',
+      }];
+      st.pool.updatedAt = Date.now();
+    } else {
+      exists.enabled = true; exists.valid = true; exists.model = exists.model || model; exists.key = exists.key || (st.cloudflareProxyKey || '');
+    }
   },
 
   ensureTeam() {

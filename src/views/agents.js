@@ -61,7 +61,7 @@ function actionInfo(agent) {
   if (agent.completed) parts.push('משימות שהושלמו: ' + agent.completed);
   const full = parts.join('\n') || agent.focus || 'במעקב ומוכן לפעולה';
   const kind = agent.thinking ? 'think' : (agent.speech ? (agent.speechType || 'speak') : (busy ? 'work' : 'idle'));
-  const headline = agent.thinking || agent.speech || agent.task || agent.focus || (busy ? 'עובד על מחקר ומיטוב…' : 'מוכן לפעולה');
+  const headline = agent.thinking || agent.speech || agent.task || agent.focus || (busy ? 'עובד על משימה בחדר…' : 'במעקב ומוכן לפעולה');
   return { full, kind, headline, busy };
 }
 
@@ -100,7 +100,7 @@ function teamScene(agents) {
       const walkDur = (7 + (i % 4)) + 's';
       agentEls.push(h('div', {
         class: 'agent3d ' + (busy ? 'is-busy' : 'is-idle') + ' in-' + rid,
-        style: { left: pos.x + '%', top: pos.y + '%', '--delay': (i * 0.6) + 's', '--walkdur': walkDur, '--face': facing },
+        style: { left: pos.x + '%', top: pos.y + '%', '--delay': (i * 0.6) + 's', '--walkdur': walkDur, '--face': facing, '--dx': ((i%3)-1)*2 + 'px', '--dy': ((i%2)*2-1)*2 + 'px', '--i': i },
         title: titleDetail,
       },
         h('div', { class: 'agent3d-bubble ' + info.kind, title: processDetail },
