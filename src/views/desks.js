@@ -1,36 +1,62 @@
-import { mount } from '../ui.js';
-import { store } from '../store.js';
-import { h, pct, num, section, statusTag, chart, tag, notice, empty } from '../ui.js';
+﻿import { store } from '../store.js';
+import { h, pct, num, money, section, statusTag, chart, tag, notice, empty } from '../ui.js';
 import { metricsTable, gateList, strategyName } from './shared.js';
-import { runDeskCycle, resetDesk, setDeskStatus } from '../firm.js';
+import { runDeskCycle, resetDesk, setDeskStatus, getPaperPortfolio, ensurePaperPortfolio } from '../firm.js';
+import { quotes } from '../market.js';
+
+function mount(root, ...children) {
+  for (const child of children.flat(6)) {
+    if (child == null || child === false) continue;
+    root.appendChild(child instanceof Node ? child : document.createTextNode(String(child)));
+  }
+  return root;
+}
 
 export function renderDesks(root, ui) {
   const state = store.state;
   const s = state.settings;
+  const pf = getPaperPortfolio() || ensurePaperPortfolio();
+  const report = pf.getReport(quotes);
 
   const act = async (fn, label) => {
     try { await fn(); ui.rerender(); } catch (err) { console.error(err); }
   };
 
-  mount(root, 
+  mount(root,
     h('div', { class: 'page-head' },
       h('div', {},
         h('div', { class: 'eyebrow', text: 'Trading desks' }),
         h('h1', { text: 'שולחנות מסחר' }),
-        h('p', { text: 'כל שולחן מתמחה בטווח זמן אחר. הסוכנים כיילו משפחת אסטרטגיה, מדדים ופרמטרים בנפרד, והקידום לידי ביטוי הוא פר־שולחן.' }),
+        h('p', { text: 'כל שולחן מתמחה בטווח זמן אחר. הסוכנים מכיילים אסטרטגיה, מדדים ופרמטרים בנפרד, והרווח מוצג לאחר עמלות ומס בהתאם לתיק הנייר.' }),
       ),
       h('div', { class: 'head-actions' },
-        h('span', { class: 'pill pill-quiet', text: `סה״כ הון: ${num(s.capital)}$` }),
-        h('span', { class: 'pill pill-quiet', text: `סיכון לעסקה: ${(s.riskPerTrade * 100).toFixed(1)}%` }),
+        h('span', { class: 'pill pill-quiet', text: `סה״כ הון: ${money(s.capital)}` }),
+        h('span', { class: 'pill pill-quiet', text: `סיכון לעסקה: ${(Number(s.riskPerTrade || 0) * 100).toFixed(1)}%` }),
       ),
     ),
   );
 
+  mount(root, h('div', { class: 'card', style: { marginBottom: '14px' } },
+    h('div', { class: 'card-head' },
+      h('div', {},
+        h('h2', { text: 'שורת רווח תיק הנייר (משותף)' }),
+        h('div', { class: 'card-sub', text: 'מחושב לאחר ניכוי עמלות ומס רווחי הון (כמו בתיק מסחר).' }),
+      ),
+      h('span', { class: 'pill ' + (report.netPnL >= 0 ? 'pill-live' : 'pill-warn'), text: (report.netPnL >= 0 ? 'רווחי' : 'בהפסד') + ' נטו' }),
+    ),
+    h('div', { class: 'grid cols-4' },
+      h('div', { class: 'metric' }, h('span', { text: 'רווח/הפסד נטו (לאחר עמלות ומס)' }), h('b', { class: report.netPnL >= 0 ? 'green mono' : 'red mono', text: money(report.netPnL) + ' · ' + pct(report.returnPct) })),
+      h('div', { class: 'metric' }, h('span', { text: 'הון עצמי נוכחי' }), h('b', { class: 'mono', text: money(report.equity) })),
+      h('div', { class: 'metric' }, h('span', { text: 'עמלות ששולמו' }), h('b', { class: 'mono', text: money(report.totalFees) })),
+      h('div', { class: 'metric' }, h('span', { text: 'מס רווחי הון שנצבר' }), h('b', { class: 'mono', text: money(report.totalTax) })),
+    ),
+  ));
+
   state.desks.forEach((desk) => {
     mount(root, h('div', { class: 'card', style: { marginBottom: '14px' } },
-      h('div', { class: 'row between', style: { alignItems: 'flex-start', flexWrap: 'wrap' } },
+      h('div', { class: 'row between', style: { alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' } },
         h('div', {},
-          h('div', { class: 'row', style: { gap: '8px' } },
+          h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } },
             h('h2', { text: desk.label }),
             statusTag(desk.status),
             tag(desk.symbol),
@@ -42,12 +68,16 @@ export function renderDesks(root, ui) {
       ),
       h('div', { class: 'profit-strip ' + ((desk.livePnl ?? desk.bestReturn ?? 0) >= 0 ? 'up' : 'down') },
         h('div', { class: 'profit-item main' },
-          h('div', { class: 'lab', text: 'רווח נייר נוכחי' }),
+          h('div', { class: 'lab', text: 'ביצועי נייר (P&L %)' }),
           h('div', { class: 'val mono ' + ((desk.livePnl || 0) >= 0 ? 'green' : 'red'), text: pct(desk.livePnl || 0) }),
         ),
         h('div', { class: 'profit-item' },
           h('div', { class: 'lab', text: 'תשואת Out-of-sample' }),
           h('div', { class: 'val mono ' + (desk.bestReturn == null ? '' : desk.bestReturn >= 0 ? 'green' : 'red'), text: desk.bestReturn == null ? '—' : pct(desk.bestReturn) }),
+        ),
+        h('div', { class: 'profit-item' },
+          h('div', { class: 'lab', text: 'תרומת הון משוערת (לפני/אחרי בתיק)' }),
+          h('div', { class: 'val mono ' + ((desk.livePnl || 0) >= 0 ? 'green' : 'red'), text: money((s.capital * (desk.weight || 0.2)) * ((desk.livePnl || 0) / 100)) }),
         ),
         h('div', { class: 'profit-item' },
           h('div', { class: 'lab', text: 'עסקאות / חשיפה' }),
@@ -61,7 +91,7 @@ export function renderDesks(root, ui) {
       h('div', { class: 'grid cols-2', style: { marginTop: '12px' } },
         h('div', {},
           h('div', { class: 'row between', style: { marginBottom: '6px' } },
-            h('div', { class: 'small muted', text: `הון מוקצה: ${num(s.capital * (desk.weight || 0.2))}$ · ${desk.metrics?.trades ?? 0} עסקאות · חשיפה ${desk.metrics?.exposurePct ?? 0}%` }),
+            h('div', { class: 'small muted', text: `הון מוקצה: ${money(s.capital * (desk.weight || 0.2))} · ${desk.metrics?.trades ?? 0} עסקאות · חשיפה ${desk.metrics?.exposurePct ?? 0}%` }),
             h('div', { class: 'tiny muted', text: desk.lastRunAt ? `עודכן ${new Date(desk.lastRunAt).toLocaleTimeString('he-IL')}` : 'טרם רץ' }),
           ),
           chart(desk.equity, { height: 120, color: 'green', showZero: true }),
@@ -86,7 +116,7 @@ export function renderDesks(root, ui) {
           ),
         ),
       ),
-      desk.metrics ? h('div', { style: { marginTop: '12px' } }, metricsTable(desk)) : empty('אין עדיין תוצאות בקטסט לשולחן הזה'),
+      desk.metrics ? h('div', { style: { marginTop: '12px' } }, metricsTable(desk)) : empty('אין עדיין תוצאות בקטסט לשולחן זה'),
       desk.history.length ? h('div', { style: { marginTop: '12px' } },
         h('h3', { style: { fontSize: '13px' }, text: 'גרסאות אחרונות' }),
         h('div', { class: 'table-wrap' }, h('table', {},
@@ -108,5 +138,5 @@ export function renderDesks(root, ui) {
     ));
   });
 
-  mount(root, notice('המדדים מחושבים על נרות היסטוריים עם עמלות והחלקה. out-of-sample הוא 30% האחרון של הסדרה — הוא לא מהווה ערובה לביצועים עתידיים.'));
+  mount(root, notice('שורת הרווח בתיק מוצגת גם כאן ומשקפת רווח/הפסד נטו לאחר עמלות ומס רווחי הון. מדדי עבר אינם ערובה לביצועים עתידיים.', 'blue'));
 }

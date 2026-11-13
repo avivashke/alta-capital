@@ -27,6 +27,7 @@ export function defaults() {
       autoCreateRobots: true,
       cloudflareProxyUrl: '',
       cloudflareProxyKey: '',
+      cloudflareProxyModel: 'openai/gpt-oss-120b',
       feeRate: 0.0004,
       makerFee: 0.00025,
       takerFee: 0.0004,
@@ -96,6 +97,17 @@ export const store = {
         ...a, status: 'idle', task: 'ממתין למחזור הראשון', progress: 0, completed: 0,
         speech: null, speechType: 'speak', thinking: null,
       }));
+    } else {
+      // merge newly added roster agents into existing saved state
+      const have = new Set(this.state.agents.map((a) => a.id));
+      for (const a of AGENT_ROSTER) {
+        if (!have.has(a.id)) {
+          this.state.agents.push({
+            ...a, status: 'idle', task: 'מצטרף לצוות ומתחיל סריקה', progress: 0, completed: 0,
+            speech: null, speechType: 'speak', thinking: null,
+          });
+        }
+      }
     }
     if (!this.state.desks?.length) {
       this.state.desks = DESKS.map((d) => ({

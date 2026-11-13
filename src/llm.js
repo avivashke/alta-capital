@@ -43,6 +43,7 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
   if (!entry.model) throw new LlmError('לא הוגדר שם מודל');
   const history = historyOf(messages);
   const shape = entry.shape || 'openai';
+  const isProxyChat = /\/chat$/i.test(base) || entry.provider === 'gateway';
 
   if (shape === 'anthropic') {
     return {
@@ -82,9 +83,10 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
     };
   }
 
-  if (!entry.key && entry.provider !== 'ollama') throw new LlmError('חסר מפתח API');
+  if (!entry.key && entry.provider !== 'ollama' && !(isProxyChat && /\/chat$/i.test(base))) throw new LlmError('חסר מפתח API');
+  const chatUrl = /\/chat$/i.test(base) ? base : (base + '/chat/completions');
   return {
-    url: base + '/chat/completions',
+    url: chatUrl,
     init: {
       method: 'POST',
       headers: {
