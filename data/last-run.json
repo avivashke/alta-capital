@@ -1,41 +1,41 @@
 {
- "at": "2026-11-13T06:16:57.384Z",
+ "at": "2026-11-13T14:50:55.961Z",
  "summary": [
   {
    "desk": "desk_1d",
    "timeframe": "1d",
    "ok": true,
-   "published": true,
+   "published": false,
    "version": "v1.4",
    "oos": 18.14,
-   "robustness": 96
+   "robustness": 95
   },
   {
    "desk": "desk_1w",
    "timeframe": "1w",
    "ok": true,
    "published": true,
-   "version": "v1.3",
-   "oos": 3.61,
-   "robustness": 75
+   "version": "v1.4",
+   "oos": 4.64,
+   "robustness": 73
   },
   {
    "desk": "desk_5m",
    "timeframe": "5m",
    "ok": true,
-   "published": true,
+   "published": false,
    "version": "v1.0",
    "oos": 5.77,
-   "robustness": 78
+   "robustness": 84
   },
   {
    "desk": "desk_15m",
    "timeframe": "15m",
    "ok": true,
-   "published": true,
+   "published": false,
    "version": "v1.0",
    "oos": 4.07,
-   "robustness": 64
+   "robustness": 82
   },
   {
    "desk": "desk_1h",
@@ -44,20 +44,20 @@
    "published": false,
    "version": "v1.0",
    "oos": 11.66,
-   "robustness": 75
+   "robustness": 92
   }
  ],
  "stats": {
-  "cycles": 38,
-  "backtests": 4674,
-  "deployments": 16,
-  "scans": 36,
+  "cycles": 43,
+  "backtests": 5295,
+  "deployments": 17,
+  "scans": 39,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 2412,
+  "durationMs": 2478,
   "node": "v20.20.2"
  },
  "ai": {

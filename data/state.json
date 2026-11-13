@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "createdAt": "2026-11-12T08:49:40.870Z",
- "lastTickAt": 1794550616292,
+ "lastTickAt": 1794581454882,
  "settings": {
   "autopilot": true,
   "tickSeconds": 7,
@@ -18,6 +18,7 @@
   "autoCreateRobots": true,
   "cloudflareProxyUrl": "",
   "cloudflareProxyKey": "",
+  "cloudflareProxyModel": "openai/gpt-oss-120b",
   "feeRate": 0.0004,
   "makerFee": 0.00025,
   "takerFee": 0.0004,
@@ -34,7 +35,7 @@
   },
   "pool": {
    "entries": [],
-   "updatedAt": 1794550614969
+   "updatedAt": 1794581453480
   },
   "github": {
    "token": "",
@@ -71,23 +72,23 @@
    "bestReturn": 5.77,
    "baselineReturn": 5.77,
    "metrics": {
-    "returnPct": 3.73,
-    "maxDrawdownPct": 2.52,
-    "sharpe": 15.49,
-    "profitFactor": 1.86,
-    "winRate": 41.2,
-    "trades": 17,
-    "avgR": 0.141,
-    "expectancy": 7.91,
-    "exposurePct": 45.6,
-    "bestTradePct": 2.275,
-    "worstTradePct": -0.646,
-    "finalEquity": 3889.92,
+    "returnPct": 3.91,
+    "maxDrawdownPct": 1.8,
+    "sharpe": 15.07,
+    "profitFactor": 1.79,
+    "winRate": 44.4,
+    "trades": 18,
+    "avgR": 0.145,
+    "expectancy": 8.15,
+    "exposurePct": 51,
+    "bestTradePct": 2.299,
+    "worstTradePct": -1.387,
+    "finalEquity": 3896.69,
     "curvePoints": 721,
-    "totalFees": 87.3759,
-    "barsInMarket": 329
+    "totalFees": 94.0958,
+    "barsInMarket": 368
    },
-   "fitness": 9.27,
+   "fitness": 7.98,
    "equity": [
     3750,
     3750,
@@ -111,145 +112,145 @@
     3750,
     3750,
     3750,
-    3747.11,
-    3725.79,
-    3725.79,
-    3725.79,
-    3725.79,
-    3725.79,
-    3725.79,
-    3725.79,
-    3725.79,
-    3725.79,
-    3725.79,
-    3725.79,
-    3725.79,
-    3725.79,
-    3722.96,
-    3730.88,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3711.26,
-    3716.18,
-    3693.28,
-    3693.28,
-    3693.28,
-    3693.28,
-    3693.28,
-    3693.28,
-    3693.28,
-    3682.77,
-    3689.81,
-    3685.88,
-    3689.25,
-    3679.03,
-    3674.71,
-    3682.38,
-    3684.31,
-    3687.52,
-    3693.28,
-    3693.82,
-    3689.65,
-    3679.42,
-    3679.42,
-    3682.21,
-    3698.91,
-    3687.25,
-    3682.63,
-    3683.69,
-    3678.35,
-    3691.86,
-    3702.23,
-    3699.98,
-    3692.54,
-    3690.42,
-    3693.85,
-    3692.92,
-    3695.34,
-    3686.16,
-    3686.16,
-    3686.16,
-    3686.16,
-    3687.99,
-    3685.96,
-    3681.63,
-    3687.15,
-    3684.09,
-    3684.82,
-    3683.94,
-    3676.31,
-    3676.31,
-    3676.31,
-    3678.15,
-    3664.57,
-    3655.61,
-    3655.61,
-    3655.61,
-    3655.61,
-    3655.61,
-    3666.19,
-    3667.09,
-    3678.76,
-    3681.31,
-    3705.97,
-    3703.4,
-    3713.74,
-    3735.12,
-    3759.35,
-    3763.53,
-    3770.55,
-    3751.23,
-    3744.5,
-    3755.08,
-    3755.71,
-    3743.96,
-    3744.86,
-    3744.03,
-    3735.45,
-    3735.45,
-    3735.45,
-    3735.45,
-    3735.45,
-    3735.45,
-    3735.45,
-    3735.45,
-    3735.45,
-    3735.45,
-    3735.45,
-    3735.45,
-    3735.45,
-    3729.53,
-    3719.18,
-    3719.18,
-    3718.55,
-    3724.64,
-    3709.05,
-    3718.88,
-    3735.96,
-    3744.92,
-    3762.08,
-    3793.93,
-    3828.27,
-    3835.56,
-    3838.3,
-    3849.53,
-    3847.97,
-    3861.42,
-    3898.94,
-    3889.92
+    3750,
+    3750,
+    3750,
+    3750,
+    3750,
+    3750,
+    3750,
+    3750,
+    3750,
+    3750,
+    3731.83,
+    3731.83,
+    3731.83,
+    3731.83,
+    3731.83,
+    3731.83,
+    3731.83,
+    3723.45,
+    3728.32,
+    3720.79,
+    3727.76,
+    3724.29,
+    3713.07,
+    3723.06,
+    3722.77,
+    3726.06,
+    3731.83,
+    3734.68,
+    3728.17,
+    3717.82,
+    3717.82,
+    3717.82,
+    3737.52,
+    3732.19,
+    3721.07,
+    3728.4,
+    3719.53,
+    3718.56,
+    3738.29,
+    3736.72,
+    3733.32,
+    3725.2,
+    3730.99,
+    3736.59,
+    3734.98,
+    3732.57,
+    3724.63,
+    3724.63,
+    3724.63,
+    3722.09,
+    3724.19,
+    3720.22,
+    3721.74,
+    3727.52,
+    3726.15,
+    3726.01,
+    3714.69,
+    3714.69,
+    3714.69,
+    3716.54,
+    3700.59,
+    3693.77,
+    3693.77,
+    3693.77,
+    3693.77,
+    3693.77,
+    3710.06,
+    3705.36,
+    3713.94,
+    3719.74,
+    3740.72,
+    3742.05,
+    3758.71,
+    3774.11,
+    3798.59,
+    3802.82,
+    3812.14,
+    3790.39,
+    3783.01,
+    3794.28,
+    3793.96,
+    3783.05,
+    3779.73,
+    3783.11,
+    3774.44,
+    3774.44,
+    3774.44,
+    3774.44,
+    3774.44,
+    3774.44,
+    3774.44,
+    3774.44,
+    3774.44,
+    3774.44,
+    3774.44,
+    3774.44,
+    3774.44,
+    3768.46,
+    3758,
+    3758,
+    3758,
+    3763.52,
+    3756.57,
+    3757.7,
+    3765.88,
+    3784.01,
+    3801.35,
+    3833.53,
+    3864.29,
+    3875.6,
+    3884.17,
+    3889.72,
+    3899.66,
+    3901.73,
+    3899,
+    3921.5,
+    3903.03,
+    3887.63,
+    3883.99,
+    3883.99,
+    3883.99,
+    3883.99,
+    3883.99,
+    3883.99,
+    3883.99,
+    3883.99,
+    3876.34,
+    3878.7,
+    3879.64,
+    3871.39,
+    3880.47,
+    3881.69,
+    3875.75,
+    3874.08,
+    3872.72,
+    3914.57,
+    3896.69,
+    3896.69,
+    3896.69
    ],
    "history": [
     {
@@ -276,279 +277,279 @@
      "note": "גרסה ראשונה שעברה את סף הרווחיות"
     }
    ],
-   "dryRunCycles": 1,
+   "dryRunCycles": 2,
    "liveTrades": [],
    "livePnl": 0,
-   "lastRunAt": 1794550615678,
+   "lastRunAt": 1794581454327,
    "generatedCode": "# ============================================================\n# Alta Capital — auto-generated strategy artifact\n# Desk: תוך־יומי · 5 דקות · BTCUSDT · 5m\n# Version: v1.0 · Strategy family: breakout\n# Backtest: return 3.73% · PF 1.86 · DD 2.52% · trades 17\n# OOS: 5.77% · Sharpe 15.49\n# Params: {\"period\":60,\"atrStop\":3.4000000000000004,\"rr\":1.8,\"filter\":false}\n# Target platform: Freqtrade\n# Generated: 2026-11-13T06:16:55.882Z\n# Research artifact only — no warranty, no live order routing.\n# ============================================================\n# Drop this file in freqtrade/user_data/strategies/ and run:\n#   freqtrade backtesting --strategy Altadesk_5m --config user_data/config.json\n#   freqtrade trade --strategy Altadesk_5m --config user_data/config.json --dry-run\n\nfrom freqtrade.strategy import IStrategy\nfrom pandas import DataFrame\nimport talib.abstract as ta\n\n\nclass Altadesk_5m(IStrategy):\n    INTERFACE_VERSION = 3\n\n    timeframe = '5m'\n    can_short = True\n    startup_candle_count = 210\n\n    stoploss = -0.041\n    minimal_roi = {\"0\": 1.62, \"240\": 0.01, \"720\": 0}\n\n    trailing_stop = False\n    process_only_new_candles = True\n    use_exit_signal = True\n    exit_profit_only = False\n\n    def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe['dc_high'] = dataframe['high'].rolling(60).max()\n        dataframe['dc_low'] = dataframe['low'].rolling(60).min()\n        dataframe['dc_mid'] = (dataframe['dc_high'] + dataframe['dc_low']) / 2\n        dataframe['atr'] = ta.ATR(dataframe, timeperiod=14)\n        return dataframe\n\n    def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe.loc[\n            (\n        & (dataframe['close'] > dataframe['dc_high'].shift(1))\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_long',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['close'] < dataframe['dc_low'].shift(1))\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_short',\n        ] = 1\n        return dataframe\n\n    def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        # Risk-managed exits: ATR stop + fixed R multiple handled by the engine.\n        dataframe.loc[\n            (\n        & (dataframe['close'] > dataframe['dc_high'].shift(1))\n            ),\n            'exit_short',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['close'] < dataframe['dc_low'].shift(1))\n            ),\n            'exit_long',\n        ] = 1\n        return dataframe\n",
    "openTrade": null,
    "ideas": [],
    "assessment": {
-    "robustness": 78,
+    "robustness": 84,
     "walkForward": {
      "folds": [
       {
        "fold": 1,
-       "from": 1794377700000,
-       "to": 1794420600000,
-       "returnPct": -1.8,
-       "trades": 4,
-       "profitFactor": 0,
-       "maxDrawdownPct": 1.83
-      },
-      {
-       "fold": 2,
-       "from": 1794420900000,
-       "to": 1794463800000,
-       "returnPct": -0.79,
-       "trades": 4,
-       "profitFactor": 0.16,
+       "from": 1794408600000,
+       "to": 1794451500000,
+       "returnPct": -0.6,
+       "trades": 3,
+       "profitFactor": 0.15,
        "maxDrawdownPct": 1.21
       },
       {
+       "fold": 2,
+       "from": 1794451800000,
+       "to": 1794494700000,
+       "returnPct": 1.52,
+       "trades": 8,
+       "profitFactor": 2.23,
+       "maxDrawdownPct": 1.25
+      },
+      {
        "fold": 3,
-       "from": 1794464100000,
-       "to": 1794507000000,
-       "returnPct": 0.57,
-       "trades": 7,
-       "profitFactor": 1.3,
-       "maxDrawdownPct": 1
+       "from": 1794495000000,
+       "to": 1794537900000,
+       "returnPct": 2.76,
+       "trades": 6,
+       "profitFactor": 3.39,
+       "maxDrawdownPct": 1.74
       },
       {
        "fold": 4,
-       "from": 1794507300000,
-       "to": 1794550500000,
-       "returnPct": 4.9,
-       "trades": 7,
-       "profitFactor": 4.23,
-       "maxDrawdownPct": 1.74
+       "from": 1794538200000,
+       "to": 1794581400000,
+       "returnPct": 3.24,
+       "trades": 8,
+       "profitFactor": 2.25,
+       "maxDrawdownPct": 1.8
       }
      ],
-     "consistency": 0.5,
-     "positiveFolds": 2,
+     "consistency": 0.75,
+     "positiveFolds": 3,
      "totalFolds": 4,
-     "avgReturn": 0.72,
-     "worstReturn": -1.8,
-     "dispersion": 2.56
+     "avgReturn": 1.73,
+     "worstReturn": -0.6,
+     "dispersion": 1.48
     },
     "monteCarlo": {
      "available": true,
      "iterations": 700,
-     "p05": -1.78,
-     "p50": 3.64,
-     "p95": 10.27,
-     "ddP95": 3.8,
-     "probProfit": 0.84,
+     "p05": -2.42,
+     "p50": 3.76,
+     "p95": 12,
+     "ddP95": 4.9,
+     "probProfit": 0.83,
      "ruinProb": 0,
      "histogram": [
       {
-       "from": -5.09,
-       "to": -3.96,
-       "count": 9
-      },
-      {
-       "from": -3.96,
-       "to": -2.83,
-       "count": 11
-      },
-      {
-       "from": -2.83,
-       "to": -1.69,
-       "count": 21
-      },
-      {
-       "from": -1.69,
-       "to": -0.56,
-       "count": 38
-      },
-      {
-       "from": -0.56,
-       "to": 0.57,
-       "count": 66
-      },
-      {
-       "from": 0.57,
-       "to": 1.71,
-       "count": 58
-      },
-      {
-       "from": 1.71,
-       "to": 2.84,
-       "count": 88
-      },
-      {
-       "from": 2.84,
-       "to": 3.97,
-       "count": 84
-      },
-      {
-       "from": 3.97,
-       "to": 5.11,
-       "count": 69
-      },
-      {
-       "from": 5.11,
-       "to": 6.24,
-       "count": 79
-      },
-      {
-       "from": 6.24,
-       "to": 7.37,
-       "count": 65
-      },
-      {
-       "from": 7.37,
-       "to": 8.51,
-       "count": 40
-      },
-      {
-       "from": 8.51,
-       "to": 9.64,
-       "count": 26
-      },
-      {
-       "from": 9.64,
-       "to": 10.77,
-       "count": 19
-      },
-      {
-       "from": 10.77,
-       "to": 11.91,
-       "count": 18
-      },
-      {
-       "from": 11.91,
-       "to": 13.04,
+       "from": -7.35,
+       "to": -5.97,
        "count": 5
       },
       {
-       "from": 13.04,
-       "to": 14.17,
-       "count": 2
+       "from": -5.97,
+       "to": -4.59,
+       "count": 7
       },
       {
-       "from": 14.17,
-       "to": 15.31,
-       "count": 2
+       "from": -4.59,
+       "to": -3.21,
+       "count": 13
+      },
+      {
+       "from": -3.21,
+       "to": -1.83,
+       "count": 25
+      },
+      {
+       "from": -1.83,
+       "to": -0.46,
+       "count": 49
+      },
+      {
+       "from": -0.46,
+       "to": 0.92,
+       "count": 67
+      },
+      {
+       "from": 0.92,
+       "to": 2.3,
+       "count": 98
+      },
+      {
+       "from": 2.3,
+       "to": 3.68,
+       "count": 84
+      },
+      {
+       "from": 3.68,
+       "to": 5.06,
+       "count": 79
+      },
+      {
+       "from": 5.06,
+       "to": 6.44,
+       "count": 71
+      },
+      {
+       "from": 6.44,
+       "to": 7.82,
+       "count": 66
+      },
+      {
+       "from": 7.82,
+       "to": 9.2,
+       "count": 55
+      },
+      {
+       "from": 9.2,
+       "to": 10.57,
+       "count": 30
+      },
+      {
+       "from": 10.57,
+       "to": 11.95,
+       "count": 16
+      },
+      {
+       "from": 11.95,
+       "to": 13.33,
+       "count": 14
+      },
+      {
+       "from": 13.33,
+       "to": 14.71,
+       "count": 10
+      },
+      {
+       "from": 14.71,
+       "to": 16.09,
+       "count": 6
+      },
+      {
+       "from": 16.09,
+       "to": 17.47,
+       "count": 5
       }
      ]
     },
     "sensitivity": {
      "available": true,
-     "baseReturn": 3.73,
-     "mean": 2.69,
-     "sd": 1.06,
-     "sensitivity": 0.22,
+     "baseReturn": 3.91,
+     "mean": 2.41,
+     "sd": 1.16,
+     "sensitivity": 0.24,
      "brokenSamples": 0,
      "samples": [
       {
        "key": "period",
        "factor": 0.85,
-       "returnPct": 3.82,
-       "profitFactor": 1.9,
+       "returnPct": 4.33,
+       "profitFactor": 1.95,
        "trades": 17
       },
       {
        "key": "period",
        "factor": 1.15,
-       "returnPct": 3.73,
-       "profitFactor": 1.86,
-       "trades": 17
+       "returnPct": 3.91,
+       "profitFactor": 1.79,
+       "trades": 18
       },
       {
        "key": "atrStop",
        "factor": 0.85,
-       "returnPct": 1.91,
-       "profitFactor": 1.37,
-       "trades": 19
+       "returnPct": 1.57,
+       "profitFactor": 1.27,
+       "trades": 20
       },
       {
        "key": "atrStop",
        "factor": 1.15,
-       "returnPct": 1.33,
-       "profitFactor": 1.36,
-       "trades": 13
+       "returnPct": 1.02,
+       "profitFactor": 1.29,
+       "trades": 12
       },
       {
        "key": "rr",
        "factor": 0.85,
        "returnPct": 2.17,
-       "profitFactor": 1.46,
-       "trades": 18
+       "profitFactor": 1.42,
+       "trades": 19
       },
       {
        "key": "rr",
        "factor": 1.15,
-       "returnPct": 1.24,
-       "profitFactor": 1.31,
+       "returnPct": 0.98,
+       "profitFactor": 1.27,
        "trades": 14
       },
       {
        "key": "filter",
        "factor": 0.85,
-       "returnPct": 3.65,
-       "profitFactor": 1.85,
+       "returnPct": 2.66,
+       "profitFactor": 1.52,
        "trades": 17
       },
       {
        "key": "filter",
        "factor": 1.15,
-       "returnPct": 3.65,
-       "profitFactor": 1.85,
+       "returnPct": 2.66,
+       "profitFactor": 1.52,
        "trades": 17
       }
      ]
     },
-    "trades": 17,
-    "assessedAt": 1794550615881
+    "trades": 18,
+    "assessedAt": 1794581454549
    },
-   "robustness": 78,
+   "robustness": 84,
    "technical": {
-    "price": 68355.2,
-    "bias": -0.48,
+    "price": 68824.7,
+    "bias": -0.55,
     "biasLabel": "דובי חזק",
-    "confidence": 78,
+    "confidence": 74,
     "trend": {
-     "score": -0.78,
+     "score": -0.87,
      "label": "מגמת ירידה",
-     "ema20": 68503.66,
-     "ema50": 69078.79,
-     "ema200": 70782.85,
-     "adx": 51.5,
-     "slopePct": -0.44
+     "ema20": 69187.82,
+     "ema50": 69213.78,
+     "ema200": 69730.55,
+     "adx": 16.7,
+     "slopePct": -0.31
     },
     "momentum": {
-     "score": -0.04,
-     "label": "מומנטום חלש",
-     "rsi": 40.1,
-     "macdHist": 21.1863,
-     "roc10": -0.32,
+     "score": -0.39,
+     "label": "מומנטום שלילי",
+     "rsi": 30.3,
+     "macdHist": -65.5914,
+     "roc10": -0.81,
      "state": "ניטרלי"
     },
     "volatility": {
-     "atrPct": 0.33,
-     "bbWidthPct": 1.01,
-     "regime": "רגילה"
+     "atrPct": 0.29,
+     "bbWidthPct": 1.7,
+     "regime": "גבוהה"
     },
     "structure": {
-     "position": 0.08,
+     "position": 0.41,
      "support": 68080.8,
-     "resistance": 71540.1,
-     "distToHighPct": 4.66,
-     "distToLowPct": 0.4
+     "resistance": 69882.2,
+     "distToHighPct": 1.54,
+     "distToLowPct": 1.08
     },
     "volume": {
-     "score": -0.47,
+     "score": -0.25,
      "label": "נפח מחליש"
     },
     "summary": [
-     "מגמה: ירידה · ADX 51",
-     "מומנטום: RSI 40 · ROC10 -0.3%",
-     "תנודתיות: רגילה · ATR 0.3% מהמחיר",
-     "מבנה: 8% מהטווח · תמיכה 68080.80 · התנגדות 71540.10",
+     "מגמה: ירידה · ADX 17",
+     "מומנטום: RSI 30 · ROC10 -0.8%",
+     "תנודתיות: גבוהה · ATR 0.3% מהמחיר",
+     "מבנה: 41% מהטווח · תמיכה 68080.80 · התנגדות 69882.20",
      "נפח: מתנגד לכיוון"
     ],
-    "at": 1794550616452
+    "at": 1794581455180
    },
    "oosMetrics": {
     "returnPct": 5.77,
@@ -640,23 +641,23 @@
    "bestReturn": 4.07,
    "baselineReturn": 4.07,
    "metrics": {
-    "returnPct": 1.98,
+    "returnPct": 1.71,
     "maxDrawdownPct": 4.04,
-    "sharpe": 2.78,
-    "profitFactor": 1.29,
-    "winRate": 28.6,
-    "trades": 28,
-    "avgR": 0.048,
-    "expectancy": 3.41,
-    "exposurePct": 28.7,
-    "bestTradePct": 2.99,
-    "worstTradePct": -0.837,
-    "finalEquity": 5099.08,
+    "sharpe": 2.33,
+    "profitFactor": 1.24,
+    "winRate": 27.6,
+    "trades": 29,
+    "avgR": 0.042,
+    "expectancy": 2.95,
+    "exposurePct": 32.6,
+    "bestTradePct": 2.997,
+    "worstTradePct": -0.839,
+    "finalEquity": 5085.62,
     "curvePoints": 721,
-    "totalFees": 171.4756,
-    "barsInMarket": 207
+    "totalFees": 181.8482,
+    "barsInMarket": 235
    },
-   "fitness": 5.08,
+   "fitness": 5.1,
    "equity": [
     5000,
     5000,
@@ -679,146 +680,146 @@
     5000,
     5000,
     5000,
-    4992.32,
-    4987.7,
-    4987.7,
-    4987.7,
-    4987.7,
-    4987.7,
-    4987.7,
-    4987.7,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    4975.37,
-    5033.44,
-    5036.85,
-    5025.41,
-    5013.44,
-    5016.8,
-    5008.08,
-    5008.08,
-    5008.08,
-    5042.37,
-    4972.71,
-    5023.7,
-    5012.53,
-    4975.63,
-    4956.11,
-    4956.11,
-    4998.5,
-    4953.56,
-    4953.56,
-    4953.56,
-    4953.56,
-    4936.51,
-    4951.8,
-    4951.8,
-    4951.8,
-    4951.8,
-    4951.8,
-    4937.7,
-    4909.94,
-    4909.94,
-    4909.94,
-    4909.94,
-    4903.06,
-    4935.02,
-    4930.92,
-    4918.95,
-    5048.69,
-    5048.52,
-    5105.94,
-    5109.85,
-    5077.04,
-    5076.29,
-    5063.78,
-    5058.01,
-    5040.06,
-    5040.64,
-    5040.64,
-    5040.64,
-    5040.64,
-    5031.05,
-    5019.77,
-    4986.72,
-    4986.72,
-    4986.72,
-    4986.72,
-    4986.72,
-    4986.72,
-    4986.72,
-    4986.72,
-    4986.72,
-    4998.52,
-    4988.66,
-    4955.31,
-    4954.69,
-    4951.91,
-    4956.1,
-    4967.45,
-    4953.62,
-    4944.05,
-    4954.55,
-    4949.1,
-    4949.1,
-    4929.45,
-    4929.45,
-    4929.45,
-    4929.45,
-    4929.45,
-    4920.23,
-    4938.48,
-    4974.56,
-    4947.17,
-    4950.23,
-    4944.66,
-    4931.66,
-    4943.27,
-    4930.86,
-    4930.86,
-    4930.86,
-    4930.86,
-    4930.86,
-    4972.2,
-    5080.34,
-    5100.21,
-    5099.08
+    4996.87,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    4987.64,
+    5047.65,
+    5018.76,
+    5036.71,
+    5028.56,
+    5025.48,
+    5017.37,
+    5020.43,
+    5020.43,
+    5066.23,
+    5017.27,
+    5023.05,
+    5024.07,
+    4987.9,
+    4984.42,
+    4968.33,
+    4963.54,
+    4962.99,
+    4965.78,
+    4965.78,
+    4965.78,
+    4965.78,
+    4964.01,
+    4964.01,
+    4964.01,
+    4964.01,
+    4964.01,
+    4964.01,
+    4922.05,
+    4922.05,
+    4922.05,
+    4922.05,
+    4922.05,
+    4938.44,
+    4942.01,
+    4952.85,
+    5058.64,
+    5034.6,
+    5112.36,
+    5119.19,
+    5105.84,
+    5093.38,
+    5072.96,
+    5071.72,
+    5048.4,
+    5053.07,
+    5053.07,
+    5053.07,
+    5053.07,
+    5053.07,
+    5033.76,
+    4999.01,
+    4999.01,
+    4999.01,
+    4999.01,
+    4999.01,
+    4999.01,
+    4999.01,
+    4999.01,
+    4999.01,
+    4984.15,
+    5008.31,
+    4972.49,
+    4972.22,
+    4964.11,
+    4964.11,
+    4979.07,
+    4950.25,
+    4974.37,
+    4960.88,
+    4961.3,
+    4961.3,
+    4941.6,
+    4941.6,
+    4941.6,
+    4941.6,
+    4941.6,
+    4954.09,
+    4978.87,
+    4955.98,
+    4970.18,
+    4941.99,
+    4956.85,
+    4950.12,
+    4959.14,
+    4943.02,
+    4943.02,
+    4943.02,
+    4943.02,
+    4943.02,
+    4975.58,
+    5054.5,
+    5105.82,
+    5124.08,
+    5081.13,
+    5091.6,
+    5089.86,
+    5113.89,
+    5138.25,
+    5127.32,
+    5139.38,
+    5085.62
    ],
    "history": [
     {
@@ -893,279 +894,279 @@
      "note": "גרסה ראשונה שעברה את סף הרווחיות"
     }
    ],
-   "dryRunCycles": 1,
+   "dryRunCycles": 2,
    "liveTrades": [],
    "livePnl": 0,
-   "lastRunAt": 1794550615882,
+   "lastRunAt": 1794581454552,
    "generatedCode": "# ============================================================\n# Alta Capital — auto-generated strategy artifact\n# Desk: תוך־יומי · 15 דקות · ETHUSDT · 15m\n# Version: v1.0 · Strategy family: momentum\n# Backtest: return 1.98% · PF 1.29 · DD 4.04% · trades 28\n# OOS: 4.07% · Sharpe 2.78\n# Params: {\"period\":21,\"threshold\":0.8,\"atrStop\":3.6,\"rr\":2.2}\n# Target platform: Freqtrade\n# Generated: 2026-11-13T06:16:56.097Z\n# Research artifact only — no warranty, no live order routing.\n# ============================================================\n# Drop this file in freqtrade/user_data/strategies/ and run:\n#   freqtrade backtesting --strategy Altadesk_15m --config user_data/config.json\n#   freqtrade trade --strategy Altadesk_15m --config user_data/config.json --dry-run\n\nfrom freqtrade.strategy import IStrategy\nfrom pandas import DataFrame\nimport talib.abstract as ta\n\n\nclass Altadesk_15m(IStrategy):\n    INTERFACE_VERSION = 3\n\n    timeframe = '15m'\n    can_short = True\n    startup_candle_count = 210\n\n    stoploss = -0.043\n    minimal_roi = {\"0\": 1.98, \"240\": 0.01, \"720\": 0}\n\n    trailing_stop = False\n    process_only_new_candles = True\n    use_exit_signal = True\n    exit_profit_only = False\n\n    def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe['roc'] = ta.ROC(dataframe, timeperiod=21)\n        dataframe['atr'] = ta.ATR(dataframe, timeperiod=14)\n        return dataframe\n\n    def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe.loc[\n            (\n        & (dataframe['roc'] > 0.80)\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_long',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['roc'] < -0.80)\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_short',\n        ] = 1\n        return dataframe\n\n    def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        # Risk-managed exits: ATR stop + fixed R multiple handled by the engine.\n        dataframe.loc[\n            (\n        & (dataframe['roc'] > 0.80)\n            ),\n            'exit_short',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['roc'] < -0.80)\n            ),\n            'exit_long',\n        ] = 1\n        return dataframe\n",
    "openTrade": null,
    "ideas": [],
    "assessment": {
-    "robustness": 64,
+    "robustness": 82,
     "walkForward": {
      "folds": [
       {
        "fold": 1,
-       "from": 1794032100000,
-       "to": 1794160800000,
-       "returnPct": 0,
-       "trades": 0,
+       "from": 1794062700000,
+       "to": 1794191400000,
+       "returnPct": -1.03,
+       "trades": 2,
        "profitFactor": 0,
-       "maxDrawdownPct": 0
+       "maxDrawdownPct": 1.1
       },
       {
        "fold": 2,
-       "from": 1794161700000,
-       "to": 1794290400000,
-       "returnPct": -2.95,
-       "trades": 6,
-       "profitFactor": 0,
-       "maxDrawdownPct": 3.4
+       "from": 1794192300000,
+       "to": 1794321000000,
+       "returnPct": 0.5,
+       "trades": 13,
+       "profitFactor": 1.14,
+       "maxDrawdownPct": 3.59
       },
       {
        "fold": 3,
-       "from": 1794291300000,
-       "to": 1794420000000,
-       "returnPct": 0.69,
-       "trades": 10,
-       "profitFactor": 1.22,
-       "maxDrawdownPct": 2.93
+       "from": 1794321900000,
+       "to": 1794450600000,
+       "returnPct": 0.01,
+       "trades": 13,
+       "profitFactor": 0.96,
+       "maxDrawdownPct": 2.54
       },
       {
        "fold": 4,
-       "from": 1794420900000,
-       "to": 1794550500000,
-       "returnPct": 4.29,
-       "trades": 12,
-       "profitFactor": 3.85,
-       "maxDrawdownPct": 1.56
+       "from": 1794451500000,
+       "to": 1794581100000,
+       "returnPct": 3.08,
+       "trades": 14,
+       "profitFactor": 2.42,
+       "maxDrawdownPct": 1.84
       }
      ],
-     "consistency": 0.5,
-     "positiveFolds": 2,
+     "consistency": 0.75,
+     "positiveFolds": 3,
      "totalFolds": 4,
-     "avgReturn": 0.51,
-     "worstReturn": -2.95,
-     "dispersion": 2.58
+     "avgReturn": 0.64,
+     "worstReturn": -1.03,
+     "dispersion": 1.51
     },
     "monteCarlo": {
      "available": true,
      "iterations": 700,
-     "p05": -5.07,
-     "p50": 1.32,
-     "p95": 10.78,
-     "ddP95": 6.23,
-     "probProfit": 0.61,
+     "p05": -3.32,
+     "p50": 2.73,
+     "p95": 11.51,
+     "ddP95": 5.21,
+     "probProfit": 0.75,
      "ruinProb": 0,
      "histogram": [
       {
-       "from": -10.18,
-       "to": -8.3,
-       "count": 1
+       "from": -8.33,
+       "to": -6.71,
+       "count": 3
       },
       {
-       "from": -8.3,
-       "to": -6.42,
-       "count": 14
+       "from": -6.71,
+       "to": -5.1,
+       "count": 9
       },
       {
-       "from": -6.42,
-       "to": -4.54,
-       "count": 33
+       "from": -5.1,
+       "to": -3.48,
+       "count": 21
       },
       {
-       "from": -4.54,
-       "to": -2.66,
-       "count": 76
+       "from": -3.48,
+       "to": -1.87,
+       "count": 48
       },
       {
-       "from": -2.66,
-       "to": -0.78,
-       "count": 107
+       "from": -1.87,
+       "to": -0.25,
+       "count": 79
       },
       {
-       "from": -0.78,
-       "to": 1.1,
-       "count": 105
+       "from": -0.25,
+       "to": 1.36,
+       "count": 102
       },
       {
-       "from": 1.1,
+       "from": 1.36,
        "to": 2.98,
-       "count": 95
+       "count": 100
       },
       {
        "from": 2.98,
-       "to": 4.86,
-       "count": 83
+       "to": 4.6,
+       "count": 89
       },
       {
-       "from": 4.86,
-       "to": 6.75,
-       "count": 77
+       "from": 4.6,
+       "to": 6.21,
+       "count": 69
       },
       {
-       "from": 6.75,
-       "to": 8.63,
-       "count": 45
+       "from": 6.21,
+       "to": 7.83,
+       "count": 64
       },
       {
-       "from": 8.63,
-       "to": 10.51,
+       "from": 7.83,
+       "to": 9.44,
+       "count": 43
+      },
+      {
+       "from": 9.44,
+       "to": 11.06,
        "count": 27
       },
       {
-       "from": 10.51,
-       "to": 12.39,
-       "count": 14
+       "from": 11.06,
+       "to": 12.68,
+       "count": 20
       },
       {
-       "from": 12.39,
-       "to": 14.27,
-       "count": 13
+       "from": 12.68,
+       "to": 14.29,
+       "count": 15
       },
       {
-       "from": 14.27,
-       "to": 16.15,
+       "from": 14.29,
+       "to": 15.91,
        "count": 6
       },
       {
-       "from": 16.15,
-       "to": 18.03,
-       "count": 1
-      },
-      {
-       "from": 18.03,
-       "to": 19.91,
+       "from": 15.91,
+       "to": 17.52,
        "count": 2
       },
       {
-       "from": 19.91,
-       "to": 21.79,
-       "count": 0
+       "from": 17.52,
+       "to": 19.14,
+       "count": 1
       },
       {
-       "from": 21.79,
-       "to": 23.67,
-       "count": 1
+       "from": 19.14,
+       "to": 20.76,
+       "count": 2
       }
      ]
     },
     "sensitivity": {
      "available": true,
-     "baseReturn": 1.98,
-     "mean": 1.92,
-     "sd": 2.04,
-     "sensitivity": 0.68,
+     "baseReturn": 3.07,
+     "mean": 2.21,
+     "sd": 1.06,
+     "sensitivity": 0.26,
      "brokenSamples": 0,
      "samples": [
       {
        "key": "period",
        "factor": 0.85,
-       "returnPct": 5.48,
-       "profitFactor": 2.29,
-       "trades": 26
+       "returnPct": 2.35,
+       "profitFactor": 1.34,
+       "trades": 34
       },
       {
        "key": "period",
        "factor": 1.15,
-       "returnPct": 2.34,
-       "profitFactor": 1.3,
-       "trades": 37
-      },
-      {
-       "key": "threshold",
-       "factor": 0.85,
-       "returnPct": 3.18,
-       "profitFactor": 1.44,
-       "trades": 35
-      },
-      {
-       "key": "threshold",
-       "factor": 1.15,
-       "returnPct": -1.66,
-       "profitFactor": 0.71,
-       "trades": 25
-      },
-      {
-       "key": "atrStop",
-       "factor": 0.85,
-       "returnPct": 0.04,
+       "returnPct": 0.03,
        "profitFactor": 0.99,
-       "trades": 28
+       "trades": 38
+      },
+      {
+       "key": "threshold",
+       "factor": 0.85,
+       "returnPct": 2.04,
+       "profitFactor": 1.26,
+       "trades": 41
+      },
+      {
+       "key": "threshold",
+       "factor": 1.15,
+       "returnPct": 1.05,
+       "profitFactor": 1.15,
+       "trades": 29
+      },
+      {
+       "key": "atrStop",
+       "factor": 0.85,
+       "returnPct": 2.96,
+       "profitFactor": 1.4,
+       "trades": 33
       },
       {
        "key": "atrStop",
        "factor": 1.15,
-       "returnPct": 1.98,
-       "profitFactor": 1.29,
-       "trades": 28
+       "returnPct": 3.07,
+       "profitFactor": 1.51,
+       "trades": 32
       },
       {
        "key": "rr",
        "factor": 0.85,
-       "returnPct": 0.88,
-       "profitFactor": 1.13,
-       "trades": 28
+       "returnPct": 3.1,
+       "profitFactor": 1.44,
+       "trades": 33
       },
       {
        "key": "rr",
        "factor": 1.15,
-       "returnPct": 3.09,
-       "profitFactor": 1.46,
-       "trades": 28
+       "returnPct": 3.04,
+       "profitFactor": 1.53,
+       "trades": 31
       }
      ]
     },
-    "trades": 28,
-    "assessedAt": 1794550616096
+    "trades": 32,
+    "assessedAt": 1794581454780
    },
-   "robustness": 64,
+   "robustness": 82,
    "technical": {
-    "price": 1919.07,
-    "bias": -0.58,
-    "biasLabel": "דובי חזק",
-    "confidence": 83,
+    "price": 1947.29,
+    "bias": -0.23,
+    "biasLabel": "דובי",
+    "confidence": 63,
     "trend": {
-     "score": -0.8,
+     "score": -0.46,
      "label": "מגמת ירידה",
-     "ema20": 1945.02,
-     "ema50": 1976.12,
-     "ema200": 2024.84,
-     "adx": 59.3,
-     "slopePct": -2.15
+     "ema20": 1955.88,
+     "ema50": 1958.44,
+     "ema200": 2001.59,
+     "adx": 26.9,
+     "slopePct": 0.36
     },
     "momentum": {
-     "score": -0.28,
-     "label": "מומנטום שלילי",
-     "rsi": 26.3,
-     "macdHist": -1.82,
-     "roc10": -0.7,
-     "state": "מכירת יתר"
+     "score": -0.1,
+     "label": "מומנטום חלש",
+     "rsi": 44.1,
+     "macdHist": -0.5487,
+     "roc10": -0.51,
+     "state": "ניטרלי"
     },
     "volatility": {
-     "atrPct": 0.89,
-     "bbWidthPct": 7.16,
-     "regime": "גבוהה"
+     "atrPct": 0.53,
+     "bbWidthPct": 1.38,
+     "regime": "רגילה"
     },
     "structure": {
-     "position": 0.06,
+     "position": 0.27,
      "support": 1909.79,
-     "resistance": 2060.71,
-     "distToHighPct": 7.38,
-     "distToLowPct": 0.48
+     "resistance": 2046.71,
+     "distToHighPct": 5.11,
+     "distToLowPct": 1.93
     },
     "volume": {
-     "score": -0.54,
-     "label": "נפח מחליש"
+     "score": 0.42,
+     "label": "נפח תומך"
     },
     "summary": [
-     "מגמה: ירידה · ADX 59",
-     "מומנטום: RSI 26 · ROC10 -0.7%",
-     "תנודתיות: גבוהה · ATR 0.9% מהמחיר",
-     "מבנה: 6% מהטווח · תמיכה 1909.79 · התנגדות 2060.71",
-     "נפח: מתנגד לכיוון"
+     "מגמה: ירידה · ADX 27",
+     "מומנטום: RSI 44 · ROC10 -0.5%",
+     "תנודתיות: רגילה · ATR 0.5% מהמחיר",
+     "מבנה: 27% מהטווח · תמיכה 1909.79 · התנגדות 2046.71",
+     "נפח: תומך בכיוון"
     ],
-    "at": 1794550616487
+    "at": 1794581455229
    },
    "oosMetrics": {
     "returnPct": 4.07,
@@ -1244,23 +1245,23 @@
    "bestReturn": 11.66,
    "baselineReturn": 11.66,
    "metrics": {
-    "returnPct": 7.14,
+    "returnPct": 7.18,
     "maxDrawdownPct": 6.11,
-    "sharpe": 3.45,
-    "profitFactor": 1.54,
-    "winRate": 54.5,
+    "sharpe": 3.46,
+    "profitFactor": 1.55,
+    "winRate": 51.5,
     "trades": 33,
     "avgR": 0.143,
-    "expectancy": 13.35,
+    "expectancy": 13.43,
     "exposurePct": 66.3,
-    "bestTradePct": 3.42,
-    "worstTradePct": -1.776,
-    "finalEquity": 6696.02,
+    "bestTradePct": 3.408,
+    "worstTradePct": -1.77,
+    "finalEquity": 6698.58,
     "curvePoints": 721,
-    "totalFees": 261.8517,
+    "totalFees": 260.9311,
     "barsInMarket": 478
    },
-   "fitness": 9.42,
+   "fitness": 10.53,
    "equity": [
     6250,
     6250,
@@ -1309,120 +1310,120 @@
     6250,
     6250,
     6250,
-    6241.48,
-    6282.29,
-    6267.77,
-    6267.5,
-    6268.51,
-    6317.81,
-    6283.27,
-    6262.53,
-    6267.19,
-    6253.38,
-    6258.53,
-    6278.03,
-    6263.34,
-    6247.19,
-    6252.71,
-    6292.25,
-    6294.07,
-    6321.5,
-    6341.15,
-    6343.68,
-    6312.7,
-    6328.32,
-    6293.27,
-    6275.45,
-    6297.8,
-    6344.29,
-    6347.92,
-    6330.24,
-    6335.04,
-    6361.48,
-    6370.83,
-    6310.21,
-    6415.7,
-    6370.15,
-    6384.76,
-    6500.7,
-    6285.58,
-    6185.87,
-    6250.94,
-    6220.37,
-    6202.6,
-    6180.58,
-    6206.87,
-    6199.92,
-    6207.37,
-    6214.64,
-    6220.35,
-    6206.37,
-    6199.73,
-    6177.12,
-    6176.76,
-    6173.19,
-    6179.41,
-    6162.03,
-    6123.74,
-    6145.62,
-    6164.11,
-    6220.62,
-    6198.06,
-    6208.33,
-    6183.45,
-    6247.12,
-    6268.23,
-    6279.14,
-    6418.65,
-    6403.05,
-    6370.72,
-    6339.21,
-    6345.95,
-    6326.26,
-    6333.77,
-    6330.53,
-    6432.61,
-    6564.41,
-    6552.03,
-    6543.77,
-    6533.24,
-    6549.86,
-    6538.76,
-    6544.61,
-    6550.32,
-    6545.73,
-    6554.75,
-    6529.01,
-    6533.85,
-    6524.98,
-    6523.42,
-    6532.73,
-    6542.77,
-    6510.62,
-    6618.01,
-    6620.34,
-    6593.61,
-    6625.23,
-    6614.4,
-    6635.25,
-    6620.44,
-    6601.66,
-    6636.57,
-    6730.2,
-    6780.78,
-    6767.26,
-    6789.56,
-    6782.28,
-    6769.78,
-    6819.99,
-    6859.89,
-    6877.88,
-    6894.39,
-    6942.17,
-    6854.46,
-    6823.79,
-    6726.01,
-    6696.02
+    6242.26,
+    6250.81,
+    6233.13,
+    6252.49,
+    6260.28,
+    6246.05,
+    6251.39,
+    6210.19,
+    6221.28,
+    6259,
+    6226.74,
+    6234.11,
+    6229.83,
+    6253.3,
+    6271.04,
+    6309.64,
+    6331.75,
+    6318.86,
+    6288.48,
+    6298.51,
+    6265,
+    6252.49,
+    6299.17,
+    6312.17,
+    6324.96,
+    6321.57,
+    6328.1,
+    6292.73,
+    6353.87,
+    6288.53,
+    6307.97,
+    6365.92,
+    6364.17,
+    6432.91,
+    6410.04,
+    6207.05,
+    6216.37,
+    6209.58,
+    6176.85,
+    6178.01,
+    6169.07,
+    6188.11,
+    6183.88,
+    6194.79,
+    6194.6,
+    6191.78,
+    6177.76,
+    6163.88,
+    6148.89,
+    6146.15,
+    6164.89,
+    6122.23,
+    6097.91,
+    6110.78,
+    6134.82,
+    6193.77,
+    6183.92,
+    6168.35,
+    6176.85,
+    6199.25,
+    6251.94,
+    6262.77,
+    6324.75,
+    6396.42,
+    6339.08,
+    6316.01,
+    6329.37,
+    6304.91,
+    6305.01,
+    6305.18,
+    6344.74,
+    6552.65,
+    6510.5,
+    6532.57,
+    6506.65,
+    6530.69,
+    6525.13,
+    6518.45,
+    6526.32,
+    6525.93,
+    6529.08,
+    6529.97,
+    6500.93,
+    6495.49,
+    6502.3,
+    6509.11,
+    6509.18,
+    6486.8,
+    6563.15,
+    6632.53,
+    6509.86,
+    6553.05,
+    6614.93,
+    6596.66,
+    6614.67,
+    6592.31,
+    6627.7,
+    6612.26,
+    6739.17,
+    6757.48,
+    6753.55,
+    6753.84,
+    6758.84,
+    6795.03,
+    6840.75,
+    6852.45,
+    6865.26,
+    6921.28,
+    6816.22,
+    6788.92,
+    6746.55,
+    6656.18,
+    6722.48,
+    6698.58
    ],
    "history": [
     {
@@ -1501,7 +1502,7 @@
    "dryRunCycles": 3,
    "liveTrades": [],
    "livePnl": 0,
-   "lastRunAt": 1794550616097,
+   "lastRunAt": 1794581454782,
    "generatedCode": "# ============================================================\n# Alta Capital — auto-generated strategy artifact\n# Desk: תוך־יומי · נר שעה · BTCUSDT · 1h\n# Version: v1.0 · Strategy family: ema_trend\n# Backtest: return 12.57% · PF 2.07 · DD 5.75% · trades 36\n# OOS: 11.66% · Sharpe 5.36\n# Params: {\"fast\":30,\"slow\":24,\"atrStop\":2.8,\"rr\":2.3,\"trendFilter\":false}\n# Target platform: Freqtrade\n# Generated: 2026-11-12T11:12:27.653Z\n# Research artifact only — no warranty, no live order routing.\n# ============================================================\n# Drop this file in freqtrade/user_data/strategies/ and run:\n#   freqtrade backtesting --strategy Altadesk_1h --config user_data/config.json\n#   freqtrade trade --strategy Altadesk_1h --config user_data/config.json --dry-run\n\nfrom freqtrade.strategy import IStrategy\nfrom pandas import DataFrame\nimport talib.abstract as ta\n\n\nclass Altadesk_1h(IStrategy):\n    INTERFACE_VERSION = 3\n\n    timeframe = '1h'\n    can_short = True\n    startup_candle_count = 210\n\n    stoploss = -0.034\n    minimal_roi = {\"0\": 2.07, \"240\": 0.01, \"720\": 0}\n\n    trailing_stop = False\n    process_only_new_candles = True\n    use_exit_signal = True\n    exit_profit_only = False\n\n    def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe['ema_fast'] = ta.EMA(dataframe, timeperiod=30)\n        dataframe['ema_slow'] = ta.EMA(dataframe, timeperiod=24)\n        dataframe['ema_trend'] = ta.EMA(dataframe, timeperiod=200)\n        dataframe['atr'] = ta.ATR(dataframe, timeperiod=14)\n        return dataframe\n\n    def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe.loc[\n            (\n        & (dataframe['ema_fast'] > dataframe['ema_slow'])\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_long',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['ema_fast'] < dataframe['ema_slow'])\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_short',\n        ] = 1\n        return dataframe\n\n    def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        # Risk-managed exits: ATR stop + fixed R multiple handled by the engine.\n        dataframe.loc[\n            (\n        & (dataframe['ema_fast'] > dataframe['ema_slow'])\n            ),\n            'exit_short',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['ema_fast'] < dataframe['ema_slow'])\n            ),\n            'exit_long',\n        ] = 1\n        return dataframe\n",
    "openTrade": {
     "dir": 1,
@@ -1516,286 +1517,286 @@
    },
    "ideas": [],
    "technical": {
-    "price": 68355.2,
-    "bias": -0.72,
+    "price": 68839.5,
+    "bias": -0.5,
     "biasLabel": "דובי חזק",
-    "confidence": 88,
+    "confidence": 78,
     "trend": {
      "score": -0.8,
      "label": "מגמת ירידה",
-     "ema20": 70702.8,
-     "ema50": 72139.48,
-     "ema200": 74546.16,
-     "adx": 56.5,
-     "slopePct": -2.5
+     "ema20": 69827.25,
+     "ema50": 71309.8,
+     "ema200": 74145.35,
+     "adx": 49.3,
+     "slopePct": -2
     },
     "momentum": {
-     "score": -0.74,
-     "label": "מומנטום שלילי",
-     "rsi": 14.9,
-     "macdHist": -303.9366,
-     "roc10": -4.21,
-     "state": "מכירת יתר"
+     "score": -0.04,
+     "label": "מומנטום חלש",
+     "rsi": 33.6,
+     "macdHist": 97.224,
+     "roc10": 0.48,
+     "state": "ניטרלי"
     },
     "volatility": {
-     "atrPct": 0.93,
-     "bbWidthPct": 8.16,
-     "regime": "רגילה"
+     "atrPct": 1.14,
+     "bbWidthPct": 6.85,
+     "regime": "גבוהה"
     },
     "structure": {
-     "position": 0.03,
+     "position": 0.1,
      "support": 68080.8,
      "resistance": 75971.7,
-     "distToHighPct": 11.14,
-     "distToLowPct": 0.4
+     "distToHighPct": 10.36,
+     "distToLowPct": 1.1
     },
     "volume": {
-     "score": -0.56,
+     "score": -0.52,
      "label": "נפח מחליש"
     },
     "summary": [
-     "מגמה: ירידה · ADX 57",
-     "מומנטום: RSI 15 · ROC10 -4.2%",
-     "תנודתיות: רגילה · ATR 0.9% מהמחיר",
-     "מבנה: 3% מהטווח · תמיכה 68080.80 · התנגדות 75971.70",
+     "מגמה: ירידה · ADX 49",
+     "מומנטום: RSI 34 · ROC10 0.5%",
+     "תנודתיות: גבוהה · ATR 1.1% מהמחיר",
+     "מבנה: 10% מהטווח · תמיכה 68080.80 · התנגדות 75971.70",
      "נפח: מתנגד לכיוון"
     ],
-    "at": 1794550616487
+    "at": 1794581455229
    },
    "assessment": {
-    "robustness": 75,
+    "robustness": 92,
     "walkForward": {
      "folds": [
       {
        "fold": 1,
-       "from": 1792476000000,
-       "to": 1792990800000,
-       "returnPct": 3.42,
-       "trades": 10,
-       "profitFactor": 2.42,
-       "maxDrawdownPct": 2.48
+       "from": 1792504800000,
+       "to": 1793019600000,
+       "returnPct": 1.68,
+       "trades": 11,
+       "profitFactor": 1.4,
+       "maxDrawdownPct": 2.93
       },
       {
        "fold": 2,
-       "from": 1792994400000,
-       "to": 1793509200000,
-       "returnPct": -0.46,
-       "trades": 9,
-       "profitFactor": 0.81,
-       "maxDrawdownPct": 1.97
+       "from": 1793023200000,
+       "to": 1793538000000,
+       "returnPct": 0.78,
+       "trades": 12,
+       "profitFactor": 1.25,
+       "maxDrawdownPct": 1.27
       },
       {
        "fold": 3,
-       "from": 1793512800000,
-       "to": 1794027600000,
-       "returnPct": 0.27,
-       "trades": 7,
-       "profitFactor": 1.08,
-       "maxDrawdownPct": 3.67
+       "from": 1793541600000,
+       "to": 1794056400000,
+       "returnPct": 1.77,
+       "trades": 14,
+       "profitFactor": 1.41,
+       "maxDrawdownPct": 2.23
       },
       {
        "fold": 4,
-       "from": 1794031200000,
-       "to": 1794549600000,
-       "returnPct": 0,
-       "trades": 0,
-       "profitFactor": 0,
-       "maxDrawdownPct": 0
+       "from": 1794060000000,
+       "to": 1794578400000,
+       "returnPct": 3.93,
+       "trades": 9,
+       "profitFactor": 5.61,
+       "maxDrawdownPct": 1.62
       }
      ],
-     "consistency": 0.5,
-     "positiveFolds": 2,
+     "consistency": 1,
+     "positiveFolds": 4,
      "totalFolds": 4,
-     "avgReturn": 0.81,
-     "worstReturn": -0.46,
-     "dispersion": 1.53
+     "avgReturn": 2.04,
+     "worstReturn": 0.78,
+     "dispersion": 1.16
     },
     "monteCarlo": {
      "available": true,
      "iterations": 700,
-     "p05": -2.68,
-     "p50": 3.94,
-     "p95": 10.54,
-     "ddP95": 4.8,
-     "probProfit": 0.81,
+     "p05": -1.04,
+     "p50": 6.03,
+     "p95": 14.41,
+     "ddP95": 4.58,
+     "probProfit": 0.91,
      "ruinProb": 0,
      "histogram": [
       {
-       "from": -6.17,
-       "to": -4.93,
+       "from": -5.52,
+       "to": -4.08,
        "count": 5
       },
       {
-       "from": -4.93,
-       "to": -3.69,
-       "count": 8
-      },
-      {
-       "from": -3.69,
-       "to": -2.45,
-       "count": 29
-      },
-      {
-       "from": -2.45,
-       "to": -1.21,
-       "count": 39
-      },
-      {
-       "from": -1.21,
-       "to": 0.03,
-       "count": 51
-      },
-      {
-       "from": 0.03,
-       "to": 1.27,
-       "count": 65
-      },
-      {
-       "from": 1.27,
-       "to": 2.51,
-       "count": 79
-      },
-      {
-       "from": 2.51,
-       "to": 3.75,
-       "count": 66
-      },
-      {
-       "from": 3.75,
-       "to": 4.98,
-       "count": 74
-      },
-      {
-       "from": 4.98,
-       "to": 6.22,
-       "count": 103
-      },
-      {
-       "from": 6.22,
-       "to": 7.46,
-       "count": 64
-      },
-      {
-       "from": 7.46,
-       "to": 8.7,
-       "count": 42
-      },
-      {
-       "from": 8.7,
-       "to": 9.94,
-       "count": 28
-      },
-      {
-       "from": 9.94,
-       "to": 11.18,
-       "count": 19
-      },
-      {
-       "from": 11.18,
-       "to": 12.42,
+       "from": -4.08,
+       "to": -2.65,
        "count": 10
       },
       {
-       "from": 12.42,
-       "to": 13.66,
+       "from": -2.65,
+       "to": -1.21,
+       "count": 18
+      },
+      {
+       "from": -1.21,
+       "to": 0.23,
+       "count": 37
+      },
+      {
+       "from": 0.23,
+       "to": 1.66,
+       "count": 47
+      },
+      {
+       "from": 1.66,
+       "to": 3.1,
+       "count": 63
+      },
+      {
+       "from": 3.1,
+       "to": 4.54,
+       "count": 82
+      },
+      {
+       "from": 4.54,
+       "to": 5.97,
+       "count": 87
+      },
+      {
+       "from": 5.97,
+       "to": 7.41,
+       "count": 97
+      },
+      {
+       "from": 7.41,
+       "to": 8.85,
+       "count": 72
+      },
+      {
+       "from": 8.85,
+       "to": 10.28,
+       "count": 44
+      },
+      {
+       "from": 10.28,
+       "to": 11.72,
+       "count": 44
+      },
+      {
+       "from": 11.72,
+       "to": 13.16,
+       "count": 38
+      },
+      {
+       "from": 13.16,
+       "to": 14.59,
+       "count": 24
+      },
+      {
+       "from": 14.59,
+       "to": 16.03,
+       "count": 16
+      },
+      {
+       "from": 16.03,
+       "to": 17.47,
        "count": 8
       },
       {
-       "from": 13.66,
-       "to": 14.9,
-       "count": 6
+       "from": 17.47,
+       "to": 18.9,
+       "count": 4
       },
       {
-       "from": 14.9,
-       "to": 16.13,
+       "from": 18.9,
+       "to": 20.34,
        "count": 4
       }
      ]
     },
     "sensitivity": {
      "available": true,
-     "baseReturn": 3.98,
-     "mean": 3.3,
-     "sd": 1.86,
-     "sensitivity": 0.37,
+     "baseReturn": 6.07,
+     "mean": 4.57,
+     "sd": 2.25,
+     "sensitivity": 0.32,
      "brokenSamples": 0,
      "samples": [
       {
        "key": "fast",
        "factor": 0.85,
-       "returnPct": 0.7,
+       "returnPct": 0.75,
        "profitFactor": 1.11,
        "trades": 30
       },
       {
        "key": "fast",
        "factor": 1.15,
-       "returnPct": 3.98,
-       "profitFactor": 1.78,
-       "trades": 19
+       "returnPct": 6.07,
+       "profitFactor": 2.15,
+       "trades": 21
       },
       {
        "key": "slow",
        "factor": 0.85,
-       "returnPct": 3.98,
-       "profitFactor": 1.78,
-       "trades": 19
+       "returnPct": 6.07,
+       "profitFactor": 2.15,
+       "trades": 21
       },
       {
        "key": "slow",
        "factor": 1.15,
-       "returnPct": 6.9,
-       "profitFactor": 2.28,
-       "trades": 29
+       "returnPct": 9.1,
+       "profitFactor": 2.64,
+       "trades": 31
       },
       {
        "key": "atrStop",
        "factor": 0.85,
-       "returnPct": 3.85,
-       "profitFactor": 1.63,
-       "trades": 20
+       "returnPct": 4.57,
+       "profitFactor": 1.61,
+       "trades": 23
       },
       {
        "key": "atrStop",
        "factor": 1.15,
-       "returnPct": 3.98,
-       "profitFactor": 1.78,
-       "trades": 19
+       "returnPct": 6.07,
+       "profitFactor": 2.15,
+       "trades": 21
       },
       {
        "key": "rr",
        "factor": 0.85,
-       "returnPct": 3.71,
-       "profitFactor": 1.73,
-       "trades": 19
+       "returnPct": 4.35,
+       "profitFactor": 1.69,
+       "trades": 22
       },
       {
        "key": "rr",
        "factor": 1.15,
-       "returnPct": 4.25,
-       "profitFactor": 1.84,
+       "returnPct": 3.51,
+       "profitFactor": 1.69,
        "trades": 19
       },
       {
        "key": "trendFilter",
        "factor": 0.85,
-       "returnPct": 0.83,
-       "profitFactor": 1.06,
-       "trades": 31
+       "returnPct": 2.61,
+       "profitFactor": 1.19,
+       "trades": 33
       },
       {
        "key": "trendFilter",
        "factor": 1.15,
-       "returnPct": 0.83,
-       "profitFactor": 1.06,
-       "trades": 31
+       "returnPct": 2.61,
+       "profitFactor": 1.19,
+       "trades": 33
       }
      ]
     },
-    "trades": 19,
-    "assessedAt": 1794550616291
+    "trades": 21,
+    "assessedAt": 1794581454880
    },
-   "robustness": 75,
+   "robustness": 92,
    "oosMetrics": {
     "returnPct": 11.66,
     "maxDrawdownPct": 1.88,
@@ -1871,23 +1872,23 @@
    "bestReturn": 18.14,
    "baselineReturn": 9.12,
    "metrics": {
-    "returnPct": 26.17,
+    "returnPct": 25.89,
     "maxDrawdownPct": 4.39,
-    "sharpe": 1.68,
-    "profitFactor": 2.68,
+    "sharpe": 1.67,
+    "profitFactor": 2.66,
     "winRate": 45.8,
     "trades": 24,
-    "avgR": 0.673,
-    "expectancy": 54.4,
+    "avgR": 0.667,
+    "expectancy": 53.81,
     "exposurePct": 27.5,
     "bestTradePct": 6.893,
     "worstTradePct": -1.926,
-    "finalEquity": 6308.41,
+    "finalEquity": 6294.4,
     "curvePoints": 600,
-    "totalFees": 68.5329,
+    "totalFees": 68.5525,
     "barsInMarket": 165
    },
-   "fitness": 27.2,
+   "fitness": 26.87,
    "equity": [
     5000,
     5000,
@@ -2049,7 +2050,7 @@
     6183.88,
     6087.59,
     6148.62,
-    6308.41
+    6294.4
    ],
    "history": [
     {
@@ -2176,7 +2177,7 @@
    "dryRunCycles": 3,
    "liveTrades": [],
    "livePnl": 0,
-   "lastRunAt": 1794550614972,
+   "lastRunAt": 1794581453484,
    "generatedCode": "# ============================================================\n# Alta Capital — auto-generated strategy artifact\n# Desk: סווינג · חודשי (יומי) · BTCUSDT · 1d\n# Version: v1.4 · Strategy family: macd_swing\n# Backtest: return 26.17% · PF 2.68 · DD 4.39% · trades 24\n# OOS: 18.14% · Sharpe 1.68\n# Params: {\"fast\":7,\"slow\":22,\"signal\":6,\"atrStop\":1.3,\"rr\":4}\n# Target platform: Freqtrade\n# Generated: 2026-11-13T06:16:55.461Z\n# Research artifact only — no warranty, no live order routing.\n# ============================================================\n# Drop this file in freqtrade/user_data/strategies/ and run:\n#   freqtrade backtesting --strategy Altadesk_1d --config user_data/config.json\n#   freqtrade trade --strategy Altadesk_1d --config user_data/config.json --dry-run\n\nfrom freqtrade.strategy import IStrategy\nfrom pandas import DataFrame\nimport talib.abstract as ta\n\n\nclass Altadesk_1d(IStrategy):\n    INTERFACE_VERSION = 3\n\n    timeframe = '1d'\n    can_short = True\n    startup_candle_count = 210\n\n    stoploss = -0.016\n    minimal_roi = {\"0\": 3.60, \"240\": 0.01, \"720\": 0}\n\n    trailing_stop = False\n    process_only_new_candles = True\n    use_exit_signal = True\n    exit_profit_only = False\n\n    def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        macd = ta.MACD(dataframe, fastperiod=7, slowperiod=22, signalperiod=6)\n        dataframe['macd_hist'] = macd['macdhist']\n        dataframe['ema_trend'] = ta.EMA(dataframe, timeperiod=200)\n        dataframe['atr'] = ta.ATR(dataframe, timeperiod=14)\n        return dataframe\n\n    def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe.loc[\n            (\n        & (dataframe['macd_hist'] > 0)\n        & (dataframe['close'] > dataframe['ema_trend'])\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_long',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['macd_hist'] < 0)\n        & (dataframe['close'] < dataframe['ema_trend'])\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_short',\n        ] = 1\n        return dataframe\n\n    def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        # Risk-managed exits: ATR stop + fixed R multiple handled by the engine.\n        dataframe.loc[\n            (\n        & (dataframe['macd_hist'] > 0)\n        & (dataframe['close'] > dataframe['ema_trend'])\n            ),\n            'exit_short',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['macd_hist'] < 0)\n        & (dataframe['close'] < dataframe['ema_trend'])\n            ),\n            'exit_long',\n        ] = 1\n        return dataframe\n",
    "openTrade": {
     "dir": -1,
@@ -2189,73 +2190,73 @@
    },
    "ideas": [],
    "technical": {
-    "price": 68356,
+    "price": 68824.7,
     "bias": -0.39,
     "biasLabel": "דובי חזק",
     "confidence": 69,
     "trend": {
      "score": -0.3,
      "label": "דשדוש",
-     "ema20": 75960.89,
-     "ema50": 78125.16,
-     "ema200": 75962.36,
+     "ema20": 76005.52,
+     "ema50": 78143.54,
+     "ema200": 75967.03,
      "adx": 24.6,
-     "slopePct": -4.78
+     "slopePct": -4.72
     },
     "momentum": {
-     "score": -0.62,
+     "score": -0.6,
      "label": "מומנטום שלילי",
-     "rsi": 24.9,
-     "macdHist": -705.5345,
-     "roc10": -11.61,
+     "rsi": 25.6,
+     "macdHist": -675.6232,
+     "roc10": -11,
      "state": "מכירת יתר"
     },
     "volatility": {
-     "atrPct": 3.66,
-     "bbWidthPct": 18.58,
+     "atrPct": 3.63,
+     "bbWidthPct": 18.1,
      "regime": "רגילה"
     },
     "structure": {
-     "position": 0.23,
+     "position": 0.25,
      "support": 62760,
      "resistance": 86593.8,
-     "distToHighPct": 26.68,
-     "distToLowPct": 8.19
+     "distToHighPct": 25.82,
+     "distToLowPct": 8.81
     },
     "volume": {
-     "score": -0.27,
+     "score": -0.29,
      "label": "נפח מחליש"
     },
     "summary": [
      "מגמה: דשדוש · ADX 25",
-     "מומנטום: RSI 25 · ROC10 -11.6%",
-     "תנודתיות: רגילה · ATR 3.7% מהמחיר",
-     "מבנה: 23% מהטווח · תמיכה 62760.00 · התנגדות 86593.80",
+     "מומנטום: RSI 26 · ROC10 -11.0%",
+     "תנודתיות: רגילה · ATR 3.6% מהמחיר",
+     "מבנה: 25% מהטווח · תמיכה 62760.00 · התנגדות 86593.80",
      "נפח: מתנגד לכיוון"
     ],
-    "at": 1794550616487
+    "at": 1794581455229
    },
    "assessment": {
-    "robustness": 96,
+    "robustness": 95,
     "walkForward": {
      "folds": [
       {
        "fold": 1,
        "from": 1753142400000,
        "to": 1763424000000,
-       "returnPct": 10.78,
-       "trades": 15,
-       "profitFactor": 2.14,
-       "maxDrawdownPct": 7.07
+       "returnPct": 5.77,
+       "trades": 13,
+       "profitFactor": 1.87,
+       "maxDrawdownPct": 7.75
       },
       {
        "fold": 2,
        "from": 1763510400000,
        "to": 1773792000000,
-       "returnPct": 4.27,
-       "trades": 14,
-       "profitFactor": 1.46,
-       "maxDrawdownPct": 4.94
+       "returnPct": 8.22,
+       "trades": 15,
+       "profitFactor": 1.87,
+       "maxDrawdownPct": 4.7
       },
       {
        "fold": 3,
@@ -2270,205 +2271,205 @@
        "fold": 4,
        "from": 1784246400000,
        "to": 1794528000000,
-       "returnPct": 5.91,
+       "returnPct": 5.68,
        "trades": 16,
-       "profitFactor": 1.53,
+       "profitFactor": 1.51,
        "maxDrawdownPct": 6.41
       }
      ],
      "consistency": 1,
      "positiveFolds": 4,
      "totalFolds": 4,
-     "avgReturn": 7.63,
-     "worstReturn": 4.27,
-     "dispersion": 2.64
+     "avgReturn": 7.31,
+     "worstReturn": 5.68,
+     "dispersion": 1.65
     },
     "monteCarlo": {
      "available": true,
      "iterations": 500,
-     "p05": 4.06,
-     "p50": 27.5,
-     "p95": 64.96,
-     "ddP95": 10.57,
-     "probProfit": 0.97,
+     "p05": 1.86,
+     "p50": 27.41,
+     "p95": 63.32,
+     "ddP95": 10.74,
+     "probProfit": 0.96,
      "ruinProb": 0,
      "histogram": [
       {
-       "from": -12.14,
-       "to": -5.74,
-       "count": 2
+       "from": -11.72,
+       "to": -5.83,
+       "count": 6
       },
       {
-       "from": -5.74,
-       "to": 0.67,
-       "count": 12
+       "from": -5.83,
+       "to": 0.05,
+       "count": 15
       },
       {
-       "from": 0.67,
-       "to": 7.08,
-       "count": 28
+       "from": 0.05,
+       "to": 5.94,
+       "count": 24
       },
       {
-       "from": 7.08,
-       "to": 13.49,
-       "count": 59
+       "from": 5.94,
+       "to": 11.83,
+       "count": 35
       },
       {
-       "from": 13.49,
-       "to": 19.89,
-       "count": 65
+       "from": 11.83,
+       "to": 17.72,
+       "count": 60
       },
       {
-       "from": 19.89,
-       "to": 26.3,
-       "count": 71
+       "from": 17.72,
+       "to": 23.61,
+       "count": 67
       },
       {
-       "from": 26.3,
-       "to": 32.71,
-       "count": 71
+       "from": 23.61,
+       "to": 29.5,
+       "count": 64
       },
       {
-       "from": 32.71,
-       "to": 39.12,
-       "count": 47
+       "from": 29.5,
+       "to": 35.39,
+       "count": 51
       },
       {
-       "from": 39.12,
-       "to": 45.53,
-       "count": 48
+       "from": 35.39,
+       "to": 41.28,
+       "count": 51
       },
       {
-       "from": 45.53,
-       "to": 51.93,
-       "count": 32
+       "from": 41.28,
+       "to": 47.17,
+       "count": 39
       },
       {
-       "from": 51.93,
-       "to": 58.34,
-       "count": 29
+       "from": 47.17,
+       "to": 53.06,
+       "count": 34
       },
       {
-       "from": 58.34,
-       "to": 64.75,
-       "count": 10
+       "from": 53.06,
+       "to": 58.95,
+       "count": 18
       },
       {
-       "from": 64.75,
-       "to": 71.16,
-       "count": 13
+       "from": 58.95,
+       "to": 64.84,
+       "count": 18
       },
       {
-       "from": 71.16,
-       "to": 77.57,
+       "from": 64.84,
+       "to": 70.73,
        "count": 8
       },
       {
-       "from": 77.57,
-       "to": 83.97,
-       "count": 1
-      },
-      {
-       "from": 83.97,
-       "to": 90.38,
+       "from": 70.73,
+       "to": 76.62,
        "count": 2
       },
       {
-       "from": 90.38,
-       "to": 96.79,
-       "count": 1
+       "from": 76.62,
+       "to": 82.51,
+       "count": 2
       },
       {
-       "from": 96.79,
-       "to": 103.2,
-       "count": 1
+       "from": 82.51,
+       "to": 88.39,
+       "count": 2
+      },
+      {
+       "from": 88.39,
+       "to": 94.28,
+       "count": 4
       }
      ]
     },
     "sensitivity": {
      "available": true,
-     "baseReturn": 26.17,
-     "mean": 21.4,
-     "sd": 3.72,
+     "baseReturn": 25.89,
+     "mean": 21.13,
+     "sd": 3.7,
      "sensitivity": 0.14,
      "brokenSamples": 0,
      "samples": [
       {
        "key": "fast",
        "factor": 0.85,
-       "returnPct": 22.1,
-       "profitFactor": 2.4,
+       "returnPct": 21.83,
+       "profitFactor": 2.38,
        "trades": 25
       },
       {
        "key": "fast",
        "factor": 1.15,
-       "returnPct": 18.26,
-       "profitFactor": 2.17,
-       "trades": 24
-      },
-      {
-       "key": "slow",
-       "factor": 0.85,
-       "returnPct": 22.16,
-       "profitFactor": 2.42,
-       "trades": 24
-      },
-      {
-       "key": "slow",
-       "factor": 1.15,
-       "returnPct": 18.78,
-       "profitFactor": 2.2,
-       "trades": 24
-      },
-      {
-       "key": "signal",
-       "factor": 0.85,
-       "returnPct": 26.17,
-       "profitFactor": 2.68,
-       "trades": 24
-      },
-      {
-       "key": "signal",
-       "factor": 1.15,
-       "returnPct": 18.02,
+       "returnPct": 18,
        "profitFactor": 2.16,
+       "trades": 24
+      },
+      {
+       "key": "slow",
+       "factor": 0.85,
+       "returnPct": 21.88,
+       "profitFactor": 2.41,
+       "trades": 24
+      },
+      {
+       "key": "slow",
+       "factor": 1.15,
+       "returnPct": 18.52,
+       "profitFactor": 2.19,
+       "trades": 24
+      },
+      {
+       "key": "signal",
+       "factor": 0.85,
+       "returnPct": 25.89,
+       "profitFactor": 2.66,
+       "trades": 24
+      },
+      {
+       "key": "signal",
+       "factor": 1.15,
+       "returnPct": 17.76,
+       "profitFactor": 2.14,
        "trades": 24
       },
       {
        "key": "atrStop",
        "factor": 0.85,
-       "returnPct": 26.37,
-       "profitFactor": 2.59,
+       "returnPct": 26.07,
+       "profitFactor": 2.57,
        "trades": 25
       },
       {
        "key": "atrStop",
        "factor": 1.15,
-       "returnPct": 15.2,
-       "profitFactor": 2.15,
+       "returnPct": 14.98,
+       "profitFactor": 2.14,
        "trades": 22
       },
       {
        "key": "rr",
        "factor": 0.85,
-       "returnPct": 20.79,
-       "profitFactor": 2.32,
+       "returnPct": 20.53,
+       "profitFactor": 2.3,
        "trades": 25
       },
       {
        "key": "rr",
        "factor": 1.15,
-       "returnPct": 26.17,
-       "profitFactor": 2.68,
+       "returnPct": 25.89,
+       "profitFactor": 2.66,
        "trades": 24
       }
      ]
     },
     "trades": 24,
-    "assessedAt": 1794550615458
+    "assessedAt": 1794581454097
    },
-   "robustness": 96,
+   "robustness": 95,
    "oosMetrics": {
     "returnPct": 18.14,
     "maxDrawdownPct": 4.54,
@@ -2523,31 +2524,31 @@
    "strategyId": "breakout",
    "params": {
     "period": 10,
-    "atrStop": 1.7,
+    "atrStop": 1.2,
     "rr": 4,
     "filter": true
    },
-   "version": "v1.3",
-   "bestReturn": 3.61,
+   "version": "v1.4",
+   "bestReturn": 4.64,
    "baselineReturn": 2.06,
    "metrics": {
-    "returnPct": 16.82,
-    "maxDrawdownPct": 5.54,
-    "sharpe": 0.49,
-    "profitFactor": 3.78,
-    "winRate": 57.9,
-    "trades": 19,
-    "avgR": 0.561,
-    "expectancy": 44.24,
-    "exposurePct": 43.1,
-    "bestTradePct": 6.304,
-    "worstTradePct": -1.612,
-    "finalEquity": 5841.09,
+    "returnPct": 25.31,
+    "maxDrawdownPct": 5.84,
+    "sharpe": 0.62,
+    "profitFactor": 2.31,
+    "winRate": 48,
+    "trades": 25,
+    "avgR": 0.632,
+    "expectancy": 50.58,
+    "exposurePct": 41.9,
+    "bestTradePct": 7.332,
+    "worstTradePct": -1.967,
+    "finalEquity": 6265.3,
     "curvePoints": 420,
-    "totalFees": 10.7519,
-    "barsInMarket": 181
+    "totalFees": 21.4613,
+    "barsInMarket": 176
    },
-   "fitness": 15.12,
+   "fitness": 16.92,
    "equity": [
     5000,
     5000,
@@ -2584,134 +2585,157 @@
     5000,
     5000,
     5000,
-    5113.42,
-    5092.2,
-    5044.54,
-    5044.54,
-    5044.54,
-    5044.54,
-    5044.54,
-    5087.74,
-    5159.5,
-    5424.78,
-    5540.43,
-    5265.7,
-    5298.22,
-    5315.69,
-    5365.74,
-    5580.92,
-    5580.92,
-    5580.92,
-    5580.92,
-    5580.92,
-    5580.92,
-    5624.36,
-    5610.36,
-    5560.16,
-    5560.16,
-    5598.95,
-    5595.15,
-    5548.71,
-    5545.04,
-    5591.93,
-    5532.83,
-    5555.26,
-    5568.38,
-    5548.31,
-    5548.31,
-    5548.31,
-    5574.15,
-    5650.8,
-    5637.1,
-    5591.74,
-    5591.74,
-    5591.74,
-    5591.74,
-    5591.74,
-    5591.74,
-    5569.99,
-    5555.28,
-    5570.32,
-    5562.36,
-    5537.3,
-    5546.23,
-    5543.48,
-    5562.38,
-    5609.55,
-    5596,
-    5584.4,
-    5597.27,
-    5597.27,
-    5597.27,
-    5597.27,
-    5597.27,
-    5597.27,
-    5597.27,
-    5597.27,
-    5597.27,
-    5657.56,
-    5718.1,
-    5706.63,
-    5841.15,
-    5717.25,
-    5717.25,
-    5888.16,
-    5838.46,
-    5843.06,
-    5750.68,
-    5750.68,
-    5750.68,
-    5750.68,
-    5750.68,
-    5750.68,
-    5750.68,
-    5750.68,
-    5750.68,
-    5750.68,
-    5750.68,
-    5733.59,
-    5844.67,
-    5794.28,
-    5770.16,
-    5756.99,
-    5756.99,
-    5756.99,
-    5747.52,
-    5787.96,
-    5767.67,
-    5690.93,
-    5698.35,
-    5673.34,
-    5799.44,
-    5856.86,
-    5926.71,
-    5928.66,
-    5902.85,
-    5880.05,
-    5880.05,
-    5880.05,
-    5880.05,
-    5880.05,
-    5880.05,
-    5880.05,
-    5899.7,
-    5889.55,
-    5877.36,
-    5857.26,
-    5855.38,
-    5855.38,
-    5894.5,
-    5897.07,
-    5833.56,
-    5834.99,
-    5834.99,
-    5825.89,
-    5876.25,
-    5814.37,
-    5814.64,
-    5841.09
+    5160.68,
+    5130.62,
+    5298.72,
+    5298.72,
+    5298.72,
+    5298.72,
+    5298.72,
+    5273.78,
+    5370.63,
+    5645.65,
+    5815.12,
+    5861.24,
+    5902.6,
+    5931.36,
+    6013.79,
+    6211.95,
+    6118.12,
+    6118.12,
+    6118.12,
+    6118.12,
+    6118.12,
+    6185.58,
+    6163.83,
+    6085.88,
+    6085.88,
+    6146.03,
+    6140.14,
+    5993.98,
+    5951.09,
+    6022.37,
+    5932.53,
+    5966.62,
+    5986.57,
+    5956.06,
+    5956.06,
+    5956.06,
+    5995.35,
+    6111.91,
+    6091.08,
+    6022.1,
+    6022.1,
+    6022.1,
+    6022.1,
+    6022.1,
+    6022.1,
+    5988.92,
+    5966.48,
+    5989.42,
+    5977.28,
+    5939.05,
+    5952.62,
+    5948.43,
+    5849.17,
+    5926.2,
+    5904.09,
+    5885.14,
+    5906.15,
+    5906.15,
+    5906.15,
+    5906.15,
+    5906.15,
+    5906.15,
+    5906.15,
+    5906.15,
+    5906.15,
+    5996.27,
+    6086.78,
+    6069.63,
+    6258.64,
+    6163.88,
+    6163.88,
+    6424.92,
+    6349,
+    6356.02,
+    6214.94,
+    6214.94,
+    6214.94,
+    6214.94,
+    6214.94,
+    6214.94,
+    6214.94,
+    6214.94,
+    6214.94,
+    6214.94,
+    6214.94,
+    6188.76,
+    6358.84,
+    6281.69,
+    6244.76,
+    6224.6,
+    6224.6,
+    6224.6,
+    6210.09,
+    6272.03,
+    6240.95,
+    6130.72,
+    6142.03,
+    6103.88,
+    6296.33,
+    6383.95,
+    6497.32,
+    6499.8,
+    6467.18,
+    6398.99,
+    6398.99,
+    6398.99,
+    6398.99,
+    6398.99,
+    6398.99,
+    6398.99,
+    6429.29,
+    6413.63,
+    6394.83,
+    6363.85,
+    6360.94,
+    6360.94,
+    6421.16,
+    6425.11,
+    6327.38,
+    6329.57,
+    6329.57,
+    6315.58,
+    6392.97,
+    6297.89,
+    6233.5,
+    6265.3
    ],
    "history": [
+    {
+     "version": "v1.4",
+     "at": 1794581454327,
+     "strategyId": "breakout",
+     "params": {
+      "period": 10,
+      "atrStop": 1.2,
+      "rr": 4,
+      "filter": true
+     },
+     "oosReturn": 4.64,
+     "isReturn": 24.3,
+     "fullReturn": 25.31,
+     "profitFactor": 2.31,
+     "trades": 25,
+     "maxDrawdownPct": 5.84,
+     "platform": "freqtrade",
+     "filename": "desk_1w_v1.4_freqtrade.py",
+     "bytes": 2586,
+     "improvement": 1.03,
+     "robustness": 73,
+     "note": "ש�\"פ�\"ר ש�S 1.03% �\u0018־out-of-sample"
+    },
     {
      "version": "v1.3",
      "at": 1794550615678,
@@ -2808,8 +2832,8 @@
    "dryRunCycles": 3,
    "liveTrades": [],
    "livePnl": 0,
-   "lastRunAt": 1794550615461,
-   "generatedCode": "# ============================================================\n# Alta Capital — auto-generated strategy artifact\n# Desk: סווינג · שנתי (שבועי) · ETHUSDT · 1w\n# Version: v1.3 · Strategy family: breakout\n# Backtest: return 16.82% · PF 3.78 · DD 5.54% · trades 19\n# OOS: 3.61% · Sharpe 0.49\n# Params: {\"period\":10,\"atrStop\":1.7,\"rr\":4,\"filter\":true}\n# Target platform: Freqtrade\n# Generated: 2026-11-13T06:16:55.678Z\n# Research artifact only — no warranty, no live order routing.\n# ============================================================\n# Drop this file in freqtrade/user_data/strategies/ and run:\n#   freqtrade backtesting --strategy Altadesk_1w --config user_data/config.json\n#   freqtrade trade --strategy Altadesk_1w --config user_data/config.json --dry-run\n\nfrom freqtrade.strategy import IStrategy\nfrom pandas import DataFrame\nimport talib.abstract as ta\n\n\nclass Altadesk_1w(IStrategy):\n    INTERFACE_VERSION = 3\n\n    timeframe = '1w'\n    can_short = True\n    startup_candle_count = 210\n\n    stoploss = -0.020\n    minimal_roi = {\"0\": 3.60, \"240\": 0.01, \"720\": 0}\n\n    trailing_stop = False\n    process_only_new_candles = True\n    use_exit_signal = True\n    exit_profit_only = False\n\n    def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe['dc_high'] = dataframe['high'].rolling(10).max()\n        dataframe['dc_low'] = dataframe['low'].rolling(10).min()\n        dataframe['dc_mid'] = (dataframe['dc_high'] + dataframe['dc_low']) / 2\n        dataframe['atr'] = ta.ATR(dataframe, timeperiod=14)\n        return dataframe\n\n    def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe.loc[\n            (\n        & (dataframe['close'] > dataframe['dc_high'].shift(1))\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_long',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['close'] < dataframe['dc_low'].shift(1))\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_short',\n        ] = 1\n        return dataframe\n\n    def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        # Risk-managed exits: ATR stop + fixed R multiple handled by the engine.\n        dataframe.loc[\n            (\n        & (dataframe['close'] > dataframe['dc_high'].shift(1))\n            ),\n            'exit_short',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['close'] < dataframe['dc_low'].shift(1))\n            ),\n            'exit_long',\n        ] = 1\n        return dataframe\n",
+   "lastRunAt": 1794581454100,
+   "generatedCode": "# ============================================================\n# Alta Capital — auto-generated strategy artifact\n# Desk: סווינג · שנתי (שבועי) · ETHUSDT · 1w\n# Version: v1.4 · Strategy family: breakout\n# Backtest: return 25.31% · PF 2.31 · DD 5.84% · trades 25\n# OOS: 4.64% · Sharpe 0.62\n# Params: {\"period\":10,\"atrStop\":1.2,\"rr\":4,\"filter\":true}\n# Target platform: Freqtrade\n# Generated: 2026-11-13T14:50:54.327Z\n# Research artifact only — no warranty, no live order routing.\n# ============================================================\n# Drop this file in freqtrade/user_data/strategies/ and run:\n#   freqtrade backtesting --strategy Altadesk_1w --config user_data/config.json\n#   freqtrade trade --strategy Altadesk_1w --config user_data/config.json --dry-run\n\nfrom freqtrade.strategy import IStrategy\nfrom pandas import DataFrame\nimport talib.abstract as ta\n\n\nclass Altadesk_1w(IStrategy):\n    INTERFACE_VERSION = 3\n\n    timeframe = '1w'\n    can_short = True\n    startup_candle_count = 210\n\n    stoploss = -0.014\n    minimal_roi = {\"0\": 3.60, \"240\": 0.01, \"720\": 0}\n\n    trailing_stop = False\n    process_only_new_candles = True\n    use_exit_signal = True\n    exit_profit_only = False\n\n    def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe['dc_high'] = dataframe['high'].rolling(10).max()\n        dataframe['dc_low'] = dataframe['low'].rolling(10).min()\n        dataframe['dc_mid'] = (dataframe['dc_high'] + dataframe['dc_low']) / 2\n        dataframe['atr'] = ta.ATR(dataframe, timeperiod=14)\n        return dataframe\n\n    def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        dataframe.loc[\n            (\n        & (dataframe['close'] > dataframe['dc_high'].shift(1))\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_long',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['close'] < dataframe['dc_low'].shift(1))\n                & (dataframe['volume'] > 0)\n            ),\n            'enter_short',\n        ] = 1\n        return dataframe\n\n    def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n        # Risk-managed exits: ATR stop + fixed R multiple handled by the engine.\n        dataframe.loc[\n            (\n        & (dataframe['close'] > dataframe['dc_high'].shift(1))\n            ),\n            'exit_short',\n        ] = 1\n        dataframe.loc[\n            (\n        & (dataframe['close'] < dataframe['dc_low'].shift(1))\n            ),\n            'exit_long',\n        ] = 1\n        return dataframe\n",
    "openTrade": {
     "dir": -1,
     "entry": 3400,
@@ -2821,38 +2845,38 @@
    },
    "ideas": [],
    "technical": {
-    "price": 1919.32,
+    "price": 1947.29,
     "bias": -0.42,
     "biasLabel": "דובי חזק",
     "confidence": 69,
     "trend": {
      "score": -0.55,
      "label": "מגמת ירידה",
-     "ema20": 2268.46,
-     "ema50": 2387.05,
-     "ema200": 2514.69,
+     "ema20": 2271.12,
+     "ema50": 2388.14,
+     "ema200": 2514.96,
      "adx": 19.8,
-     "slopePct": 6
+     "slopePct": 6.13
     },
     "momentum": {
-     "score": -0.39,
+     "score": -0.38,
      "label": "מומנטום שלילי",
-     "rsi": 39.8,
-     "macdHist": -25.0972,
-     "roc10": -22.23,
+     "rsi": 40.4,
+     "macdHist": -23.3122,
+     "roc10": -21.1,
      "state": "ניטרלי"
     },
     "volatility": {
-     "atrPct": 13.88,
-     "bbWidthPct": 61.66,
+     "atrPct": 13.68,
+     "bbWidthPct": 60.47,
      "regime": "רגילה"
     },
     "structure": {
-     "position": 0.11,
+     "position": 0.12,
      "support": 1577.06,
      "resistance": 4750.83,
-     "distToHighPct": 147.53,
-     "distToLowPct": 17.83
+     "distToHighPct": 143.97,
+     "distToLowPct": 19.01
     },
     "volume": {
      "score": 0.09,
@@ -2860,270 +2884,270 @@
     },
     "summary": [
      "מגמה: ירידה · ADX 20",
-     "מומנטום: RSI 40 · ROC10 -22.2%",
-     "תנודתיות: רגילה · ATR 13.9% מהמחיר",
-     "מבנה: 11% מהטווח · תמיכה 1577.06 · התנגדות 4750.83",
+     "מומנטום: RSI 40 · ROC10 -21.1%",
+     "תנודתיות: רגילה · ATR 13.7% מהמחיר",
+     "מבנה: 12% מהטווח · תמיכה 1577.06 · התנגדות 4750.83",
      "נפח: ניטרלי"
     ],
-    "at": 1794550616488
+    "at": 1794581455230
    },
    "assessment": {
-    "robustness": 75,
+    "robustness": 73,
     "walkForward": {
      "folds": [
       {
        "fold": 1,
        "from": 1591833600000,
        "to": 1642032000000,
-       "returnPct": 3.88,
+       "returnPct": 9.13,
        "trades": 9,
-       "profitFactor": 1.76,
-       "maxDrawdownPct": 4.65
+       "profitFactor": 2.71,
+       "maxDrawdownPct": 5.78
       },
       {
        "fold": 2,
        "from": 1642636800000,
        "to": 1692835200000,
-       "returnPct": -0.18,
-       "trades": 6,
-       "profitFactor": 0.91,
-       "maxDrawdownPct": 2.51
+       "returnPct": -2.68,
+       "trades": 7,
+       "profitFactor": 0.41,
+       "maxDrawdownPct": 4.57
       },
       {
        "fold": 3,
        "from": 1693440000000,
        "to": 1743638400000,
-       "returnPct": 3.45,
-       "trades": 7,
-       "profitFactor": 3.49,
-       "maxDrawdownPct": 3.65
+       "returnPct": 5.9,
+       "trades": 8,
+       "profitFactor": 2.52,
+       "maxDrawdownPct": 5.1
       },
       {
        "fold": 4,
        "from": 1744243200000,
        "to": 1794441600000,
-       "returnPct": 2.51,
-       "trades": 9,
-       "profitFactor": 1.65,
-       "maxDrawdownPct": 2.72
+       "returnPct": 3.31,
+       "trades": 10,
+       "profitFactor": 1.72,
+       "maxDrawdownPct": 3.23
       }
      ],
      "consistency": 0.75,
      "positiveFolds": 3,
      "totalFolds": 4,
-     "avgReturn": 2.42,
-     "worstReturn": -0.18,
-     "dispersion": 1.58
+     "avgReturn": 3.92,
+     "worstReturn": -2.68,
+     "dispersion": 4.33
     },
     "monteCarlo": {
      "available": true,
      "iterations": 500,
-     "p05": 2.01,
-     "p50": 16.77,
-     "p95": 37.35,
-     "ddP95": 5.48,
-     "probProfit": 0.98,
+     "p05": -1.14,
+     "p50": 26.09,
+     "p95": 71.4,
+     "ddP95": 14.32,
+     "probProfit": 0.93,
      "ruinProb": 0,
      "histogram": [
       {
-       "from": -5.76,
-       "to": -2.31,
-       "count": 7
+       "from": -21.56,
+       "to": -13.45,
+       "count": 2
       },
       {
-       "from": -2.31,
-       "to": 1.15,
-       "count": 12
+       "from": -13.45,
+       "to": -5.34,
+       "count": 9
       },
       {
-       "from": 1.15,
-       "to": 4.6,
-       "count": 26
+       "from": -5.34,
+       "to": 2.77,
+       "count": 45
       },
       {
-       "from": 4.6,
-       "to": 8.06,
-       "count": 48
+       "from": 2.77,
+       "to": 10.88,
+       "count": 57
       },
       {
-       "from": 8.06,
-       "to": 11.51,
-       "count": 53
-      },
-      {
-       "from": 11.51,
-       "to": 14.97,
+       "from": 10.88,
+       "to": 18.99,
        "count": 65
       },
       {
-       "from": 14.97,
-       "to": 18.42,
-       "count": 75
+       "from": 18.99,
+       "to": 27.1,
+       "count": 77
       },
       {
-       "from": 18.42,
-       "to": 21.88,
-       "count": 55
+       "from": 27.1,
+       "to": 35.21,
+       "count": 72
       },
       {
-       "from": 21.88,
-       "to": 25.33,
-       "count": 47
+       "from": 35.21,
+       "to": 43.32,
+       "count": 60
       },
       {
-       "from": 25.33,
-       "to": 28.79,
-       "count": 26
+       "from": 43.32,
+       "to": 51.43,
+       "count": 48
       },
       {
-       "from": 28.79,
-       "to": 32.24,
-       "count": 34
+       "from": 51.43,
+       "to": 59.54,
+       "count": 23
       },
       {
-       "from": 32.24,
-       "to": 35.7,
-       "count": 20
+       "from": 59.54,
+       "to": 67.65,
+       "count": 12
       },
       {
-       "from": 35.7,
-       "to": 39.16,
-       "count": 15
-      },
-      {
-       "from": 39.16,
-       "to": 42.61,
+       "from": 67.65,
+       "to": 75.75,
        "count": 10
       },
       {
-       "from": 42.61,
-       "to": 46.07,
+       "from": 75.75,
+       "to": 83.86,
+       "count": 7
+      },
+      {
+       "from": 83.86,
+       "to": 91.97,
+       "count": 7
+      },
+      {
+       "from": 91.97,
+       "to": 100.08,
+       "count": 0
+      },
+      {
+       "from": 100.08,
+       "to": 108.19,
        "count": 3
       },
       {
-       "from": 46.07,
-       "to": 49.52,
+       "from": 108.19,
+       "to": 116.3,
        "count": 1
       },
       {
-       "from": 49.52,
-       "to": 52.98,
-       "count": 1
-      },
-      {
-       "from": 52.98,
-       "to": 56.43,
+       "from": 116.3,
+       "to": 124.41,
        "count": 2
       }
      ]
     },
     "sensitivity": {
      "available": true,
-     "baseReturn": 16.82,
-     "mean": 15.79,
-     "sd": 3.66,
-     "sensitivity": 0.21,
+     "baseReturn": 25.31,
+     "mean": 23.2,
+     "sd": 4.14,
+     "sensitivity": 0.16,
      "brokenSamples": 0,
      "samples": [
       {
        "key": "period",
        "factor": 0.85,
-       "returnPct": 16.82,
-       "profitFactor": 3.78,
-       "trades": 19
+       "returnPct": 25.31,
+       "profitFactor": 2.31,
+       "trades": 25
       },
       {
        "key": "period",
        "factor": 1.15,
-       "returnPct": 7.98,
-       "profitFactor": 1.43,
-       "trades": 21
+       "returnPct": 18.29,
+       "profitFactor": 1.63,
+       "trades": 27
       },
       {
        "key": "atrStop",
        "factor": 0.85,
-       "returnPct": 18.52,
-       "profitFactor": 2.55,
-       "trades": 21
+       "returnPct": 23.8,
+       "profitFactor": 1.87,
+       "trades": 29
       },
       {
        "key": "atrStop",
        "factor": 1.15,
-       "returnPct": 11.47,
-       "profitFactor": 3.16,
-       "trades": 19
+       "returnPct": 16.32,
+       "profitFactor": 2.17,
+       "trades": 22
       },
       {
        "key": "rr",
        "factor": 0.85,
-       "returnPct": 18.35,
-       "profitFactor": 3.33,
-       "trades": 20
+       "returnPct": 20.36,
+       "profitFactor": 1.92,
+       "trades": 27
       },
       {
        "key": "rr",
        "factor": 1.15,
-       "returnPct": 16.82,
-       "profitFactor": 3.78,
-       "trades": 19
+       "returnPct": 25.31,
+       "profitFactor": 2.31,
+       "trades": 25
       },
       {
        "key": "filter",
        "factor": 0.85,
-       "returnPct": 18.16,
-       "profitFactor": 4.09,
-       "trades": 22
+       "returnPct": 28.1,
+       "profitFactor": 2.54,
+       "trades": 28
       },
       {
        "key": "filter",
        "factor": 1.15,
-       "returnPct": 18.16,
-       "profitFactor": 4.09,
-       "trades": 22
+       "returnPct": 28.1,
+       "profitFactor": 2.54,
+       "trades": 28
       }
      ]
     },
-    "trades": 19,
-    "assessedAt": 1794550615677
+    "trades": 25,
+    "assessedAt": 1794581454326
    },
-   "robustness": 75,
+   "robustness": 73,
    "oosMetrics": {
-    "returnPct": 3.61,
-    "maxDrawdownPct": 2.46,
+    "returnPct": 4.64,
+    "maxDrawdownPct": 3.23,
     "sharpe": 0.36,
-    "profitFactor": 3.73,
-    "winRate": 66.7,
-    "trades": 9,
-    "avgR": 0.266,
-    "expectancy": 20.01,
-    "exposurePct": 48.2,
-    "bestTradePct": 3.319,
-    "worstTradePct": -0.53,
-    "finalEquity": 5180.57,
+    "profitFactor": 2.33,
+    "winRate": 60,
+    "trades": 10,
+    "avgR": 0.315,
+    "expectancy": 23.15,
+    "exposurePct": 47.7,
+    "bestTradePct": 5.968,
+    "worstTradePct": -1.601,
+    "finalEquity": 5232.23,
     "curvePoints": 199,
-    "totalFees": 4.1478,
-    "barsInMarket": 96
+    "totalFees": 6.7135,
+    "barsInMarket": 95
    },
    "isMetrics": {
-    "returnPct": 15.01,
-    "maxDrawdownPct": 5.54,
-    "sharpe": 0.58,
-    "profitFactor": 5.39,
-    "winRate": 66.7,
-    "trades": 12,
-    "avgR": 0.799,
-    "expectancy": 62.56,
-    "exposurePct": 37.4,
-    "bestTradePct": 6.304,
-    "worstTradePct": -1.612,
-    "finalEquity": 5750.68,
+    "returnPct": 24.3,
+    "maxDrawdownPct": 5.84,
+    "sharpe": 0.8,
+    "profitFactor": 3,
+    "winRate": 52.9,
+    "trades": 17,
+    "avgR": 0.89,
+    "expectancy": 71.47,
+    "exposurePct": 36.1,
+    "bestTradePct": 7.05,
+    "worstTradePct": -1.895,
+    "finalEquity": 6214.94,
     "curvePoints": 294,
-    "totalFees": 6.8012,
-    "barsInMarket": 110
+    "totalFees": 14.5124,
+    "barsInMarket": 106
    },
    "lastCandles": 420,
    "dataProvider": null,
-   "artifactName": "desk_1w_v1.3_freqtrade.py",
+   "artifactName": "desk_1w_v1.4_freqtrade.py",
    "liveSince": 1794479160535
   }
  ],
@@ -3135,14 +3159,14 @@
    "icon": "♠",
    "focus": "ניהול תיק הסוכנים, החלטות קידום והקצאת הון",
    "status": "idle",
-   "task": "מעדיף להמתין לשיפור מובהק",
+   "task": "×ž×¢×“×™×£ ×œ×”×ž×ª×™×Ÿ ×œ×©×™×¤×•×¨ ×ž×•×‘×”×§",
    "progress": 100,
-   "completed": 38,
-   "speech": "סיים: מעדיף להמתין לשיפור מובהק",
+   "completed": 43,
+   "speech": "סיים: ×ž×¢×“×™×£ ×œ×”×ž×ª×™×Ÿ ×œ×©×™×¤×•×¨ ×ž×•×‘×”×§",
    "speechType": "speak",
-   "lastActive": 1794550616292,
+   "lastActive": 1794581454882,
    "thinking": null,
-   "thoughtUntil": 1794550661292
+   "thoughtUntil": 1794581499882
   },
   {
    "id": "quant",
@@ -3151,14 +3175,14 @@
    "icon": "∑",
    "focus": "סריקת אסטרטגיות ובניית השערות מסחר",
    "status": "idle",
-   "task": "בונה השערה · תוך־יומי · נר שעה",
+   "task": "בונה השערת מסחר · תוך־יומי · נר שעה",
    "progress": 100,
-   "completed": 38,
-   "speech": "סיים: בונה השערה · תוך־יומי · נר שעה",
+   "completed": 43,
+   "speech": "סיים: בונה השערת מסחר · תוך־יומי · נר שעה",
    "speechType": "speak",
-   "lastActive": 1794550616292,
+   "lastActive": 1794581454882,
    "thinking": null,
-   "thoughtUntil": 1794550661292
+   "thoughtUntil": 1794581499882
   },
   {
    "id": "backtest",
@@ -3167,14 +3191,14 @@
    "icon": "⌛",
    "focus": "הרצות עבר, חלוקת in-sample / out-of-sample",
    "status": "idle",
-   "task": "בודק 39/39 וריאציות",
+   "task": "�\u0018�\"�\u001cק 39/39 �\"ר�\"אצ�\"�\"ת",
    "progress": 100,
-   "completed": 38,
+   "completed": 43,
    "thinking": null,
-   "speech": "סיים: בודק 39/39 וריאציות",
+   "speech": "סיים: �\u0018�\"�\u001cק 39/39 �\"ר�\"אצ�\"�\"ת",
    "speechType": "speak",
-   "lastActive": 1794550616292,
-   "thoughtUntil": 1794550661292
+   "lastActive": 1794581454882,
+   "thoughtUntil": 1794581499882
   },
   {
    "id": "optimizer",
@@ -3185,12 +3209,12 @@
    "status": "idle",
    "task": "מיטוב פרמטרים מתמטי",
    "progress": 100,
-   "completed": 38,
+   "completed": 43,
    "thinking": null,
    "speechType": "speak",
-   "lastActive": 1794550616292,
+   "lastActive": 1794581454882,
    "speech": "סיים: מיטוב פרמטרים מתמטי",
-   "thoughtUntil": 1794550661292
+   "thoughtUntil": 1794581499882
   },
   {
    "id": "risk",
@@ -3199,14 +3223,14 @@
    "icon": "⛨",
    "focus": "מגבלות drawdown, חשיפה ומינוף",
    "status": "idle",
-   "task": "בודק DD 3.93% · PF 1.78",
+   "task": "�\u0018�\"�\u001cק DD 3.93% · PF 2.15",
    "progress": 100,
-   "completed": 38,
-   "speech": "סיים: בודק DD 3.93% · PF 1.78",
+   "completed": 43,
+   "speech": "סיים: �\u0018�\"�\u001cק DD 3.93% · PF 2.15",
    "speechType": "speak",
-   "lastActive": 1794550616292,
+   "lastActive": 1794581454882,
    "thinking": null,
-   "thoughtUntil": 1794550661292
+   "thoughtUntil": 1794581499882
   },
   {
    "id": "dev",
@@ -3215,14 +3239,14 @@
    "icon": "⌥",
    "focus": "אריזת גרסאות וקוד לבוטים בקוד פתוח",
    "status": "idle",
-   "task": "אורז v1.0 ל־freqtrade",
+   "task": "א�\"ר�\u0013 v1.4 �S־freqtrade",
    "progress": 100,
-   "completed": 16,
-   "speech": "סיים: אורז v1.0 ל־freqtrade",
+   "completed": 17,
+   "speech": "סיים: א�\"ר�\u0013 v1.4 �S־freqtrade",
    "speechType": "speak",
-   "lastActive": 1794550616097,
+   "lastActive": 1794581454327,
    "thinking": null,
-   "thoughtUntil": 1794550661097
+   "thoughtUntil": 1794581499327
   },
   {
    "id": "exec",
@@ -3231,14 +3255,14 @@
    "icon": "▶",
    "focus": "מעבר מ-dry-run להרצה חיה על הפלטפורמה",
    "status": "idle",
-   "task": "dry-run 1/3 · v1.0",
+   "task": "dry-run 2/3 · v1.0",
    "progress": 100,
-   "completed": 16,
-   "speech": "סיים: dry-run 1/3 · v1.0",
+   "completed": 18,
+   "speech": "סיים: dry-run 2/3 · v1.0",
    "speechType": "speak",
-   "lastActive": 1794550616097,
+   "lastActive": 1794581454782,
    "thinking": null,
-   "thoughtUntil": 1794550661097
+   "thoughtUntil": 1794581499782
   },
   {
    "id": "intel",
@@ -3249,12 +3273,12 @@
    "status": "idle",
    "task": "סורק GitHub/חדשות לאסטרטגיות ומיטוב",
    "progress": 100,
-   "completed": 38,
+   "completed": 43,
    "thinking": null,
    "speech": "סיים: סורק GitHub/חדשות לאסטרטגיות ומיטוב",
    "speechType": "speak",
-   "lastActive": 1794550616292,
-   "thoughtUntil": 1794550661292
+   "lastActive": 1794581454882,
+   "thoughtUntil": 1794581499882
   },
   {
    "id": "ta",
@@ -3263,17 +3287,187 @@
    "icon": "∿",
    "focus": "מגמה, מומנטום, תנודתיות ומבנה מחיר",
    "status": "idle",
-   "task": "קוראת מגמה, מומנטום ומבנה · 1h",
+   "task": "מנתח מגמה ומבנה מחיר · 1h",
    "progress": 100,
-   "completed": 38,
+   "completed": 43,
    "thinking": null,
    "speechType": "speak",
-   "lastActive": 1794550616292,
-   "speech": "סיים: קוראת מגמה, מומנטום ומבנה · 1h",
-   "thoughtUntil": 1794550661292
+   "lastActive": 1794581454882,
+   "speech": "סיים: מנתח מגמה ומבנה מחיר · 1h",
+   "thoughtUntil": 1794581499882
+  },
+  {
+   "id": "gann_time",
+   "name": "גדעון",
+   "role": "אנליסט מחזורי זמן גאן",
+   "icon": "⏱",
+   "focus": "מומחה מחזורי זמן של גאן: ניתוח רב-שנתי של גרפים ונתונים היסטוריים לזיהוי מחזורים, תאריכי מפנה ולוח שנה מסחרי",
+   "status": "idle",
+   "task": "מנתח מחזורי זמן גאן רב-שנתיים · BTCUSDT",
+   "progress": 100,
+   "completed": 5,
+   "speech": "סיים: מנתח מחזורי זמן גאן רב-שנתיים · BTCUSDT",
+   "speechType": "speak",
+   "thinking": null,
+   "lastActive": 1794581454882,
+   "thoughtUntil": 1794581499882
+  },
+  {
+   "id": "gann_geometry",
+   "name": "גליה",
+   "role": "אנליסטית זוויות ומבנה גאן",
+   "icon": "⌖",
+   "focus": "ניתוח זוויות גאן, רמות מחיר/זמן, ריבועי גאן ומבנה גאומטרי לזיהוי אזורי תמיכה/התנגדות ודפוסים",
+   "status": "idle",
+   "task": "ממפה זוויות ורמות גאן · BTCUSDT",
+   "progress": 100,
+   "completed": 5,
+   "speech": "סיים: ממפה זוויות ורמות גאן · BTCUSDT",
+   "speechType": "speak",
+   "thinking": null,
+   "lastActive": 1794581454882,
+   "thoughtUntil": 1794581499882
+  },
+  {
+   "id": "gann_patterns",
+   "name": "גיל",
+   "role": "אנליסט תבניות גאן",
+   "icon": "◈",
+   "focus": "זיהוי תבניות חוזרות, הרמוניות ומחזוריות בגרפים רב-שנתיים ושילוב מחקר גאן עם אסטרטגיות מסחר",
+   "status": "idle",
+   "task": "מזהה תבניות גאן חוזרות · BTCUSDT",
+   "progress": 100,
+   "completed": 5,
+   "speech": "סיים: מזהה תבניות גאן חוזרות · BTCUSDT",
+   "speechType": "speak",
+   "thinking": null,
+   "lastActive": 1794581454882,
+   "thoughtUntil": 1794581499882
+  },
+  {
+   "id": "gann_square",
+   "name": "גלעד",
+   "role": "אנליסט ריבוע התשע ומחיר-זמן",
+   "icon": "▣",
+   "focus": "חוקר שיטות גאן: ריבוע התשע, חישובי מחיר/זמן, רמות קרדינליות ויישום במציאת אזורי מפנה ואופטימיזציה",
+   "status": "idle",
+   "task": "חוקר ריבוע התשע ומחיר-זמן · BTCUSDT",
+   "progress": 100,
+   "completed": 5,
+   "speech": "סיים: חוקר ריבוע התשע ומחיר-זמן · BTCUSDT",
+   "speechType": "speak",
+   "thinking": null,
+   "lastActive": 1794581454882,
+   "thoughtUntil": 1794581499882
+  },
+  {
+   "id": "gann_master",
+   "name": "גנית",
+   "role": "אנליסטית מחזורי שוק ויישום גאן",
+   "icon": "⌬",
+   "focus": "חוקרת מחזורי שוק היסטוריים, מניפות/זוויות מאסטר ותרגום שיטות גאן לאסטרטגיות ומיטוב פרמטרים לרובוטים",
+   "status": "idle",
+   "task": "חוקרת מחזורי שוק ומיטוב גאן · BTCUSDT",
+   "progress": 100,
+   "completed": 5,
+   "speech": "סיים: חוקרת מחזורי שוק ומיטוב גאן · BTCUSDT",
+   "speechType": "speak",
+   "thinking": null,
+   "lastActive": 1794581454882,
+   "thoughtUntil": 1794581499882
   }
  ],
  "events": [
+  {
+   "at": 1794581455661,
+   "level": "ok",
+   "actor": "עומר · מודיעין",
+   "text": "מטבעות במגמת חיפוש: MIHAO, MIHAO, DACITYCOIN"
+  },
+  {
+   "at": 1794581455574,
+   "level": "ok",
+   "actor": "עומר · מודיעין",
+   "text": "מדד פחד/חמדנות: 20 (Extreme Fear)"
+  },
+  {
+   "at": 1794581455445,
+   "level": "ok",
+   "actor": "עומר · מודיעין",
+   "text": "סריקת GitHub (\"gann square of 9 trading algorithm\") החזירה 0 רעיונות חדשים"
+  },
+  {
+   "at": 1794581454882,
+   "level": "warn",
+   "actor": "�S�\"�\u001d · א�\"פ���\"�~�\"�\u0013צ�\"�\u001d",
+   "text": "תוך־יומי · נר שעה: �\u001d�~�\"ע�~�\u001c �\u001d���\"�\u0018 (ema_trend) �\u001dש�\"�\u0019 OOS 6.03% · �\u0014�\"ס�x 92/100 �\u001d �Sא ע�\"�~�\u001c �\u0018סף (ש�\"פ�\"ר 0.1% · �\u0014�\"ס�x 50)"
+  },
+  {
+   "at": 1794581454782,
+   "level": "info",
+   "actor": "א�\"ר�\"�\u001d · CIO",
+   "text": "פ�\"ת�\u0014 �~�\u0014�\u0013�\"ר ע�S תוך־יומי · נר שעה (BTCUSDT · 1h)"
+  },
+  {
+   "at": 1794581454782,
+   "level": "info",
+   "actor": "×ª×ž×¨ Â· ×‘×™×¦×•×¢",
+   "text": "תוך־יומי · 15 דקות: dry-run 2/3 Â· v1.0"
+  },
+  {
+   "at": 1794581454782,
+   "level": "warn",
+   "actor": "�S�\"�\u001d · א�\"פ���\"�~�\"�\u0013צ�\"�\u001d",
+   "text": "תוך־יומי · 15 דקות: �\u001d�~�\"ע�~�\u001c �\u001d���\"�\u0018 (momentum) �\u001dש�\"�\u0019 OOS 1.9% · �\u0014�\"ס�x 82/100 �\u001d �Sא ע�\"�~�\u001c �\u0018סף (ש�\"פ�\"ר 0.1% · �\u0014�\"ס�x 50)"
+  },
+  {
+   "at": 1794581454552,
+   "level": "info",
+   "actor": "א�\"ר�\"�\u001d · CIO",
+   "text": "פ�\"ת�\u0014 �~�\u0014�\u0013�\"ר ע�S תוך־יומי · 15 דקות (ETHUSDT · 15m)"
+  },
+  {
+   "at": 1794581454552,
+   "level": "info",
+   "actor": "×ª×ž×¨ Â· ×‘×™×¦×•×¢",
+   "text": "תוך־יומי · 5 דקות: dry-run 2/3 Â· v1.0"
+  },
+  {
+   "at": 1794581454552,
+   "level": "warn",
+   "actor": "�S�\"�\u001d · א�\"פ���\"�~�\"�\u0013צ�\"�\u001d",
+   "text": "תוך־יומי · 5 דקות: �\u001d�~�\"ע�~�\u001c �\u001d���\"�\u0018 (breakout) �\u001dש�\"�\u0019 OOS 3.24% · �\u0014�\"ס�x 84/100 �\u001d �Sא ע�\"�~�\u001c �\u0018סף (ש�\"פ�\"ר 0.1% · �\u0014�\"ס�x 50)"
+  },
+  {
+   "at": 1794581454328,
+   "level": "info",
+   "actor": "א�\"ר�\"�\u001d · CIO",
+   "text": "פ�\"ת�\u0014 �~�\u0014�\u0013�\"ר ע�S תוך־יומי · 5 דקות (BTCUSDT · 5m)"
+  },
+  {
+   "at": 1794581454327,
+   "level": "ok",
+   "actor": "�\u0019�\"א · פ�\"ת�\"�\u0014",
+   "text": "סווינג · שנתי (שבועי): פ�\"רס�~�\u001d v1.4 (breakout) · OOS 4.64% · PF 2.31"
+  },
+  {
+   "at": 1794581454100,
+   "level": "info",
+   "actor": "א�\"ר�\"�\u001d · CIO",
+   "text": "פ�\"ת�\u0014 �~�\u0014�\u0013�\"ר ע�S סווינג · שנתי (שבועי) (ETHUSDT · 1w)"
+  },
+  {
+   "at": 1794581454100,
+   "level": "warn",
+   "actor": "�S�\"�\u001d · א�\"פ���\"�~�\"�\u0013צ�\"�\u001d",
+   "text": "סווינג · חודשי (יומי): �\u001d�~�\"ע�~�\u001c �\u001d���\"�\u0018 (macd_swing) �\u001dש�\"�\u0019 OOS 17.88% · �\u0014�\"ס�x 95/100 �\u001d �Sא ע�\"�~�\u001c �\u0018סף (ש�\"פ�\"ר 0.1% · �\u0014�\"ס�x 50)"
+  },
+  {
+   "at": 1794581453484,
+   "level": "info",
+   "actor": "א�\"ר�\"�\u001d · CIO",
+   "text": "פ�\"ת�\u0014 �~�\u0014�\u0013�\"ר ע�S סווינג · חודשי (יומי) (BTCUSDT · 1d)"
+  },
   {
    "at": 1794550617200,
    "level": "ok",
@@ -5086,24 +5280,24 @@
   "github": {
    "used": 1,
    "total": 10,
-   "resetAt": 1794550676488,
-   "calls": 12
+   "resetAt": 1794581515230,
+   "calls": 13
   },
   "feargreed": {
    "used": 1,
    "total": 20,
-   "resetAt": 1794554216781,
-   "calls": 12
+   "resetAt": 1794585055445,
+   "calls": 13
   },
   "coingecko": {
    "used": 1,
    "total": 15,
-   "resetAt": 1794554217120,
-   "calls": 12
+   "resetAt": 1794585055574,
+   "calls": 13
   }
  },
  "sentiment": {
-  "updatedAt": 1794550617382,
+  "updatedAt": 1794581455958,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 20,
@@ -5128,20 +5322,20 @@
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.32,
+    "score": -0.4,
     "bias": "דובי",
-    "technical": -0.5,
+    "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 68355.2
+    "price": 68839.4
    },
    "ETHUSDT": {
-    "score": -0.32,
+    "score": -0.4,
     "bias": "דובי",
-    "technical": -0.5,
+    "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 1919.32
+    "price": 1947.65
    }
   },
   "headlines": [],
@@ -5149,7 +5343,22 @@
    {
     "name": "ni hao cat",
     "symbol": "MIHAO",
-    "rank": 947
+    "rank": 917
+   },
+   {
+    "name": "ni hao cat",
+    "symbol": "MIHAO",
+    "rank": 921
+   },
+   {
+    "name": "AudaCity",
+    "symbol": "DACITYCOIN",
+    "rank": 966
+   },
+   {
+    "name": "Seppuku",
+    "symbol": "SEPPUKU",
+    "rank": 803
    },
    {
     "name": "Bitcoin",
@@ -5157,14 +5366,9 @@
     "rank": 1
    },
    {
-    "name": "Sanctum",
-    "symbol": "SANC",
-    "rank": 408
-   },
-   {
-    "name": "Pearl",
-    "symbol": "PEARL",
-    "rank": 102
+    "name": "Shiba Inu",
+    "symbol": "SHIB",
+    "rank": 37
    },
    {
     "name": "Hyperliquid",
@@ -5172,29 +5376,19 @@
     "rank": 10
    },
    {
-    "name": "Pepe",
-    "symbol": "PEPE",
-    "rank": 45
+    "name": "Pearl",
+    "symbol": "PEARL",
+    "rank": 97
    },
    {
     "name": "Pudgy Penguins",
     "symbol": "PENGU",
-    "rank": 116
+    "rank": 115
    },
    {
     "name": "Solana",
     "symbol": "SOL",
     "rank": 7
-   },
-   {
-    "name": "Ethereum",
-    "symbol": "ETH",
-    "rank": 2
-   },
-   {
-    "name": "Zcash",
-    "symbol": "ZEC",
-    "rank": 11
    }
   ],
   "newsScore": 0
@@ -5204,18 +5398,18 @@
  },
  "remote": null,
  "stats": {
-  "cycles": 38,
-  "backtests": 4674,
-  "deployments": 16,
-  "scans": 36,
+  "cycles": 43,
+  "backtests": 5295,
+  "deployments": 17,
+  "scans": 39,
   "startedAt": 1794473380871
  },
- "updatedAt": "2026-11-13T06:16:57.384Z",
+ "updatedAt": "2026-11-13T14:50:55.961Z",
  "source": "github-actions",
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 2412,
+  "durationMs": 2478,
   "node": "v20.20.2"
  },
  "aiDirector": {
