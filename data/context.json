@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-12T23:49:06.239Z",
+ "generatedAt": "2026-11-13T06:16:57.385Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -14,8 +14,8 @@
    "label": "תוך־יומי · 5 דקות",
    "timeframe": "5m",
    "symbol": "BTCUSDT",
-   "status": "optimizing",
-   "version": null,
+   "status": "dry-run",
+   "version": "v1.0",
    "strategyId": "breakout",
    "params": {
     "period": 60,
@@ -24,92 +24,103 @@
     "filter": false
    },
    "metrics": {
-    "returnPct": -0.86,
-    "maxDrawdownPct": 3.09,
-    "sharpe": -4.25,
-    "profitFactor": 0.75,
-    "winRate": 28.6,
-    "trades": 14,
-    "avgR": -0.047,
-    "expectancy": -2.67,
-    "exposurePct": 42.2,
-    "bestTradePct": 1.467,
-    "worstTradePct": -0.643,
-    "finalEquity": 3717.76,
+    "returnPct": 3.73,
+    "maxDrawdownPct": 2.52,
+    "sharpe": 15.49,
+    "profitFactor": 1.86,
+    "winRate": 41.2,
+    "trades": 17,
+    "avgR": 0.141,
+    "expectancy": 7.91,
+    "exposurePct": 45.6,
+    "bestTradePct": 2.275,
+    "worstTradePct": -0.646,
+    "finalEquity": 3889.92,
     "curvePoints": 721,
-    "totalFees": 71.5285,
-    "barsInMarket": 304
+    "totalFees": 87.3759,
+    "barsInMarket": 329
    },
    "oos": {
-    "returnPct": 1.2,
-    "maxDrawdownPct": 1.21,
-    "sharpe": 11.92,
-    "profitFactor": 1.61,
-    "winRate": 37.5,
-    "trades": 8,
-    "avgR": 0.09,
-    "expectancy": 4.98,
-    "exposurePct": 37.3,
-    "bestTradePct": 1.497,
-    "worstTradePct": -0.648,
-    "finalEquity": 3795.12,
+    "returnPct": 5.77,
+    "maxDrawdownPct": 1.74,
+    "sharpe": 40.44,
+    "profitFactor": 3.7,
+    "winRate": 54.5,
+    "trades": 11,
+    "avgR": 0.335,
+    "expectancy": 19.18,
+    "exposurePct": 46.4,
+    "bestTradePct": 2.32,
+    "worstTradePct": -0.65,
+    "finalEquity": 3966.52,
     "curvePoints": 343,
-    "totalFees": 41.5503,
-    "barsInMarket": 128
+    "totalFees": 57.6507,
+    "barsInMarket": 159
    },
-   "bestReturn": null,
-   "versions": []
+   "bestReturn": 5.77,
+   "versions": [
+    {
+     "version": "v1.0",
+     "at": 1794550615882,
+     "oos": 5.77
+    }
+   ]
   },
   {
    "id": "desk_15m",
    "label": "תוך־יומי · 15 דקות",
    "timeframe": "15m",
    "symbol": "ETHUSDT",
-   "status": "optimizing",
-   "version": null,
+   "status": "dry-run",
+   "version": "v1.0",
    "strategyId": "momentum",
    "params": {
-    "period": 14,
+    "period": 21,
     "threshold": 0.8,
-    "atrStop": 1.6,
-    "rr": 1.6
+    "atrStop": 3.6,
+    "rr": 2.2
    },
    "metrics": {
-    "returnPct": -2.74,
-    "maxDrawdownPct": 4.05,
-    "sharpe": -4.2,
-    "profitFactor": 0.79,
-    "winRate": 34.9,
-    "trades": 43,
-    "avgR": -0.042,
-    "expectancy": -3.19,
-    "exposurePct": 21.1,
-    "bestTradePct": 1.961,
-    "worstTradePct": -1.163,
-    "finalEquity": 4862.82,
+    "returnPct": 1.98,
+    "maxDrawdownPct": 4.04,
+    "sharpe": 2.78,
+    "profitFactor": 1.29,
+    "winRate": 28.6,
+    "trades": 28,
+    "avgR": 0.048,
+    "expectancy": 3.41,
+    "exposurePct": 28.7,
+    "bestTradePct": 2.99,
+    "worstTradePct": -0.837,
+    "finalEquity": 5099.08,
     "curvePoints": 721,
-    "totalFees": 288.9812,
-    "barsInMarket": 152
+    "totalFees": 171.4756,
+    "barsInMarket": 207
    },
    "oos": {
-    "returnPct": 0.65,
-    "maxDrawdownPct": 2.28,
-    "sharpe": 2.07,
-    "profitFactor": 1.1,
-    "winRate": 43.5,
-    "trades": 23,
-    "avgR": 0.021,
-    "expectancy": 1.42,
-    "exposurePct": 28,
-    "bestTradePct": 2.029,
-    "worstTradePct": -1.109,
-    "finalEquity": 5032.6,
+    "returnPct": 4.07,
+    "maxDrawdownPct": 4.04,
+    "sharpe": 8.92,
+    "profitFactor": 2.11,
+    "winRate": 38.9,
+    "trades": 18,
+    "avgR": 0.149,
+    "expectancy": 11.1,
+    "exposurePct": 37.9,
+    "bestTradePct": 3.051,
+    "worstTradePct": -0.707,
+    "finalEquity": 5203.46,
     "curvePoints": 343,
-    "totalFees": 158.8751,
-    "barsInMarket": 96
+    "totalFees": 112.6036,
+    "barsInMarket": 130
    },
-   "bestReturn": null,
+   "bestReturn": 4.07,
    "versions": [
+    {
+     "version": "v1.0",
+     "at": 1794550616097,
+     "oos": 4.07
+    },
     {
      "version": "v1.1",
      "at": 1794478849476,
@@ -138,21 +149,21 @@
     "trendFilter": false
    },
    "metrics": {
-    "returnPct": 9.23,
+    "returnPct": 7.14,
     "maxDrawdownPct": 6.11,
-    "sharpe": 4.41,
-    "profitFactor": 1.79,
-    "winRate": 56.3,
-    "trades": 32,
-    "avgR": 0.186,
-    "expectancy": 17.76,
-    "exposurePct": 66.4,
-    "bestTradePct": 3.431,
-    "worstTradePct": -1.688,
-    "finalEquity": 6826.75,
+    "sharpe": 3.45,
+    "profitFactor": 1.54,
+    "winRate": 54.5,
+    "trades": 33,
+    "avgR": 0.143,
+    "expectancy": 13.35,
+    "exposurePct": 66.3,
+    "bestTradePct": 3.42,
+    "worstTradePct": -1.776,
+    "finalEquity": 6696.02,
     "curvePoints": 721,
-    "totalFees": 257.3743,
-    "barsInMarket": 479
+    "totalFees": 261.8517,
+    "barsInMarket": 478
    },
    "oos": {
     "returnPct": 11.66,
@@ -195,7 +206,7 @@
    "timeframe": "1d",
    "symbol": "BTCUSDT",
    "status": "live",
-   "version": "v1.3",
+   "version": "v1.4",
    "strategyId": "macd_swing",
    "params": {
     "fast": 7,
@@ -205,41 +216,46 @@
     "rr": 4
    },
    "metrics": {
-    "returnPct": 24.43,
+    "returnPct": 26.17,
     "maxDrawdownPct": 4.39,
-    "sharpe": 1.59,
-    "profitFactor": 2.57,
+    "sharpe": 1.68,
+    "profitFactor": 2.68,
     "winRate": 45.8,
     "trades": 24,
-    "avgR": 0.633,
-    "expectancy": 50.77,
-    "exposurePct": 27.3,
+    "avgR": 0.673,
+    "expectancy": 54.4,
+    "exposurePct": 27.5,
     "bestTradePct": 6.893,
     "worstTradePct": -1.926,
-    "finalEquity": 6221.4,
+    "finalEquity": 6308.41,
     "curvePoints": 600,
-    "totalFees": 68.6547,
-    "barsInMarket": 164
+    "totalFees": 68.5329,
+    "barsInMarket": 165
    },
    "oos": {
-    "returnPct": 16.51,
+    "returnPct": 18.14,
     "maxDrawdownPct": 4.54,
-    "sharpe": 1.76,
-    "profitFactor": 3.36,
+    "sharpe": 1.89,
+    "profitFactor": 3.6,
     "winRate": 50,
     "trades": 14,
-    "avgR": 0.753,
-    "expectancy": 58.78,
+    "avgR": 0.821,
+    "expectancy": 64.61,
     "exposurePct": 36.1,
     "bestTradePct": 6.486,
     "worstTradePct": -1.812,
-    "finalEquity": 5825.74,
+    "finalEquity": 5907.16,
     "curvePoints": 285,
-    "totalFees": 46.8051,
+    "totalFees": 46.6998,
     "barsInMarket": 103
    },
-   "bestReturn": 16.51,
+   "bestReturn": 18.14,
    "versions": [
+    {
+     "version": "v1.4",
+     "at": 1794550615461,
+     "oos": 18.14
+    },
     {
      "version": "v1.3",
      "at": 1794527344063,
@@ -268,7 +284,7 @@
    "timeframe": "1w",
    "symbol": "ETHUSDT",
    "status": "live",
-   "version": "v1.2",
+   "version": "v1.3",
    "strategyId": "breakout",
    "params": {
     "period": 10,
@@ -277,41 +293,46 @@
     "filter": true
    },
    "metrics": {
-    "returnPct": 16.44,
+    "returnPct": 16.82,
     "maxDrawdownPct": 5.54,
-    "sharpe": 0.48,
-    "profitFactor": 3.72,
+    "sharpe": 0.49,
+    "profitFactor": 3.78,
     "winRate": 57.9,
     "trades": 19,
-    "avgR": 0.55,
-    "expectancy": 43.24,
+    "avgR": 0.561,
+    "expectancy": 44.24,
     "exposurePct": 43.1,
     "bestTradePct": 6.304,
     "worstTradePct": -1.612,
-    "finalEquity": 5822.19,
+    "finalEquity": 5841.09,
     "curvePoints": 420,
-    "totalFees": 10.7783,
+    "totalFees": 10.7519,
     "barsInMarket": 181
    },
    "oos": {
-    "returnPct": 3.28,
+    "returnPct": 3.61,
     "maxDrawdownPct": 2.46,
-    "sharpe": 0.33,
-    "profitFactor": 3.48,
+    "sharpe": 0.36,
+    "profitFactor": 3.73,
     "winRate": 66.7,
     "trades": 9,
-    "avgR": 0.243,
-    "expectancy": 18.17,
+    "avgR": 0.266,
+    "expectancy": 20.01,
     "exposurePct": 48.2,
     "bestTradePct": 3.319,
     "worstTradePct": -0.53,
-    "finalEquity": 5163.98,
+    "finalEquity": 5180.57,
     "curvePoints": 199,
-    "totalFees": 4.171,
+    "totalFees": 4.1478,
     "barsInMarket": 96
    },
-   "bestReturn": 3.28,
+   "bestReturn": 3.61,
    "versions": [
+    {
+     "version": "v1.3",
+     "at": 1794550615678,
+     "oos": 3.61
+    },
     {
      "version": "v1.2",
      "at": 1794507750965,
@@ -331,6 +352,27 @@
   }
  ],
  "ideas": [
+  {
+   "title": "HuynhNhatKhanh/auto-trade",
+   "source": "GitHub",
+   "url": "https://github.com/HuynhNhatKhanh/auto-trade",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "KushagraKanaujia/trading-bot",
+   "source": "GitHub",
+   "url": "https://github.com/KushagraKanaujia/trading-bot",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "Angel1900/kalshi-ai-trading-bot",
+   "source": "GitHub",
+   "url": "https://github.com/Angel1900/kalshi-ai-trading-bot",
+   "strategy": null,
+   "tested": false
+  },
   {
    "title": "shivanshsinghal107/Investment-Portfolio",
    "source": "GitHub",
@@ -519,38 +561,16 @@
    "url": "https://github.com/ivopetiz/algotrading",
    "strategy": null,
    "tested": false
-  },
-  {
-   "title": "coding-kitties/investing-algorithm-framework",
-   "source": "GitHub",
-   "url": "https://github.com/coding-kitties/investing-algorithm-framework",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "Superalgos/Superalgos",
-   "source": "GitHub",
-   "url": "https://github.com/Superalgos/Superalgos",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "veighna-global/vnpy_novastrategy",
-   "source": "GitHub",
-   "url": "https://github.com/veighna-global/vnpy_novastrategy",
-   "strategy": null,
-   "tested": false
   }
  ],
  "sentiment": {
-  "updatedAt": 1794527346237,
+  "updatedAt": 1794550617382,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
-   "value": 28,
-   "label": "Fear",
-   "at": 1794441600000,
+   "value": 20,
+   "label": "Extreme Fear",
+   "at": 1794528000000,
    "history": [
-    30,
     30,
     34,
     37,
@@ -563,25 +583,26 @@
     29,
     32,
     29,
-    28
+    28,
+    20
    ]
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.29,
+    "score": -0.32,
     "bias": "דובי",
     "technical": -0.5,
     "news": 0,
     "drivers": [],
-    "price": 71266.1
+    "price": 68355.2
    },
    "ETHUSDT": {
-    "score": -0.37,
+    "score": -0.32,
     "bias": "דובי",
-    "technical": -0.7,
+    "technical": -0.5,
     "news": 0,
     "drivers": [],
-    "price": 2015.18
+    "price": 1919.32
    }
   },
   "headlines": [],
@@ -589,17 +610,7 @@
    {
     "name": "ni hao cat",
     "symbol": "MIHAO",
-    "rank": 778
-   },
-   {
-    "name": "Seppuku",
-    "symbol": "SEPPUKU",
-    "rank": 818
-   },
-   {
-    "name": "AudaCity",
-    "symbol": "DACITYCOIN",
-    "rank": 820
+    "rank": 947
    },
    {
     "name": "Bitcoin",
@@ -607,14 +618,29 @@
     "rank": 1
    },
    {
-    "name": "Pudgy Penguins",
-    "symbol": "PENGU",
-    "rank": 115
+    "name": "Sanctum",
+    "symbol": "SANC",
+    "rank": 408
    },
    {
-    "name": "Zcash",
-    "symbol": "ZEC",
-    "rank": 11
+    "name": "Pearl",
+    "symbol": "PEARL",
+    "rank": 102
+   },
+   {
+    "name": "Hyperliquid",
+    "symbol": "HYPE",
+    "rank": 10
+   },
+   {
+    "name": "Pepe",
+    "symbol": "PEPE",
+    "rank": 45
+   },
+   {
+    "name": "Pudgy Penguins",
+    "symbol": "PENGU",
+    "rank": 116
    },
    {
     "name": "Solana",
@@ -622,19 +648,14 @@
     "rank": 7
    },
    {
-    "name": "Pearl",
-    "symbol": "PEARL",
-    "rank": 100
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "rank": 2
    },
    {
-    "name": "XRP",
-    "symbol": "XRP",
-    "rank": 6
-   },
-   {
-    "name": "Quant",
-    "symbol": "QNT",
-    "rank": 41
+    "name": "Zcash",
+    "symbol": "ZEC",
+    "rank": 11
    }
   ],
   "newsScore": 0
