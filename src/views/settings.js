@@ -96,61 +96,55 @@ export function renderSettings(root, ui) {
       h('div', {},
         h('div', { class: 'eyebrow', text: 'Control room' }),
         h('h1', { text: 'הגדרות ומפתחות' }),
-        h('p', { text: 'כאן מחברים מודל, מגדירים סיכון, בוחרים פלטפורמת בוט ומחברים את זיכרון החברה לריפו GitHub.' }),
+        h('p', { text: 'כאן מחברים את הסוכנים לפרוקסי Cloudflare Worker, מגדירים סיכון ומנהלים הגדרות פלטפורמה וזיכרון.' }),
       ),
       h('div', { class: 'head-actions' },
-        h('button', { class: 'btn btn-primary', onclick: save }, 'שמור הכל'),
-        h('button', {
-          class: 'btn',
-          onclick: async () => {
-            save();
-            try { const r = await testConnection(); toast('המודל ענה: ' + r, 'ok'); }
-            catch (err) { toast('כשל בחיבור: ' + err.message, 'bad'); }
-          },
-        }, 'שמור ובדוק מודל'),
+        h('button', { class: 'btn btn-primary', onclick: async () => { save(); try { const r = await testConnection(); toast('הפרוקסי ענה: ' + r, 'ok'); } catch (err) { toast('בדיקת חיבור נכשלה: ' + err.message, 'bad'); } } }, 'שמור ובדוק חיבור פרוקסי'),
       ),
     ),
     notice('המפתחות נשמרים ב-localStorage של הדפדפן הזה בלבד. אין שרת, אין בסיס נתונים ואין שליחת מפתחות לשום מקום מלבד ספק המודל. אל תעלה קובץ הגדרות עם מפתחות לריפו ציבורי.', 'bad'),
   );
 
-  mount(root, poolCard(ui));
-  mount(root, webllmCard(ui));
-  mount(root, tradingviewCard(ui));
-
-  mount(root, h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },
-    h('div', { class: 'card' },
-      h('div', { class: 'card-head' }, h('div', {}, h('h2', { text: 'מודל AI ראשי' }), h('div', { class: 'card-sub', text: 'ברירת מחדל / פרוקסי — הבריכה מעליו קודמת' }))),
-      h('div', { class: 'form-grid' },
-        field('ספק', provider),
-        field('שם מודל', model),
-        field('כתובת API', baseUrl),
-        field('טמפרטורה', temperature),
-        h('div', { class: 'full' }, field('מפתח API (נשמר מקומית)', keyInput)),
+  // --- חיבור AI: פעיל רק דרך Cloudflare Workers Proxy (מופרד מחיבור API ישיר) ---
+  mount(root, h('section', { 'aria-label': 'חיבור AI לסוכנים', style: { marginTop: '14px' } },
+    h('h2', { style: { margin: '0 0 6px', fontSize: '20px' }, text: 'חיבור AI לסוכנים' }),
+    h('p', { class: 'small muted', style: { margin: '0 0 10px', lineHeight: '1.7' } },
+      'המערכת מוגדרת כרגע לעבוד ', h('strong', { text: 'רק' }), ' עם פרוקסי Cloudflare Worker. ההגדרה הפעילה נמצאת בכרטיס הייעודי למטה ומופרדת לחלוטין מחיבור API ישיר.'),
+    proxyCard(ui),
+    h('details', { class: 'card', style: { marginTop: '12px' } },
+      h('summary', { style: { cursor: 'pointer', padding: '14px 16px', fontWeight: '600', fontSize: '15px' } },
+        'חיבור API ישיר לספקים (מושבת זמנית — מופרד מהפרוקסי)',
+        ' ', tag('לא פעיל', 'dry'),
       ),
-      notice('ספקים שחוסמים בקשות דפדפן (CORS) לא יעבדו ישירות מהאתר. במצב כזה אפשר להריץ פרוקסי מקומי, או להשתמש ב-OpenRouter/Groq/Gemini שתומכים בקריאה מהדפדפן.', 'blue'),
-      h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '12px' } },
-        h('button', { class: 'btn btn-primary btn-sm', onclick: save }, 'שמור הגדרות API'),
-        h('button', { class: 'btn btn-sm', onclick: async () => { save(); try { const r = await testConnection(); toast('המודל ענה: ' + r, 'ok'); } catch (err) { toast('כשל בחיבור: ' + err.message, 'bad'); } } }, 'שמור ובדוק חיבור'),
+      h('div', { style: { padding: '0 16px 16px' } },
+        notice('מושבת זמנית: חיבור API ישיר, בריכת מודלים ו-WebLLM אינם בשימוש ולא יפעילו את הסוכנים. כדי שהמערכת תעבוד יש להגדיר ולשמור פרוקסי Cloudflare Worker פעיל בכרטיס שמעל.', 'blue'),
+        h('ul', { style: { margin: '8px 0 0', paddingInlineStart: '20px', lineHeight: '1.8' } },
+          h('li', {}, h('strong', { text: 'פרוקסי Cloudflare Worker (החיבור הפעיל): ' }), 'מזינים כתובת Worker (למשל https://name.workers.dev/chat), בוחרים מודל ושומרים. ה-Worker מעביר את הבקשה למודל ומחזיק את מפתח הספק כסוד ב-Cloudflare — לא בדפדפן.'),
+          h('li', {}, h('strong', { text: 'חיבור API ישיר / בריכה (מושבת): ' }), 'הזנת מפתחות ספקים ישירות בדפדפן או ניהול בריכת מפתחות — כרגע לא בשימוש כדי לעבוד דרך Worker בלבד.'),
+          h('li', {}, h('strong', { text: 'למה ההפרדה? ' }), 'כרטיס הפרוקסי ייעודי ונגיש (תוויות, הוראות שלב-אחר-שלב, סטטוס ובדיקת חיבור) ועומד בפני עצמו; הגדרות API ישירות מופרדות ואינן משפיעות בזמן שהן מושבתות.'),
+        ),
       ),
     ),
+  ));
 
-    h('div', { class: 'card' },
-      h('div', { class: 'card-head' }, h('div', {}, h('h2', { text: 'סיכון והפעלה' }), h('div', { class: 'card-sub', text: 'שערי הקידום והקצאת ההון' }))),
-      h('div', { class: 'form-grid' },
-        h('div', { class: 'full' }, h('label', { class: 'check' }, autopilot, 'אוטופיילוט — הסוכנים רצים לבד כל כמה שניות')),
-        field('שניות בין מחזורים', tickSeconds),
-        field('הון מדומה ($)', capital),
-        field('סיכון לעסקה (%)', risk),
-        field('Max DD (%)', maxDd),
-        field('מינימום עסקאות', minTrades),
-        field('Profit Factor מינימלי', minPf),
-        field('חוסן סטטיסטי מינימלי (0-100)', minRobust),
-        field('סף שיפור לגרסה (%)', delta),
-        h('div', { class: 'full' }, field('פלטפורמת יעד לקוד', platform)),
-      ),
-      h('div', { class: 'small muted', style: { marginTop: '8px' } },
-        'הסף קובע מתי נפתחת גרסה חדשה: שיפור של ' + s.promotionDelta + '% ומעלה ב-OOS, בתנאי שהמדדים עוברים את שערי הסיכון.',
-      ),
+  mount(root, tradingviewCard(ui));
+
+  mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
+    h('div', { class: 'card-head' }, h('div', {}, h('h2', { text: 'סיכון והפעלה' }), h('div', { class: 'card-sub', text: 'שערי הקידום והקצאת ההון' }))),
+    h('div', { class: 'form-grid' },
+      h('div', { class: 'full' }, h('label', { class: 'check' }, autopilot, 'אוטופיילוט — הסוכנים רצים לבד כל כמה שניות')),
+      field('שניות בין מחזורים', tickSeconds),
+      field('הון מדומה ($)', capital),
+      field('סיכון לעסקה (%)', risk),
+      field('Max DD (%)', maxDd),
+      field('מינימום עסקאות', minTrades),
+      field('Profit Factor מינימלי', minPf),
+      field('חוסן סטטיסטי מינימלי (0-100)', minRobust),
+      field('סף שיפור לגרסה (%)', delta),
+      h('div', { class: 'full' }, field('פלטפורמת יעד לקוד', platform)),
+    ),
+    h('div', { class: 'small muted', style: { marginTop: '8px' } },
+      'הסף קובע מתי נפתחת גרסה חדשה: שיפור של ' + s.promotionDelta + '% ומעלה ב-OOS, בתנאי שהמדדים עוברים את שערי הסיכון.',
     ),
   ));
 
@@ -398,42 +392,121 @@ function tradingviewCard(ui) {
 
 function proxyCard(ui) {
   const st = store.state.settings;
-  const proxyUrl = h('input', { type: 'url', value: st.cloudflareProxyUrl || '', placeholder: 'https://<worker>.workers.dev/v1 או Cloudflare AI Gateway URL', dir: 'ltr' });
-  const proxyKey = h('input', { type: 'password', value: st.cloudflareProxyKey || '', placeholder: 'מפתח/טוקן ל-Proxy (אם נדרש)', dir: 'ltr', autocomplete: 'off' });
-  const modelIn = h('input', { type: 'text', value: st.cloudflareProxyModel || 'llama-3.1-8b-instant', placeholder: 'מודל דרך Proxy (למשל llama-3.1-8b-instant / @cf/meta/llama-3.3-70b-instruct-fp8-fast)', dir: 'ltr' });
+  const proxyUrl = h('input', { type: 'url', id: 'cf-proxy-url', value: st.cloudflareProxyUrl || '', placeholder: 'https://your-worker.your-subdomain.workers.dev/chat', dir: 'ltr', 'aria-describedby': 'cf-url-help', style: { width: '100%' } });
+  const proxyKey = h('input', { type: 'password', id: 'cf-proxy-key', value: st.cloudflareProxyKey || '', placeholder: 'אופציונלי — רק אם ה-Worker דורש מפתח/טוקן', dir: 'ltr', autocomplete: 'off', style: { width: '100%' } });
+  const modelIn = h('input', { type: 'text', id: 'cf-proxy-model', value: st.cloudflareProxyModel || 'openai/gpt-oss-120b', placeholder: 'openai/gpt-oss-120b', dir: 'ltr', list: 'cf-models', style: { width: '100%' } });
+  const modelsDl = h('datalist', { id: 'cf-models' },
+    h('option', { value: 'openai/gpt-oss-120b' }),
+    h('option', { value: 'openai/gpt-oss-20b' }),
+    h('option', { value: 'qwen/qwen3.6-27b' }),
+  );
+
   const addProxy = () => {
     const url = proxyUrl.value.trim();
-    if (!url) { toast('הזן כתובת Proxy/Gateway', 'bad'); return; }
-    const res = addPoolEntry(store.state, { provider: 'gateway', model: modelIn.value.trim() || 'auto', key: proxyKey.value.trim(), baseUrl: url, label: 'Cloudflare/AI Proxy' });
+    if (!url) { toast('יש להזין כתובת Worker (URL)', 'bad'); proxyUrl.focus(); return; }
+    if (!/^https?:\/\//i.test(url)) { toast('כתובת ה-Worker חייבת להתחיל ב-https://', 'bad'); proxyUrl.focus(); return; }
+    // replace previous gateway entries to keep "Cloudflare proxy only"
     store.mutate((x) => {
+      if (x.settings && x.settings.pool && Array.isArray(x.settings.pool.entries)) {
+        x.settings.pool.entries = x.settings.pool.entries.filter((e) => e.provider !== 'gateway');
+      }
       x.settings.cloudflareProxyUrl = url;
       x.settings.cloudflareProxyKey = proxyKey.value.trim();
-      x.settings.cloudflareProxyModel = modelIn.value.trim() || 'auto';
+      x.settings.cloudflareProxyModel = modelIn.value.trim() || 'openai/gpt-oss-120b';
     });
-    toast(res.duplicate ? 'ה-proxy כבר בבריכה' : 'Proxy נוסף לבריכה — הסוכנים ישתמשו בו', res.duplicate ? 'bad' : 'ok');
+    const res = addPoolEntry(store.state, { provider: 'gateway', model: modelIn.value.trim() || 'openai/gpt-oss-120b', key: proxyKey.value.trim(), baseUrl: url, label: 'Cloudflare Worker Proxy' });
+    if (!res.duplicate) { store.save(true); store.emit(); }
+    toast('פרוקסי Cloudflare נשמר — המערכת תשתמש בו', 'ok');
     ui.rerender();
   };
+
+  const status = (() => {
+    const pool = poolEntries(store.state).filter((e) => e.provider === 'gateway');
+    if (!pool.length) return tag('לא מחובר', 'dry');
+    const s = entryStatus(pool[0]);
+    const [label, color] = STATUS_LABEL[s] || [s, 'dry'];
+    return tag('מחובר · ' + label, color === 'green' ? 'live' : (color === 'red' ? 'dry' : 'opt'));
+  })();
+
   return h('div', { class: 'card', style: { marginTop: '14px' } },
     h('div', { class: 'card-head' },
-      h('div', {}, h('h2', { text: 'Proxy / Cloudflare AI Gateway (Groq, Workers AI וכו׳)' }),
-        h('div', { class: 'card-sub', text: 'חיבור מודלי AI חינמיים דרך Cloudflare Worker/Proxy — הסוכנים ינתבו אליו אוטומטית' })),
-      tag('proxy', 'live'),
+      h('div', {},
+        h('h2', { text: 'חיבור AI דרך Cloudflare Workers (פרוקסי)' }),
+        h('div', { class: 'card-sub', text: 'הגדרת החיבור הפעילה היחידה כרגע — הסוכנים ישתמשו רק ב-Worker הזה' }),
+      ),
+      status,
     ),
-    notice('הגדר כאן כתובת Proxy תואמת OpenAI (/v1/chat/completions), למשל Cloudflare Worker שמעביר ל-Groq או ל-Cloudflare Workers AI ומחזיק את המפתח כסוד בצד השרת. לאחר הוספה הוא נכנס לבריכת המודלים והסוכנים משתמשים בו עם רוטציה ונפילה אוטומטית. ניתן גם להוסיף ישירות Groq/Cloudflare בבריכה למטה.', 'blue'),
-    h('div', { class: 'form-grid', style: { marginTop: '12px' } },
-      h('div', { class: 'full' }, field('כתובת Proxy/Gateway', proxyUrl)),
-      field('מפתח ל-Proxy (אופציונלי)', proxyKey),
-      field('מודל ברירת מחדל', modelIn),
+    notice('כרגע המערכת מוגדרת לעבוד רק עם פרוקסי Cloudflare Worker. חיבורים ישירים לספקים אחרים מושבתים עד לשינוי הגדרה.', 'bad'),
+
+    h('div', { role: 'group', 'aria-label': 'הגדרות פרוקסי Cloudflare', style: { marginTop: '12px' } },
+      h('div', { class: 'form-grid' },
+        h('div', { class: 'full' },
+          h('label', { for: 'cf-proxy-url', class: 'field' },
+            h('span', { text: 'כתובת Worker (URL) — שדה חובה' }),
+            proxyUrl,
+          ),
+          h('div', { id: 'cf-url-help', class: 'small muted', style: { marginTop: '4px' }, text: 'הדבק את כתובת ה-Worker המלאה, לדוגמה: https://gefen-proxy.kkar1953.workers.dev/chat' }),
+        ),
+        h('div', {},
+          h('label', { for: 'cf-proxy-key', class: 'field' },
+            h('span', { text: 'מפתח/טוקן ל-Proxy (אופציונלי)' }),
+            proxyKey,
+          ),
+          h('div', { class: 'small muted', style: { marginTop: '4px' }, text: 'השאר ריק אם ה-Worker לא מבקש אימות ומחזיק את ה-API key כסוד בצד השרת (מומלץ).' }),
+        ),
+        h('div', {},
+          h('label', { for: 'cf-proxy-model', class: 'field' },
+            h('span', { text: 'מודל' }),
+            h('div', {}, modelIn, modelsDl),
+          ),
+          h('div', { class: 'small muted', style: { marginTop: '4px' }, text: 'ברירת מחדל: openai/gpt-oss-120b (ניתן לבחור מהרשימה או להקליד).' }),
+        ),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '12px' } },
+        h('button', { class: 'btn btn-sm btn-primary', onclick: addProxy }, 'שמור והפעל פרוקסי'),
+        h('button', { class: 'btn btn-sm', onclick: async () => {
+          addProxy();
+          try { const r = await testConnection(); toast('הפרוקסי ענה: ' + r, 'ok'); }
+          catch (err) { toast('בדיקת חיבור נכשלה: ' + err.message, 'bad'); }
+          ui.rerender();
+        } }, 'שמור ובדוק חיבור'),
+      ),
     ),
-    h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '10px' } },
-      h('button', { class: 'btn btn-sm btn-primary', onclick: addProxy }, 'הוסף Proxy לבריכה'),
-      h('a', { class: 'btn btn-sm btn-ghost', href: 'https://developers.cloudflare.com/ai-gateway/', target: '_blank', rel: 'noopener', text: 'Cloudflare AI Gateway ↗' }),
-      h('a', { class: 'btn btn-sm btn-ghost', href: 'https://console.groq.com/keys', target: '_blank', rel: 'noopener', text: 'מפתח Groq ↗' }),
-      h('a', { class: 'btn btn-sm btn-ghost', href: 'https://developers.cloudflare.com/workers-ai/', target: '_blank', rel: 'noopener', text: 'Workers AI ↗' }),
-    ),
-    h('ul', { class: 'list-clean', style: { marginTop: '8px' } },
-      h('li', { class: 'small muted', text: 'דוגמה ל-Worker: קבל POST ב-/v1/chat/completions והעבר ל-https://api.groq.com/openai/v1 עם Authorization מתוך סוד GROQ_API_KEY ב-Cloudflare.' }),
-      h('li', { class: 'small muted', text: 'ל-24/7 ב-Actions: הוסף Secrets כמו GROQ_API_KEY, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID או LLM_GATEWAY_URL/KEY.' }),
+
+    h('details', { open: true, style: { marginTop: '14px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px 14px' } },
+      h('summary', { style: { cursor: 'pointer', fontWeight: '600' }, text: 'איך מחברים — הסבר שלב-אחר-שלב' }),
+      h('ol', { style: { margin: '10px 0 0', paddingInlineStart: '20px', lineHeight: '1.7' } },
+        h('li', {},
+          h('b', { text: 'צור Worker ב-Cloudflare: ' }),
+          h('span', { text: 'היכנס ל-Cloudflare Dashboard → Workers & Pages → Create Worker. הדבק קוד שמקבל ' }),
+          h('code', { text: 'POST /chat' }),
+          h('span', { text: ' ומעביר את הבקשה ל-API של המודל (למשל Groq: ' }),
+          h('code', { text: 'https://api.groq.com/openai/v1/chat/completions' }),
+          h('span', { text: ').' }),
+        ),
+        h('li', {},
+          h('b', { text: 'הגדר סוד (Secret) ב-Worker: ' }),
+          h('span', { text: 'בהגדרות ה-Worker הוסף משתנה סודי ' }),
+          h('code', { text: 'GROQ_API_KEY' }),
+          h('span', { text: ' (או המפתח המתאים) — כך המפתח לא נחשף בדפדפן.' }),
+        ),
+        h('li', {},
+          h('b', { text: 'פרוס והעתק כתובת: ' }),
+          h('span', { text: 'לחץ Deploy והעתק את כתובת ה-Worker שמסתיימת ב-' }),
+          h('code', { text: '/chat' }),
+          h('span', { text: ' (למשל ' }),
+          h('code', { text: 'https://name.workers.dev/chat' }),
+          h('span', { text: ').' }),
+        ),
+        h('li', {},
+          h('b', { text: 'הדבק כאן ושמור: ' }),
+          h('span', { text: 'הדבק את הכתובת בשדה "כתובת Worker", ודא שהמודל נכון, לחץ "שמור והפעל פרוקסי" ואז "שמור ובדוק חיבור".' }),
+        ),
+      ),
+      h('div', { class: 'small muted', style: { marginTop: '10px' } },
+        h('b', { text: 'טיפ: ' }),
+        h('span', { text: 'אם ה-Worker מוגן בטוקן גישה משלך, הזן אותו בשדה האופציונלי. אם אין הגנה — השאר ריק. לריצה 24/7 ב-GitHub Actions ניתן להגדיר Secrets מתאימים (למשל GROQ_API_KEY / LLM_GATEWAY_URL) ב-Repository.' }),
+      ),
     ),
   );
 }
