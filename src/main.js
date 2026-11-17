@@ -18,6 +18,8 @@ import { renderSentiment } from './views/sentiment.js';
 import { renderAdvisor } from './views/advisor.js';
 import { renderSettings } from './views/settings.js';
 import { renderDocs } from './views/docs.js';
+import { renderPortfolio } from './views/portfolio.js';
+import { renderCharts } from './views/charts.js';
 
 const VIEWS = {
   overview: renderOverview,
@@ -30,6 +32,8 @@ const VIEWS = {
   advisor: renderAdvisor,
   settings: renderSettings,
   docs: renderDocs,
+  portfolio: renderPortfolio,
+  charts: renderCharts,
 };
 
 const ui = {
@@ -112,7 +116,7 @@ function errorBox(err) {
   return h('div', { class: 'card', style: { borderColor: 'rgba(240,91,91,.4)' } },
     h('h2', { text: 'שגיאה ברינדור המסך' }),
     h('div', { class: 'small muted', text: String(err?.message || err) }),
-    h('div', { class: 'small muted', style: { marginTop: '8px' }, text: 'פתח את קונסולת הדפדפן (Cmd+Option+J) כדי לראות את ה-stack. שאר המסכים ממשיכים לעבוד.' }),
+    h('div', { class: 'small muted', style: { marginTop: '8px' }, text: 'פתח את קונסולת הדפדפן (F12) כדי לראות את ה-stack. שאר המסכים ממשיכים לעבוד.' }),
     h('button', { class: 'btn btn-sm', style: { marginTop: '10px' }, onclick: () => ui.go('overview') }, 'חזור לסקירה'),
   );
 }
@@ -187,11 +191,11 @@ function boot() {
     updateTopbar();
     const s = store.state.settings;
     if (!s.autopilot) return;
-    // When the cloud runner is publishing state, the local tab stays a read-only dashboard.
-    if (store.state.remote?.updatedAt && s.cloudSync) return;
+    const cloudMode = !!(store.state.remote?.updatedAt && s.cloudSync);
     const gap = Date.now() - (store.state.lastTickAt || 0);
-    if (gap >= Math.max(3, s.tickSeconds) * 1000) {
-      tick().catch((err) => console.warn('[autopilot]', err));
+    const interval = Math.max(3, Number(s.tickSeconds || 4)) * 1000;
+    if (gap >= interval) {
+      tick({ reason: cloudMode ? 'local-nudge' : 'auto' }).catch((err) => console.warn('[autopilot]', err));
     }
   }, 1000);
 
@@ -211,9 +215,12 @@ function boot() {
     .catch((err) => console.warn('[cloud]', err));
 
   setTimeout(() => {
-    const cloudMode = !!(store.state.remote?.updatedAt && store.state.settings.cloudSync);
-    if (store.state.settings.autopilot && !cloudMode) catchUp().catch((err) => console.warn('[catchup]', err));
-  }, 1300);
+    if (store.state.settings.autopilot) {
+      tick({ reason: 'boot' }).catch(() => {});
+      const cloudMode = !!(store.state.remote?.updatedAt && store.state.settings.cloudSync);
+      if (!cloudMode) catchUp().catch((err) => console.warn('[catchup]', err));
+    }
+  }, 600);
 }
 
 boot();

@@ -292,7 +292,15 @@ export async function refreshSentiment() {
 export async function scanIfDue() {
   const b = budget('github');
   if (b.used >= b.total) return { skipped: true };
-  const queries = ['freqtrade strategy', 'trading strategy backtest', 'algorithmic trading bot', 'crypto quant strategy'];
+  const queries = [
+    'freqtrade strategy profitable', 'trading strategy backtest walk forward', 'algorithmic trading bot optimization', 'crypto quant strategy sharpe',
+    'hyperopt strategy optimization', 'portfolio optimization trading python', 'walk forward analysis trading github', 'bayesian optimization trading strategy',
+    'trading bot risk management position sizing kelly', 'mean reversion momentum breakout strategy backtest',
+    'wd gann trading strategy', 'gann square of 9 trading algorithm', 'gann fan angles crypto trading', 'gann time cycles calendar trading',
+    'gann swing chart technique', 'gann price time geometry tradingview', 'gann seasonal time cycles', 'gann box square indicator github',
+    'supertrend indicator strategy', 'vwap trading strategy', 'ichimoku cloud strategy', 'stochastic rsi strategy crypto',
+    'order flow volume profile trading', 'machine learning trading signals feature engineering', 'open source quantitative trading framework'
+  ];
   const q = queries[(store.state.stats.scans || 0) % queries.length];
   try {
     return await scanGitHub(q, { quiet: true });

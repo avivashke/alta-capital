@@ -227,3 +227,74 @@ export function section(title, subtitle, ...children) {
 export function progressBar(value, warn = false) {
   return h('div', { class: 'bar' + (warn ? ' warn' : '') }, h('i', { style: { width: Math.max(0, Math.min(100, value || 0)) + '%' } }));
 }
+
+/* ---- Agent speech / thinking bubbles ---- */
+
+export function speechBubble(text, type = 'speak') {
+  const cls = 'bubble ' + (type === 'think' ? 'think' : type === 'status' ? 'status' : 'speak');
+  const dots = type === 'think'
+    ? h('div', { class: 'typing-dots' }, h('span'), h('span'), h('span'))
+    : null;
+  return h('div', { class: 'agent-bubble-wrap' },
+    h('div', { class: cls, text }, dots)
+  );
+}
+
+export function agentBubble(agent) {
+  if (agent.speech) {
+    return speechBubble(agent.speech, agent.speechType || 'speak');
+  }
+  if (agent.thinking) {
+    return speechBubble(agent.thinking, 'think');
+  }
+  if (agent.status === 'busy') {
+    return speechBubble('עובד על משימה…', 'status');
+  }
+  return null;
+}
+
+/* ---- Live price indicator ---- */
+
+export function livePrice(symbol, price, changePct, connected = true) {
+  const dir = changePct == null ? '' : (changePct >= 0 ? 'up' : 'down');
+  const dotCls = 'dot' + (connected ? '' : ' off');
+  const chg = changePct == null ? '—' : (changePct >= 0 ? '+' : '') + changePct.toFixed(2) + '%';
+  return h('div', { class: 'live-price' },
+    h('div', { class: dotCls }),
+    h('span', { class: 'sym', text: symbol }),
+    h('span', { class: dir, text: num(price, 2) }),
+    h('span', { class: dir + ' ' + signClass(changePct), text: chg }),
+  );
+}
+
+/* ---- Portfolio table row helpers ---- */
+
+export function positionRow(pos, currentPrice) {
+  const qty = num(pos.quantity, 6);
+  const entry = num(pos.averageEntryPrice, 2);
+  const mark = num(currentPrice, 2);
+  const pnl = currentPrice ? ((currentPrice - pos.averageEntryPrice) * pos.quantity) : 0;
+  const pnlPct = currentPrice ? ((currentPrice / pos.averageEntryPrice) - 1) * 100 : 0;
+  const cls = pnl >= 0 ? 'up' : 'down';
+  return h('div', { class: 'position-row' },
+    h('div', { class: 'sym', text: pos.symbol }),
+    h('div', { class: 'qty', text: qty }),
+    h('div', { class: 'entry', text: 'כניסה: ' + entry }),
+    h('div', { class: 'mark', text: 'מחיר: ' + mark }),
+    h('div', { class: 'pnl ' + cls, text: pct(pnlPct) + ' · ' + money(pnl) }),
+    h('div', { class: 'small muted', text: 'פוזיציה פתוחה' }),
+  );
+}
+
+export function tradeRow(trade) {
+  const sideCls = trade.side === 'BUY' ? 'buy' : 'sell';
+  const time = trade.timestamp ? new Date(trade.timestamp).toLocaleTimeString('he-IL') : '—';
+  return h('div', { class: 'trade-row' },
+    h('div', { class: 'side ' + sideCls, text: trade.side }),
+    h('div', { class: 'sym', text: trade.symbol }),
+    h('div', { class: 'entry', text: num(trade.price, 2) }),
+    h('div', { class: 'qty', text: num(trade.quantity, 6) }),
+    h('div', { class: 'fee', text: 'עמלה ' + money(trade.fee) }),
+    h('div', { class: 'tiny muted', text: time }),
+  );
+}

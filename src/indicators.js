@@ -181,3 +181,101 @@ export function highest(values, period) {
 export function lowest(values, period) {
   return values.map((_, i) => (i < period - 1 ? null : Math.min(...values.slice(i - period + 1, i + 1))));
 }
+
+
+export function stochastic(candles, period = 14, smoothK = 3, smoothD = 3) {
+  const rawK = new Array(candles.length).fill(null);
+  for (let i = period - 1; i < candles.length; i++) {
+    let hh = -Infinity, ll = Infinity;
+    for (let j = i - period + 1; j <= i; j++) { hh = Math.max(hh, candles[j].h); ll = Math.min(ll, candles[j].l); }
+    const range = hh - ll || 1e-9;
+    rawK[i] = ((candles[i].c - ll) / range) * 100;
+  }
+  const k = sma(rawK.map(v => v == null ? 0 : v), smoothK).map((v,i)=> rawK[i]==null?null:v);
+  const d = sma(k.map(v => v == null ? 0 : v), smoothD).map((v,i)=> k[i]==null?null:v);
+  return { k, d };
+}
+
+export function vwap(candles) {
+  const out = new Array(candles.length).fill(null);
+  let cumPV = 0, cumV = 0;
+  for (let i = 0; i < candles.length; i++) {
+    const tp = (candles[i].h + candles[i].l + candles[i].c) / 3;
+    const v = candles[i].v || 0;
+    cumPV += tp * v; cumV += v;
+    out[i] = cumV ? cumPV / cumV : tp;
+  }
+  return out;
+}
+
+export function supertrend(candles, period = 10, multiplier = 3) {
+  const atrArr = atr(candles, period);
+  const out = new Array(candles.length).fill(null);
+  const dir = new Array(candles.length).fill(0);
+  let prevUpper = null, prevLower = null, prevTrend = 1;
+  for (let i = 1; i < candles.length; i++) {
+    const a = atrArr[i];
+    if (a == null) continue;
+    const hl2 = (candles[i].h + candles[i].l) / 2;
+    let upper = hl2 + multiplier * a;
+    let lower = hl2 - multiplier * a;
+    if (prevUpper != null) upper = (upper < prevUpper || candles[i-1].c > prevUpper) ? upper : prevUpper;
+    if (prevLower != null) lower = (lower > prevLower || candles[i-1].c < prevLower) ? lower : prevLower;
+    let trend = prevTrend;
+    if (prevTrend === 1 && candles[i].c < lower) trend = -1;
+    else if (prevTrend === -1 && candles[i].c > upper) trend = 1;
+    out[i] = trend === 1 ? lower : upper;
+    dir[i] = trend;
+    prevUpper = upper; prevLower = lower; prevTrend = trend;
+  }
+  return { line: out, dir };
+}
+
+export function gannSquareLevels(price, steps = 8) {
+  const root = Math.sqrt(Math.max(price, 1e-9));
+  const levels = [];
+  for (let k = -steps; k <= steps; k++) {
+    const v = Math.pow(root + k * 0.125, 2);
+    if (v > 0) levels.push(v);
+  }
+  return levels;
+}
+
+export function gannTimeCycles() {
+  return [7, 14, 21, 30, 45, 49, 52, 60, 90, 120, 144, 180, 360];
+}
+
+export function zscore(values, period = 20) {
+  const out = new Array(values.length).fill(null);
+  for (let i = period - 1; i < values.length; i++) {
+    const slice = values.slice(i - period + 1, i + 1);
+    const mean = slice.reduce((a,b)=>a+b,0)/period;
+    const sd = Math.sqrt(slice.reduce((a,b)=>a+(b-mean)*(b-mean),0)/period) || 1e-9;
+    out[i] = (values[i] - mean) / sd;
+  }
+  return out;
+}
+
+export function efficiencyRatio(values, period = 10) {
+  const out = new Array(values.length).fill(null);
+  for (let i = period; i < values.length; i++) {
+    const change = Math.abs(values[i] - values[i - period]);
+    let vol = 0;
+    for (let j = i - period + 1; j <= i; j++) vol += Math.abs(values[j] - values[j - 1]);
+    out[i] = vol ? change / vol : 0;
+  }
+  return out;
+}
+
+export function kellyCriterion(winRate, avgWin, avgLoss) {
+  if (!avgLoss) return 0;
+  const b = avgWin / Math.abs(avgLoss);
+  const p = Math.max(0, Math.min(1, winRate));
+  const q = 1 - p;
+  return b ? (b * p - q) / b : 0;
+}
+
+export function expectancy(winRate, avgWin, avgLoss) {
+  const p = Math.max(0, Math.min(1, winRate));
+  return p * avgWin - (1 - p) * Math.abs(avgLoss);
+}

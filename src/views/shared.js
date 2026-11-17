@@ -1,7 +1,7 @@
 import { mount } from '../ui.js';
 // Shared building blocks used by more than one view.
 
-import { h, chart, pct, num, statusTag, timeAgo, progressBar, tag, signClass } from '../ui.js';
+import { h, chart, pct, num, statusTag, timeAgo, progressBar, tag, signClass, agentBubble } from '../ui.js';
 import { STRATEGIES } from '../strategies.js';
 import { STRATEGY_LABELS, PLATFORMS } from '../config.js';
 
@@ -115,8 +115,9 @@ export function feedList(events, limit = 14) {
 
 export function agentCard(agent) {
   const busy = agent.status === 'busy';
-  return h('div', { class: 'agent' + (busy ? ' busy' : '') },
+  return h('div', { class: 'agent' + (busy ? ' busy agent-active' : '') },
     h('div', { class: 'av', text: agent.icon || '☻' }),
+    agentBubble(agent),
     h('div', { class: 'grow' },
       h('div', { class: 'who' }, h('b', { text: agent.name }), h('span', { text: agent.role })),
       h('div', { class: 'task' + (busy ? ' on' : ''), text: busy ? agent.task : agent.focus }),

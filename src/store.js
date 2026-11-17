@@ -13,8 +13,8 @@ export function defaults() {
     lastTickAt: null,
     settings: {
       autopilot: true,
-      tickSeconds: 7,
-      capital: 25000,
+      tickSeconds: 4,
+      capital: 100000,
       riskPerTrade: 0.015,
       maxDrawdown: 0.3,
       minTrades: 10,
@@ -22,6 +22,12 @@ export function defaults() {
       promotionDelta: 0.1,
       minRobustness: 50,
       cloudSync: true,
+      autoResearch: true,
+      autoOptimize: true,
+      autoCreateRobots: true,
+      cloudflareProxyUrl: '',
+      cloudflareProxyKey: '',
+      cloudflareProxyModel: 'openai/gpt-oss-120b',
       feeRate: 0.0004,
       makerFee: 0.00025,
       takerFee: 0.0004,
@@ -85,11 +91,63 @@ export const store = {
     return this.state;
   },
 
+  ensureCloudflareProxy() {
+    const st = this.state?.settings;
+    if (!st) return;
+    const url = (st.cloudflareProxyUrl || 'https://alta-groq.avivashke95.workers.dev/v1').trim() || 'https://alta-groq.avivashke95.workers.dev/v1';
+    const model = (st.cloudflareProxyModel || 'openai/gpt-oss-120b').trim() || 'openai/gpt-oss-120b';
+    st.cloudflareProxyUrl = url;
+    st.cloudflareProxyModel = model;
+    if (!st.pool || !Array.isArray(st.pool.entries)) st.pool = { entries: [], updatedAt: null };
+    // keep only/ensure our embedded gateway proxy as available default
+    const exists = st.pool.entries.find((e) => e.provider === 'gateway' && (e.baseUrl || '').replace(/\/+$/,'') === url.replace(/\/+$/,''));
+    if (!exists) {
+      st.pool.entries = [{
+        id: 'cf_proxy_default',
+        provider: 'gateway',
+        label: 'Cloudflare Worker Proxy (Alta)',
+        shape: 'openai',
+        baseUrl: url,
+        accountId: '',
+        model,
+        key: st.cloudflareProxyKey || '',
+        enabled: true,
+        valid: true,
+        weight: 1,
+        addedAt: Date.now(),
+        lastUsedAt: null,
+        uses: 0,
+        day: new Date().toISOString().slice(0,10),
+        dayCount: 0,
+        minuteStart: 0,
+        minuteCount: 0,
+        cooldownUntil: 0,
+        failStreak: 0,
+        lastError: '',
+      }];
+      st.pool.updatedAt = Date.now();
+    } else {
+      exists.enabled = true; exists.valid = true; exists.model = exists.model || model; exists.key = exists.key || (st.cloudflareProxyKey || '');
+    }
+  },
+
   ensureTeam() {
     if (!this.state.agents?.length) {
       this.state.agents = AGENT_ROSTER.map((a) => ({
         ...a, status: 'idle', task: 'ממתין למחזור הראשון', progress: 0, completed: 0,
+        speech: null, speechType: 'speak', thinking: null,
       }));
+    } else {
+      // merge newly added roster agents into existing saved state
+      const have = new Set(this.state.agents.map((a) => a.id));
+      for (const a of AGENT_ROSTER) {
+        if (!have.has(a.id)) {
+          this.state.agents.push({
+            ...a, status: 'idle', task: 'מצטרף לצוות ומתחיל סריקה', progress: 0, completed: 0,
+            speech: null, speechType: 'speak', thinking: null,
+          });
+        }
+      }
     }
     if (!this.state.desks?.length) {
       this.state.desks = DESKS.map((d) => ({
@@ -113,15 +171,17 @@ export const store = {
     }
   },
 
-  save() {
+  save(immediate = false) {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
+    const write = () => {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
       } catch (err) {
         console.warn('[store] save failed (quota?)', err);
       }
-    }, 300);
+    };
+    if (immediate) write();
+    else saveTimer = setTimeout(write, 300);
   },
 
   subscribe(fn) {
@@ -137,13 +197,37 @@ export const store = {
 
   mutate(fn) {
     fn(this.state);
-    this.save();
+    this.save(true);
     this.emit();
   },
 
   log(level, actor, text) {
     this.state.events.unshift({ at: Date.now(), level, actor, text });
     if (this.state.events.length > 350) this.state.events.length = 350;
+  },
+
+  setAgentSpeech(agentId, { speech = null, speechType = 'speak', thinking = null, status = null, task = null, progress = null }) {
+    const agent = this.state.agents.find((a) => a.id === agentId);
+    if (!agent) return;
+    if (speech !== null) agent.speech = speech;
+    if (speechType !== null) agent.speechType = speechType;
+    if (thinking !== null) agent.thinking = thinking;
+    if (status !== null) agent.status = status;
+    if (task !== null) agent.task = task;
+    if (progress !== null) agent.progress = progress;
+    this.save();
+    this.emit();
+  },
+
+  clearAgentSpeech(agentId) {
+    const agent = this.state.agents.find((a) => a.id === agentId);
+    if (!agent) return;
+    agent.speech = null;
+    agent.speechType = 'speak';
+    agent.thinking = null;
+    if (agent.status === 'busy') agent.status = 'idle';
+    this.save();
+    this.emit();
   },
 
   reset() {
