@@ -6,6 +6,7 @@ import { ensureDeskFields, startMarketFeed, tick, catchUp } from './firm.js';
 import { marketState, onQuotes, quotes } from './market.js';
 import { openingMessage } from './advisor.js';
 import { syncFromCloud } from './remote.js';
+import { mountPageChat } from './page_chat.js';
 import { h, timeAgo, num, toast } from './ui.js';
 
 import { renderOverview } from './views/overview.js';
@@ -172,6 +173,7 @@ function boot() {
 
   buildNav();
   render();
+  mountPageChat(ui);
   startMarketFeed();
   onQuotes(updateTopbar);
   store.subscribe(scheduleRender);
