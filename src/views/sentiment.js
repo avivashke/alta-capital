@@ -2,6 +2,7 @@ import { mount } from '../ui.js';
 import { store } from '../store.js';
 import { h, pct, num, section, tag, notice, empty, toast, timeAgo, chart } from '../ui.js';
 import { refreshSentiment, scoreText } from '../research.js';
+import { refreshFundamentals, formatCompactUsd } from '../fundamentals.js';
 
 export function renderSentiment(root, ui) {
   const state = store.state;
@@ -20,6 +21,7 @@ export function renderSentiment(root, ui) {
         h('p', { text: 'שילוב של מדד פחד/חמדנות, מגמות חיפוש, כותרות מרשתות חברתיות וניתוח טכני — כדי לתת הטיה מקומית לשולחנות, לא תחזית.' }),
       ),
       h('div', { class: 'head-actions' },
+        h('button', { class: 'btn btn-sm', onclick: () => act(() => refreshFundamentals({ force: true }), 'הזרם הפונדמנטליסטי והמאקרו עודכן') }, '📊 רענן זרם פונדמנטליסטי'),
         h('button', { class: 'btn btn-primary', onclick: () => act(() => refreshSentiment(), 'הסנטימנט עודכן') }, '⟳ רענן סנטימנט'),
       ),
     ),
@@ -53,6 +55,10 @@ export function renderSentiment(root, ui) {
     ),
   ));
 
+  const fund = state.fundamentals || { macro: null, assets: {} };
+  const macro = fund.macro;
+  const fundEntries = Object.values(fund.assets || {});
+
   mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
     h('div', { class: 'card-head' },
       h('div', {}, h('h2', { text: 'הטיה לפי נכס' }), h('div', { class: 'card-sub', text: '30% טכני · 30% כותרות · 20% פחד/חמדנות · 10% מגמה' })),
@@ -76,6 +82,48 @@ export function renderSentiment(root, ui) {
         );
       }))
       : empty('אין שולחנות'),
+  ));
+
+  mount(root, h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(88, 166, 255, 0.32)' } },
+    h('div', { class: 'card-head' },
+      h('div', {},
+        h('h2', { text: 'זרם נתוני ניתוח פונדמנטליסטי ומאקרו (חינם · SEC EDGAR + CoinGecko + Macro)' }),
+        h('div', { class: 'card-sub', text: fund.updatedAt ? `עודכן ${timeAgo(fund.updatedAt)} · משולב אוטומטית בהחלטות ה-AI והצוות` : 'לחץ "רענן זרם פונדמנטליסטי" למשיכת דוחות SEC ומאקרו' }),
+      ),
+      macro ? tag(macro.regime || 'מאקרו', macro.vix > 25 ? 'red' : 'live') : tag('טרם נסרק', 'dry'),
+    ),
+    macro ? h('div', { class: 'grid cols-3', style: { marginBottom: '12px' } },
+      h('div', { class: 'metric' }, h('span', { text: 'מדד הפחד (VIX)' }), h('b', { class: macro.vix > 25 ? 'red mono' : 'green mono', text: macro.vix != null ? macro.vix.toFixed(2) : '—' })),
+      h('div', { class: 'metric' }, h('span', { text: 'תשואת אג״ח ארה״ב 10Y' }), h('b', { class: 'mono', text: macro.us10yYield != null ? macro.us10yYield.toFixed(2) + '%' : '—' })),
+      h('div', { class: 'metric' }, h('span', { text: 'מדד הדולר (DXY)' }), h('b', { class: 'mono', text: macro.dxy != null ? macro.dxy.toFixed(2) : '—' })),
+    ) : null,
+    fundEntries.length
+      ? h('div', { class: 'grid cols-2', style: { gap: '10px' } }, ...fundEntries.map((item) =>
+        h('div', { class: 'agent' },
+          h('div', { class: 'av', text: item.symbol.slice(0, 4) }),
+          h('div', { class: 'grow' },
+            h('div', { class: 'who' },
+              h('b', { text: `${item.symbol} · ${item.entityName || ''}` }),
+              tag(`${item.bias} (${item.score}/100)`, item.score >= 62 ? 'live' : item.score <= 40 ? 'red' : 'dry'),
+            ),
+            item.kind === 'stock'
+              ? h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: [
+                  item.pe != null ? `P/E: ${item.pe}` : null,
+                  item.netMarginPct != null ? `מרווח נקי: ${item.netMarginPct}%` : null,
+                  item.revenue != null ? `הכנסות: ${formatCompactUsd(item.revenue)}` : null,
+                  item.debtToAssetsPct != null ? `חוב/נכסים: ${item.debtToAssetsPct}%` : null,
+                  item.source,
+                ].filter(Boolean).join(' · ') })
+              : h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: [
+                  item.marketCap != null ? `שווי שוק: ${formatCompactUsd(item.marketCap)}` : null,
+                  item.volume24h != null ? `נפח 24h: ${formatCompactUsd(item.volume24h)}` : null,
+                  item.athDrawdownPct != null ? `מהשיא: ${item.athDrawdownPct.toFixed(1)}%` : null,
+                  item.source,
+                ].filter(Boolean).join(' · ') }),
+          ),
+        ),
+      ))
+      : empty('לחץ על "📊 רענן זרם פונדמנטליסטי" כדי למשוך נתוני דוחות SEC EDGAR, CoinGecko ומאקרו.'),
   ));
 
   mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },

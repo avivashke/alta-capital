@@ -64,6 +64,7 @@ export function defaults() {
     knowledge: { strategies: [], lessons: [], facts: [] },
     budget: {},
     sentiment: { updatedAt: null, source: null, fearGreed: null, assets: {}, headlines: [] },
+    fundamentals: { updatedAt: null, macro: null, assets: {} },
     advisor: { messages: [] },
     remote: null,
     stats: { cycles: 0, backtests: 0, deployments: 0, scans: 0, startedAt: Date.now() },

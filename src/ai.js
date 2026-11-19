@@ -7,8 +7,8 @@ import { STRATEGY_IDS, STRATEGIES } from './strategies.js';
 import { chatDetailed, hasModelKey } from './llm.js';
 
 const SYSTEM = `אתה סמנכ"ל ההשקעות של Alta Capital, חברת השקעות שמנוהלת על ידי סוכנים.
-אתה מקבל נתוני בקטסט, חלונות walk-forward, Monte Carlo, ניתוח טכני והיסטוריית גרסאות.
-תפקידך: לבחור על איזה שולחן להתמקד עכשיו, איזו משפחת אסטרטגיה לנסות, ואיזה טווח פרמטרים יצמצם את החיפוש.
+אתה מקבל נתוני בקטסט, חלונות walk-forward, Monte Carlo, ניתוח טכני (EMA, RSI, MACD, ADX, ATR, Gann Square of 9), נתונים פונדמנטליסטיים רשמיים (SEC EDGAR: הכנסות, רווח נקי, מכפיל P/E, מרווח נקי, חוב לנכסים; CoinGecko: שווי שוק, נפח, היצע) ומאקרו (VIX, תשואת אג"ח 10 שנים, DXY).
+תפקידך: לבחור על איזה שולחן להתמקד עכשיו, איזו משפחת אסטרטגיה לנסות, ואיזה טווח פרמטרים יצמצם את החיפוש תוך שילוב ניתוח טכני + פונדמנטליסטי + גאן.
 
 כללים:
 - החזר JSON תקין בלבד, בלי טקסט מסביב ובלי code fences.
@@ -16,6 +16,7 @@ const SYSTEM = `אתה סמנכ"ל ההשקעות של Alta Capital, חברת ה
 - אל תבטיח תשואות. זו עבודת מחקר ובקטסט.
 - אם שולחן כבר חזק ויציב (חוסן גבוה, OOS חיובי), אל תבזבז עליו את המחזור — התמקד בשולחן חלש.
 - אם ה-OOS שלילי אבל החלונות מעורבים, הצע משפחה אחרת עם פחות פרמטרים.
+- התחשב במאקרו: כש-VIX גבוה (>25) העדף סטופים רחבים יותר וניהול סיכון הדוק; כשנכס חזק פונדמנטלית (P/E סביר, מרווח נקי גבוה) העדף מעקב מגמה.
 - rationale ו-nextActions בעברית, קצרים ומעשיים.`;
 
 function deskSummary(desk) {
@@ -75,6 +76,13 @@ ${JSON.stringify({
     },
     platform: state.settings.platform,
     desks: state.desks.map(deskSummary),
+    macro: state.fundamentals?.macro || null,
+    fundamentals: Object.fromEntries(
+      Object.entries(state.fundamentals?.assets || {}).map(([sym, f]) => [
+        sym,
+        { score: f.score, bias: f.bias, pe: f.pe ?? null, netMarginPct: f.netMarginPct ?? null, marketCap: f.marketCap ?? null },
+      ]),
+    ),
     recentEvents: state.events.slice(0, 8).map((e) => e.text),
   }, null, 2)}
 

@@ -11,6 +11,7 @@ import { atr } from './indicators.js';
 import { assessStrategy } from './stats.js';
 import { analyze } from './ta.js';
 import { scanIfDue, refreshSentiment } from './research.js';
+import { refreshFundamentals } from './fundamentals.js';
 import { createBinanceClient } from './binance_testnet.js';
 import { createPaperPortfolio } from './paper_portfolio.js';
 import { recordVersionInDb, recordTradeInDb, recordCycleInDb, scheduleDatabasePush } from './db.js';
@@ -706,8 +707,9 @@ export async function tick({ reason = 'auto' } = {}) {
     const result = await runDeskCycle(desk, { deep: (state.stats.cycles||0) % 4 === 0 });
     await tickLive();
     await promoteDryRuns();
-    // עבודה רציפה: מחקר, ניתוח טכני, סנטימנט ואופטימיזציה בכל מחזור
+    // עבודה רציפה: מחקר, ניתוח טכני, פונדמנטליסטי, סנטימנט ואופטימיזציה בכל מחזור
     refreshTechnicals({ force: true }).catch((e) => console.warn('[ta]', e));
+    refreshFundamentals().catch((e) => console.warn('[fundamentals]', e));
     scanIfDue().catch((e) => console.warn('[research]', e));
     refreshSentiment().catch((e) => console.warn('[sentiment]', e));
     store.save();
