@@ -275,6 +275,25 @@ export function lastPrice(symbol) {
 
 // --- candle fetching ------------------------------------------------------
 
+async function fromBybit(symbol, tf, limit) {
+  const bybitMap = { '5m': '5', '15m': '15', '1h': '60', '1d': 'D', '1w': 'W' };
+  const url = `https://api.bybit.com/v5/market/kline?category=spot&symbol=${symbol}&interval=${bybitMap[tf] || 'D'}&limit=${Math.min(1000, limit)}`;
+  const json = await fetchJson(url);
+  const rows = json?.result?.list || [];
+  if (rows.length < 30) throw new Error('bybit: empty');
+  return rows.map((r) => ({ t: +r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4], v: +r[5] })).reverse();
+}
+
+async function fromOkx(symbol, tf, limit) {
+  const okxMap = { '5m': '5m', '15m': '15m', '1h': '1H', '1d': '1D', '1w': '1W' };
+  const inst = symbol.replace(/USDT$/i, '-USDT');
+  const url = `https://www.okx.com/api/v5/market/candles?instId=${inst}&bar=${okxMap[tf] || '1D'}&limit=${Math.min(300, limit)}`;
+  const json = await fetchJson(url);
+  const rows = json?.data || [];
+  if (rows.length < 30) throw new Error('okx: empty');
+  return rows.map((r) => ({ t: +r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4], v: +r[5] })).reverse();
+}
+
 export async function getCandles(symbol, tf, { limit = 700, force = false } = {}) {
   const key = `${symbol}|${tf}|${limit}`;
   const hit = cache.get(key);
@@ -286,11 +305,13 @@ export async function getCandles(symbol, tf, { limit = 700, force = false } = {}
   const providers = isCryptoSymbol(symbol)
     ? [
         ['Binance', () => fromBinance(symbol, tf, limit)],
+        ['Bybit', () => fromBybit(symbol, tf, limit)],
+        ['OKX', () => fromOkx(symbol, tf, limit)],
         ['Kraken', () => fromKraken(symbol, tf, limit)],
         ['Coinbase', () => fromCoinbase(symbol, tf, limit)],
       ]
     : [
-        ['Yahoo Finance', () => fromYahoo(symbol, tf, limit)],
+        ['Yahoo Finance / Stooq', () => fromYahoo(symbol, tf, limit)],
       ];
   for (const [name, fn] of providers) {
     try {

@@ -157,8 +157,9 @@ export function renderFundamentals(root, ui) {
   );
 
   if (macro?.ok) {
+    const fx = macro.forex ? ` · מט"ח חי (ECB): EUR/USD ${macro.forex.eurusd ?? '—'} · USD/ILS ${macro.forex.usdils ?? '—'}` : '';
     mount(root, notice(
-      `משטר מאקרו נוכחי: ${macro.regime} · מדד הפחד VIX: ${macro.vix ?? '—'} · תשואת אג"ח ארה"ב ל-10 שנים: ${macro.us10yYield ?? '—'}% · דולר DXY: ${macro.dxy ?? '—'}`,
+      `משטר מאקרו נוכחי: ${macro.regime} · מדד הפחד VIX: ${macro.vix ?? '—'} · תשואת אג"ח ארה"ב ל-10 שנים: ${macro.us10yYield ?? '—'}% · דולר DXY: ${macro.dxy ?? '—'}${fx}`,
       'blue',
     ));
   }
@@ -206,7 +207,7 @@ export function renderFundamentals(root, ui) {
       h('div', { class: 'card-head' },
         h('div', {},
           h('h2', { text: `📰 חדשות בזמן אמת והסבר השפעה פונדמנטלית (${fundViewState.symbol})` }),
-          h('div', { class: 'card-sub', text: 'כותרות חיות מ-Yahoo Finance / Google News עם פירוש המשמעות לשווי החברה' }),
+          h('div', { class: 'card-sub', text: 'כותרות חיות מ-Yahoo Finance, CNBC, MarketWatch והפדרל ריזרב (Fed) עם פירוש המשמעות לשווי החברה' }),
         ),
       ),
       fundViewState.newsLoading
@@ -214,8 +215,9 @@ export function renderFundamentals(root, ui) {
         : news.length
           ? h('div', { class: 'table-wrap' },
             h('table', {},
-              h('thead', {}, h('tr', {}, h('th', { text: 'כותרת החדשה' }), h('th', { text: 'הסבר השפעה פונדמנטלית' }))),
+              h('thead', {}, h('tr', {}, h('th', { text: 'מקור' }), h('th', { text: 'כותרת החדשה' }), h('th', { text: 'הסבר השפעה פונדמנטלית' }))),
               h('tbody', {}, news.map((n) => h('tr', {},
+                h('td', {}, tag(n.source || 'News', 'opt')),
                 h('td', { class: 'small' },
                   n.link
                     ? h('a', { href: n.link, target: '_blank', rel: 'noopener noreferrer', style: { color: '#93c5fd', fontWeight: '600' } }, n.title)
