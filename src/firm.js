@@ -15,7 +15,7 @@ import { refreshFundamentals } from './fundamentals.js';
 import { runAutonomousGannLibraryAuditIfDue } from './gann.js';
 import { createBinanceClient } from './binance_testnet.js';
 import { createPaperPortfolio } from './paper_portfolio.js';
-import { recordVersionInDb, recordTradeInDb, recordCycleInDb, scheduleDatabasePush } from './db.js';
+import { recordVersionInDb, recordTradeInDb, recordCycleInDb, scheduleDatabasePush, pushStateToDatabase } from './db.js';
 import { runAiDirector } from './ai.js';
 
 const LIMITS = { '5m': 800, '15m': 800, '1h': 800, '1d': 600, '1w': 420 };
@@ -24,39 +24,47 @@ const ROUNDS = { intraday: { rounds: 26, climb: 12 }, swing: { rounds: 30, climb
 let lastEmit = 0;
 let ticking = false;
 
-// מנוע תיק דמה גלובלי — מופעל רק לאחר בדיקת עבר רווחית
+// מנוע תיק דמה גלובלי — מסונכרן אוטומטית עם store._revision כדי שלעולם לא יתאפס אחרי סנכרון ענן
 let paperPortfolio = null;
+let paperPortfolioRev = -1;
 // לקוח Binance Testnet — מוגדר רק אם יש מפתחות API בהגדרות
 let binanceClient = null;
 
+export function rehydratePaperPortfolio() {
+  const s = store.state.settings || {};
+  const pf = createPaperPortfolio(s);
+  if (store.state.paperPortfolio && typeof store.state.paperPortfolio === 'object') {
+    pf.fromJSON(store.state.paperPortfolio);
+  }
+  paperPortfolio = pf;
+  paperPortfolioRev = store._revision;
+  binanceClient = createBinanceClient(s);
+  return paperPortfolio;
+}
+
 export function ensurePaperPortfolio() {
-  if (!paperPortfolio) {
-    const s = store.state.settings;
-    paperPortfolio = createPaperPortfolio(s);
-    if (store.state.paperPortfolio) {
-      paperPortfolio.fromJSON(store.state.paperPortfolio);
-    }
-    binanceClient = createBinanceClient(s);
-    if (binanceClient.apiKey && binanceClient.apiSecret) {
+  if (!paperPortfolio || paperPortfolioRev !== store._revision) {
+    rehydratePaperPortfolio();
+    if (binanceClient?.apiKey && binanceClient?.apiSecret) {
       console.log('[firm] Binance Testnet client initialized');
-    } else {
-      console.log('[firm] Binance Testnet client running in simulation mode (no API keys)');
     }
   }
   return paperPortfolio;
 }
 
-function savePaperPortfolio() {
-  if (paperPortfolio) {
-    store.state.paperPortfolio = paperPortfolio.toJSON();
+export function savePaperPortfolio() {
+  const pf = ensurePaperPortfolio();
+  if (pf) {
+    store.state.paperPortfolio = pf.toJSON();
   }
 }
 
 export function getPaperPortfolio() {
-  return paperPortfolio;
+  return ensurePaperPortfolio();
 }
 
 export function getBinanceClient() {
+  if (!binanceClient) ensurePaperPortfolio();
   return binanceClient;
 }
 
@@ -444,22 +452,27 @@ async function closePaperTrade(desk, price, reason) {
     at: Date.now(), dir: t.dir, entry: +t.entry.toFixed(4), exit: +price.toFixed(4),
     pct: +sized.toFixed(3), reason, bars: 0,
   });
-  if (desk.liveTrades.length > 25) desk.liveTrades.length = 25;
+  if (desk.liveTrades.length > 100) desk.liveTrades.length = 100;
 
   // סגירה בתיק הנייר המשותף + Binance Testnet אם הוגדרו מפתחות
   const pf = ensurePaperPortfolio();
   if (!pf.isActive) pf.activate({ reason: 'מסחר נייר פעיל' });
   const qty = t.binanceQuantity || t.quantity || 0;
+  let sellRes = null;
   if (qty > 0 && pf.positions[desk.symbol]) {
-    pf.sell({
+    sellRes = pf.sell({
       symbol: desk.symbol,
       price,
       quantity: Math.min(qty, pf.positions[desk.symbol].quantity),
       timestamp: Date.now(),
       isTaker: true,
+      deskId: desk.id,
+      reason,
     });
   }
+  desk.openTrade = null;
   savePaperPortfolio();
+  store.save(true);
 
   if (binanceClient && binanceClient.apiKey && binanceClient.apiSecret && t.binanceOrderId) {
     try {
@@ -479,17 +492,20 @@ async function closePaperTrade(desk, price, reason) {
   store.log(sized >= 0 ? 'ok' : 'warn', 'תמר · ביצוע',
     `${desk.label}: סגירת פוזיציית נייר ${t.dir > 0 ? 'לונג' : 'שורט'} · ${sized.toFixed(2)}% (${reason})`);
   recordTradeInDb({
+    id: sellRes?.trade?.id,
     deskId: desk.id,
     symbol: desk.symbol,
+    side: t.dir > 0 ? 'SELL' : 'COVER',
     dir: t.dir,
     price,
-    quantity: t.binanceQuantity || 0,
+    quantity: qty,
     pct: +sized.toFixed(3),
+    fee: sellRes?.trade?.fee || 0,
+    tax: sellRes?.tax || 0,
     reason,
     at: Date.now(),
   }).catch(() => {});
-  scheduleDatabasePush();
-  desk.openTrade = null;
+  pushStateToDatabase(store.state).catch(() => {});
 }
 
 export async function analyzeManualClose(deskId) {
@@ -541,7 +557,7 @@ export async function manualCloseDesk(deskId, reason = 'manual') {
   }
   if (!price) price = desk.openTrade.entry;
   await closePaperTrade(desk, price, reason);
-  store.save();
+  store.save(true);
   store.emit();
   return { ok: true, price };
 }
@@ -565,10 +581,15 @@ export async function refreshTechnicals({ force = false } = {}) {
 export async function tickLive() {
   const live = store.state.desks.filter((d) => d.status === 'live');
   const s = store.state.settings;
+  const livePrices = {};
+  const pf = ensurePaperPortfolio();
+  let tradeChanged = false;
+
   for (const desk of live) {
     try {
       const candles = await getCandles(desk.symbol, desk.tf, { limit: 320 });
       const price = lastPrice(desk.symbol) || candles[candles.length - 1].c;
+      if (price) livePrices[desk.symbol] = price;
       if (!desk.strategyId || !desk.params) continue;
       const desired = STRATEGIES[desk.strategyId].positions(candles, desk.params);
       const dir = desired[desired.length - 1] || 0;
@@ -581,16 +602,21 @@ export async function tickLive() {
         const t = desk.openTrade;
         const hitStop = t.dir > 0 ? price <= t.stop : price >= t.stop;
         const hitTarget = t.dir > 0 ? price >= t.target : price <= t.target;
-        if (hitStop) closePaperTrade(desk, t.stop, 'stop');
-        else if (hitTarget) closePaperTrade(desk, t.target, 'target');
-        else if (dir !== t.dir) closePaperTrade(desk, price, 'signal');
-        else {
+        if (hitStop) {
+          await closePaperTrade(desk, t.stop, 'stop');
+          tradeChanged = true;
+        } else if (hitTarget) {
+          await closePaperTrade(desk, t.target, 'target');
+          tradeChanged = true;
+        } else if (dir !== t.dir) {
+          await closePaperTrade(desk, price, 'signal');
+          tradeChanged = true;
+        } else {
           const pct = t.dir > 0 ? ((price - t.entry) / t.entry) * 100 : ((t.entry - price) / t.entry) * 100;
           desk.openTrade.markPct = +pct.toFixed(3);
         }
       } else if (dir !== 0 && s.autopilot) {
         const stopDist = stopMult * a;
-        const pf = ensurePaperPortfolio();
         const capitalUsdt = Math.min(s.capital || 100000, pf.cash);
         const riskAmount = capitalUsdt * Number(s.riskPerTrade || 0.015);
         const stopDistance = Math.abs(price - (dir > 0 ? price - stopDist : price + stopDist));
@@ -601,19 +627,24 @@ export async function tickLive() {
         if (!pf.isActive) pf.activate({ reason: `פתיחת עסקת נייר על ${desk.label}` });
 
         // ביצוע פקודה בתיק הנייר המשותף (עמלות + מעקב יתרה)
+        let buyRes = null;
         if (binanceQuantity > 0 && price > 0) {
           const maxQtyByCash = (pf.cash * 0.25) / price;
           const paperQty = Math.min(binanceQuantity, maxQtyByCash);
           if (paperQty > 0) {
-            pf.buy({
+            buyRes = pf.buy({
               symbol: desk.symbol,
               price,
               quantity: paperQty,
               timestamp: Date.now(),
               isTaker: true,
+              dir,
+              deskId: desk.id,
+              reason: 'open_paper',
             });
             binanceQuantity = +paperQty.toFixed(6);
             savePaperPortfolio();
+            tradeChanged = true;
           }
         }
 
@@ -647,27 +678,39 @@ export async function tickLive() {
           binanceOrderId,
           binanceQuantity,
         };
+        savePaperPortfolio();
+        store.save(true);
         recordTradeInDb({
+          id: buyRes?.trade?.id,
           deskId: desk.id,
           symbol: desk.symbol,
-          side: dir > 0 ? 'BUY' : 'SELL',
+          side: dir > 0 ? 'BUY' : 'SHORT',
+          dir,
           price,
           quantity: binanceQuantity,
+          fee: buyRes?.trade?.fee || 0,
           reason: 'open_paper',
           at: Date.now(),
         }).catch(() => {});
-        scheduleDatabasePush();
+        pushStateToDatabase(store.state).catch(() => {});
         store.log('info', 'תמר · ביצוע', `${desk.label}: פתיחת פוזיציית נייר ${dir > 0 ? 'לונג' : 'שורט'} ב־${price.toFixed(2)}`);
       }
     } catch (err) {
       console.warn('[firm] live tick failed', desk.id, err);
     }
   }
+
+  if (Object.keys(livePrices).length) {
+    pf.recordEquitySnapshot(livePrices);
+  }
+  if (!store.state.paperPortfolio || tradeChanged || Object.keys(livePrices).length) {
+    savePaperPortfolio();
+  }
 }
 
 export async function promoteDryRuns() {
-  const s = store.state.settings;
   const pf = ensurePaperPortfolio();
+  let promoted = false;
 
   for (const desk of store.state.desks) {
     if (desk.status !== 'dry-run') continue;
@@ -681,12 +724,17 @@ export async function promoteDryRuns() {
       pf.activate({
         reason: `אסטרטגיה ${desk.strategyId} על ${desk.label} הרוויחה ${desk.metrics.returnPct}% בבקטסט אחרי עמלות`,
       });
+      promoted = true;
       store.log('ok', 'אוריה · CIO',
         `${desk.label}: אושרה למסחר דמה על Binance Testnet — ${desk.version} · ${desk.metrics.returnPct}% נטו בבקטסט`);
     } else if (desk.dryRunCycles >= PAPER_TRADING.dryRunCyclesBeforeLive && gatesOk && !profitableAfterFees) {
       store.log('warn', 'אוריה · CIO',
         `${desk.label}: עברה גדרות אך אינה רווחית אחרי עמלות ומס — לא תופעל במסחר דמה`);
     }
+  }
+  if (promoted) {
+    savePaperPortfolio();
+    scheduleDatabasePush(1000);
   }
 }
 
@@ -708,14 +756,16 @@ export async function tick({ reason = 'auto' } = {}) {
     const result = await runDeskCycle(desk, { deep: (state.stats.cycles||0) % 4 === 0 });
     await tickLive();
     await promoteDryRuns();
+    savePaperPortfolio();
     // עבודה רציפה: מחקר, ניתוח טכני, פונדמנטליסטי, סנטימנט ואופטימיזציה בכל מחזור
     refreshTechnicals({ force: true }).catch((e) => console.warn('[ta]', e));
     refreshFundamentals().catch((e) => console.warn('[fundamentals]', e));
     runAutonomousGannLibraryAuditIfDue().catch((e) => console.warn('[gann-audit]', e));
     scanIfDue().catch((e) => console.warn('[research]', e));
     refreshSentiment().catch((e) => console.warn('[sentiment]', e));
-    store.save();
+    store.save(true);
     store.emit();
+    scheduleDatabasePush(1000);
     return { ok: true, desk: desk.id, ...result };
   } finally {
     ticking = false;

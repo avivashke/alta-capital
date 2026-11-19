@@ -4,6 +4,10 @@
 
 const TAX_RATE_IL = 0.25;
 
+function makeTradeId(ts = Date.now()) {
+  return `tr_${ts}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export class PaperPortfolio {
   constructor({
     initialBalance = 100000,
@@ -15,21 +19,28 @@ export class PaperPortfolio {
     this.cash = initialBalance;
     this.positions = {};
     this.trades = [];
+    this.equityHistory = [];
     this.makerFee = makerFee;
     this.takerFee = takerFee;
     this.taxRate = taxRate;
     this.taxAccumulated = 0;
+    this.totalFeesAccumulated = 0;
+    this.realizedPnLAccumulated = 0;
+    this.totalTradesCount = 0;
     this.capitalLossesCarryForward = 0;
     this.isActive = false;
+    this.updatedAt = null;
   }
 
   activate({ reason = 'בדיקת עבר/אישור הפעלה' } = {}) {
     this.isActive = true;
+    this.updatedAt = new Date().toISOString();
     this.log(`תיק דמה הופעל: ${reason}`);
   }
 
   deactivate({ reason = 'נעצר' } = {}) {
     this.isActive = false;
+    this.updatedAt = new Date().toISOString();
     this.log(`תיק דמה הושבת: ${reason}`);
   }
 
@@ -43,7 +54,21 @@ export class PaperPortfolio {
     return price * quantity * rate;
   }
 
-  buy({ symbol, price, quantity, timestamp = Date.now(), isTaker = true }) {
+  recordEquitySnapshot(currentPrices = {}, timestamp = Date.now()) {
+    const equity = Math.round(this.getEquity(currentPrices) * 100) / 100;
+    const cash = Math.round(this.cash * 100) / 100;
+    const netPnL = Math.round((equity - this.initialBalance) * 100) / 100;
+    const last = this.equityHistory[this.equityHistory.length - 1];
+    if (last && Math.abs(timestamp - last.t) < 60_000 && Math.abs(last.equity - equity) < 0.01) {
+      return;
+    }
+    this.equityHistory.push({ t: timestamp, equity, cash, netPnL });
+    if (this.equityHistory.length > 300) {
+      this.equityHistory = this.equityHistory.slice(-300);
+    }
+  }
+
+  buy({ symbol, price, quantity, timestamp = Date.now(), isTaker = true, dir = 1, deskId = null, reason = '' }) {
     if (!this.isActive) {
       return { success: false, error: 'תיק הדמה לא פעיל — יש לעבור בדיקת עבר רווחית קודם' };
     }
@@ -57,51 +82,85 @@ export class PaperPortfolio {
     }
 
     this.cash -= totalCost;
+    this.totalFeesAccumulated += fee;
 
     const existing = this.positions[symbol];
-    if (existing) {
-      const totalCostBefore = existing.quantity * existing.averageEntryPrice;
+    const direction = dir < 0 ? -1 : 1;
+    if (existing && (existing.dir || 1) === direction) {
+      const totalNotionalBefore = existing.quantity * existing.averageEntryPrice;
       const newQuantity = existing.quantity + quantity;
-      existing.averageEntryPrice = (totalCostBefore + notional + fee) / newQuantity;
+      existing.averageEntryPrice = (totalNotionalBefore + notional) / newQuantity;
       existing.quantity = newQuantity;
+      existing.feePaid = (existing.feePaid || 0) + fee;
+      existing.dir = direction;
     } else {
       this.positions[symbol] = {
         quantity,
-        averageEntryPrice: (notional + fee) / quantity,
+        averageEntryPrice: price,
+        feePaid: fee,
+        dir: direction,
+        openedAt: timestamp,
+        deskId,
       };
     }
 
+    const equityAfter = this.getEquity({ [symbol]: price });
     const trade = {
+      id: makeTradeId(timestamp),
       timestamp,
       symbol,
-      side: 'BUY',
+      deskId,
+      dir: direction,
+      side: direction > 0 ? 'BUY' : 'SHORT',
       price,
       quantity,
       notional,
       fee,
-      cashAfter: this.cash,
+      reason,
+      cashAfter: Math.round(this.cash * 100) / 100,
+      equityAfter: Math.round(equityAfter * 100) / 100,
     };
     this.trades.push(trade);
+    if (this.trades.length > 500) this.trades = this.trades.slice(-500);
+    this.totalTradesCount = Math.max(this.totalTradesCount + 1, this.trades.length);
+    this.updatedAt = new Date(timestamp).toISOString();
+    this.recordEquitySnapshot({ [symbol]: price }, timestamp);
     return { success: true, trade };
   }
 
-  sell({ symbol, price, quantity, timestamp = Date.now(), isTaker = true }) {
+  sell({ symbol, price, quantity, timestamp = Date.now(), isTaker = true, deskId = null, reason = '' }) {
     if (!this.isActive) {
       return { success: false, error: 'תיק הדמה לא פעיל — יש לעבור בדיקת עבר רווחית קודם' };
     }
 
     const existing = this.positions[symbol];
-    if (!existing || existing.quantity < quantity) {
+    if (!existing || existing.quantity < quantity - 1e-12) {
       return { success: false, error: 'אין כמות מספיקה למכירה בתיק הדמה' };
     }
 
-    const notional = price * quantity;
-    const fee = this.feeAmount(isTaker, price, quantity);
-    const netProceeds = notional - fee;
-    this.cash += netProceeds;
+    const qty = Math.min(quantity, existing.quantity);
+    const direction = existing.dir || 1;
+    const notional = price * qty;
+    const entryNotional = existing.averageEntryPrice * qty;
+    const fee = this.feeAmount(isTaker, price, qty);
+    this.totalFeesAccumulated += fee;
 
-    const costOfSold = quantity * existing.averageEntryPrice;
-    const realizedPnL = netProceeds - costOfSold;
+    const entryFeeShare = existing.quantity > 0 ? ((existing.feePaid || 0) * (qty / existing.quantity)) : 0;
+
+    let grossTradePnL;
+    let proceeds;
+    if (direction > 0) {
+      grossTradePnL = notional - entryNotional;
+      proceeds = notional - fee;
+    } else {
+      // Short position: margin reserved at entry was entryNotional; PnL = entryNotional - notional
+      grossTradePnL = entryNotional - notional;
+      proceeds = Math.max(0, entryNotional + grossTradePnL - fee);
+    }
+
+    const realizedPnL = grossTradePnL - fee - entryFeeShare;
+    this.cash += proceeds;
+    this.realizedPnLAccumulated += realizedPnL;
 
     let tax = 0;
     if (realizedPnL > 0) {
@@ -114,24 +173,35 @@ export class PaperPortfolio {
       this.capitalLossesCarryForward += Math.abs(realizedPnL);
     }
 
-    existing.quantity -= quantity;
-    if (existing.quantity <= 0) {
+    existing.quantity -= qty;
+    if (existing.feePaid) existing.feePaid = Math.max(0, existing.feePaid - entryFeeShare);
+    if (existing.quantity <= 1e-9) {
       delete this.positions[symbol];
     }
 
+    const equityAfter = this.getEquity({ [symbol]: price });
     const trade = {
+      id: makeTradeId(timestamp),
       timestamp,
       symbol,
-      side: 'SELL',
+      deskId: deskId || existing.deskId || null,
+      dir: direction,
+      side: direction > 0 ? 'SELL' : 'COVER',
       price,
-      quantity,
+      quantity: qty,
       notional,
       fee,
-      realizedPnL,
-      tax,
-      cashAfter: this.cash,
+      realizedPnL: Math.round(realizedPnL * 100) / 100,
+      tax: Math.round(tax * 100) / 100,
+      reason,
+      cashAfter: Math.round(this.cash * 100) / 100,
+      equityAfter: Math.round(equityAfter * 100) / 100,
     };
     this.trades.push(trade);
+    if (this.trades.length > 500) this.trades = this.trades.slice(-500);
+    this.totalTradesCount = Math.max(this.totalTradesCount + 1, this.trades.length);
+    this.updatedAt = new Date(timestamp).toISOString();
+    this.recordEquitySnapshot({ [symbol]: price }, timestamp);
     return { success: true, trade, realizedPnL, tax };
   }
 
@@ -140,20 +210,28 @@ export class PaperPortfolio {
     for (const [symbol, pos] of Object.entries(this.positions)) {
       const raw = currentPrices[symbol];
       const currentPrice = (typeof raw === 'object' && raw !== null ? raw.price : raw) ?? pos.averageEntryPrice;
-      positionsValue += pos.quantity * currentPrice;
+      const direction = pos.dir || 1;
+      if (direction > 0) {
+        positionsValue += pos.quantity * currentPrice;
+      } else {
+        // Short margin value = entryNotional + (entryPrice - currentPrice) * qty
+        const val = pos.quantity * (2 * pos.averageEntryPrice - currentPrice);
+        positionsValue += Math.max(0, val);
+      }
     }
     return this.cash + positionsValue;
   }
 
   getReport(currentPrices = {}) {
     const equity = this.getEquity(currentPrices);
-    const grossPnL = equity - this.initialBalance;
+    const tradesFees = this.trades.reduce((sum, t) => sum + (t.fee || 0), 0);
+    const totalFees = Math.max(this.totalFeesAccumulated || 0, tradesFees);
+    const totalTax = this.taxAccumulated || 0;
 
-    const totalFees = this.trades.reduce((sum, t) => sum + (t.fee || 0), 0);
-    const totalTax = this.taxAccumulated;
-
-    const netPnL = grossPnL - totalFees - totalTax;
-    const returnPct = (netPnL / this.initialBalance) * 100;
+    // Cash already reflects paid fees and taxes, so (equity - initialBalance) is net PnL after fees & tax
+    const netPnL = equity - this.initialBalance;
+    const grossPnL = netPnL + totalFees + totalTax;
+    const returnPct = this.initialBalance > 0 ? (netPnL / this.initialBalance) * 100 : 0;
 
     return {
       initialBalance: this.initialBalance,
@@ -164,11 +242,14 @@ export class PaperPortfolio {
       totalTax: Math.round(totalTax * 100) / 100,
       netPnL: Math.round(netPnL * 100) / 100,
       returnPct: Math.round(returnPct * 100) / 100,
-      tradeCount: this.trades.length,
+      realizedPnL: Math.round((this.realizedPnLAccumulated || 0) * 100) / 100,
+      tradeCount: Math.max(this.totalTradesCount || 0, this.trades.length),
       openPositions: Object.keys(this.positions).length,
-      taxAccumulated: Math.round(this.taxAccumulated * 100) / 100,
+      taxAccumulated: Math.round(totalTax * 100) / 100,
       isActive: this.isActive,
       positions: { ...this.positions },
+      equityHistory: this.equityHistory || [],
+      updatedAt: this.updatedAt,
     };
   }
 
@@ -182,25 +263,53 @@ export class PaperPortfolio {
       initialBalance: this.initialBalance,
       cash: this.cash,
       positions: this.positions,
-      trades: this.trades.slice(-150),
+      trades: this.trades.slice(-500),
+      equityHistory: this.equityHistory.slice(-300),
       makerFee: this.makerFee,
       takerFee: this.takerFee,
       taxRate: this.taxRate,
       taxAccumulated: this.taxAccumulated,
+      totalFeesAccumulated: Math.max(
+        this.totalFeesAccumulated || 0,
+        this.trades.reduce((s, t) => s + (t.fee || 0), 0),
+      ),
+      realizedPnLAccumulated: this.realizedPnLAccumulated || 0,
+      totalTradesCount: Math.max(this.totalTradesCount || 0, this.trades.length),
       capitalLossesCarryForward: this.capitalLossesCarryForward,
       isActive: this.isActive,
+      updatedAt: this.updatedAt || new Date().toISOString(),
     };
   }
 
   fromJSON(data) {
     if (!data || typeof data !== 'object') return this;
-    if (Number.isFinite(data.initialBalance)) this.initialBalance = data.initialBalance;
-    if (Number.isFinite(data.cash)) this.cash = data.cash;
-    if (data.positions && typeof data.positions === 'object') this.positions = data.positions;
-    if (Array.isArray(data.trades)) this.trades = data.trades;
-    if (Number.isFinite(data.taxAccumulated)) this.taxAccumulated = data.taxAccumulated;
-    if (Number.isFinite(data.capitalLossesCarryForward)) this.capitalLossesCarryForward = data.capitalLossesCarryForward;
+    if (Number.isFinite(Number(data.initialBalance))) this.initialBalance = Number(data.initialBalance);
+    if (Number.isFinite(Number(data.cash))) this.cash = Number(data.cash);
+    this.positions = (data.positions && typeof data.positions === 'object')
+      ? JSON.parse(JSON.stringify(data.positions))
+      : {};
+    this.trades = Array.isArray(data.trades) ? JSON.parse(JSON.stringify(data.trades)) : [];
+    this.equityHistory = Array.isArray(data.equityHistory) ? JSON.parse(JSON.stringify(data.equityHistory)) : [];
+    if (Number.isFinite(Number(data.makerFee))) this.makerFee = Number(data.makerFee);
+    if (Number.isFinite(Number(data.takerFee))) this.takerFee = Number(data.takerFee);
+    if (Number.isFinite(Number(data.taxRate))) this.taxRate = Number(data.taxRate);
+    this.taxAccumulated = Number.isFinite(Number(data.taxAccumulated)) ? Number(data.taxAccumulated) : 0;
+    const tradesFees = this.trades.reduce((s, t) => s + (Number(t.fee) || 0), 0);
+    this.totalFeesAccumulated = Number.isFinite(Number(data.totalFeesAccumulated))
+      ? Math.max(Number(data.totalFeesAccumulated), tradesFees)
+      : tradesFees;
+    this.realizedPnLAccumulated = Number.isFinite(Number(data.realizedPnLAccumulated))
+      ? Number(data.realizedPnLAccumulated)
+      : this.trades.reduce((s, t) => s + (Number(t.realizedPnL) || 0), 0);
+    this.totalTradesCount = Math.max(
+      Number.isFinite(Number(data.totalTradesCount)) ? Number(data.totalTradesCount) : 0,
+      this.trades.length,
+    );
+    this.capitalLossesCarryForward = Number.isFinite(Number(data.capitalLossesCarryForward))
+      ? Number(data.capitalLossesCarryForward)
+      : 0;
     if (typeof data.isActive === 'boolean') this.isActive = data.isActive;
+    this.updatedAt = data.updatedAt || null;
     return this;
   }
 }

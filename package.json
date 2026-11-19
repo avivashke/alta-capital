@@ -1,11 +1,13 @@
 {
   "name": "alta-capital",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
-  "description": "Agent-run trading research desk: backtests, walk-forward hardening, versioned bot artifacts and a 24/7 runner.",
+  "description": "Agent-run trading research desk: backtests, walk-forward hardening, versioned bot artifacts, cross-device cloud sync, and an always-on Base Server.",
   "scripts": {
+    "start": "node server.mjs",
     "dev": "node server.mjs",
+    "base-server": "node scripts/start-base-server.mjs",
     "firm": "node runner/run.mjs --cycles=5",
     "firm:deep": "node runner/run.mjs --cycles=5 --deep"
   },

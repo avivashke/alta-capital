@@ -40,8 +40,28 @@ const research = await import('../src/research.js');
 const ai = await import('../src/ai.js');
 const { buildPoolFromEnv, mergePoolUsage } = await import('../src/keypool.js');
 const { buildArtifact } = await import('../src/platforms.js');
+const { pullFromDatabase, pushStateToDatabase, dbState } = await import('../src/db.js');
+const { mergeFirmStates } = await import('../src/state_merge.js');
 
 store.load();
+
+// Sync from Supabase / Cloud API / Base Server before running so GitHub Actions never diverges
+try {
+  const pulled = await pullFromDatabase();
+  if (pulled?.ok && pulled.state && Array.isArray(pulled.state.desks) && pulled.state.desks.length) {
+    const merged = mergeFirmStates(store.state, pulled.state);
+    store.state = {
+      ...store.state,
+      ...merged,
+      settings: { ...store.state.settings, ...(merged.settings || {}) },
+    };
+    store.markReloaded();
+    console.log(`[runner] synced state from ${pulled.provider} (cycles=${store.state.stats?.cycles || 0}, trades=${store.state.paperPortfolio?.totalTradesCount || store.state.paperPortfolio?.trades?.length || 0})`);
+  }
+} catch (err) {
+  console.warn('[runner] cloud pre-sync skipped:', err.message);
+}
+
 store.state.settings.autopilot = true;
 if (process.env.GITHUB_TOKEN) store.state.settings.github.token = process.env.GITHUB_TOKEN;
 
@@ -70,6 +90,7 @@ if (llmKey) {
   store.state.settings.llm.apiKey = '';
 }
 firm.ensureDeskFields();
+firm.rehydratePaperPortfolio();
 
 let aiResult = { ok: false, reason: (llmKey || envPool.length) ? 'not-run' : 'no-model-key' };
 try {
@@ -117,9 +138,14 @@ try {
   console.warn('[runner] paper execution:', err.message);
 }
 try {
-  firm.promoteDryRuns();
+  await firm.promoteDryRuns();
 } catch (err) {
   console.warn('[runner] promotion:', err.message);
+}
+try {
+  firm.savePaperPortfolio();
+} catch (err) {
+  console.warn('[runner] paper portfolio save:', err.message);
 }
 try {
   await firm.refreshTechnicals({ force: true });
@@ -154,6 +180,12 @@ function sanitize(state) {
   for (const entry of out.settings?.pool?.entries || []) entry.key = '';
   if (out.settings?.github) out.settings.github.token = '';
   if (out.settings?.news) out.settings.news.apiKey = '';
+  if (out.settings?.db) {
+    out.settings.db.supabaseKey = '';
+    out.settings.db.workerDbKey = '';
+    out.settings.db.baseServerToken = '';
+    out.settings.db.netlifyToken = '';
+  }
   out.advisor = { messages: [] };
   out.updatedAt = new Date().toISOString();
   out.source = 'github-actions';
@@ -162,7 +194,22 @@ function sanitize(state) {
 }
 
 fs.mkdirSync(dataDir, { recursive: true });
-const state = sanitize(store.state);
+let state = sanitize(store.state);
+
+// Push merged state to Supabase / Cloud API / Base Server so all devices see GitHub Actions progress immediately
+try {
+  dbState.initialSyncDone = true;
+  const pushRes = await pushStateToDatabase(state);
+  if (pushRes?.ok) {
+    console.log(`[runner] pushed state to ${pushRes.provider}`);
+    if (pushRes.state && Array.isArray(pushRes.state.desks)) {
+      state = sanitize(mergeFirmStates(state, pushRes.state));
+    }
+  }
+} catch (err) {
+  console.warn('[runner] cloud post-sync skipped:', err.message);
+}
+
 fs.writeFileSync(stateFile, JSON.stringify(state, null, 1));
 fs.writeFileSync(path.join(dataDir, 'context.json'), JSON.stringify(research.buildContextDocument(), null, 1));
 fs.writeFileSync(

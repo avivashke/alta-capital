@@ -1,12 +1,12 @@
-﻿import { mount } from '../ui.js';
+import { mount } from '../ui.js';
 import { store } from '../store.js';
 import { LLM_PROVIDERS, PLATFORMS, DISCLAIMER } from '../config.js';
 import { testConnection, testPoolEntry } from '../llm.js';
 import { PROVIDERS, PROVIDER_ORDER } from '../providers.js';
 import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, parseCloudflareKeys, parseWorkerProxies, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
 import { h, notice, toast, openModal, downloadFile, timeAgo, tag, copyText } from '../ui.js';
-import { syncFromCloud } from '../remote.js';
-import { dbState, testDatabaseConnection, pushStateToDatabase, pullFromDatabase, SUPABASE_SQL_SCHEMA } from '../db.js';
+import { syncFromCloud, syncBidirectional } from '../remote.js';
+import { dbState, testDatabaseConnection, pushStateToDatabase, pullFromDatabase, checkBaseServerHealth, SUPABASE_SQL_SCHEMA } from '../db.js';
 import * as webllm from '../webllm.js';
 
 export function renderSettings(root, ui) {
@@ -928,8 +928,8 @@ function helpBlock(providerSel) {
 function dbCard(ui) {
   const dbCfg = store.state.settings.db || {};
   const modeSel = h('select', {}, [
-    ['auto', 'אוטומטי (Netlify DB + Supabase אם הוגדר)'],
-    ['netlify', 'Netlify Database (/api/db · ללא הגדרות נוספות)'],
+    ['auto', 'אוטומטי (ענן + Supabase + שרת בסיס במקביל)'],
+    ['netlify', 'Netlify / Base Server API (/api/db)'],
     ['supabase', 'Supabase PostgreSQL (REST API)'],
     ['worker', 'Cloudflare Worker D1 / KV'],
   ].map(([val, label]) => h('option', { value: val, selected: (dbCfg.mode || 'auto') === val }, label)));
@@ -943,7 +943,26 @@ function dbCard(ui) {
   const supaKey = h('input', {
     type: 'password',
     value: dbCfg.supabaseKey || '',
-    placeholder: 'Supabase Anon Key (eyJ...)',
+    placeholder: 'Supabase Anon Key (eyJ... / sb_publishable_...)',
+    dir: 'ltr',
+    autocomplete: 'off',
+  });
+  const cloudApiUrl = h('input', {
+    type: 'url',
+    value: dbCfg.cloudApiUrl || '',
+    placeholder: 'https://your-site.netlify.app/api/db (אופציונלי — לגישור מול ענן Netlify)',
+    dir: 'ltr',
+  });
+  const baseServerUrl = h('input', {
+    type: 'url',
+    value: dbCfg.baseServerUrl || '',
+    placeholder: 'http://192.168.1.x:8181 או כתובת Tunnel לשרת הבסיס שלך',
+    dir: 'ltr',
+  });
+  const baseServerToken = h('input', {
+    type: 'password',
+    value: dbCfg.baseServerToken || '',
+    placeholder: 'טוקן שרת בסיס (אופציונלי — אם מוגדר BASE_SERVER_TOKEN)',
     dir: 'ltr',
     autocomplete: 'off',
   });
@@ -969,6 +988,9 @@ function dbCard(ui) {
         mode: modeSel.value,
         supabaseUrl: supaUrl.value.trim(),
         supabaseKey: supaKey.value.trim(),
+        cloudApiUrl: cloudApiUrl.value.trim(),
+        baseServerUrl: baseServerUrl.value.trim(),
+        baseServerToken: baseServerToken.value.trim(),
         workerDbUrl: workerDbUrl.value.trim(),
         netlifyToken: netlifyTok.value.trim(),
         apiEndpoint: '/api/db',
@@ -984,34 +1006,56 @@ function dbCard(ui) {
     ? tag('🟢 Supabase מחובר ופעיל', 'live')
     : tag('🔴 Supabase לא מחובר', 'red');
 
-  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: dbState.supabaseConnected ? 'rgba(46, 204, 113, 0.55)' : 'rgba(224, 182, 74, 0.4)' } },
+  const baseBadge = dbState.baseServerConnected
+    ? tag('🖥 שרת בסיס מחובר', 'live')
+    : tag('🖥 שרת בסיס: לא מחובר', 'dry');
+
+  const pfTrades = Math.max(
+    Number(store.state.paperPortfolio?.totalTradesCount) || 0,
+    store.state.paperPortfolio?.trades?.length || 0,
+  );
+
+  const bsInfo = dbState.baseServerInfo;
+  const lanHint = bsInfo?.lanUrls?.length ? bsInfo.lanUrls.join(' · ') : null;
+
+  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: (dbState.supabaseConnected || dbState.baseServerConnected) ? 'rgba(46, 204, 113, 0.55)' : 'rgba(224, 182, 74, 0.4)' } },
     h('div', { class: 'card-head' },
       h('div', {},
-        h('h2', { text: 'מסד נתונים חינמי + ריצה 24/7 ב-Netlify' }),
-        h('div', { class: 'card-sub', text: 'שמירה אוטומטית של מצב השולחנות, היסטוריית בקטסטים, גרסאות רובוטים ועסקאות נייר' }),
+        h('h2', { text: 'סנכרון חוצה מכשירים · ענן 24/7 + שרת בסיס (Base Server)' }),
+        h('div', { class: 'card-sub', text: 'מיזוג חכם ומונוטוני של יתרת התיק, היסטוריית עסקאות, גרסאות רובוטים ומחזורים — אף מכשיר לא מאפס את ההתקדמות' }),
       ),
       h('div', { class: 'row wrap', style: { gap: '6px' } },
         supaBadge,
+        baseBadge,
         tag(dbState.connected ? `מסד פעיל · ${dbState.provider}` : 'מוכן לסנכרון', dbState.connected ? 'live' : 'opt'),
-        tag(`מחזורים: ${dbState.counts.cycles || store.state.stats.cycles || 0}`, 'dry'),
-        tag(`גרסאות: ${dbState.counts.versions || store.state.stats.deployments || 0}`, 'dry'),
+        tag(`עסקאות תיק: ${pfTrades}`, 'dry'),
+        tag(`מחזורים: ${Math.max(dbState.counts.cycles || 0, store.state.stats.cycles || 0)}`, 'dry'),
+        tag(`גרסה #${store.state.stateRevision || 0}`, 'dry'),
       ),
     ),
     notice(
-      dbState.supabaseConnected
-        ? '✅ חיבור ל-Supabase PostgreSQL מאומת ופעיל! כל מחזור, גרסה ועסקה נשמרים ישירות ב-Supabase.'
-        : 'הדרך הכי פשוטה לחיבור קבוע: הגדר ב-Netlify → Site configuration → Environment variables את SUPABASE_URL ו-SUPABASE_ANON_KEY, והמערכת תתחבר אוטומטית בלי להזין מפתח בדפדפן. לחילופין הדבק מפתח (eyJ... / sb_publishable_...) למטה ולחץ שמור.',
-      dbState.supabaseConnected ? 'blue' : 'blue',
+      dbState.supabaseConnected && dbState.baseServerConnected
+        ? '✅ מצב היברידי מלא פעיל: שרת הבסיס והענן (Supabase) מסונכרנים דו-כיוונית! כל פתיחה ממחשב או טלפון טוענת וממזגת אוטומטית את היתרה וההיסטוריה המלאה.'
+        : dbState.supabaseConnected
+          ? '✅ חיבור ל-Supabase PostgreSQL מאומת ופעיל! כל מכשיר שתפתח ממנו מסתנכרן אוטומטית בלי איפוס יתרה או היסטוריה.'
+          : dbState.baseServerConnected
+            ? '✅ שרת הבסיס המקומי פעיל ושומר הכל בדיסק + גיבויים שעתיים. כדי לסנכרן גם מחוץ לבית/מהענן, הגדר SUPABASE_ANON_KEY בקובץ .env וב-Netlify.'
+            : 'לסנכרון חוצה מכשירים בענן 24/7: הגדר ב-Netlify את SUPABASE_URL ו-SUPABASE_ANON_KEY (וב-GitHub Secrets לאותו ריפו), או הזן מפתח Supabase / כתובת שרת בסיס למטה.',
+      'blue',
     ),
+    lanHint ? h('div', { class: 'small muted', style: { marginTop: '6px' }, text: `כתובות שרת הבסיס ברשת המקומית: ${lanHint}` }) : null,
     dbState.supabaseError && !dbState.supabaseConnected
       ? h('div', { class: 'notice bad', style: { marginTop: '8px' }, text: 'סטטוס Supabase: ' + dbState.supabaseError })
       : null,
     h('div', { class: 'form-grid', style: { marginTop: '12px' } },
       field('מצב מסד נתונים', modeSel),
-      field('Supabase Project URL (אופציונלי)', supaUrl),
-      field('Supabase Key / Token (הוזן)', supaKey),
+      field('Supabase Project URL', supaUrl),
+      field('Supabase Key (אופציונלי אם מוגדר ב-Netlify Env)', supaKey),
+      field('כתובת Cloud API (Netlify — אופציונלי)', cloudApiUrl),
+      field('כתובת שרת הבסיס (המחשב שלך — LAN / Tunnel)', baseServerUrl),
+      field('טוקן שרת בסיס (אופציונלי)', baseServerToken),
       field('Cloudflare D1 Worker URL (אופציונלי)', workerDbUrl),
-      h('div', { class: 'full' }, field('Netlify / Cloud Auth Token (הוזן)', netlifyTok)),
+      field('Netlify / Cloud Auth Token (אופציונלי)', netlifyTok),
     ),
     h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '12px' } },
       h('button', {
@@ -1023,7 +1067,7 @@ function dbCard(ui) {
           try {
             const res = await testDatabaseConnection();
             if (res?.ok) {
-              toast(`מסד הנתונים סונכרן בהצלחה (${res.provider || 'Netlify DB'})`, 'ok');
+              toast(`מסד הנתונים סונכרן בהצלחה (${res.provider || 'Cloud DB'})`, 'ok');
             } else {
               toast(`שגיאה בחיבור למסד הנתונים: ${res?.error || res?.reason || 'לא זמין'}`, 'bad');
             }
@@ -1040,7 +1084,45 @@ function dbCard(ui) {
         onclick: async (e) => {
           const btn = e.currentTarget;
           btn.disabled = true;
-          btn.textContent = 'מריץ מחזור ענן…';
+          btn.textContent = 'מסנכרן…';
+          try {
+            const res = await syncBidirectional();
+            if (res?.ok) {
+              toast(`סנכרון דו-כיווני הושלם (${res.provider || 'ענן'})`, 'ok');
+            } else {
+              toast('לא ניתן היה לסנכרן — בדוק הגדרות חיבור', 'bad');
+            }
+          } catch (err) {
+            toast('שגיאת סנכרון: ' + err.message, 'bad');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = '⟳ סנכרן דו-כיוונית עכשיו';
+            ui.rerender();
+          }
+        },
+      }, '⟳ סנכרן דו-כיוונית עכשיו'),
+      h('button', {
+        class: 'btn btn-sm',
+        onclick: async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true;
+          saveDb();
+          const hRes = await checkBaseServerHealth(baseServerUrl.value.trim());
+          btn.disabled = false;
+          if (hRes?.ok) {
+            toast(`שרת הבסיס פעיל (${hRes.hostname || 'local'} · ${hRes.stats?.cycles || 0} מחזורים · ${hRes.portfolio?.tradesCount || 0} עסקאות)`, 'ok');
+          } else {
+            toast(`שרת הבסיס לא זמין: ${hRes?.error || 'אין תגובה'}`, 'bad');
+          }
+          ui.rerender();
+        },
+      }, '🖥 בדוק שרת בסיס'),
+      h('button', {
+        class: 'btn btn-sm',
+        onclick: async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true;
+          btn.textContent = 'מריץ מחזור שרת…';
           try {
             const res = await fetch('/api/firm-cron', {
               method: 'POST',
@@ -1050,19 +1132,19 @@ function dbCard(ui) {
             const data = await res.json();
             if (data?.ok) {
               await syncFromCloud({ force: true });
-              toast(`מחזור Netlify 24/7 הושלם ונשמר בדאטה-בייס (${data.summary?.length || 2} שולחנות)`, 'ok');
+              toast(`מחזור שרת 24/7 הושלם ונשמר בדאטה-בייס (${data.summary?.length || 2} שולחנות)`, 'ok');
             } else {
-              toast('שגיאה בהרצת מחזור ענן: ' + (data?.error || 'נכשל'), 'bad');
+              toast('שגיאה בהרצת מחזור שרת: ' + (data?.error || 'נכשל'), 'bad');
             }
           } catch (err) {
             toast('שגיאה: ' + err.message, 'bad');
           } finally {
             btn.disabled = false;
-            btn.textContent = '⚡ הרץ מחזור אופטימיזציה בשרת (Netlify)';
+            btn.textContent = '⚡ הרץ מחזור אופטימיזציה בשרת';
             ui.rerender();
           }
         },
-      }, '⚡ הרץ מחזור אופטימיזציה בשרת (Netlify)'),
+      }, '⚡ הרץ מחזור אופטימיזציה בשרת'),
       h('button', {
         class: 'btn btn-sm btn-ghost',
         onclick: () => {
@@ -1074,6 +1156,17 @@ function dbCard(ui) {
         class: 'btn btn-sm btn-ghost',
         onclick: () => openModal('סכמת טבלאות PostgreSQL עבור Supabase', h('pre', { class: 'code', text: SUPABASE_SQL_SCHEMA }), { wide: true }),
       }, '👁 הצג SQL ל-Supabase'),
+    ),
+    h('details', { style: { marginTop: '12px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '10px 12px' } },
+      h('summary', { style: { cursor: 'pointer', fontWeight: '700', fontSize: '13px' }, text: '🖥 הפיכת המחשב שלך לשרת בסיס קבוע (Base Server) שמסתנכרן עם הענן 24/7' }),
+      h('div', { class: 'small muted', style: { marginTop: '8px', lineHeight: '1.7' } },
+        'שרת הבסיס רץ קבוע על המחשב שלך (גם אחרי הפעלה מחדש), שומר את כל התיק וההיסטוריה בדיסק המקומי + גיבויים שעתיים, ומסנכרן דו-כיוונית עם הענן (Supabase / Netlify) כל 60 שניות. כך האפליקציה עובדת בענן מכל מכשיר, ותמיד יש לך שרת בסיס מקומי פעיל גם ב-LAN.'),
+      h('div', { style: { marginTop: '8px' } },
+        h('div', { class: 'small', text: '1. העתק .env.example ל-.env והזן SUPABASE_ANON_KEY (ואופציונלית CLOUD_API_URL):' }),
+        h('pre', { class: 'code', text: 'cp .env.example .env' }),
+        h('div', { class: 'small', style: { marginTop: '6px' }, text: '2. התקן כשירות קבוע במערכת ההפעלה (עולה אוטומטית בהפעלת המחשב):' }),
+        h('pre', { class: 'code', text: '# macOS:\nbash scripts/install-base-server-macos.sh\n\n# Windows (PowerShell):\npowershell -ExecutionPolicy Bypass -File scripts\\install-base-server-windows.ps1\n\n# Linux:\nbash scripts/install-base-server-linux.sh\n\n# או הרצה ישירה עם auto-restart:\nnpm run base-server' }),
+      ),
     ),
     dbState.lastError ? h('div', { class: 'small red', style: { marginTop: '8px' }, text: `שגיאה אחרונה: ${dbState.lastError}` }) : null,
   );

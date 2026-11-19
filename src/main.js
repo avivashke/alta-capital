@@ -2,10 +2,11 @@
 
 import { store } from './store.js';
 import { NAV } from './config.js';
-import { ensureDeskFields, startMarketFeed, tick, catchUp } from './firm.js';
+import { ensureDeskFields, startMarketFeed, tick, catchUp, rehydratePaperPortfolio } from './firm.js';
 import { marketState, onQuotes, quotes } from './market.js';
 import { openingMessage } from './advisor.js';
 import { syncFromCloud } from './remote.js';
+import { dbState, pushStateToDatabase, checkBaseServerHealth } from './db.js';
 import { mountPageChat } from './page_chat.js';
 import { h, timeAgo, num, toast } from './ui.js';
 
@@ -103,16 +104,23 @@ function updateTopbar() {
   const cloud = state.remote?.updatedAt && s.cloudSync ? state.remote : null;
   const ap = document.getElementById('pill-autopilot');
   if (ap) {
-    ap.textContent = cloud
-      ? 'ענן 24/7 · פעיל'
-      : s.autopilot ? 'אוטופיילוט פעיל' : 'אוטופיילוט מושהה';
-    ap.className = 'pill ' + (cloud || s.autopilot ? '' : 'pill-off');
-    ap.title = cloud ? `הסוכנים רצים ב-GitHub Actions · עדכון אחרון ${timeAgo(Date.parse(cloud.updatedAt))}` : '';
+    if (dbState.baseServerConnected && (dbState.supabaseConnected || dbState.cloudApiConnected)) {
+      ap.textContent = 'שרת בסיס + ענן 24/7';
+    } else if (dbState.baseServerConnected) {
+      ap.textContent = 'שרת בסיס · פעיל';
+    } else if (dbState.supabaseConnected || cloud) {
+      ap.textContent = 'ענן 24/7 · מסונכרן';
+    } else {
+      ap.textContent = s.autopilot ? 'אוטופיילוט מקומי' : 'אוטופיילוט מושהה';
+    }
+    ap.className = 'pill ' + (dbState.connected || cloud || s.autopilot ? '' : 'pill-off');
+    const syncInfo = dbState.lastSyncAt ? `סנכרון אחרון ${timeAgo(dbState.lastSyncAt)} (${dbState.provider})` : '';
+    ap.title = syncInfo || (cloud ? `עדכון אחרון ${timeAgo(Date.parse(cloud.updatedAt))}` : 'מצב סנכרון');
   }
   const tickPill = document.getElementById('pill-tick');
   if (tickPill) {
     tickPill.textContent = state.lastTickAt
-      ? `${cloud ? 'ענן' : 'מחזור'} ${timeAgo(state.lastTickAt)}`
+      ? `${dbState.connected || cloud ? 'מסונכרן' : 'מחזור'} ${timeAgo(state.lastTickAt)}`
       : 'טרם רץ מחזור';
   }
   const cycles = document.getElementById('foot-cycles');
@@ -212,24 +220,42 @@ function boot() {
     }
   }, 1000);
 
-  // Periodic cross-device sync every 30s so phone/PC stay aligned with Supabase
+  // Periodic cross-device sync every 20s so phone/PC/Base Server stay aligned
   setInterval(() => {
     if (cloudReady) syncFromCloud().catch(() => {});
-  }, 30000);
+  }, 20000);
+
+  // Flush local changes immediately when leaving/switching tabs or closing on mobile
+  const flushOnExit = () => {
+    store.save(true);
+    if (cloudReady) {
+      pushStateToDatabase(store.state, { keepalive: true }).catch(() => {});
+    }
+  };
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       startMarketFeed();
       syncFromCloud().catch(() => {});
+    } else if (document.visibilityState === 'hidden') {
+      flushOnExit();
     }
   });
+  window.addEventListener('pagehide', flushOnExit);
+
+  // Check if served by or connected to a local Base Server
+  checkBaseServerHealth(store.state.settings?.db?.baseServerUrl || '').then(() => updateTopbar()).catch(() => {});
 
   syncFromCloud()
     .then((res) => {
-      if (res?.ok) toast(`נטען מצב התיק מהענן (${res.source || 'Supabase'})`, 'ok');
+      rehydratePaperPortfolio();
+      if (res?.ok) {
+        toast(`נטען מצב התיק וההיסטוריה (${res.source || 'ענן'})`, 'ok');
+      }
     })
     .catch((err) => console.warn('[cloud]', err))
     .finally(() => {
+      rehydratePaperPortfolio();
       cloudReady = true;
       render();
       if (store.state.settings.autopilot) {

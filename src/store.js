@@ -9,8 +9,11 @@ export const uid = (prefix = 'id') => prefix + '_' + Math.random().toString(36).
 export function defaults() {
   return {
     schema: 1,
+    stateRevision: 0,
     createdAt: new Date().toISOString(),
+    updatedAt: null,
     lastTickAt: null,
+    paperPortfolio: null,
     settings: {
       autopilot: true,
       tickSeconds: 4,
@@ -43,6 +46,9 @@ export function defaults() {
         supabaseUrl: 'https://lqiakdsdpdvdlobeeovz.supabase.co',
         supabaseKey: '',
         netlifyToken: '',
+        cloudApiUrl: '',
+        baseServerUrl: '',
+        baseServerToken: '',
         workerDbUrl: '',
         workerDbKey: '',
         apiEndpoint: '/api/db',
@@ -87,6 +93,11 @@ let saveTimer = null;
 
 export const store = {
   state: defaults(),
+  _revision: 0,
+
+  markReloaded() {
+    this._revision += 1;
+  },
 
   load() {
     try {
@@ -107,6 +118,7 @@ export const store = {
     }
     this.ensureTeam();
     this.ensureCloudflareProxy();
+    this.markReloaded();
     return this.state;
   },
 
@@ -283,7 +295,8 @@ export const store = {
     this.state = defaults();
     this.ensureTeam();
     this.ensureCloudflareProxy();
-    this.save();
+    this.markReloaded();
+    this.save(true);
     this.emit();
   },
 
@@ -303,7 +316,8 @@ export const store = {
     };
     this.ensureTeam();
     this.ensureCloudflareProxy();
-    this.save();
+    this.markReloaded();
+    this.save(true);
     this.emit();
   },
 };

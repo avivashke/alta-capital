@@ -26,21 +26,25 @@ export async function runFirmCronJob({ cycles = 2, deep = false } = {}) {
   const firm = await import('../../src/firm.js');
   const ai = await import('../../src/ai.js');
   const { buildPoolFromEnv, mergePoolUsage } = await import('../../src/keypool.js');
+  const { mergeFirmStates } = await import('../../src/state_merge.js');
 
   store.load();
 
-  // Pull latest state from DB
+  // Pull latest state from DB & merge non-destructively
   const pulled = await handleDbRequest('GET', { action: 'pull' });
   if (pulled?.state && Array.isArray(pulled.state.desks) && pulled.state.desks.length) {
+    const merged = mergeFirmStates(store.state, pulled.state);
     store.state = {
       ...store.state,
-      ...pulled.state,
+      ...merged,
       settings: { ...store.state.settings, ...(pulled.state.settings || {}) },
     };
+    store.markReloaded();
   }
   store.ensureTeam();
   store.ensureCloudflareProxy();
   firm.ensureDeskFields();
+  firm.rehydratePaperPortfolio();
 
   // Merge environment model pool if configured on Netlify
   const envPool = buildPoolFromEnv(process.env);
@@ -99,10 +103,11 @@ export async function runFirmCronJob({ cycles = 2, deep = false } = {}) {
     await gann.runAutonomousGannLibraryAuditIfDue();
   } catch { /* ignore */ }
 
+  firm.savePaperPortfolio();
   store.state.updatedAt = new Date().toISOString();
   store.state.remote = {
     updatedAt: store.state.updatedAt,
-    source: 'netlify-24-7',
+    source: process.env.ALTA_BASE_SERVER === '1' ? 'base-server-24-7' : 'netlify-24-7',
     cycles: store.state.stats.cycles || 0,
     desks: store.state.desks.length,
   };

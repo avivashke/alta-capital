@@ -62,6 +62,13 @@ jobs:
           LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
           LLM_TEMPERATURE: ${{ vars.LLM_TEMPERATURE }}
+          # Cross-device Cloud DB & Base Server sync
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL || 'https://lqiakdsdpdvdlobeeovz.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CLOUD_API_URL: ${{ secrets.CLOUD_API_URL || vars.CLOUD_API_URL }}
+          BASE_SERVER_URL: ${{ secrets.BASE_SERVER_URL || vars.BASE_SERVER_URL }}
+          BASE_SERVER_TOKEN: ${{ secrets.BASE_SERVER_TOKEN }}
         run: node runner/run.mjs --cycles=${{ github.event.inputs.cycles || 5 }} ${{ github.event.inputs.deep == 'true' && '--deep' || '' }}
 
       - name: Publish state

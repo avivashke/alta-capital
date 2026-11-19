@@ -1,7 +1,9 @@
-﻿import { store } from '../store.js';
+import { store } from '../store.js';
 import { h, pct, num, money, notice, empty, tag, timeAgo, chart, tradeRow, kpi, openModal, closeModal, toast } from '../ui.js';
 import { marketState, quotes } from '../market.js';
 import { ensurePaperPortfolio, getPaperPortfolio, analyzeManualClose, manualCloseDesk } from '../firm.js';
+import { syncBidirectional } from '../remote.js';
+import { dbState } from '../db.js';
 
 function mount(root, ...children) {
   for (const child of children.flat(6)) {
@@ -38,7 +40,7 @@ export function renderPortfolio(root, ui) {
           onclick: async () => {
             const res = await manualCloseDesk(deskId, contradicts ? 'manual_override' : 'manual');
             closeModal();
-            if (res.ok) toast('הפוזיציה נסגרה ידנית (נייר)', 'ok'); else toast(res.error || 'סגירה נכשלה', 'bad');
+            if (res.ok) toast('הפוזיציה נסגרה ידנית ונשמרה בענן', 'ok'); else toast(res.error || 'סגירה נכשלה', 'bad');
             ui.rerender();
           },
         }, contradicts ? 'סגור בכל זאת' : 'סגור פוזיציה'),
@@ -51,11 +53,10 @@ export function renderPortfolio(root, ui) {
   const openPositions = [];
   for (const d of liveDesks) {
     if (d.openTrade) {
-      const cur = quotes[d.symbol]?.price ?? d.openTrade.entry;
       openPositions.push({
         symbol: d.symbol, deskLabel: d.label, deskId: d.id,
         dir: d.openTrade.dir,
-        quantity: d.openTrade.binanceQuantity || d.openTrade.sizeFactor * 0.1,
+        quantity: d.openTrade.binanceQuantity || d.openTrade.quantity || d.openTrade.sizeFactor * 0.1,
         averageEntryPrice: d.openTrade.entry,
         stop: d.openTrade.stop, target: d.openTrade.target,
         markPct: d.openTrade.markPct ?? 0, at: d.openTrade.at,
@@ -63,27 +64,54 @@ export function renderPortfolio(root, ui) {
     }
   }
 
-  const recentTrades = (pf.trades || []).slice(-12).reverse();
+  const recentTrades = (pf.trades || []).slice(-100).reverse();
+  const realEqSeries = (report.equityHistory || []).map((pt) => Number(pt.equity)).filter(Number.isFinite);
   const allEquity = [];
-  for (const d of desks) {
-    if (d.equity && d.equity.length) {
-      d.equity.forEach((v, i) => {
-        const existing = allEquity.find((e) => e.t === i);
-        if (existing) existing.v += Number(v) || 0; else allEquity.push({ t: i, v: Number(v) || 0 });
-      });
+  if (realEqSeries.length >= 2) {
+    realEqSeries.forEach((v, i) => allEquity.push({ t: i, v }));
+  } else {
+    for (const d of desks) {
+      if (d.equity && d.equity.length) {
+        d.equity.forEach((v, i) => {
+          const existing = allEquity.find((e) => e.t === i);
+          if (existing) existing.v += Number(v) || 0; else allEquity.push({ t: i, v: Number(v) || 0 });
+        });
+      }
     }
   }
 
   const connected = !marketState.synthetic;
+  const syncLabel = dbState.connected
+    ? `☁ מסונכרן (${dbState.provider}${dbState.lastSyncAt ? ' · ' + timeAgo(dbState.lastSyncAt) : ''})`
+    : '⚠ לא מסונכרן לענן עדיין';
 
   mount(root,
     h('div', { class: 'page-head' },
       h('div', {},
-        h('div', { class: 'eyebrow', text: 'Paper Trading · תיק מסחר מדומה' }),
+        h('div', { class: 'eyebrow', text: 'Paper Trading · תיק מסחר מדומה חוצה מכשירים' }),
         h('h1', { text: 'תיק המסחר של החברה' }),
-        h('p', { text: 'כל הפוזיציות נפתחות על נייר בלבד לאחר בדיקת עבר רווחית על נתוני Binance אמת. מחירים מתעדכנים בחיבור חי. הרווח/הפסד מוצג לאחר ניכוי עמלות ומס רווחי הון.' }),
+        h('p', { text: 'כל הפוזיציות וההיסטוריה נשמרות באופן מונוטוני ומסתנכרנות בין כל המכשירים, הענן ושרת הבסיס — בלי איפוס יתרה.' }),
       ),
-      h('div', { class: 'head-actions' },
+      h('div', { class: 'head-actions', style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } },
+        h('span', { class: dbState.connected ? 'pill pill-live' : 'pill pill-warn', text: syncLabel }),
+        h('button', {
+          class: 'btn btn-sm',
+          onclick: async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            btn.textContent = 'מסנכרן…';
+            try {
+              const res = await syncBidirectional();
+              toast(res?.ok ? `התיק וההיסטוריה סונכרנו (${res.provider || 'ענן'})` : 'לא נמצא חיבור לענן/שרת בסיס', res?.ok ? 'ok' : 'bad');
+            } catch (err) {
+              toast('שגיאת סנכרון: ' + err.message, 'bad');
+            } finally {
+              btn.disabled = false;
+              btn.textContent = '⟳ סנכרן עכשיו';
+              ui.rerender();
+            }
+          },
+        }, '⟳ סנכרן עכשיו'),
         h('span', { class: connected ? 'pill pill-sim' : 'pill pill-warn', text: connected ? 'חיבור חי ל-Binance · פעיל' : 'נתוני הדגמה · אין חיבור חי' }),
       ),
     ),
@@ -137,10 +165,10 @@ export function renderPortfolio(root, ui) {
 
       h('div', { class: 'card trades-card' },
         h('div', { class: 'trades-head' },
-          h('h3', { text: 'היסטוריית עסקאות אחרונות' }),
+          h('h3', { text: 'היסטוריית עסקאות (שמורה חוצה מכשירים)' }),
           h('span', { class: 'tiny muted', text: (report.tradeCount || 0) + ' סה״כ' }),
         ),
-        recentTrades.length ? h('div', {},
+        recentTrades.length ? h('div', { style: { maxHeight: '420px', overflowY: 'auto' } },
           h('div', { class: 'thead-row' },
             h('div', { text: 'פעולה' }), h('div', { text: 'סמל' }), h('div', { text: 'מחיר' }),
             h('div', { text: 'כמות' }), h('div', { text: 'עמלה' }), h('div', { text: 'זמן' }),
@@ -149,7 +177,7 @@ export function renderPortfolio(root, ui) {
         ) : h('div', { class: 'empty-portfolio' },
           h('div', { class: 'ic', text: '◻' }),
           h('div', { text: 'עדיין לא בוצעו עסקאות בתיק הדמה' }),
-          h('div', { class: 'tiny muted', text: 'העסקאות יופיעו כאן לאחר פתיחה וסגירה של פוזיציות.' }),
+          h('div', { class: 'tiny muted', text: 'העסקאות יופיעו כאן ויישמרו אוטומטית בין כל המכשירים.' }),
         ),
       ),
     ),

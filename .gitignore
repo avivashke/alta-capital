@@ -2,5 +2,10 @@
 node_modules/
 .tools/
 .freebuff/
+.env
+.env.local
 data/.localstorage.json
+data/db.json
+data/backups/
+*.tmp
 *.log
