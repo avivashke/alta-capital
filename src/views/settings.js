@@ -631,10 +631,29 @@ function proxyCard(ui) {
   );
 }
 
+let envPoolCache = { loaded: false, loading: false, items: [], lastTest: {} };
+
+function refreshEnvPool(ui) {
+  if (envPoolCache.loading) return;
+  envPoolCache.loading = true;
+  fetch('/api/llm')
+    .then((r) => r.json())
+    .then((d) => {
+      envPoolCache.loaded = true;
+      envPoolCache.items = Array.isArray(d?.envPool) ? d.envPool : [];
+    })
+    .catch(() => { envPoolCache.loaded = true; })
+    .finally(() => {
+      envPoolCache.loading = false;
+      ui.rerender();
+    });
+}
+
 function poolCard(ui) {
   const now = Date.now();
   const stats = poolStats(store.state, now);
   const entries = poolEntries(store.state);
+  if (!envPoolCache.loaded && !envPoolCache.loading) refreshEnvPool(ui);
 
   const providerSel = h('select', {}, PROVIDER_ORDER.map((k) => h('option', {
     value: k,
@@ -798,8 +817,54 @@ function poolCard(ui) {
     ),
     helpBlock(providerSel),
     rows.length ? h('div', { style: { marginTop: '8px' } }, rows) : h('div', { class: 'small muted', style: { marginTop: '10px' }, text: 'הבריכה ריקה. הוסף מפתח אחד ומעלה — Groq ו-Gemini הם ההתחלה המומלצת.' }),
-    notice('בדפדפן המפתחות נשמרים מקומית בלבד. כדי שהסוכנים בענן ישתמשו בהם, הוסף אותם כסודות בריפו: ' +
-      Object.values(ENV_HINT).filter((v) => v !== '—').slice(0, 8).join(' · ') + ' — הבריכה נבנית מהם אוטומטית.', 'blue'),
+    h('div', { style: { marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' } },
+      h('div', { class: 'row between wrap', style: { gap: '8px', marginBottom: '6px' } },
+        h('b', { style: { fontSize: '14px' }, text: 'ספקי AI מוגדרים בשרת Netlify (Environment Variables)' }),
+        h('button', {
+          class: 'btn btn-sm btn-ghost',
+          onclick: () => { envPoolCache.loaded = false; refreshEnvPool(ui); },
+        }, '⟳ רענן סטטוס שרת'),
+      ),
+      envPoolCache.items.length
+        ? h('div', { class: 'grid cols-2', style: { gap: '8px' } }, ...envPoolCache.items.map((item) => {
+          const t = envPoolCache.lastTest[item.provider];
+          return h('div', { class: 'card', style: { padding: '10px 12px', background: 'rgba(8, 13, 22, 0.85)' } },
+            h('div', { class: 'row between wrap', style: { gap: '6px' } },
+              h('b', { style: { fontSize: '13px' }, text: item.label || item.provider }),
+              t ? tag(t.ok ? `🟢 פעיל · ${t.ms}ms` : '🔴 נכשל', t.ok ? 'live' : 'red') : tag('🟢 מוגדר ב-Netlify Env', 'live'),
+            ),
+            h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: `מודל: ${item.model || '—'}` }),
+            t && !t.ok ? h('div', { class: 'tiny red', style: { marginTop: '4px' }, text: t.error }) : null,
+            h('div', { style: { marginTop: '6px' } },
+              h('button', {
+                class: 'btn btn-sm',
+                onclick: async (e) => {
+                  const btn = e.currentTarget;
+                  btn.disabled = true;
+                  btn.textContent = 'בודק…';
+                  try {
+                    const r = await fetch('/api/llm', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'env_test', provider: item.provider }),
+                    });
+                    const res = await r.json();
+                    envPoolCache.lastTest[item.provider] = res;
+                    toast(res.ok ? `${item.label} ענה (${res.ms}ms): ${res.text}` : `${item.label}: ${res.error}`, res.ok ? 'ok' : 'bad');
+                  } catch (err) {
+                    toast('שגיאה: ' + err.message, 'bad');
+                  } finally {
+                    btn.disabled = false;
+                    ui.rerender();
+                  }
+                },
+              }, 'בדוק חיבור שרת'),
+            ),
+          );
+        }))
+        : h('div', { class: 'small muted', text: 'לא זוהו עדיין משתני סביבה בשרת זה (או שהשרת המקומי רץ ללא ENV). ב-Netlify הוסף NVIDIA_API_KEY / GROQ_API_KEY וכו׳ ובצע Trigger deploy.' }),
+    ),
+    notice('בדפדפן המפתחות נשמרים מקומית בלבד. כדי שהסוכנים בענן ישתמשו בהם, הוסף אותם כסודות ב-Netlify Environment Variables — הבריכה נבנית מהם אוטומטית.', 'blue'),
   );
 }
 

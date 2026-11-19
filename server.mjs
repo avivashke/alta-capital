@@ -64,11 +64,11 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname === '/api/llm' || pathname === '/.netlify/functions/llm') {
     try {
-      const raw = await readBody(req);
-      const payload = raw ? JSON.parse(raw) : {};
-      const { status, text } = await handleLlmProxy(payload);
-      res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(text);
+      const { handler: llmHandler } = await import('./netlify/functions/llm.mjs');
+      const raw = req.method === 'POST' ? await readBody(req) : '';
+      const out = await llmHandler({ httpMethod: req.method, body: raw });
+      res.writeHead(out.statusCode || 200, out.headers || { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(out.body);
     } catch (err) {
       res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ error: { message: err.message } }));
