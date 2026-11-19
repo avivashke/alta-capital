@@ -2,11 +2,11 @@
 # Alta Capital — auto-generated strategy artifact
 # Desk: סווינג · שנתי (שבועי) · ETHUSDT · 1w
 # Version: v1.4 · Strategy family: breakout
-# Backtest: return 25.31% · PF 2.31 · DD 5.84% · trades 25
-# OOS: 4.64% · Sharpe 0.62
+# Backtest: return 17.24% · PF 1.88 · DD 5.84% · trades 25
+# OOS: 4.64% · Sharpe 0.46
 # Params: {"period":10,"atrStop":1.2,"rr":4,"filter":true}
 # Target platform: Freqtrade
-# Generated: 2026-11-13T14:50:55.959Z
+# Generated: 2026-11-19T10:42:53.814Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:

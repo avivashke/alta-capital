@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-13T14:50:55.962Z",
+ "generatedAt": "2026-11-19T10:42:53.836Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -216,21 +216,21 @@
     "rr": 4
    },
    "metrics": {
-    "returnPct": 25.89,
-    "maxDrawdownPct": 4.39,
-    "sharpe": 1.67,
-    "profitFactor": 2.66,
-    "winRate": 45.8,
-    "trades": 24,
-    "avgR": 0.667,
-    "expectancy": 53.81,
-    "exposurePct": 27.5,
-    "bestTradePct": 6.893,
-    "worstTradePct": -1.926,
-    "finalEquity": 6294.4,
+    "returnPct": 28.28,
+    "maxDrawdownPct": 4.58,
+    "sharpe": 1.76,
+    "profitFactor": 2.71,
+    "winRate": 48,
+    "trades": 25,
+    "avgR": 0.694,
+    "expectancy": 56.47,
+    "exposurePct": 27.7,
+    "bestTradePct": 7.169,
+    "worstTradePct": -1.904,
+    "finalEquity": 6414,
     "curvePoints": 600,
-    "totalFees": 68.5525,
-    "barsInMarket": 165
+    "totalFees": 70.5525,
+    "barsInMarket": 166
    },
    "oos": {
     "returnPct": 18.14,
@@ -293,21 +293,21 @@
     "filter": true
    },
    "metrics": {
-    "returnPct": 25.31,
+    "returnPct": 17.24,
     "maxDrawdownPct": 5.84,
-    "sharpe": 0.62,
-    "profitFactor": 2.31,
-    "winRate": 48,
+    "sharpe": 0.46,
+    "profitFactor": 1.88,
+    "winRate": 44,
     "trades": 25,
-    "avgR": 0.632,
-    "expectancy": 50.58,
-    "exposurePct": 41.9,
-    "bestTradePct": 7.332,
-    "worstTradePct": -1.967,
-    "finalEquity": 6265.3,
+    "avgR": 0.451,
+    "expectancy": 34.46,
+    "exposurePct": 42.1,
+    "bestTradePct": 6.814,
+    "worstTradePct": -1.828,
+    "finalEquity": 5862.2,
     "curvePoints": 420,
-    "totalFees": 21.4613,
-    "barsInMarket": 176
+    "totalFees": 19.5232,
+    "barsInMarket": 177
    },
    "oos": {
     "returnPct": 4.64,
@@ -352,6 +352,179 @@
      "version": "v1.0",
      "at": 1794473478477,
      "oos": 2.06
+    }
+   ]
+  },
+  {
+   "id": "desk_nvda",
+   "label": "מניות · NVIDIA (שעתי)",
+   "timeframe": "1h",
+   "symbol": "NVDA",
+   "status": "dry-run",
+   "version": "v1.0",
+   "strategyId": "ema_trend",
+   "params": {
+    "fast": 28,
+    "slow": 108,
+    "atrStop": 1,
+    "rr": 3.1,
+    "trendFilter": true
+   },
+   "metrics": {
+    "returnPct": 20.7,
+    "maxDrawdownPct": 5.46,
+    "sharpe": 7.2,
+    "profitFactor": 2.43,
+    "winRate": 44,
+    "trades": 25,
+    "avgR": 0.517,
+    "expectancy": 24.75,
+    "exposurePct": 51.8,
+    "bestTradePct": 5.068,
+    "worstTradePct": -1.735,
+    "finalEquity": 3621.04,
+    "curvePoints": 456,
+    "totalFees": 101.1533,
+    "barsInMarket": 236
+   },
+   "oos": {
+    "returnPct": 19.54,
+    "maxDrawdownPct": 4.11,
+    "sharpe": 11.95,
+    "profitFactor": 7.83,
+    "winRate": 75,
+    "trades": 8,
+    "avgR": 1.516,
+    "expectancy": 72.99,
+    "exposurePct": 46.8,
+    "bestTradePct": 5.019,
+    "worstTradePct": -1.718,
+    "finalEquity": 3586.12,
+    "curvePoints": 216,
+    "totalFees": 27.6965,
+    "barsInMarket": 101
+   },
+   "bestReturn": 19.54,
+   "versions": [
+    {
+     "version": "v1.0",
+     "at": 1795084972590,
+     "oos": 19.54
+    }
+   ]
+  },
+  {
+   "id": "desk_spy",
+   "label": "מדדים · S&P 500 (יומי)",
+   "timeframe": "1d",
+   "symbol": "SPY",
+   "status": "dry-run",
+   "version": "v1.0",
+   "strategyId": "breakout",
+   "params": {
+    "period": 32,
+    "atrStop": 1,
+    "rr": 3.6,
+    "filter": true
+   },
+   "metrics": {
+    "returnPct": 14.61,
+    "maxDrawdownPct": 6.06,
+    "sharpe": 1.13,
+    "profitFactor": 1.91,
+    "winRate": 33.3,
+    "trades": 21,
+    "avgR": 0.45,
+    "expectancy": 20.69,
+    "exposurePct": 42.5,
+    "bestTradePct": 5.716,
+    "worstTradePct": -1.862,
+    "finalEquity": 3438.21,
+    "curvePoints": 501,
+    "totalFees": 95.9547,
+    "barsInMarket": 213
+   },
+   "oos": {
+    "returnPct": 1.4,
+    "maxDrawdownPct": 5.98,
+    "sharpe": 0.37,
+    "profitFactor": 1.21,
+    "winRate": 22.2,
+    "trades": 9,
+    "avgR": 0.106,
+    "expectancy": 4.29,
+    "exposurePct": 28.6,
+    "bestTradePct": 4.005,
+    "worstTradePct": -1.165,
+    "finalEquity": 3041.89,
+    "curvePoints": 238,
+    "totalFees": 37.993,
+    "barsInMarket": 68
+   },
+   "bestReturn": 1.4,
+   "versions": [
+    {
+     "version": "v1.0",
+     "at": 1795084972707,
+     "oos": 1.4
+    }
+   ]
+  },
+  {
+   "id": "desk_aapl",
+   "label": "מניות · Apple (יומי)",
+   "timeframe": "1d",
+   "symbol": "AAPL",
+   "status": "dry-run",
+   "version": "v1.0",
+   "strategyId": "macd_swing",
+   "params": {
+    "fast": 11,
+    "slow": 20,
+    "signal": 12,
+    "atrStop": 2,
+    "rr": 3
+   },
+   "metrics": {
+    "returnPct": 9.15,
+    "maxDrawdownPct": 4.75,
+    "sharpe": 1.12,
+    "profitFactor": 2.98,
+    "winRate": 37.5,
+    "trades": 16,
+    "avgR": 0.372,
+    "expectancy": 17.08,
+    "exposurePct": 30.5,
+    "bestTradePct": 4.472,
+    "worstTradePct": -0.85,
+    "finalEquity": 3274.54,
+    "curvePoints": 501,
+    "totalFees": 24.8566,
+    "barsInMarket": 153
+   },
+   "oos": {
+    "returnPct": 6.28,
+    "maxDrawdownPct": 3.56,
+    "sharpe": 1.41,
+    "profitFactor": 2.33,
+    "winRate": 30,
+    "trades": 10,
+    "avgR": 0.418,
+    "expectancy": 18.71,
+    "exposurePct": 47.5,
+    "bestTradePct": 4.628,
+    "worstTradePct": -1.667,
+    "finalEquity": 3188.37,
+    "curvePoints": 238,
+    "totalFees": 15.0943,
+    "barsInMarket": 113
+   },
+   "bestReturn": 6.28,
+   "versions": [
+    {
+     "version": "v1.0",
+     "at": 1795084972826,
+     "oos": 6.28
     }
    ]
   }
@@ -569,19 +742,13 @@
   }
  ],
  "sentiment": {
-  "updatedAt": 1794581455958,
+  "updatedAt": 1795084973755,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
-   "value": 20,
+   "value": 10,
    "label": "Extreme Fear",
-   "at": 1794528000000,
+   "at": 1795046400000,
    "history": [
-    30,
-    34,
-    37,
-    26,
-    34,
-    50,
     28,
     25,
     28,
@@ -589,48 +756,68 @@
     32,
     29,
     28,
-    20
+    20,
+    13,
+    10,
+    10,
+    12,
+    11,
+    10
    ]
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.4,
+    "score": -0.16,
     "bias": "דובי",
-    "technical": -0.7,
+    "technical": 0,
     "news": 0,
     "drivers": [],
-    "price": 68839.4
+    "price": 63778.7
    },
    "ETHUSDT": {
-    "score": -0.4,
+    "score": -0.16,
+    "bias": "דובי",
+    "technical": 0,
+    "news": 0,
+    "drivers": [],
+    "price": 1804.36
+   },
+   "NVDA": {
+    "score": -0.36,
+    "bias": "דובי",
+    "technical": -0.5,
+    "news": 0,
+    "drivers": [],
+    "price": 150.96
+   },
+   "SPY": {
+    "score": -0.44,
     "bias": "דובי",
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 1947.65
+    "price": 730.2
+   },
+   "AAPL": {
+    "score": 0.12,
+    "bias": "ניטרלי",
+    "technical": 0.7,
+    "news": 0,
+    "drivers": [],
+    "price": 352.45
    }
   },
   "headlines": [],
   "trending": [
    {
-    "name": "ni hao cat",
-    "symbol": "MIHAO",
-    "rank": 917
+    "name": "WASTED",
+    "symbol": "WASTED",
+    "rank": 866
    },
    {
-    "name": "ni hao cat",
-    "symbol": "MIHAO",
-    "rank": 921
-   },
-   {
-    "name": "AudaCity",
-    "symbol": "DACITYCOIN",
-    "rank": 966
-   },
-   {
-    "name": "Seppuku",
-    "symbol": "SEPPUKU",
-    "rank": 803
+    "name": "Pearl",
+    "symbol": "PEARL",
+    "rank": 73
    },
    {
     "name": "Bitcoin",
@@ -638,29 +825,39 @@
     "rank": 1
    },
    {
-    "name": "Shiba Inu",
-    "symbol": "SHIB",
-    "rank": 37
-   },
-   {
-    "name": "Hyperliquid",
-    "symbol": "HYPE",
-    "rank": 10
-   },
-   {
-    "name": "Pearl",
-    "symbol": "PEARL",
-    "rank": 97
-   },
-   {
     "name": "Pudgy Penguins",
     "symbol": "PENGU",
-    "rank": 115
+    "rank": 125
    },
    {
     "name": "Solana",
     "symbol": "SOL",
     "rank": 7
+   },
+   {
+    "name": "Terra Luna Classic",
+    "symbol": "LUNC",
+    "rank": 139
+   },
+   {
+    "name": "Bittensor",
+    "symbol": "TAO",
+    "rank": 38
+   },
+   {
+    "name": "Venice Token",
+    "symbol": "VVV",
+    "rank": 65
+   },
+   {
+    "name": "Irys",
+    "symbol": "IRYS",
+    "rank": 421
+   },
+   {
+    "name": "Sui",
+    "symbol": "SUI",
+    "rank": 30
    }
   ],
   "newsScore": 0
