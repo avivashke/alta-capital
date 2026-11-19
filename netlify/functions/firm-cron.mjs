@@ -90,6 +90,14 @@ export async function runFirmCronJob({ cycles = 2, deep = false } = {}) {
 
   try { await firm.tickLive(); } catch { /* ignore */ }
   try { await firm.promoteDryRuns(); } catch { /* ignore */ }
+  try {
+    const nostro = await import('../../src/nostro.js');
+    await nostro.runNostroFleetSimulation({}, { doOptimize: false, forceLive: true });
+  } catch { /* ignore */ }
+  try {
+    const gann = await import('../../src/gann.js');
+    await gann.runAutonomousGannLibraryAuditIfDue();
+  } catch { /* ignore */ }
 
   store.state.updatedAt = new Date().toISOString();
   store.state.remote = {
