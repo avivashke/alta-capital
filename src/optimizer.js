@@ -144,6 +144,46 @@ function randFloat(min, max, step) {
   return step ? Math.round(v / step) * step : Math.round(v * 100) / 100;
 }
 
+/** Enforce structural parameter invariants (e.g. fast < slow, oversold < overbought) and clamp to space bounds. */
+export function repairParams(strategyIdOrSpace, params) {
+  const space = resolveSpace(strategyIdOrSpace);
+  const out = { ...params };
+  for (const [key, spec] of Object.entries(space)) {
+    if (spec.type === 'bool') {
+      out[key] = !!out[key];
+    } else if (spec.type === 'int') {
+      const v = Number(out[key]);
+      out[key] = Math.max(spec.min, Math.min(spec.max, Math.round(Number.isFinite(v) ? v : (spec.min + spec.max) / 2)));
+    } else {
+      const v = Number(out[key]);
+      const clamped = Math.max(spec.min, Math.min(spec.max, Number.isFinite(v) ? v : (spec.min + spec.max) / 2));
+      const step = spec.step || 0.1;
+      out[key] = +(Math.round(clamped / step) * step).toFixed(2);
+    }
+  }
+  if ('fast' in out && 'slow' in out && space.slow) {
+    if (out.fast >= out.slow - 3) {
+      out.slow = Math.min(space.slow.max, Math.max(space.slow.min, out.fast + 5));
+      if (out.fast >= out.slow - 3 && space.fast) {
+        out.fast = Math.max(space.fast.min, out.slow - 5);
+      }
+    }
+  }
+  if ('emaFast' in out && 'emaSlow' in out && space.emaSlow) {
+    if (out.emaFast >= out.emaSlow - 5) {
+      out.emaSlow = Math.min(space.emaSlow.max, Math.max(space.emaSlow.min, out.emaFast + 8));
+      if (out.emaFast >= out.emaSlow - 5 && space.emaFast) {
+        out.emaFast = Math.max(space.emaFast.min, out.emaSlow - 8);
+      }
+    }
+  }
+  if ('oversold' in out && 'overbought' in out && out.oversold >= out.overbought - 20) {
+    out.oversold = Math.min(out.oversold, 34);
+    out.overbought = Math.max(out.overbought, 66);
+  }
+  return out;
+}
+
 export function sampleParams(strategyIdOrSpace) {
   const space = resolveSpace(strategyIdOrSpace);
   const out = {};
@@ -152,7 +192,7 @@ export function sampleParams(strategyIdOrSpace) {
     else if (spec.type === 'int') out[key] = randInt(spec.min, spec.max);
     else out[key] = randFloat(spec.min, spec.max, spec.step);
   }
-  return out;
+  return repairParams(space, out);
 }
 
 export function mutateParams(strategyIdOrSpace, params, strength = 0.35) {
@@ -172,16 +212,30 @@ export function mutateParams(strategyIdOrSpace, params, strength = 0.35) {
       out[key] = Math.round(out[key] * 100) / 100;
     }
   }
-  return out;
+  return repairParams(space, out);
 }
 
 export function score(evaluation, recentMetrics = null) {
   if (!evaluation?.full) return -1e9;
-  const { full, oos } = evaluation;
-  if (!full.trades || full.trades < 4) return -1e9;
+  const { is, full, oos } = evaluation;
+  if (!full.trades || full.trades < 6) return -1e9;
   if (!oos || oos.trades < 2) return -1e9;
-  const robust = oos.returnPct * 0.6 + full.returnPct * 0.4;
-  let total = robust - full.maxDrawdownPct * 0.5 + Math.min(full.profitFactor, 3) * 3;
+
+  // Risk-adjusted, anti-overfit objective: reward OOS + full consistency, Sharpe & PF, penalize DD & IS/OOS collapse
+  const oosRet = Math.max(-40, Math.min(120, oos.returnPct));
+  const fullRet = Math.max(-40, Math.min(180, full.returnPct));
+  const robust = oosRet * 0.55 + fullRet * 0.35 + (is ? Math.max(-25, Math.min(60, is.returnPct)) * 0.10 : 0);
+  const pfBonus = Math.min(full.profitFactor, 3.5) * 3.2 + Math.min(oos.profitFactor || 0, 3.5) * 1.8;
+  const sharpeBonus = Math.max(-2, Math.min(4, oos.sharpe || 0)) * 1.1;
+  const ddPenalty = full.maxDrawdownPct * 0.55 + (oos.maxDrawdownPct || 0) * 0.35;
+  const overfitPenalty = is && is.returnPct > 15 && oos.returnPct < is.returnPct * 0.2
+    ? Math.min(25, (is.returnPct - oos.returnPct) * 0.22)
+    : 0;
+  const consistencyBonus = (oos.returnPct > 0 && full.returnPct > 0 && (!is || is.returnPct > 0)) ? 3.5 : 0;
+  const tradeDepthBonus = Math.min(full.trades, 24) * 0.12;
+
+  let total = robust + pfBonus + sharpeBonus + consistencyBonus + tradeDepthBonus - ddPenalty - overfitPenalty;
+
   // Continuous adaptation: reward candidates that perform well in the current live market regime window
   if (recentMetrics && recentMetrics.trades >= 2 && Number.isFinite(recentMetrics.returnPct)) {
     const clampedRecent = Math.max(-25, Math.min(35, recentMetrics.returnPct));
@@ -191,8 +245,8 @@ export function score(evaluation, recentMetrics = null) {
 }
 
 /**
- * Optimize a strategy on the given candles, blending current market-regime bias
- * and recent-window stability into the fitness function.
+ * Optimize a strategy on the given candles using deduplicated exploration +
+ * Top-3 Multi-Elite hill climbing, blending current market-regime bias and recent-window stability.
  */
 export async function optimize({
   candles,
@@ -211,14 +265,27 @@ export async function optimize({
   let done = 0;
   let best = null;
   let bestScore = -1e9;
+  const elites = [];
+  const seen = new Set();
 
-  const consider = async (params) => {
+  const consider = async (rawParams) => {
+    const params = repairParams(space, rawParams);
+    const key = JSON.stringify(params);
+    if (seen.has(key)) return;
+    seen.add(key);
+
     const evaluation = evaluate(candles, strategyId, params, cfg);
     const recentMetrics = evaluation?.oos?.trades >= 2 ? evaluateRecentWindow(candles, strategyId, params, cfg) : null;
     const s = score(evaluation, recentMetrics);
+    const cand = { strategyId, params, evaluation, recentMetrics, score: s };
     if (s > bestScore) {
       bestScore = s;
-      best = { strategyId, params, evaluation, recentMetrics, score: s };
+      best = cand;
+    }
+    if (s > -1e8) {
+      elites.push(cand);
+      elites.sort((a, b) => b.score - a.score);
+      if (elites.length > 3) elites.length = 3;
     }
     done++;
     if (onProgress) onProgress({ done, total, best });
@@ -227,8 +294,10 @@ export async function optimize({
 
   if (seed) await consider(seed);
   for (let i = 0; i < rounds; i++) await consider(sampleParams(space));
-  for (let i = 0; i < climb && best; i++) {
-    await consider(mutateParams(space, best.params, 0.3 + Math.random() * 0.3));
+  for (let i = 0; i < climb && elites.length; i++) {
+    const parent = elites[i % elites.length];
+    const strength = i < climb / 2 ? 0.35 : 0.18;
+    await consider(mutateParams(space, parent.params, strength));
   }
 
   return {

@@ -205,22 +205,26 @@ export function applyPlan(plan, { source = 'model', model = null } = {}) {
 export function localPlan(state = store.state) {
   const desks = state.desks;
   const focus = [...desks].sort((a, b) => {
-    const ra = a.assessment?.robustness ?? a.robustness ?? -1;
-    const rb = b.assessment?.robustness ?? b.robustness ?? -1;
+    const ra = (a.lastAudit?.vetoed ? -50 : 0) + (a.assessment?.robustness ?? a.robustness ?? -1);
+    const rb = (b.lastAudit?.vetoed ? -50 : 0) + (b.assessment?.robustness ?? b.robustness ?? -1);
     return ra - rb;
   })[0];
-  const alternatives = ['breakout', 'momentum', 'ema_trend', 'rsi_reversion', 'macd_swing']
-    .filter((s) => s !== focus?.strategyId);
+  const regimePreferred = (focus?.marketRegime?.recommendedFamilies || []).filter((s) => STRATEGY_IDS.includes(s) && s !== focus?.strategyId);
+  const fallbackPool = STRATEGY_IDS.filter((s) => s !== focus?.strategyId);
+  const nextStrategy = regimePreferred[0] || fallbackPool[Math.floor(Math.random() * fallbackPool.length)] || focus?.strategyId;
   return sanitizePlan({
     focusDesk: focus?.id,
-    strategyId: alternatives[0] || focus?.strategyId,
-    rationale: 'בחירה מקומית: השולחן עם החוסן הנמוך ביותר עובר למשפחה חלופית עם פחות פרמטרים.',
+    strategyId: nextStrategy,
+    paramBias: focus?.marketRegime?.paramBias || {},
+    rationale: focus?.marketRegime?.label
+      ? `בחירה מקומית מותאמת משטר (${focus.marketRegime.label}): מעבר של ${focus.label} למשפחת ${STRATEGIES[nextStrategy]?.label || nextStrategy}.`
+      : 'בחירה מקומית: השולחן עם החוסן הנמוך ביותר עובר למשפחה חלופית מתוך 10 האסטרטגיות.',
     review: {
-      verdict: 'מצב התיק נבדק בכללים מקומיים (ללא מודל).',
-      risks: ['ייתכנו overfitting בפרמטרים', 'פער בין בקטסט לנייר חי'],
-      watch: ['חוסן מתחת לסף', 'drawdown עולה'],
+      verdict: 'מצב התיק נבדק בכללים כמותיים מותאמי משטר שוק.',
+      risks: ['ייתכנו שינויי משטר פתאומיים', 'פער בין בקטסט לנייר חי'],
+      watch: ['חוסן מתחת לסף', 'drawdown עולה', 'חותמת אמיר'],
     },
-    nextActions: ['להריץ מחזור על השולחן החלש', 'לבדוק dry-run של הגרסאות החדשות'],
+    nextActions: ['להריץ מחזור כיול על השולחן החלש', 'לאמת מול ביקורת האמת של אמיר'],
   }, state);
 }
 

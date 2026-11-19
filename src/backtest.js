@@ -28,7 +28,8 @@ function impactCost(units, avgDailyVolume, dailyVolatility, impactFactor) {
 
 function tradeFee(isTaker, price, units, cfg) {
   const baseFee = isTaker ? cfg.takerFee : cfg.makerFee;
-  const spreadCost = price * cfg.spread * Math.abs(units);
+  // Half-spread per side (entry + exit = 1 full spread round-trip)
+  const halfSpreadCost = price * (cfg.spread * 0.5) * Math.abs(units);
   const impact = impactCost(
     units,
     1000000,
@@ -36,7 +37,7 @@ function tradeFee(isTaker, price, units, cfg) {
     cfg.impactFactor
   );
   const exchange = cfg.exchangeFee * price * Math.abs(units);
-  return baseFee * price * Math.abs(units) + spreadCost + impact + exchange;
+  return baseFee * price * Math.abs(units) + halfSpreadCost + impact + exchange;
 }
 
 export function runBacktest(candles, strategyId, params, cfg = {}) {
@@ -47,8 +48,10 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
   }
   const desired = strat.positions(candles, params);
   const atrArr = atr(candles, 14);
-  const warmup = Math.min(Math.max(strat.warmup || 60, 30), Math.floor(candles.length * 0.4));
+  const baseWarmup = Math.min(Math.max(strat.warmup || 60, 30), Math.floor(candles.length * 0.4));
+  const startIdx = Number.isInteger(conf.startIdx) ? Math.max(baseWarmup, conf.startIdx) : baseWarmup;
   const stopMult = Number(params.atrStop) > 0 ? Number(params.atrStop) : 2;
+  const rr = Math.max(1.0, Number(params.rr || 2));
 
   let cash = conf.capital;
   let pos = null;
@@ -59,10 +62,10 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
 
   const closePosition = (i, price, reason, isTaker) => {
     const gross = pos.dir * (price - pos.entry) * pos.units;
-    const fee = tradeFee(isTaker, price, pos.units, conf);
-    const fees = closingSideFee(pos.entry, pos.units, conf.feeRate) + closingSideFee(price, pos.units, conf.feeRate);
-    const pnl = gross - fee;
-    totalFees += fee;
+    const exitFee = tradeFee(isTaker, price, pos.units, conf);
+    const roundTripFee = (pos.entryFee || 0) + exitFee;
+    const pnl = gross - exitFee; // entryFee already deducted from cash at entry
+    totalFees += exitFee;
     cash += pnl;
     const riskAmount = pos.risk;
     trades.push({
@@ -72,18 +75,19 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
       entry: +pos.entry.toFixed(6),
       exit: +price.toFixed(6),
       bars: i - pos.entryIdx,
-      pnl: +pnl.toFixed(4),
-      pnlPct: +((pnl / conf.capital) * 100).toFixed(3),
-      rMultiple: riskAmount > 0 ? +(pnl / riskAmount).toFixed(3) : 0,
+      pnl: +(gross - roundTripFee).toFixed(4),
+      pnlPct: +(((gross - roundTripFee) / conf.capital) * 100).toFixed(3),
+      rMultiple: riskAmount > 0 ? +((gross - roundTripFee) / riskAmount).toFixed(3) : 0,
       reason,
       at: candles[i]?.t || null,
-      fee: +fee.toFixed(4),
+      fee: +roundTripFee.toFixed(4),
     });
     pos = null;
   };
 
-  for (let i = 0; i < candles.length; i++) {
+  for (let i = startIdx; i < candles.length; i++) {
     const c = candles[i];
+    const barAtr = atrArr[i] || 0;
     let closedThisBar = false;
 
     if (pos) {
@@ -91,10 +95,10 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
       const hitStop = pos.dir > 0 ? c.l <= pos.stop : c.h >= pos.stop;
       const hitTarget = pos.dir > 0 ? c.h >= pos.target : c.l <= pos.target;
       if (hitStop) {
-        closePosition(i, pos.stop, 'stop', true);
+        closePosition(i, pos.stop, pos.trailed ? 'trail' : 'stop', true);
         closedThisBar = true;
       } else if (hitTarget) {
-        closePosition(i, pos.target, 'target', true);
+        closePosition(i, pos.target, 'target', false);
         closedThisBar = true;
       } else if (desired[i] !== pos.dir && desired[i] !== 0) {
         closePosition(i, c.c, 'flip', true);
@@ -102,12 +106,35 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
       } else if (desired[i] === 0 && i > pos.entryIdx + 1) {
         closePosition(i, c.c, 'signal', true);
         closedThisBar = true;
+      } else {
+        // Institutional profit-lock: move stop to breakeven at +1R, then ATR Chandelier trail at >= +1.5R
+        if (pos.dir > 0) {
+          pos.peak = Math.max(pos.peak, c.h);
+          const gain = pos.peak - pos.entry;
+          if (gain >= pos.stopDist * 1.5 && barAtr > 0) {
+            const trail = pos.peak - Math.max(barAtr * 1.3, pos.stopDist * 0.75);
+            if (trail > pos.stop) { pos.stop = trail; pos.trailed = true; }
+          } else if (gain >= pos.stopDist * 1.0) {
+            const be = pos.entry + pos.stopDist * 0.1;
+            if (be > pos.stop) { pos.stop = be; pos.trailed = true; }
+          }
+        } else {
+          pos.peak = Math.min(pos.peak, c.l);
+          const gain = pos.entry - pos.peak;
+          if (gain >= pos.stopDist * 1.5 && barAtr > 0) {
+            const trail = pos.peak + Math.max(barAtr * 1.3, pos.stopDist * 0.75);
+            if (trail < pos.stop) { pos.stop = trail; pos.trailed = true; }
+          } else if (gain >= pos.stopDist * 1.0) {
+            const be = pos.entry - pos.stopDist * 0.1;
+            if (be < pos.stop) { pos.stop = be; pos.trailed = true; }
+          }
+        }
       }
     }
 
-    if (!pos && !closedThisBar && i >= warmup && desired[i] !== 0) {
-      const a = atrArr[i];
-      if (a && Number.isFinite(a) && a > 0) {
+    if (!pos && !closedThisBar && desired[i] !== 0) {
+      const a = barAtr;
+      if (a && Number.isFinite(a) && a > 0 && cash > 0) {
         const stopDist = stopMult * a;
         const riskAmount = conf.riskPerTrade * cash;
         const byRisk = riskAmount / stopDist;
@@ -115,14 +142,21 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
         const units = Math.min(byRisk, byCash);
         if (units > 0 && Number.isFinite(units)) {
           const dir = desired[i];
+          const entryFee = tradeFee(true, c.c, units, conf);
+          cash -= entryFee;
+          totalFees += entryFee;
           pos = {
             dir,
             units,
             entry: c.c,
+            peak: c.c,
+            stopDist,
             stop: dir > 0 ? c.c - stopDist : c.c + stopDist,
-            target: dir > 0 ? c.c + stopDist * Number(params.rr || 2) : c.c - stopDist * Number(params.rr || 2),
+            target: dir > 0 ? c.c + stopDist * rr : c.c - stopDist * rr,
             entryIdx: i,
             risk: riskAmount,
+            entryFee,
+            trailed: false,
           };
         }
       }
@@ -135,8 +169,9 @@ export function runBacktest(candles, strategyId, params, cfg = {}) {
   if (pos) closePosition(candles.length - 1, candles[candles.length - 1].c, 'eod', true);
 
   const metrics = summarize(trades, curve, conf, totalFees);
+  const evalBars = Math.max(1, candles.length - startIdx);
   metrics.barsInMarket = barsInMarket;
-  metrics.exposurePct = +(100 * barsInMarket / candles.length).toFixed(1);
+  metrics.exposurePct = +(100 * barsInMarket / evalBars).toFixed(1);
   metrics.totalFees = +totalFees.toFixed(4);
   return { metrics, curve, trades };
 }
@@ -201,15 +236,14 @@ function summarize(trades, curve, conf, totalFees = 0) {
   };
 }
 
-// Walk-forward: first 70% in-sample, last 30% out-of-sample (with a small warmup overlap).
+// Strict zero-leakage Walk-Forward split:
+// First 70% in-sample, last 30% strictly out-of-sample (indicators warmed up without trading IS bars).
 export function evaluate(candles, strategyId, params, cfg = {}) {
   const n = candles.length;
   const split = Math.floor(n * 0.7);
-  const overlap = Math.min(180, Math.floor(split * 0.25));
   const isCandles = candles.slice(0, split);
-  const oosCandles = candles.slice(split - overlap);
   const is = runBacktest(isCandles, strategyId, params, cfg);
-  const oos = runBacktest(oosCandles, strategyId, params, cfg);
+  const oos = runBacktest(candles, strategyId, params, { ...cfg, startIdx: split });
   const full = runBacktest(candles, strategyId, params, cfg);
   return {
     is: is.metrics,

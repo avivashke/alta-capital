@@ -2,11 +2,11 @@
 # Alta Capital — auto-generated strategy artifact
 # Desk: מניות · Apple (יומי) · AAPL · 1d
 # Version: v1.0 · Strategy family: macd_swing
-# Backtest: return 9.15% · PF 2.98 · DD 4.75% · trades 16
-# OOS: 6.28% · Sharpe 1.12
+# Backtest: return 1.43% · PF 1.12 · DD 5.76% · trades 26
+# OOS: 6.28% · Sharpe 0.25
 # Params: {"fast":11,"slow":20,"signal":12,"atrStop":2,"rr":3}
 # Target platform: Freqtrade
-# Generated: 2026-11-19T19:12:20.945Z
+# Generated: 2026-11-19T22:13:42.561Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:

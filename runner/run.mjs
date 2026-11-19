@@ -148,6 +148,14 @@ try {
   console.warn('[runner] paper portfolio save:', err.message);
 }
 try {
+  const { auditSystemTruth } = await import('../src/auditor.js');
+  const { marketState } = await import('../src/market.js');
+  store.state.truthAudit = auditSystemTruth(store.state, marketState);
+  console.log(`[runner] Amir truth audit: ${store.state.truthAudit.score}/100 (${store.state.truthAudit.status})`);
+} catch (err) {
+  console.warn('[runner] truth audit:', err.message);
+}
+try {
   await firm.refreshTechnicals({ force: true });
 } catch (err) {
   console.warn('[runner] technical analysis:', err.message);

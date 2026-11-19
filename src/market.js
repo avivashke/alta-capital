@@ -287,11 +287,29 @@ async function fromBybit(symbol, tf, limit) {
 async function fromOkx(symbol, tf, limit) {
   const okxMap = { '5m': '5m', '15m': '15m', '1h': '1H', '1d': '1D', '1w': '1W' };
   const inst = symbol.replace(/USDT$/i, '-USDT');
-  const url = `https://www.okx.com/api/v5/market/candles?instId=${inst}&bar=${okxMap[tf] || '1D'}&limit=${Math.min(300, limit)}`;
-  const json = await fetchJson(url);
-  const rows = json?.data || [];
-  if (rows.length < 30) throw new Error('okx: empty');
-  return rows.map((r) => ({ t: +r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4], v: +r[5] })).reverse();
+  const bar = okxMap[tf] || '1D';
+  const collected = [];
+  let afterTs = null;
+  const maxPages = Math.min(4, Math.ceil(limit / 280));
+  for (let page = 0; page < maxPages && collected.length < limit; page++) {
+    const endpoint = page === 0 ? 'candles' : 'history-candles';
+    const perPage = page === 0 ? Math.min(300, limit) : 100;
+    const url = `https://www.okx.com/api/v5/market/${endpoint}?instId=${inst}&bar=${bar}&limit=${perPage}`
+      + (afterTs ? `&after=${afterTs}` : '');
+    const json = await fetchJson(url);
+    const rows = json?.data || [];
+    if (!rows.length) break;
+    for (const r of rows) {
+      collected.push({ t: +r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4], v: +r[5] });
+    }
+    const oldest = Math.min(...rows.map((r) => +r[0]));
+    if (!Number.isFinite(oldest) || (afterTs && oldest >= afterTs)) break;
+    afterTs = oldest;
+    if (rows.length < perPage * 0.8) break;
+  }
+  if (collected.length < 30) throw new Error('okx: empty');
+  const byTs = new Map(collected.map((c) => [c.t, c]));
+  return [...byTs.values()].sort((a, b) => a.t - b.t).slice(-limit);
 }
 
 export async function getCandles(symbol, tf, { limit = 700, force = false } = {}) {
@@ -317,6 +335,15 @@ export async function getCandles(symbol, tf, { limit = 700, force = false } = {}
     try {
       const candles = await fn();
       if (candles.length >= 30) {
+        candles.__provider = name;
+        candles.__synthetic = false;
+        const lastBar = candles[candles.length - 1];
+        const prevBar = candles[candles.length - 2];
+        const existingQ = quotes[symbol];
+        if (lastBar?.c > 0 && (!existingQ || existingQ.synthetic || Date.now() - (existingQ.at || 0) > 60000)) {
+          const chg = prevBar?.c > 0 ? +(((lastBar.c - prevBar.c) / prevBar.c) * 100).toFixed(2) : 0;
+          quotes[symbol] = { price: lastBar.c, changePct: chg, at: Date.now(), provider: name, synthetic: false };
+        }
         cache.set(key, { at: Date.now(), candles, provider: name, synthetic: false });
         Object.assign(marketState, { provider: name, synthetic: false, fetchedAt: Date.now(), error: null });
         return candles;
@@ -326,6 +353,8 @@ export async function getCandles(symbol, tf, { limit = 700, force = false } = {}
     }
   }
   const candles = syntheticCandles(symbol, tf, limit);
+  candles.__provider = 'נתוני הדגמה';
+  candles.__synthetic = true;
   cache.set(key, { at: Date.now(), candles, provider: 'נתוני הדגמה', synthetic: true, error: errors.join(' · ') });
   Object.assign(marketState, { provider: 'נתוני הדגמה', synthetic: true, fetchedAt: Date.now(), error: errors.join(' · ') });
   return candles;

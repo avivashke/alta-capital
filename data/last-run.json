@@ -1,32 +1,50 @@
 {
- "at": "2026-11-19T19:12:20.947Z",
+ "at": "2026-11-19T22:16:40.347Z",
  "summary": [
+  {
+   "desk": "desk_spy",
+   "timeframe": "1d",
+   "ok": true,
+   "published": true,
+   "version": "v1.2",
+   "oos": 3.59,
+   "robustness": 76
+  },
+  {
+   "desk": "desk_aapl",
+   "timeframe": "1d",
+   "ok": true,
+   "published": false,
+   "version": "v1.1",
+   "oos": 10.32,
+   "robustness": 72
+  },
   {
    "desk": "desk_5m",
    "timeframe": "5m",
    "ok": true,
    "published": false,
    "version": "v1.0",
-   "oos": 5.77,
-   "robustness": 33
+   "oos": 2.41,
+   "robustness": 83
   },
   {
    "desk": "desk_15m",
    "timeframe": "15m",
    "ok": true,
-   "published": false,
-   "version": "v1.0",
-   "oos": 4.07,
-   "robustness": 61
+   "published": true,
+   "version": "v1.1",
+   "oos": 0.47,
+   "robustness": 72
   },
   {
    "desk": "desk_1h",
    "timeframe": "1h",
    "ok": true,
    "published": false,
-   "version": "v1.0",
-   "oos": 11.66,
-   "robustness": 78
+   "version": "v1.1",
+   "oos": 12.66,
+   "robustness": 83
   },
   {
    "desk": "desk_1d",
@@ -35,30 +53,39 @@
    "published": false,
    "version": "v1.4",
    "oos": 18.14,
-   "robustness": 82
+   "robustness": 84
   },
   {
    "desk": "desk_1w",
    "timeframe": "1w",
    "ok": true,
+   "published": true,
+   "version": "v1.8",
+   "oos": 21.38,
+   "robustness": 89
+  },
+  {
+   "desk": "desk_nvda",
+   "timeframe": "1h",
+   "ok": true,
    "published": false,
-   "version": "v1.4",
-   "oos": 4.64,
-   "robustness": 58
+   "version": "v1.1",
+   "oos": 25.42,
+   "robustness": 90
   }
  ],
  "stats": {
-  "cycles": 53,
-  "backtests": 6564,
-  "deployments": 20,
-  "scans": 45,
+  "cycles": 86,
+  "backtests": 16416,
+  "deployments": 31,
+  "scans": 57,
   "startedAt": 1794473380871
  },
  "runner": {
-  "cycles": 5,
-  "deep": false,
-  "durationMs": 3592,
-  "node": "v20.20.2"
+  "cycles": 8,
+  "deep": true,
+  "durationMs": 7399,
+  "node": "v24.22.3"
  },
  "ai": {
   "ok": false,

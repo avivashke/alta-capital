@@ -169,8 +169,8 @@ function downsample(values, maxPoints = 160) {
 }
 
 function pickStrategy(desk) {
-  const intraday = ['ema_trend', 'breakout', 'momentum', 'rsi_reversion', 'macd_swing'];
-  const swing = ['macd_swing', 'ema_trend', 'breakout', 'momentum'];
+  const intraday = ['ema_trend', 'supertrend_adx', 'vol_breakout', 'breakout', 'momentum', 'rsi_reversion', 'mean_reversion_z', 'gann_swing_sq9'];
+  const swing = ['macd_swing', 'ema_trend', 'supertrend_adx', 'breakout', 'gann_swing_sq9', 'gann_time_cycle', 'vol_breakout'];
   const pool = desk.kind === 'intraday' ? intraday : swing;
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -282,27 +282,42 @@ export async function runDeskCycle(desk, opts = {}) {
 
     state.stats.backtests = (state.stats.backtests || 0) + (result.backtests || 0);
 
-    // Continuous Market-Regime Challenger: if incumbent is misaligned with live regime or losing in recent window,
-    // automatically pit a regime-recommended challenger family against it on the exact same real candles.
+    // Continuous Market-Regime Challenger: if incumbent is misaligned, losing recently, or weak/vetoed,
+    // automatically pit top regime-recommended challenger families against it on the exact same real candles.
     let winner = result.best;
     const regimeMismatch = !(regime.recommendedFamilies || []).includes(desk.strategyId);
     const recentWeak = !winner?.recentMetrics || (winner.recentMetrics.returnPct ?? 0) < 0;
-    if (regimeMismatch || recentWeak || !winner) {
-      const challengerId = (regime.recommendedFamilies || []).find((id) => STRATEGIES[id] && id !== desk.strategyId);
-      if (challengerId) {
+    const deskWeak = !desk.version || (winner?.evaluation?.oos?.returnPct ?? -999) < 1.5 || (desk.assessment?.robustness ?? 0) < 55 || !!desk.lastAudit?.vetoed;
+    if (regimeMismatch || recentWeak || deskWeak || opts.deep || !winner) {
+      const regRecs = (regime.recommendedFamilies || []).filter((id) => STRATEGIES[id] && id !== desk.strategyId);
+      const orthogonal = deskWeak
+        ? [regRecs[0], 'rsi_reversion', 'mean_reversion_z', 'macd_swing', 'gann_swing_sq9', regRecs[1]]
+            .filter((id, i, arr) => id && STRATEGIES[id] && id !== desk.strategyId && arr.indexOf(id) === i)
+            .slice(0, 3)
+        : regRecs.slice(0, opts.deep ? 2 : 1);
+      for (const challengerId of orthogonal) {
         const chalRes = await optimize({
           candles,
           strategyId: challengerId,
           cfg,
           regime,
-          rounds: 16,
-          climb: 8,
+          rounds: opts.deep ? 26 : 18,
+          climb: opts.deep ? 12 : 8,
         });
         state.stats.backtests = (state.stats.backtests || 0) + (chalRes.backtests || 0);
         const cb = chalRes.best;
-        if (cb && (!winner || (cb.score > winner.score + 0.8 && (cb.evaluation?.oos?.returnPct ?? -999) > (winner.evaluation?.oos?.returnPct ?? -999) + 0.4))) {
+        const incWeak = !winner
+          || (winner.evaluation?.full?.profitFactor ?? 0) < 1.15
+          || (winner.evaluation?.full?.returnPct ?? 0) <= 0;
+        const chalPositive = cb && (cb.evaluation?.oos?.returnPct ?? -999) > 0 && (cb.evaluation?.full?.returnPct ?? -999) > 0;
+        const beatsInc = cb && (!winner
+          || (cb.score > winner.score + 0.8 && (
+            (cb.evaluation?.oos?.returnPct ?? -999) > (winner.evaluation?.oos?.returnPct ?? -999) + 0.3
+            || (incWeak && chalPositive)
+          )));
+        if (beatsInc) {
           store.log('info', 'ליה · הסתגלות לשוק',
-            `${desk.label}: משטר "${regime.label}" — מתמודדת ${STRATEGIES[challengerId].label} (OOS ${cb.evaluation.oos.returnPct}%) גברה על ${STRATEGIES[desk.strategyId]?.label || desk.strategyId}`);
+            `${desk.label}: משטר "${regime.label}" — מתמודדת ${STRATEGIES[challengerId].label} (OOS ${cb.evaluation.oos.returnPct}% · PF ${cb.evaluation.full.profitFactor}) גברה על ${STRATEGIES[winner?.strategyId || desk.strategyId]?.label || desk.strategyId}`);
           winner = cb;
         }
       }
@@ -380,9 +395,17 @@ export async function runDeskCycle(desk, opts = {}) {
     const threshold = s.promotionDelta;
     const hasVersion = desk.version != null;
     const robustEnough = assessment.robustness >= (s.minRobustness ?? 50);
-    const publish = !audit.vetoed && ev.oos.returnPct > 0 && robustEnough && (
-      desk.version == null || ev.oos.returnPct >= (prevReturn ?? ev.oos.returnPct) + threshold
-    );
+    // Unlock stale high-water-mark trap: if the currently deployed version is failing gates or losing on current candles,
+    // allow any healthy, Amir-verified OOS-positive replacement immediately.
+    let incumbentBroken = false;
+    if (hasVersion && desk.params && STRATEGIES[desk.strategyId]) {
+      const curCheck = runBacktest(candles, desk.strategyId, desk.params, cfg);
+      incumbentBroken = !passesGates(curCheck.metrics, gates).ok || curCheck.metrics.returnPct <= 0;
+    }
+    const beatsThreshold = desk.version == null
+      || incumbentBroken
+      || ev.oos.returnPct >= (prevReturn ?? ev.oos.returnPct) + threshold;
+    const publish = !audit.vetoed && ev.oos.returnPct > 0 && robustEnough && beatsThreshold;
 
     setAgent('risk', {
       status: 'busy',
@@ -684,7 +707,9 @@ export async function tickLive() {
   for (const desk of live) {
     try {
       const candles = await getCandles(desk.symbol, desk.tf, { limit: 320 });
-      const price = lastPrice(desk.symbol) || candles[candles.length - 1].c;
+      if (candles.__synthetic) continue;
+      const candlePrice = candles[candles.length - 1]?.c;
+      const price = candlePrice > 0 ? candlePrice : lastPrice(desk.symbol);
       if (price) livePrices[desk.symbol] = price;
       if (!desk.strategyId || !desk.params) continue;
       const desired = STRATEGIES[desk.strategyId].positions(candles, desk.params);
@@ -699,7 +724,7 @@ export async function tickLive() {
         const hitStop = t.dir > 0 ? price <= t.stop : price >= t.stop;
         const hitTarget = t.dir > 0 ? price >= t.target : price <= t.target;
         if (hitStop) {
-          await closePaperTrade(desk, t.stop, 'stop');
+          await closePaperTrade(desk, t.stop, t.trailed ? 'trail' : 'stop');
           tradeChanged = true;
         } else if (hitTarget) {
           await closePaperTrade(desk, t.target, 'target');
@@ -708,6 +733,30 @@ export async function tickLive() {
           await closePaperTrade(desk, price, 'signal');
           tradeChanged = true;
         } else {
+          // Mirror backtest breakeven + ATR trailing stop on live paper trades
+          const initDist = t.stopDist || Math.abs(t.entry - t.stop) || a * stopMult;
+          t.stopDist = initDist;
+          if (t.dir > 0) {
+            t.peak = Math.max(t.peak || t.entry, price);
+            const gain = t.peak - t.entry;
+            if (gain >= initDist * 1.5 && a > 0) {
+              const trail = t.peak - Math.max(a * 1.3, initDist * 0.75);
+              if (trail > t.stop) { t.stop = trail; t.trailed = true; }
+            } else if (gain >= initDist * 1.0) {
+              const be = t.entry + initDist * 0.1;
+              if (be > t.stop) { t.stop = be; t.trailed = true; }
+            }
+          } else {
+            t.peak = Math.min(t.peak || t.entry, price);
+            const gain = t.entry - t.peak;
+            if (gain >= initDist * 1.5 && a > 0) {
+              const trail = t.peak + Math.max(a * 1.3, initDist * 0.75);
+              if (trail < t.stop) { t.stop = trail; t.trailed = true; }
+            } else if (gain >= initDist * 1.0) {
+              const be = t.entry - initDist * 0.1;
+              if (be < t.stop) { t.stop = be; t.trailed = true; }
+            }
+          }
           const pct = t.dir > 0 ? ((price - t.entry) / t.entry) * 100 : ((t.entry - price) / t.entry) * 100;
           desk.openTrade.markPct = +pct.toFixed(3);
         }

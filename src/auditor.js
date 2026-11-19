@@ -283,7 +283,10 @@ export function auditSystemTruth(state, marketState = {}) {
     const tax = Number(pf.taxAccumulated || 0);
     const trades = Array.isArray(pf.trades) ? pf.trades : [];
     const badNumbers = !Number.isFinite(init) || init <= 0 || !Number.isFinite(cash) || cash < -1 || !Number.isFinite(fees) || !Number.isFinite(tax);
-    const badPositions = Object.values(pf.positions || {}).some((p) => !p || !Number.isFinite(Number(p.quantity)) || Number(p.quantity) <= 0 || !Number.isFinite(Number(p.avgPrice)) || Number(p.avgPrice) <= 0);
+    const badPositions = Object.values(pf.positions || {}).some((p) => {
+      const entryP = Number(p?.averageEntryPrice ?? p?.avgPrice);
+      return !p || !Number.isFinite(Number(p.quantity)) || Number(p.quantity) <= 0 || !Number.isFinite(entryP) || entryP <= 0;
+    });
     if (badNumbers || badPositions) {
       add('accounting', 'עקביות חשבונאית של תיק המסחר', 'veto', 'זוהו ערכים לא תקינים או פוזיציה פגומה בתיק הנייר');
     } else {
