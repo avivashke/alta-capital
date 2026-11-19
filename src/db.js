@@ -124,11 +124,18 @@ export function sanitizeStateForDb(state = store.state) {
   return out;
 }
 
+function isValidSupabaseKey(key) {
+  return /^(eyJ|sb_publishable_|sb_secret_)/.test(String(key || '').trim());
+}
+
 async function supabaseRequest(cfg, table, { method = 'GET', query = '', body = null, upsert = false } = {}) {
+  if (!isValidSupabaseKey(cfg.supabaseKey)) {
+    throw new Error('מפתח Supabase אינו תקין — יש להדביק מפתח שמתחיל ב-eyJ... או sb_publishable_... מתוך Project Settings → API Keys');
+  }
   const url = `${cfg.supabaseUrl}/rest/v1/${table}${query ? '?' + query : ''}`;
   const headers = {
     apikey: cfg.supabaseKey,
-    Authorization: `Bearer ${cfg.supabaseKey}`,
+    ...(cfg.supabaseKey.startsWith('eyJ') ? { Authorization: `Bearer ${cfg.supabaseKey}` } : {}),
     'Content-Type': 'application/json',
     Prefer: upsert ? 'resolution=merge-duplicates,return=minimal' : 'return=representation',
   };

@@ -27,7 +27,7 @@ export function defaults() {
       autoCreateRobots: true,
       cloudflareProxyUrl: '',
       cloudflareProxyKey: '',
-      cloudflareProxyModel: 'openai/gpt-oss-120b',
+      cloudflareProxyModel: 'llama-3.3-70b-versatile',
       feeRate: 0.0004,
       makerFee: 0.00025,
       takerFee: 0.0004,
@@ -113,10 +113,12 @@ export const store = {
     const st = this.state?.settings;
     if (!st) return;
     const url = (st.cloudflareProxyUrl || 'https://alta-groq.avivashke95.workers.dev/v1').trim() || 'https://alta-groq.avivashke95.workers.dev/v1';
-    const model = (st.cloudflareProxyModel || 'openai/gpt-oss-120b').trim() || 'openai/gpt-oss-120b';
+    const model = (st.cloudflareProxyModel || 'llama-3.3-70b-versatile').trim() || 'llama-3.3-70b-versatile';
     st.cloudflareProxyUrl = url;
     st.cloudflareProxyModel = model;
     if (!st.pool || !Array.isArray(st.pool.entries)) st.pool = { entries: [], updatedAt: null };
+    // Remove deprecated pollinations entry if present
+    st.pool.entries = st.pool.entries.filter((e) => e.provider !== 'pollinations');
     // ensure our embedded gateway proxy is in the pool alongside any other API keys & proxies
     const exists = st.pool.entries.find((e) => e.provider === 'gateway' && (e.baseUrl || '').replace(/\/+$/,'') === url.replace(/\/+$/,''));
     if (!exists) {
@@ -147,36 +149,8 @@ export const store = {
     } else {
       exists.enabled = exists.enabled !== false;
       exists.valid = exists.valid !== false;
-      exists.model = exists.model || model;
+      if (!exists.model || exists.model === 'openai/gpt-oss-120b') exists.model = model;
       exists.key = exists.key || (st.cloudflareProxyKey || '');
-    }
-    // Ensure built-in zero-key network AI compute node (Pollinations OpenAI-compatible) is in the pool
-    const hasNetAi = st.pool.entries.find((e) => e.provider === 'pollinations');
-    if (!hasNetAi) {
-      st.pool.entries.push({
-        id: 'net_ai_pollinations',
-        provider: 'pollinations',
-        label: 'Pollinations AI (רשת פתוחה · חינם)',
-        shape: 'openai',
-        baseUrl: 'https://text.pollinations.ai/openai',
-        accountId: '',
-        model: 'openai',
-        key: '',
-        enabled: true,
-        valid: true,
-        weight: 1,
-        addedAt: Date.now(),
-        lastUsedAt: null,
-        uses: 0,
-        day: new Date().toISOString().slice(0, 10),
-        dayCount: 0,
-        minuteStart: 0,
-        minuteCount: 0,
-        cooldownUntil: 0,
-        failStreak: 0,
-        lastError: '',
-      });
-      st.pool.updatedAt = Date.now();
     }
   },
 
