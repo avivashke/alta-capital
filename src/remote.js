@@ -85,6 +85,9 @@ export function mergeRemote(state, remote) {
   if (merged.gannLibrary && typeof merged.gannLibrary === 'object') {
     state.gannLibrary = merged.gannLibrary;
   }
+  if (merged.gannConfig && typeof merged.gannConfig === 'object') {
+    state.gannConfig = merged.gannConfig;
+  }
   if (merged.fundamentals && typeof merged.fundamentals === 'object') {
     state.fundamentals = merged.fundamentals;
   }

@@ -342,8 +342,10 @@ export function mergeFirmStates(base, incoming, { forceReset = false, bumpRevisi
 
   const nostro = pickFresherRicher(base.nostro, incoming.nostro, (n) => (n.bots?.length || 0));
   if (nostro) shell.nostro = nostro;
-  const gann = pickFresherRicher(base.gannLibrary, incoming.gannLibrary, (g) => (g.entries?.length || g.events?.length || 0));
+  const gann = pickFresherRicher(base.gannLibrary, incoming.gannLibrary, (g) => (g.items?.length || g.entries?.length || g.events?.length || 0));
   if (gann) shell.gannLibrary = gann;
+  const gannCfg = pickFresherRicher(base.gannConfig, incoming.gannConfig);
+  if (gannCfg) shell.gannConfig = gannCfg;
   const fund = pickFresherRicher(base.fundamentals, incoming.fundamentals, (f) => Object.keys(f.assets || {}).length);
   if (fund) shell.fundamentals = fund;
   const scout = pickFresherRicher(base.githubScout, incoming.githubScout, (g) => (g.repos?.length || 0));

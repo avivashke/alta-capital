@@ -447,36 +447,668 @@ export function generateGannWorkingProposals(analysis, symbol = '') {
   ];
 }
 
-export function computeGannAngles(candles, anchorPivot) {
-  if (!candles?.length || !anchorPivot) return [];
+// --- Full 9-Angle W.D. Gann Fan (8x1 down to 1x8, Gann Explained / Gann Fan Tool) ---
+
+export const GANN_FAN_RATIOS = [
+  { id: '8x1', name: '8x1 (82.5° · פריצה אקספוננציאלית)', degLabel: '82.5°', mult: 8, color: '#f97316', isMain: false },
+  { id: '4x1', name: '4x1 (75° · מגמה חזקה מאוד)', degLabel: '75°', mult: 4, color: '#eab308', isMain: false },
+  { id: '3x1', name: '3x1 (71.25° · מומנטום גבוה)', degLabel: '71.25°', mult: 3, color: '#facc15', isMain: false },
+  { id: '2x1', name: '2x1 (63.75° · מגמה מהירה)', degLabel: '63.75°', mult: 2, color: '#38bdf8', isMain: true },
+  { id: '1x1', name: '1x1 (45° · זווית המאסטר · שיווי משקל)', degLabel: '45°', mult: 1, color: '#2ecc71', isMain: true },
+  { id: '1x2', name: '1x2 (26.25° · תמיכת מגמה משנית)', degLabel: '26.25°', mult: 0.5, color: '#a78bfa', isMain: true },
+  { id: '1x3', name: '1x3 (18.75° · שיפוע מתון)', degLabel: '18.75°', mult: 1 / 3, color: '#c084fc', isMain: false },
+  { id: '1x4', name: '1x4 (15° · קו תמיכה ארוך טווח)', degLabel: '15°', mult: 0.25, color: '#e879f9', isMain: false },
+  { id: '1x8', name: '1x8 (7.5° · קו הגנה אחרון)', degLabel: '7.5°', mult: 0.125, color: '#f472b6', isMain: false },
+];
+
+export function computeGannFan(candles, anchorPivot, { scaleOverride = null, direction = 'auto', futureBars = 30 } = {}) {
+  if (!candles?.length || !anchorPivot) {
+    return { dir: 1, unitPerBar: 0, anchorIdx: 0, anchorPrice: 0, barsElapsed: 0, rays: [], activeSupport: null, activeResistance: null, ruleOfAllAngles: '' };
+  }
   const n = candles.length;
   const lastIdx = n - 1;
-  const barsElapsed = Math.max(1, lastIdx - anchorPivot.idx);
+  const anchorIdx = Math.max(0, Math.min(lastIdx - 1, anchorPivot.idx ?? 0));
+  const barsElapsed = Math.max(1, lastIdx - anchorIdx);
 
   let sumRange = 0;
   for (let i = 1; i < n; i++) sumRange += Math.abs(candles[i].c - candles[i - 1].c);
-  const unitPerBar = Math.max(1e-6, (sumRange / Math.max(1, n - 1)) * 0.85);
-  const dir = anchorPivot.type === 'low' ? 1 : -1;
-
-  const ratios = [
-    { name: '4x1 (תלול מאוד)', mult: 4 },
-    { name: '2x1 (מהיר)', mult: 2 },
-    { name: '1x1 (45° · שיווי משקל)', mult: 1 },
-    { name: '1x2 (מתון)', mult: 0.5 },
-    { name: '1x4 (ארוך טווח)', mult: 0.25 },
-  ];
+  const autoUnit = Math.max(1e-6, (sumRange / Math.max(1, n - 1)) * 0.85);
+  const unitPerBar = scaleOverride && Number(scaleOverride) > 0 ? Number(scaleOverride) : autoUnit;
+  const dir = direction === 'up' ? 1 : direction === 'down' ? -1 : (anchorPivot.type === 'low' ? 1 : -1);
 
   const currentClose = candles[lastIdx].c;
-  return ratios.map((r) => {
-    const projectedNow = +(anchorPivot.price + dir * r.mult * unitPerBar * barsElapsed).toFixed(4);
+  const rays = GANN_FAN_RATIOS.map((r) => {
+    const slopePerBar = dir * r.mult * unitPerBar;
+    const projectedNow = +(anchorPivot.price + slopePerBar * barsElapsed).toFixed(4);
+    const projectedFuture = +(anchorPivot.price + slopePerBar * (barsElapsed + futureBars)).toFixed(4);
     return {
-      name: r.name,
-      mult: r.mult,
+      ...r,
+      slopePerBar,
       projectedNow,
+      projectedFuture,
       abovePrice: currentClose >= projectedNow,
-      distPct: +(((projectedNow - currentClose) / currentClose) * 100).toFixed(2),
+      distPct: +(((projectedNow - currentClose) / Math.max(1e-9, currentClose)) * 100).toFixed(2),
     };
   });
+
+  const below = rays.filter((r) => r.projectedNow <= currentClose).sort((a, b) => b.projectedNow - a.projectedNow);
+  const above = rays.filter((r) => r.projectedNow > currentClose).sort((a, b) => a.projectedNow - b.projectedNow);
+  const activeSupport = below[0] || null;
+  const activeResistance = above[0] || null;
+
+  const ruleOfAllAngles = activeSupport && activeResistance
+    ? `חוק כל הזוויות (Rule of All Angles): המחיר נע כעת בתעלה שבין ${activeSupport.id} (${activeSupport.projectedNow}) כתמיכה לבין ${activeResistance.id} (${activeResistance.projectedNow}) כהתנגדות. שבירה של אחת הזוויות מכוונת לזווית הבאה במניפה.`
+    : activeSupport
+      ? `המחיר נסחר מעל כל הזוויות הפעילות (תמיכה קרובה: ${activeSupport.id} ב-${activeSupport.projectedNow}) — עוצמת מגמה גבוהה.`
+      : activeResistance
+        ? `המחיר נסחר מתחת לזוויות המניפה (התנגדות קרובה: ${activeResistance.id} ב-${activeResistance.projectedNow}).`
+        : '';
+
+  return {
+    dir,
+    unitPerBar: +unitPerBar.toFixed(6),
+    autoUnit: +autoUnit.toFixed(6),
+    anchorIdx,
+    anchorPrice: anchorPivot.price,
+    barsElapsed,
+    futureBars,
+    rays,
+    activeSupport,
+    activeResistance,
+    ruleOfAllAngles,
+  };
+}
+
+export function computeGannAngles(candles, anchorPivot, opts = {}) {
+  return computeGannFan(candles, anchorPivot, opts).rays;
+}
+
+// --- W.D. Gann Box / Square of Price & Time ---
+
+export function computeGannBox(candles, anchorPivot, swingHigh, swingLow) {
+  if (!candles?.length || !anchorPivot) return null;
+  const n = candles.length;
+  const startIdx = Math.max(0, Math.min(n - 10, anchorPivot.idx ?? Math.max(0, n - 90)));
+  const elapsed = Math.max(10, n - 1 - startIdx);
+  const naturalWidths = [36, 45, 52, 72, 90, 120, 144, 180, 240];
+  const widthBars = naturalWidths.find((w) => w >= elapsed) || 144;
+  const endIdx = startIdx + widthBars;
+  const high = Math.max(swingHigh, swingLow);
+  const low = Math.min(swingHigh, swingLow);
+  const range = Math.max(1e-6, high - low);
+
+  const priceRatios = [0, 0.125, 0.25, 0.3333, 0.5, 0.6667, 0.75, 0.875, 1];
+  const timeRatios = [0.25, 0.3333, 0.5, 0.6667, 0.75, 1];
+
+  return {
+    startIdx,
+    endIdx,
+    widthBars,
+    high,
+    low,
+    mid50: +(low + range * 0.5).toFixed(4),
+    priceLines: priceRatios.map((r) => ({
+      ratio: r,
+      label: r === 0.3333 ? '1/3' : r === 0.6667 ? '2/3' : `${Math.round(r * 8)}/8`,
+      price: +(low + range * r).toFixed(4),
+      strong: r === 0 || r === 0.25 || r === 0.5 || r === 0.75 || r === 1,
+    })),
+    timeLines: timeRatios.map((r) => ({
+      ratio: r,
+      label: r === 0.3333 ? '1/3T' : r === 0.6667 ? '2/3T' : `${Math.round(r * 4)}/4T`,
+      idx: Math.round(startIdx + widthBars * r),
+    })),
+  };
+}
+
+// --- W.D. Gann Swing Chart & 2-Bar / 3-Bar Trend Indicator (Gann Explained) ---
+
+export function computeGannSwingChart(candles, { barMode = 2 } = {}) {
+  if (!Array.isArray(candles) || candles.length < 10) {
+    return { barMode, trend: 'neutral', swings: [], lastSwingHigh: null, lastSwingLow: null, midpoint50: null, rule3BarSignal: '' };
+  }
+  const req = Math.max(1, Math.min(3, Number(barMode) || 2));
+  const swings = [];
+  let dir = 0; // 1 = upswing, -1 = downswing
+  let upStreak = 0;
+  let downStreak = 0;
+  let curHigh = { idx: 0, t: candles[0].t, price: candles[0].h, type: 'high' };
+  let curLow = { idx: 0, t: candles[0].t, price: candles[0].l, type: 'low' };
+
+  for (let i = 1; i < candles.length; i++) {
+    const prev = candles[i - 1];
+    const c = candles[i];
+    const higherHigh = c.h > prev.h;
+    const lowerLow = c.l < prev.l;
+
+    if (higherHigh && !lowerLow) {
+      upStreak++;
+      downStreak = 0;
+    } else if (lowerLow && !higherHigh) {
+      downStreak++;
+      upStreak = 0;
+    } else if (higherHigh && lowerLow) {
+      // Outside bar: continue dominant close direction
+      if (c.c >= c.o) { upStreak++; downStreak = 0; }
+      else { downStreak++; upStreak = 0; }
+    }
+
+    if (c.h >= curHigh.price) curHigh = { idx: i, t: c.t, price: c.h, type: 'high' };
+    if (c.l <= curLow.price) curLow = { idx: i, t: c.t, price: c.l, type: 'low' };
+
+    if (dir <= 0 && upStreak >= req) {
+      if (swings.length === 0 || swings[swings.length - 1].type !== 'low') {
+        swings.push({ ...curLow });
+      }
+      dir = 1;
+      curHigh = { idx: i, t: c.t, price: c.h, type: 'high' };
+    } else if (dir >= 0 && downStreak >= req) {
+      if (swings.length === 0 || swings[swings.length - 1].type !== 'high') {
+        swings.push({ ...curHigh });
+      }
+      dir = -1;
+      curLow = { idx: i, t: c.t, price: c.l, type: 'low' };
+    }
+  }
+
+  // Append active leg endpoint
+  if (dir === 1) swings.push({ ...curHigh });
+  else if (dir === -1) swings.push({ ...curLow });
+
+  const highs = swings.filter((s) => s.type === 'high');
+  const lows = swings.filter((s) => s.type === 'low');
+  const lastSwingHigh = highs[highs.length - 1] || null;
+  const lastSwingLow = lows[lows.length - 1] || null;
+  const prevSwingHigh = highs[highs.length - 2] || null;
+  const prevSwingLow = lows[lows.length - 2] || null;
+
+  const lastClose = candles[candles.length - 1].c;
+  const midpoint50 = lastSwingHigh && lastSwingLow
+    ? +((lastSwingHigh.price + lastSwingLow.price) / 2).toFixed(4)
+    : null;
+
+  let trend = dir > 0 ? 'bullish' : dir < 0 ? 'bearish' : 'neutral';
+  if (prevSwingHigh && lastClose > prevSwingHigh.price) trend = 'bullish';
+  else if (prevSwingLow && lastClose < prevSwingLow.price) trend = 'bearish';
+
+  const rule3BarSignal = trend === 'bullish'
+    ? `מגמת סווינג עולה (${req}-Bar Gann Swing) · פריצה מעל ${prevSwingHigh ? prevSwingHigh.price.toFixed(2) : (lastSwingHigh?.price?.toFixed(2) || '—')} · שבירת מגמה רק מתחת לשפל ${lastSwingLow?.price?.toFixed(2) || '—'}`
+    : trend === 'bearish'
+      ? `מגמת סווינג יורדת (${req}-Bar Gann Swing) · היפוך למגמת עלייה מעל שיא הסווינג ${lastSwingHigh?.price?.toFixed(2) || '—'}`
+      : 'דשדוש בתוך טווח הסווינג הפעיל';
+
+  return {
+    barMode: req,
+    trend,
+    swings: swings.slice(-24),
+    lastSwingHigh,
+    lastSwingLow,
+    prevSwingHigh,
+    prevSwingLow,
+    midpoint50,
+    above50: midpoint50 != null ? lastClose >= midpoint50 : null,
+    rule3BarSignal,
+  };
+}
+
+// --- MSJ_GannSQ9 (Michael S. Jenkins Square of 9 Interactive Matrix & Price-Time Calculator) ---
+
+export function computeMsjSq9Analysis(
+  price,
+  { startValue = 1, increment = 1, scale = 1, ringCount = 5, clockwise = true, angleOffset = 0 } = {},
+) {
+  const safePrice = Math.max(1e-6, Number(price) || 100);
+  const effScale = Number(scale) > 0 ? Number(scale) : 1;
+  const effStart = Number.isFinite(Number(startValue)) ? Number(startValue) : 1;
+  const effInc = Number(increment) > 0 ? Number(increment) : 1;
+  const rings = Math.max(3, Math.min(7, Number(ringCount) || 5));
+
+  // Normalize price to Sq9 number space using scale (so BTC 90000 with scale=100 -> 900, EURUSD 1.08 with scale=0.01 -> 108)
+  const normVal = safePrice / effScale;
+  const sqrtVal = Math.sqrt(Math.max(1e-6, normVal));
+  const wheelAngleRaw = ((sqrtVal - 1) * 180 + angleOffset) % 360;
+  const wheelAngle = +((wheelAngleRaw + 360) % 360).toFixed(1);
+  const ring = Math.max(1, Math.ceil((sqrtVal - 1) / 2));
+
+  // Build odd-square spiral matrix centered around the active ring or startValue
+  const dim = rings * 2 + 1;
+  const grid = Array.from({ length: dim }, () => Array(dim).fill(null));
+  const center = rings;
+
+  // Determine step numbering: spiral outward from center
+  const dirs = clockwise
+    ? [[0, -1], [-1, 0], [0, 1], [1, 0]] // left, up, right, down (classic Gannzilla/MSJ clockwise)
+    : [[0, -1], [1, 0], [0, 1], [-1, 0]]; // counter-clockwise
+
+  let r = center;
+  let c = center;
+  let stepIndex = 0;
+
+  const placeCell = (row, col, idx) => {
+    const rawNumber = effStart + idx * effInc;
+    const scaledPrice = +(rawNumber * effScale).toFixed(4);
+    const dr = row - center;
+    const dc = col - center;
+    const cellRing = Math.max(Math.abs(dr), Math.abs(dc));
+    const deg = cellRing === 0 ? 0 : +(((Math.atan2(dr, dc) * 180) / Math.PI + 360 + angleOffset) % 360).toFixed(1);
+    const isCardinal = cellRing > 0 && (dr === 0 || dc === 0);
+    const isOrdinal = cellRing > 0 && Math.abs(dr) === Math.abs(dc);
+    grid[row][col] = {
+      row,
+      col,
+      idx,
+      rawNumber: +rawNumber.toFixed(4),
+      scaledPrice,
+      ring: cellRing,
+      angleDeg: deg,
+      isCardinal,
+      isOrdinal,
+      isCenter: cellRing === 0,
+      distPct: +(((scaledPrice - safePrice) / safePrice) * 100).toFixed(2),
+    };
+  };
+
+  placeCell(r, c, stepIndex++);
+  let stepLen = 1;
+  let dirIdx = 0;
+  while (stepIndex < dim * dim) {
+    for (let repeat = 0; repeat < 2; repeat++) {
+      const [dr, dc] = dirs[dirIdx % 4];
+      for (let s = 0; s < stepLen && stepIndex < dim * dim; s++) {
+        r += dr;
+        c += dc;
+        if (r >= 0 && r < dim && c >= 0 && c < dim) {
+          placeCell(r, c, stepIndex++);
+        }
+      }
+      dirIdx++;
+    }
+    stepLen++;
+  }
+
+  // Highlight closest cell in grid to current market price
+  let closestCell = null;
+  let closestDiff = Infinity;
+  for (let i = 0; i < dim; i++) {
+    for (let j = 0; j < dim; j++) {
+      const cell = grid[i][j];
+      if (!cell) continue;
+      const diff = Math.abs(cell.scaledPrice - safePrice);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestCell = cell;
+      }
+    }
+  }
+  if (closestCell) closestCell.isClosest = true;
+
+  // Full MSJ_GannSQ9 Degree Table (45°, 60°, 72°, 90°, 120°, 135°, 144°, 180°, 225°, 240°, 270°, 315°, 360°, 540°, 720°)
+  const msjDegrees = [
+    { deg: 45, group: 'Ordinal', label: '45° (חצי ריבוע)' },
+    { deg: 60, group: 'Hexagon', label: '60° (הקסגון)' },
+    { deg: 72, group: 'Pentagon', label: '72° (חמישית מעגל)' },
+    { deg: 90, group: 'Cardinal', label: '90° (רבע ריבוע · צלב)' },
+    { deg: 120, group: 'Trine', label: '120° (משולש הרמוני)' },
+    { deg: 135, group: 'Ordinal', label: '135° (3/8 מעגל)' },
+    { deg: 144, group: 'Pentagon', label: '144° (פיבונאצ׳י-גאן)' },
+    { deg: 180, group: 'Cardinal', label: '180° (צד נגדי · חזק)' },
+    { deg: 225, group: 'Ordinal', label: '225° (5/8 מעגל)' },
+    { deg: 240, group: 'Trine', label: '240° (משולש שני)' },
+    { deg: 270, group: 'Cardinal', label: '270° (3/4 ריבוע)' },
+    { deg: 315, group: 'Ordinal', label: '315° (7/8 מעגל)' },
+    { deg: 360, group: 'Cardinal', label: '360° (הקפה מלאה)' },
+    { deg: 540, group: 'Cardinal', label: '540° (הקפה וחצי)' },
+    { deg: 720, group: 'Cardinal', label: '720° (2 הקפות מלאות)' },
+  ];
+
+  const degreeTargets = msjDegrees.map((d) => {
+    const upNorm = Math.pow(sqrtVal + d.deg / 180, 2);
+    const dnRoot = sqrtVal - d.deg / 180;
+    const dnNorm = dnRoot > 0 ? Math.pow(dnRoot, 2) : null;
+    const upPrice = +(upNorm * effScale).toFixed(4);
+    const downPrice = dnNorm != null ? +(dnNorm * effScale).toFixed(4) : null;
+    return {
+      ...d,
+      upPrice,
+      downPrice,
+      upDistPct: +(((upPrice - safePrice) / safePrice) * 100).toFixed(2),
+      downDistPct: downPrice != null ? +(((downPrice - safePrice) / safePrice) * 100).toFixed(2) : null,
+    };
+  });
+
+  // Jenkins Square-Root Time Conversions (MSJ_GannSQ9 Time Tab)
+  const sqrtForTime = Math.sqrt(normVal);
+  const timeConversions = [
+    { unit: 'ימי לוח שנה (Calendar Days)', val: Math.round(sqrtForTime), mult2: Math.round(sqrtForTime * 2), half: Math.round(sqrtForTime * 0.5) },
+    { unit: 'ימי מסחר (Trading Bars · ×0.71)', val: Math.round(sqrtForTime * 0.71), mult2: Math.round(sqrtForTime * 1.42), half: Math.round(sqrtForTime * 0.355) },
+    { unit: 'שבועות (Weeks · √P / 7)', val: +(sqrtForTime / 7).toFixed(1), mult2: +((sqrtForTime * 2) / 7).toFixed(1), half: +((sqrtForTime * 0.5) / 7).toFixed(1) },
+    { unit: 'חודשים (Months · √P / 30)', val: +(sqrtForTime / 30).toFixed(2), mult2: +((sqrtForTime * 2) / 30).toFixed(2), half: +((sqrtForTime * 0.5) / 30).toFixed(2) },
+  ];
+
+  return {
+    price: safePrice,
+    scale: effScale,
+    startValue: effStart,
+    increment: effInc,
+    normVal: +normVal.toFixed(4),
+    sqrtVal: +sqrtVal.toFixed(4),
+    wheelAngle,
+    ring,
+    dim,
+    grid,
+    closestCell,
+    degreeTargets,
+    timeConversions,
+  };
+}
+
+// --- Gannzilla Pro v8.3 Multi-Layout + Protractor + Planetary Cosmogram + .ini Parser/Exporter ---
+
+export const DEFAULT_GANNZILLA_CONFIG = {
+  layout: 'sq9', // 'sq9' | 'sq4' | 'sq144' | 'hex' | 'tri' | 'wheel24' | 'cosmos'
+  protractor: 'cross', // 'cross' | 'square' | 'triangle' | 'hexagon' | 'pentagon' | 'octagon' | 'none'
+  startValue: 1,
+  increment: 1,
+  scale: 'auto', // 'auto' or numeric scale
+  clockwise: true,
+  angleOffset: 0,
+  ringCount: 5,
+  showChronometer: true,
+  showCosmogram: true,
+  showFanOnChart: true,
+  showBoxOnChart: false,
+  showSwingOnChart: false,
+  swingBarMode: 2,
+  fanDirection: 'auto',
+  fanScale: '',
+  iniFileName: '',
+};
+
+export function autoScaleForPrice(price) {
+  const p = Math.abs(Number(price) || 100);
+  if (p >= 20000) return 100;
+  if (p >= 2000) return 10;
+  if (p >= 20) return 1;
+  if (p >= 2) return 0.1;
+  return 0.01;
+}
+
+// Approximate geocentric/heliocentric ecliptic longitudes (0°–360°) for Gannzilla Cosmogram
+export function computePlanetaryLongitudes(ts = Date.now()) {
+  // Days since J2000.0 (2000-01-01T12:00:00Z)
+  const j2000 = Date.UTC(2000, 0, 1, 12, 0, 0);
+  const d = (ts - j2000) / DAY_MS;
+  const norm360 = (deg) => +(((deg % 360) + 360) % 360).toFixed(1);
+
+  const planets = [
+    { id: 'sun',     glyph: '☉', name: 'שמש (Sun)',     lon: norm360(280.460 + 0.9856474 * d), color: '#facc15' },
+    { id: 'mercury', glyph: '☿', name: 'מרקורי',        lon: norm360(252.251 + 4.09233445 * d), color: '#38bdf8' },
+    { id: 'venus',   glyph: '♀', name: 'נוגה (Venus)',   lon: norm360(181.980 + 1.60213034 * d), color: '#f472b6' },
+    { id: 'mars',    glyph: '♂', name: 'מאדים (Mars)',   lon: norm360(355.433 + 0.52403295 * d), color: '#ef4444' },
+    { id: 'jupiter', glyph: '♃', name: 'צדק (Jupiter)',  lon: norm360(34.351 + 0.08309121 * d), color: '#a78bfa' },
+    { id: 'saturn',  glyph: '♄', name: 'שבתאי (Saturn)', lon: norm360(50.077 + 0.03345965 * d), color: '#94a3b8' },
+    { id: 'uranus',  glyph: '♅', name: 'אורנוס (Uranus)',lon: norm360(314.055 + 0.01173129 * d), color: '#22d3ee' },
+  ];
+
+  // Detect key planetary aspects (0° Conjunction, 90° Square, 120° Trine, 180° Opposition within ±5°)
+  const aspects = [];
+  const aspectDefs = [
+    { angle: 0, label: 'צמידות (0°)', strong: true },
+    { angle: 60, label: 'סקסטייל (60°)', strong: false },
+    { angle: 90, label: 'ריבוע (90°)', strong: true },
+    { angle: 120, label: 'משולש (120°)', strong: true },
+    { angle: 180, label: 'מולות (180°)', strong: true },
+  ];
+  for (let i = 0; i < planets.length; i++) {
+    for (let j = i + 1; j < planets.length; j++) {
+      let sep = Math.abs(planets[i].lon - planets[j].lon);
+      if (sep > 180) sep = 360 - sep;
+      for (const ad of aspectDefs) {
+        const orb = Math.abs(sep - ad.angle);
+        if (orb <= 5) {
+          aspects.push({
+            p1: planets[i].name,
+            p2: planets[j].name,
+            glyphs: `${planets[i].glyph}–${planets[j].glyph}`,
+            aspect: ad.label,
+            angle: ad.angle,
+            orb: +orb.toFixed(1),
+            strong: ad.strong,
+          });
+        }
+      }
+    }
+  }
+
+  return { planets, aspects };
+}
+
+export function computeGannzillaLayoutLevels(anchorPrice, currentPrice, layout = 'sq9') {
+  const safeAnchor = Math.max(1e-6, Number(anchorPrice) || 100);
+  const safeCurrent = Math.max(1e-6, Number(currentPrice) || safeAnchor);
+
+  if (layout === 'sq4') {
+    // Square of 4 (90° cardinal box steps: 90°, 180°, 270°, 360°, 450°, 540°, 630°, 720°)
+    const degs = [90, 180, 270, 360, 450, 540, 630, 720];
+    return degs.map((deg) => {
+      const p = gannSq9Price(safeAnchor, deg, 1);
+      return { degree: deg, label: `Sq4 ${deg}°`, price: p, isCardinal: true, distPct: +(((p - safeCurrent) / safeCurrent) * 100).toFixed(2) };
+    });
+  }
+  if (layout === 'sq144') {
+    // Master Square of 144 (12 divisions of 144: 12, 24, 36, 48, 60, 72, 84, 96, 108, 120, 132, 144 -> mapped to degrees)
+    const steps = [18, 36, 54, 72, 90, 108, 126, 144];
+    return steps.map((s) => {
+      const deg = Math.round((s / 144) * 360);
+      const p = gannSq9Price(safeAnchor, deg, 1);
+      return { degree: deg, label: `Sq144 · ${s}/144 (${deg}°)`, price: p, isCardinal: s % 36 === 0, distPct: +(((p - safeCurrent) / safeCurrent) * 100).toFixed(2) };
+    });
+  }
+  if (layout === 'tri') {
+    // Triangle (120° steps)
+    const degs = [60, 120, 180, 240, 300, 360];
+    return degs.map((deg) => {
+      const p = gannSq9Price(safeAnchor, deg, 1);
+      return { degree: deg, label: `משולש ${deg}°`, price: p, isCardinal: deg % 120 === 0, distPct: +(((p - safeCurrent) / safeCurrent) * 100).toFixed(2) };
+    });
+  }
+  if (layout === 'wheel24') {
+    // Wheel of 24 (15° increments -> 24 harmonic spokes; show key 30°/45°/90° spokes)
+    const degs = [15, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330, 360];
+    return degs.map((deg) => {
+      const p = gannSq9Price(safeAnchor, deg, 1);
+      return { degree: deg, label: `W24 · #${Math.round(deg / 15)} (${deg}°)`, price: p, isCardinal: deg % 90 === 0, distPct: +(((p - safeCurrent) / safeCurrent) * 100).toFixed(2) };
+    });
+  }
+  if (layout === 'hex') return buildHexagonVibrationTable(safeAnchor, safeCurrent);
+  return buildSq9VibrationTable(safeAnchor, safeCurrent);
+}
+
+// Parser for real Gannzilla Pro v8.3 Gannzilla.ini configuration files
+export function parseGannzillaIni(iniText, fileName = 'Gannzilla.ini') {
+  const parsed = { ...DEFAULT_GANNZILLA_CONFIG, iniFileName: fileName };
+  const rawSections = {};
+  let section = 'general';
+
+  for (const rawLine of String(iniText || '').split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith(';') || line.startsWith('#')) continue;
+    const secMatch = line.match(/^\[(.+)\]$/);
+    if (secMatch) {
+      section = secMatch[1].trim().toLowerCase();
+      rawSections[section] = rawSections[section] || {};
+      continue;
+    }
+    const eq = line.indexOf('=');
+    if (eq <= 0) continue;
+    const key = line.slice(0, eq).trim();
+    const val = line.slice(eq + 1).trim();
+    const keyL = key.toLowerCase();
+    rawSections[section] = rawSections[section] || {};
+    rawSections[section][key] = val;
+
+    const toBool = (v) => /^(1|true|yes|on)$/i.test(v);
+    const toNum = (v) => {
+      const n = Number(String(v).replace(',', '.'));
+      return Number.isFinite(n) ? n : null;
+    };
+
+    if (keyL === 'layout' || keyL === 'chartlayout' || keyL === 'type') {
+      const v = val.toLowerCase();
+      if (v.includes('hex')) parsed.layout = 'hex';
+      else if (v.includes('144')) parsed.layout = 'sq144';
+      else if (v.includes('sq4') || v.includes('square4') || v.includes('square of 4') || v === '1') parsed.layout = 'sq4';
+      else if (v.includes('tri')) parsed.layout = 'tri';
+      else if (v.includes('24') || v.includes('circle')) parsed.layout = 'wheel24';
+      else if (v.includes('cosmo')) parsed.layout = 'cosmos';
+      else parsed.layout = 'sq9';
+    } else if (keyL === 'startvalue' || keyL === 'start' || keyL === 'initvalue') {
+      const n = toNum(val);
+      if (n != null && n > 0) parsed.startValue = n;
+    } else if (keyL === 'increment' || keyL === 'step' || keyL === 'delta') {
+      const n = toNum(val);
+      if (n != null && n > 0) parsed.increment = n;
+    } else if (keyL === 'clockwise' || keyL === 'direction') {
+      if (val.toLowerCase().includes('counter') || val.toLowerCase() === 'ccw') parsed.clockwise = false;
+      else if (val.toLowerCase().includes('clock') || val.toLowerCase() === 'cw') parsed.clockwise = true;
+      else parsed.clockwise = toBool(val);
+    } else if (keyL === 'angle' || keyL === 'angleoffset' || keyL === 'rotation' || keyL === 'offset') {
+      const n = toNum(val);
+      if (n != null) parsed.angleOffset = ((n % 360) + 360) % 360;
+    } else if (keyL === 'size' || keyL === 'rings' || keyL === 'ringcount') {
+      const n = toNum(val);
+      if (n != null) parsed.ringCount = Math.max(3, Math.min(7, Math.round(n)));
+    } else if (keyL === 'protractor' || keyL === 'figure' || keyL === 'geometry') {
+      const v = val.toLowerCase();
+      if (v.includes('tri')) parsed.protractor = 'triangle';
+      else if (v.includes('hex')) parsed.protractor = 'hexagon';
+      else if (v.includes('pent')) parsed.protractor = 'pentagon';
+      else if (v.includes('oct')) parsed.protractor = 'octagon';
+      else if (v.includes('sq')) parsed.protractor = 'square';
+      else if (v === '0' || v === 'none' || v === 'false') parsed.protractor = 'none';
+      else parsed.protractor = 'cross';
+    } else if (keyL === 'chronometer' || keyL === 'showchronometer') {
+      parsed.showChronometer = toBool(val);
+    } else if (keyL === 'cosmogram' || keyL === 'showcosmogram') {
+      parsed.showCosmogram = toBool(val);
+    } else if (keyL === 'scale' || keyL === 'pricescale') {
+      const n = toNum(val);
+      if (n != null && n > 0) parsed.scale = n;
+    }
+  }
+
+  return { config: parsed, rawSections, keyCount: Object.values(rawSections).reduce((s, o) => s + Object.keys(o).length, 0) };
+}
+
+export function exportGannzillaIni(config = DEFAULT_GANNZILLA_CONFIG) {
+  const c = { ...DEFAULT_GANNZILLA_CONFIG, ...config };
+  return [
+    '; Gannzilla Pro v8.3 Compatible Configuration (Exported from Alta Capital Gann Lab)',
+    '[Layout]',
+    `Layout=${c.layout}`,
+    `Size=${c.ringCount}`,
+    `Clockwise=${c.clockwise ? 1 : 0}`,
+    `Angle=${c.angleOffset || 0}`,
+    '',
+    '[Data]',
+    `StartValue=${c.startValue}`,
+    `Increment=${c.increment}`,
+    `Scale=${c.scale}`,
+    '',
+    '[Protractor]',
+    `Figure=${c.protractor}`,
+    '',
+    '[Chronometer]',
+    `ShowChronometer=${c.showChronometer ? 1 : 0}`,
+    '',
+    '[Cosmogram]',
+    `ShowCosmogram=${c.showCosmogram ? 1 : 0}`,
+    '',
+  ].join('\n');
+}
+
+// --- W.D. Gann Trading Rules Confluence Checklist (Gann Explained) ---
+
+export function evaluateGannConfluenceChecklist(analysis) {
+  const rules = [];
+  let score = 0;
+
+  // 1. 1x1 Master Angle Rule
+  const above1x1 = !!analysis.angle1x1?.abovePrice;
+  rules.push({
+    id: 'angle_1x1',
+    name: 'זווית 1x1 (45° · כלל המאסטר של גאן)',
+    passed: above1x1,
+    status: above1x1 ? 'שורי · מעל 1x1' : 'דובי · מתחת ל-1x1',
+    detail: `מחיר נוכחי ${analysis.currentPrice} מול קו 1x1 ב-${analysis.angle1x1?.projectedNow ?? '—'}`,
+  });
+  if (above1x1) score += 20;
+
+  // 2. 50% Retracement Rule (Most Important Single Level per W.D. Gann)
+  const mid50 = (analysis.swingHigh + analysis.swingLow) / 2;
+  const above50 = analysis.currentPrice >= mid50;
+  rules.push({
+    id: 'rule_50',
+    name: 'כלל 50% (נקודת שיווי המשקל של הטווח)',
+    passed: above50,
+    status: above50 ? 'מעל 50% · שליטת קונים' : 'מתחת ל-50% · חולשה',
+    detail: `רמת 50% = ${mid50.toFixed(2)} (טווח ${analysis.swingLow.toFixed(2)} – ${analysis.swingHigh.toFixed(2)})`,
+  });
+  if (above50) score += 20;
+
+  // 3. Gann Swing Chart (2-Bar / 3-Bar Trend Indicator)
+  const swingBull = analysis.swingChart?.trend === 'bullish';
+  rules.push({
+    id: 'swing_trend',
+    name: `מד מגמת הסווינג של גאן (${analysis.swingChart?.barMode || 2}-Bar Swing)`,
+    passed: swingBull,
+    status: swingBull ? 'מגמת סווינג עולה' : analysis.swingChart?.trend === 'bearish' ? 'מגמת סווינג יורדת' : 'דשדוש',
+    detail: analysis.swingChart?.rule3BarSignal || '',
+  });
+  if (swingBull) score += 20;
+
+  // 4. Proximity to Square of 9 Cardinal/Ordinal Level
+  const nearestSq9 = analysis.sq9Levels?.[0];
+  const nearSq9 = nearestSq9 && Math.abs(nearestSq9.distPct) <= 3.5;
+  rules.push({
+    id: 'sq9_vibration',
+    name: 'קירבה לרמת ויברציה Square of 9 (MSJ_GannSQ9)',
+    passed: !!nearSq9,
+    status: nearSq9 ? `אזור פעיל (${nearestSq9.degree}° · ${nearestSq9.distPct}%)` : `רחוק מרמת מפתח (${nearestSq9?.distPct ?? '—'}%)`,
+    detail: nearestSq9 ? `רמה קרובה: ${nearestSq9.degree}° (${nearestSq9.type}) במחיר ${nearestSq9.price}` : '—',
+  });
+  if (nearSq9) score += 15;
+
+  // 5. Active Gann Time Cycle / Master Window within 10 days
+  const nextPivot = analysis.futurePivots?.[0];
+  const timeActive = nextPivot && nextPivot.daysAhead <= 10;
+  rules.push({
+    id: 'time_window',
+    name: 'חלון זמן פעיל (Gannzilla Time Cycle)',
+    passed: !!timeActive,
+    status: timeActive ? `חלון מפנה בעוד ${nextPivot.daysAhead} ימים!` : `חלון קרוב: ${nextPivot?.date || '—'} (+${nextPivot?.daysAhead ?? '—'}d)`,
+    detail: nextPivot ? `${nextPivot.confluenceLabel} (${nextPivot.reasons?.slice(0, 2).join(' · ') || ''})` : '—',
+  });
+  if (timeActive) score += 15;
+
+  // 6. Historical Validation & Fundamental Proof Backing
+  const provenStrong = (analysis.hitRatePct || 0) >= 45 || (analysis.fundamentalProof?.matchRatePct || 0) >= 50;
+  rules.push({
+    id: 'historical_proof',
+    name: 'גיבוי סטטיסטי והיסטורי (צירים + פונדמנטל)',
+    passed: provenStrong,
+    status: provenStrong ? `מאומת (${analysis.hitRatePct}% צירים · ${analysis.fundamentalProof?.matchRatePct || 0}% פונדמנטל)` : 'בינוני',
+    detail: `${analysis.totalHits}/${analysis.totalTests} פגיעות היסטוריות בנכס זה`,
+  });
+  if (provenStrong) score += 10;
+
+  const verdict = score >= 75
+    ? 'התכנסות גאן גבוהה (שורי חזק)'
+    : score >= 50
+      ? 'מבנה מאוזן / נטייה חיובית'
+      : 'זהירות / מגמה חלשה לפי כללי גאן';
+
+  return { score, verdict, rules };
 }
 
 // Prove Gann against Fundamental Events: check if prior Gann cycles + Sq9/Hex predicted the event BEFORE the news!
@@ -582,7 +1214,7 @@ function proveGannAgainstFundamentals(candles, pivots, sq9Levels, hexLevels, ass
 
 export function analyzeGannHistoryAndForecast(
   candles,
-  { lookback = 10, manualAnchorPrice = null, manualAnchorDate = null, assetKind = 'all' } = {},
+  { lookback = 10, manualAnchorPrice = null, manualAnchorDate = null, assetKind = 'all', gannzillaConfig = null } = {},
 ) {
   if (!Array.isArray(candles) || candles.length < 60) {
     return { ok: false, error: 'אין מספיק נרות היסטוריים לניתוח גאן' };
@@ -670,12 +1302,34 @@ export function analyzeGannHistoryAndForecast(
   // 3. Michael Jenkins & Sheet 1-5 Suite
   const jenkins = buildJenkinsSuite(swingHigh, swingLow, anchorPivot.price, anchorPivot.t);
 
-  // 4. Gannzilla Calendars
+  // 4. Gannzilla Calendars & Cosmogram Planetary Longitudes
+  const gzCfg = { ...DEFAULT_GANNZILLA_CONFIG, ...(gannzillaConfig || {}) };
   const calendars = buildGannzillaCalendars(lastTs, anchorPivot.t);
+  const cosmogram = computePlanetaryLongitudes(lastTs);
 
-  // 5. Gann Angles
-  const angles = computeGannAngles(candles, anchorPivot);
+  // 5. Full 9-Angle Gann Fan, Gann Box & 2/3-Bar Gann Swing Chart (Gann Explained / Gann Fan)
+  const gannFan = computeGannFan(candles, anchorPivot, {
+    scaleOverride: gzCfg.fanScale ? Number(gzCfg.fanScale) : null,
+    direction: gzCfg.fanDirection || 'auto',
+    futureBars: 35,
+  });
+  const angles = gannFan.rays;
   const angle1x1 = angles.find((a) => a.mult === 1);
+  const gannBox = computeGannBox(candles, anchorPivot, swingHigh, swingLow);
+  const swingChart = computeGannSwingChart(candles, { barMode: gzCfg.swingBarMode || 2 });
+
+  // 5b. MSJ_GannSQ9 Spiral Matrix & Degree/Time Calculator
+  const effScale = gzCfg.scale === 'auto' || !Number(gzCfg.scale)
+    ? autoScaleForPrice(currentPrice)
+    : Number(gzCfg.scale);
+  const msjSq9 = computeMsjSq9Analysis(currentPrice, {
+    startValue: gzCfg.startValue || 1,
+    increment: gzCfg.increment || 1,
+    scale: effScale,
+    ringCount: gzCfg.ringCount || 5,
+    clockwise: gzCfg.clockwise !== false,
+    angleOffset: gzCfg.angleOffset || 0,
+  });
 
   // 6. Gann vs. Fundamental Events Proof
   const fundamentalProof = proveGannAgainstFundamentals(candles, pivots, sq9Levels, hexLevels, assetKind);
@@ -739,6 +1393,11 @@ export function analyzeGannHistoryAndForecast(
     hexLevels,
     jenkins,
     calendars,
+    cosmogram,
+    gannFan,
+    gannBox,
+    swingChart,
+    msjSq9,
     angles,
     angle1x1,
     totalTests,
@@ -749,6 +1408,7 @@ export function analyzeGannHistoryAndForecast(
     futurePivots,
     upcomingMacro: upcomingMacro.slice(0, 6),
   };
+  out.confluence = evaluateGannConfluenceChecklist(out);
   out.proposals = generateGannWorkingProposals(out);
   return out;
 }

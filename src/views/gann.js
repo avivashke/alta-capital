@@ -3,14 +3,21 @@
 // Multi-Asset Proof Scanner, and Gann vs. Fundamental Events Historical Proof.
 
 import { store } from '../store.js';
-import { h, mount, num, pct, tag, notice, empty, toast, openModal, timeAgo } from '../ui.js';
+import { h, mount, num, pct, tag, notice, empty, toast, openModal, timeAgo, downloadFile } from '../ui.js';
 import { getCandles, marketState, ASSET_CATALOG } from '../market.js';
+import { scheduleDatabasePush } from '../db.js';
 import {
   analyzeGannHistoryAndForecast,
   generateGannWorkingProposals,
   searchGannLibrary,
   runAutonomousGannLibraryAudit,
   runAutonomousGannLibraryAuditIfDue,
+  DEFAULT_GANNZILLA_CONFIG,
+  computeGannzillaLayoutLevels,
+  computeMsjSq9Analysis,
+  autoScaleForPrice,
+  parseGannzillaIni,
+  exportGannzillaIni,
 } from '../gann.js';
 import { chatDetailed } from '../llm.js';
 
@@ -20,9 +27,10 @@ let gannViewState = {
   tf: '1d',
   manualPrice: '',
   manualDate: '',
-  wheelMode: 'sq9', // 'sq9' | 'hex' | 'cosmos'
-  calcTab: 'jenkins', // 'jenkins' | 'eighths' | 'sq9' | 'hex'
+  calcTab: 'fan', // 'fan' | 'msj_grid' | 'msj_deg' | 'jenkins' | 'eighths' | 'hex'
   calendarTab: 'zodiac12', // 'zodiac12' | 'planetary' | 'squares' | 'seasonal'
+  msjCustomPrice: '',
+  selectedMsjCell: null,
   loading: false,
   error: null,
   candles: null,
@@ -37,22 +45,49 @@ let gannViewState = {
   libLoading: false,
 };
 
+function getGannzillaConfig() {
+  return { ...DEFAULT_GANNZILLA_CONFIG, ...(store.state.gannConfig || {}) };
+}
+
+function updateGannzillaConfig(patch, ui, { reloadAnalysis = false } = {}) {
+  store.state.gannConfig = {
+    ...getGannzillaConfig(),
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  };
+  store.save(true);
+  scheduleDatabasePush(1500);
+  if (reloadAnalysis && gannViewState.candles) {
+    const lookback = gannViewState.tf === '1w' ? 5 : 10;
+    const analysis = analyzeGannHistoryAndForecast(gannViewState.candles, {
+      lookback,
+      manualAnchorPrice: gannViewState.manualPrice ? Number(gannViewState.manualPrice) : null,
+      manualAnchorDate: gannViewState.manualDate || null,
+      assetKind: assetKindFor(gannViewState.symbol),
+      gannzillaConfig: store.state.gannConfig,
+    });
+    if (analysis.ok) gannViewState.analysis = analysis;
+  }
+  ui.rerender();
+}
+
 async function askAiForGannProposal(a, ui) {
   if (gannViewState.aiLoading || !a) return;
   gannViewState.aiLoading = true;
   ui.rerender();
   const prompt = [
-    `נתח את הנכס ${gannViewState.symbol} (${gannViewState.tf}) לפי נתוני Gannzilla בזמן אמת:`,
-    `- מחיר נוכחי: ${a.currentPrice}, עוגן: ${a.anchorPivot.price} (${a.anchorPivot.type}), טבעת Sq9 #${a.jenkins.ringNumber}`,
-    `- זווית 1x1: ${a.angle1x1?.abovePrice ? 'מעל 1x1 (שורי)' : 'מתחת ל-1x1 (דובי)'} (${a.angle1x1?.projectedNow})`,
+    `נתח את הנכס ${gannViewState.symbol} (${gannViewState.tf}) לפי נתוני Gannzilla Pro, מניפת גאן ו-MSJ_GannSQ9 בזמן אמת:`,
+    `- מחיר נוכחי: ${a.currentPrice}, עוגן: ${a.anchorPivot.price} (${a.anchorPivot.type}), טבעת Sq9 #${a.jenkins.ringNumber}, זווית גלגל MSJ: ${a.msjSq9?.wheelAngle ?? '—'}°`,
+    `- מניפת גאן (1x1): ${a.angle1x1?.abovePrice ? 'מעל 1x1 (שורי)' : 'מתחת ל-1x1 (דובי)'} (${a.angle1x1?.projectedNow}) · תמיכה ${a.gannFan?.activeSupport?.id || '—'} · התנגדות ${a.gannFan?.activeResistance?.id || '—'}`,
+    `- סווינג גאן (${a.swingChart?.barMode || 2}-Bar): ${a.swingChart?.trend || '—'} · ציון התכנסות גאן: ${a.confluence?.score ?? '—'}/100`,
     `- רמות Sq9 קרובות: ${a.sq9Levels.slice(0, 4).map((l) => `${l.degree}°=${l.price}`).join(', ')}`,
     `- חלון ציר עתידי קרוב: ${a.futurePivots[0]?.date || '—'} (${a.futurePivots[0]?.confluenceLabel || ''})`,
     `- הוכחה מול אירועים פונדמנטליסטיים: ${a.fundamentalProof.matchedCount}/${a.fundamentalProof.totalInSpan} (${a.fundamentalProof.matchRatePct}%)`,
-    'תן הצעת עבודה תמציתית ומדויקת בעברית: הטיה, תרחיש כניסה, יעדי Sq9, חלון זמן קריטי וניהול סיכון.',
+    'תן הצעת עבודה תמציתית ומדויקת בעברית: הטיה, תרחיש כניסה, יעדי Sq9 ומניפת גאן, חלון זמן קריטי וניהול סיכון.',
   ].join('\n');
   try {
     const res = await chatDetailed({
-      system: 'אתה חוקר גאן בכיר המייעץ למשתמש על בסיס Gannzilla, Square of 9, הקסגון ומייקל ג׳נקינס. השב בעברית מקצועית וברורה.',
+      system: 'אתה חוקר גאן בכיר המייעץ למשתמש על בסיס Gannzilla Pro v8.3, MSJ_GannSQ9 (מייקל ג׳נקינס), מניפת גאן ו-W.D. Gann Trading Tools. השב בעברית מקצועית וברורה.',
       messages: [{ role: 'user', content: prompt }],
       maxTokens: 700,
     });
@@ -92,7 +127,7 @@ function openFundamentalEventModal(fe) {
             ? h('a', { href: fe.sourceUrl, target: '_blank', rel: 'noopener noreferrer', style: { color: '#7dd3fc', fontWeight: '600' } }, `${fe.sourceName || 'מקור רשמי'} ↗`)
             : h('span', { text: fe.sourceName || 'מקור מאקרו רשמי' }),
         ),
-        h('div', { class: 'tiny muted', text: 'מקור חישובי גאן: Square of 9 (gann indicator script sq9.txt), Hexagon 60° (הקסגון.xlsx) ומחזורי Master Time Cycles (wdgannbook_copy.pdf).' }),
+        h('div', { class: 'tiny muted', text: 'מקור חישובי גאן: Square of 9 (MSJ_GannSQ9), Gannzilla Pro v8.3, Hexagon 60°, מניפת גאן 9 זוויות ומחזורי Master Time Cycles.' }),
       ),
     ),
     { wide: true },
@@ -122,10 +157,12 @@ async function loadGannData(ui) {
       manualAnchorPrice: gannViewState.manualPrice ? Number(gannViewState.manualPrice) : null,
       manualAnchorDate: gannViewState.manualDate || null,
       assetKind: assetKindFor(gannViewState.symbol),
+      gannzillaConfig: getGannzillaConfig(),
     });
     if (!analysis.ok) throw new Error(analysis.error);
     gannViewState.candles = candles;
     gannViewState.analysis = analysis;
+    gannViewState.selectedMsjCell = null;
   } catch (err) {
     gannViewState.error = err.message;
   } finally {
@@ -172,7 +209,7 @@ function svgEl(tag, attrs, text) {
   return node;
 }
 
-function renderGannForecastSvg(candles, analysis) {
+function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG) {
   const show = Math.min(candles.length, 240);
   const slice = candles.slice(-show);
   const offset = candles.length - show;
@@ -186,15 +223,23 @@ function renderGannForecastSvg(candles, analysis) {
   const range = maxV - minV || 1;
 
   const width = 940;
-  const height = 350;
-  const padL = 58;
-  const padR = 175;
+  const height = 380;
+  const padL = 62;
+  const padR = 180;
   const padT = 24;
-  const padB = 30;
+  const padB = 32;
   const chartW = width - padL - padR;
   const chartH = height - padT - padB;
+  const futureW = padR - 8;
+  const futureBars = analysis.gannFan?.futureBars || 35;
 
   const xAt = (i) => padL + (i / Math.max(1, show - 1)) * chartW;
+  const xAtGlobal = (globalIdx) => {
+    const rel = globalIdx - offset;
+    if (rel <= show - 1) return padL + (rel / Math.max(1, show - 1)) * chartW;
+    const extra = rel - (show - 1);
+    return padL + chartW + (extra / Math.max(1, futureBars)) * futureW;
+  };
   const yAt = (v) => padT + ((maxV - v) / range) * chartH;
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -205,9 +250,17 @@ function renderGannForecastSvg(candles, analysis) {
   svg.style.background = 'linear-gradient(180deg, #0b1220, #070c14)';
   svg.style.borderRadius = '12px';
 
+  // Clip path for Fan/Box overlays so rays never spill outside chart frame
+  const clipId = 'gannClip_' + Math.random().toString(36).slice(2, 7);
+  const defs = svgEl('defs', {});
+  const clip = svgEl('clipPath', { id: clipId });
+  clip.appendChild(svgEl('rect', { x: padL, y: padT, width: width - padL - 8, height: chartH }));
+  defs.appendChild(clip);
+  svg.appendChild(defs);
+
   // Future Forecast Zone Background
   svg.appendChild(svgEl('rect', {
-    x: padL + chartW, y: padT, width: padR - 8, height: chartH,
+    x: padL + chartW, y: padT, width: futureW, height: chartH,
     fill: 'rgba(167, 139, 250, 0.07)', stroke: 'rgba(167, 139, 250, 0.3)', 'stroke-dasharray': '4,4',
   }));
   svg.appendChild(svgEl('text', {
@@ -222,13 +275,76 @@ function renderGannForecastSvg(candles, analysis) {
     svg.appendChild(svgEl('text', { x: 4, y: y + 4, fill: '#8fa3bf', 'font-size': '10' }, val >= 100 ? val.toFixed(0) : val.toFixed(2)));
   }
 
+  // Optional W.D. Gann Box (Square of Price & Time) Overlay
+  if (cfg.showBoxOnChart && analysis.gannBox) {
+    const box = analysis.gannBox;
+    const bx1 = Math.max(padL, xAtGlobal(box.startIdx));
+    const bx2 = Math.min(width - 8, xAtGlobal(box.endIdx));
+    const by1 = Math.max(padT, yAt(box.high));
+    const by2 = Math.min(padT + chartH, yAt(box.low));
+    const gBox = svgEl('g', { 'clip-path': `url(#${clipId})` });
+    gBox.appendChild(svgEl('rect', {
+      x: bx1, y: by1, width: Math.max(4, bx2 - bx1), height: Math.max(4, by2 - by1),
+      fill: 'rgba(56, 189, 248, 0.05)', stroke: 'rgba(56, 189, 248, 0.55)', 'stroke-width': 1.2,
+    }));
+    // 1x1 box diagonals
+    gBox.appendChild(svgEl('line', { x1: bx1, y1: by2, x2: bx2, y2: by1, stroke: 'rgba(46, 204, 113, 0.45)', 'stroke-dasharray': '4,3', 'stroke-width': 1 }));
+    gBox.appendChild(svgEl('line', { x1: bx1, y1: by1, x2: bx2, y2: by2, stroke: 'rgba(240, 91, 91, 0.45)', 'stroke-dasharray': '4,3', 'stroke-width': 1 }));
+    for (const pl of box.priceLines.filter((p) => p.ratio === 0.25 || p.ratio === 0.5 || p.ratio === 0.75)) {
+      const py = yAt(pl.price);
+      gBox.appendChild(svgEl('line', { x1: bx1, x2: bx2, y1: py, y2: py, stroke: pl.ratio === 0.5 ? 'rgba(242, 204, 96, 0.65)' : 'rgba(56, 189, 248, 0.3)', 'stroke-dasharray': '3,3', 'stroke-width': pl.ratio === 0.5 ? 1.3 : 0.9 }));
+    }
+    for (const tl of box.timeLines) {
+      const tx = xAtGlobal(tl.idx);
+      if (tx > bx1 && tx < bx2) {
+        gBox.appendChild(svgEl('line', { x1: tx, x2: tx, y1: by1, y2: by2, stroke: 'rgba(56, 189, 248, 0.25)', 'stroke-dasharray': '2,4', 'stroke-width': 0.9 }));
+      }
+    }
+    svg.appendChild(gBox);
+  }
+
+  // Optional Full 9-Angle W.D. Gann Fan Overlay (from gannFan.png / Gann Explained)
+  if (cfg.showFanOnChart !== false && analysis.gannFan?.rays?.length) {
+    const fan = analysis.gannFan;
+    const gFan = svgEl('g', { 'clip-path': `url(#${clipId})` });
+    const ax = xAtGlobal(fan.anchorIdx);
+    const ay = yAt(fan.anchorPrice);
+    const endGlobal = candles.length - 1 + futureBars;
+    const fxEnd = xAtGlobal(endGlobal);
+
+    for (const ray of fan.rays) {
+      const fyEnd = yAt(ray.projectedFuture);
+      gFan.appendChild(svgEl('line', {
+        x1: ax, y1: ay, x2: fxEnd, y2: fyEnd,
+        stroke: ray.color,
+        'stroke-opacity': ray.id === '1x1' ? 0.95 : ray.isMain ? 0.68 : 0.36,
+        'stroke-width': ray.id === '1x1' ? 2.1 : ray.isMain ? 1.3 : 0.9,
+        'stroke-dasharray': ray.id === '1x1' ? '0' : '4,3',
+      }));
+      const fyNow = yAt(ray.projectedNow);
+      if (fyNow >= padT + 10 && fyNow <= padT + chartH - 8) {
+        gFan.appendChild(svgEl('text', {
+          x: padL + chartW - 32, y: fyNow - 3,
+          fill: ray.color, 'font-size': ray.id === '1x1' ? '10' : '8.5',
+          'font-weight': ray.id === '1x1' ? '800' : '600',
+        }, ray.id));
+      }
+    }
+    // Fan Origin Marker
+    gFan.appendChild(svgEl('circle', {
+      cx: ax, cy: ay, r: 5.5,
+      fill: '#facc15', stroke: '#070c14', 'stroke-width': 1.5,
+    }));
+    svg.appendChild(gFan);
+  }
+
   // Square of 9 Levels
   for (const lvl of nearbySq9) {
     const y = yAt(lvl.price);
-    const col = lvl.isCardinal ? 'rgba(41, 98, 255, 0.85)' : 'rgba(167, 139, 250, 0.5)';
+    const col = lvl.isCardinal ? 'rgba(41, 98, 255, 0.85)' : 'rgba(167, 139, 250, 0.45)';
     svg.appendChild(svgEl('line', {
       x1: padL, x2: width - 8, y1: y, y2: y,
-      stroke: col, 'stroke-width': lvl.isCardinal ? 1.4 : 1, 'stroke-dasharray': lvl.isCardinal ? '0' : '4,4',
+      stroke: col, 'stroke-width': lvl.isCardinal ? 1.3 : 0.9, 'stroke-dasharray': lvl.isCardinal ? '0' : '4,4',
     }));
     svg.appendChild(svgEl('text', {
       x: padL + chartW + 8, y: y - 3, fill: lvl.isCardinal ? '#7dd3fc' : '#c4b5fd', 'font-size': '9.5',
@@ -238,6 +354,19 @@ function renderGannForecastSvg(candles, analysis) {
   // Price Polyline
   const pts = closes.map((c, i) => `${xAt(i).toFixed(1)},${yAt(c).toFixed(1)}`).join(' ');
   svg.appendChild(svgEl('polyline', { points: pts, fill: 'none', stroke: '#2ecc71', 'stroke-width': 2 }));
+
+  // Optional W.D. Gann Swing Chart Overlay (2-Bar / 3-Bar Swing Trend Line)
+  if (cfg.showSwingOnChart && analysis.swingChart?.swings?.length >= 2) {
+    const swingPts = analysis.swingChart.swings
+      .filter((s) => s.idx >= offset)
+      .map((s) => `${xAt(s.idx - offset).toFixed(1)},${yAt(s.price).toFixed(1)}`)
+      .join(' ');
+    if (swingPts) {
+      svg.appendChild(svgEl('polyline', {
+        points: swingPts, fill: 'none', stroke: '#facc15', 'stroke-width': 1.8, 'stroke-linejoin': 'round',
+      }));
+    }
+  }
 
   // Proven Fundamental Events Stars on Chart
   for (const fe of analysis.fundamentalProof.events) {
@@ -279,80 +408,210 @@ function renderGannForecastSvg(candles, analysis) {
   return svg;
 }
 
-// Interactive Gannzilla Wheel (Square of 9 / Hexagon 60° / Cosmogram Seasonal Calendar)
-function renderGannzillaWheelSvg(analysis, mode) {
-  const size = 310;
+// Interactive Gannzilla Pro v8.3 Wheel (7 Layouts + Protractor Geometry + Chronometer + Planetary Cosmogram)
+function renderGannzillaWheelSvg(analysis, cfg = DEFAULT_GANNZILLA_CONFIG) {
+  const size = 340;
   const cx = size / 2;
   const cy = size / 2;
+  const rot = Number(cfg.angleOffset) || 0;
+  const dirSign = cfg.clockwise === false ? -1 : 1;
+  const radFor = (deg) => (((deg * dirSign + rot) - 90) * Math.PI) / 180;
+
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
   svg.style.width = '100%';
-  svg.style.maxWidth = '310px';
+  svg.style.maxWidth = '340px';
   svg.style.height = 'auto';
   svg.style.display = 'block';
   svg.style.margin = '0 auto';
-  svg.style.background = 'radial-gradient(circle, #101b30 0%, #070c14 75%)';
+  svg.style.background = 'radial-gradient(circle, #101b30 0%, #070c14 78%)';
   svg.style.borderRadius = '50%';
   svg.style.border = '1px solid #1e2d45';
 
-  const radii = [42, 78, 114, 142];
-  for (const r of radii) {
-    svg.appendChild(svgEl('circle', { cx, cy, r, fill: 'none', stroke: '#1b2a42', 'stroke-width': 1 }));
+  // Concentric rings (inner wheel + outer chronometer/cosmogram rings)
+  for (const r of [40, 74, 108, 136, 158]) {
+    svg.appendChild(svgEl('circle', {
+      cx, cy, r, fill: 'none',
+      stroke: r === 136 ? '#263a5c' : '#1b2a42',
+      'stroke-width': r === 136 ? 1.3 : 1,
+    }));
+  }
+
+  // Outer Chronometer Date Ring (0° = Mar 21 Vernal Equinox)
+  if (cfg.showChronometer !== false || cfg.layout === 'cosmos') {
+    const seasonal = analysis.calendars?.seasonalTemplates || [];
+    for (const s of seasonal) {
+      const rad = radFor(s.deg);
+      const tx = cx + Math.cos(rad) * 147;
+      const ty = cy + Math.sin(rad) * 147;
+      svg.appendChild(svgEl('text', {
+        x: tx, y: ty + 3, fill: s.deg % 90 === 0 ? '#f2cc60' : '#7c8ea6',
+        'font-size': s.deg % 90 === 0 ? '8.5' : '7.5', 'font-weight': s.deg % 90 === 0 ? '700' : '400',
+        'text-anchor': 'middle',
+      }, s.mmdd));
+    }
+  }
+
+  // Outer Cosmogram Planetary Longitude Markers (real approximate ecliptic longitudes)
+  if (cfg.showCosmogram !== false && analysis.cosmogram?.planets?.length) {
+    for (const pl of analysis.cosmogram.planets) {
+      const rad = radFor(pl.lon);
+      const px = cx + Math.cos(rad) * 126;
+      const py = cy + Math.sin(rad) * 126;
+      svg.appendChild(svgEl('circle', { cx: px, cy: py, r: 8.5, fill: '#08101d', stroke: pl.color, 'stroke-width': 1.2 }));
+      svg.appendChild(svgEl('text', {
+        x: px, y: py + 3.5, fill: pl.color, 'font-size': '10', 'font-weight': '700', 'text-anchor': 'middle',
+      }, pl.glyph));
+    }
+  }
+
+  // Gannzilla Protractor Geometric Figure Overlay
+  const prot = cfg.protractor || 'cross';
+  const polyR = 108;
+  const drawPolygon = (sides, strokeCol, offsetDeg = 0) => {
+    const pts = [];
+    for (let i = 0; i < sides; i++) {
+      const rad = radFor((i * 360) / sides + offsetDeg);
+      pts.push(`${(cx + Math.cos(rad) * polyR).toFixed(1)},${(cy + Math.sin(rad) * polyR).toFixed(1)}`);
+    }
+    svg.appendChild(svgEl('polygon', {
+      points: pts.join(' '), fill: 'rgba(56, 189, 248, 0.06)',
+      stroke: strokeCol, 'stroke-width': 1.5, 'stroke-dasharray': '4,2',
+    }));
+  };
+  if (prot === 'square') drawPolygon(4, '#38bdf8', 0);
+  else if (prot === 'triangle') drawPolygon(3, '#f59e0b', 0);
+  else if (prot === 'hexagon') drawPolygon(6, '#2ecc71', 0);
+  else if (prot === 'pentagon') drawPolygon(5, '#ec4899', 0);
+  else if (prot === 'octagon') drawPolygon(8, '#a78bfa', 0);
+  else if (prot === 'cross') {
+    for (const d of [0, 90, 180, 270]) {
+      const rad = radFor(d);
+      svg.appendChild(svgEl('line', {
+        x1: cx + Math.cos(rad) * 30, y1: cy + Math.sin(rad) * 30,
+        x2: cx + Math.cos(rad) * 134, y2: cy + Math.sin(rad) * 134,
+        stroke: 'rgba(59, 130, 246, 0.72)', 'stroke-width': 1.5,
+      }));
+    }
+    for (const d of [45, 135, 225, 315]) {
+      const rad = radFor(d);
+      svg.appendChild(svgEl('line', {
+        x1: cx + Math.cos(rad) * 30, y1: cy + Math.sin(rad) * 30,
+        x2: cx + Math.cos(rad) * 134, y2: cy + Math.sin(rad) * 134,
+        stroke: 'rgba(167, 139, 250, 0.4)', 'stroke-width': 1, 'stroke-dasharray': '3,3',
+      }));
+    }
   }
 
   // Center Anchor
-  svg.appendChild(svgEl('circle', { cx, cy, r: 28, fill: 'rgba(41, 98, 255, 0.18)', stroke: '#3b82f6', 'stroke-width': 1.5 }));
-  svg.appendChild(svgEl('text', { x: cx, y: cy - 3, fill: '#93c5fd', 'font-size': '9', 'text-anchor': 'middle' }, 'ANCHOR'));
-  svg.appendChild(svgEl('text', { x: cx, y: cy + 10, fill: '#fff', 'font-size': '11', 'font-weight': '700', 'text-anchor': 'middle' }, num(analysis.anchorPivot.price, 2)));
+  svg.appendChild(svgEl('circle', { cx, cy, r: 29, fill: 'rgba(41, 98, 255, 0.2)', stroke: '#3b82f6', 'stroke-width': 1.5 }));
+  svg.appendChild(svgEl('text', { x: cx, y: cy - 5, fill: '#93c5fd', 'font-size': '8', 'text-anchor': 'middle' }, (cfg.layout || 'sq9').toUpperCase()));
+  svg.appendChild(svgEl('text', { x: cx, y: cy + 8, fill: '#fff', 'font-size': '10.5', 'font-weight': '700', 'text-anchor': 'middle' }, num(analysis.anchorPivot.price, 2)));
 
-  if (mode === 'cosmos') {
-    const items = analysis.calendars.seasonalTemplates;
-    items.forEach((s) => {
-      const rad = ((s.deg - 90) * Math.PI) / 180;
-      const x1 = cx + Math.cos(rad) * 30;
-      const y1 = cy + Math.sin(rad) * 30;
-      const x2 = cx + Math.cos(rad) * 140;
-      const y2 = cy + Math.sin(rad) * 140;
-      const isCard = s.deg % 90 === 0;
-      svg.appendChild(svgEl('line', {
-        x1, y1, x2, y2,
-        stroke: isCard ? 'rgba(242, 204, 96, 0.75)' : 'rgba(167, 139, 250, 0.45)',
-        'stroke-width': isCard ? 1.5 : 1,
-      }));
-      const tx = cx + Math.cos(rad) * 116;
-      const ty = cy + Math.sin(rad) * 116;
-      svg.appendChild(svgEl('circle', { cx: tx, cy: ty, r: 15, fill: '#0b1220', stroke: isCard ? '#f2cc60' : '#a78bfa' }));
-      svg.appendChild(svgEl('text', { x: tx, y: ty + 3, fill: '#e2e8f0', 'font-size': '8.5', 'text-anchor': 'middle' }, s.mmdd));
-    });
+  if (cfg.layout === 'cosmos') {
+    // Highlight current market angle pointer
+    const mRad = radFor(analysis.msjSq9?.wheelAngle || 0);
+    svg.appendChild(svgEl('line', {
+      x1: cx, y1: cy, x2: cx + Math.cos(mRad) * 110, y2: cy + Math.sin(mRad) * 110,
+      stroke: '#2ecc71', 'stroke-width': 2,
+    }));
     return svg;
   }
 
-  const degs = mode === 'hex' ? [60, 120, 180, 240, 300, 360] : [45, 90, 135, 180, 225, 270, 315, 360];
-  const table = mode === 'hex' ? analysis.hexLevels : analysis.sq9Levels;
+  const layoutLevels = computeGannzillaLayoutLevels(analysis.anchorPivot.price, analysis.currentPrice, cfg.layout || 'sq9');
+  const degs = cfg.layout === 'hex'
+    ? [60, 120, 180, 240, 300, 360]
+    : cfg.layout === 'tri'
+      ? [120, 240, 360]
+      : cfg.layout === 'sq4'
+        ? [90, 180, 270, 360]
+        : cfg.layout === 'wheel24'
+          ? [30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360]
+          : [45, 90, 135, 180, 225, 270, 315, 360];
+
+  const nodeR = degs.length > 8 ? 14 : 18;
+  const ringR = degs.length > 8 ? 96 : 94;
 
   degs.forEach((deg) => {
-    const rad = ((deg - 90) * Math.PI) / 180;
-    const isCard = mode === 'hex' ? deg % 180 === 0 : deg % 90 === 0;
-    const x1 = cx + Math.cos(rad) * 30;
-    const y1 = cy + Math.sin(rad) * 30;
-    const x2 = cx + Math.cos(rad) * 142;
-    const y2 = cy + Math.sin(rad) * 142;
-    svg.appendChild(svgEl('line', {
-      x1, y1, x2, y2,
-      stroke: isCard ? 'rgba(41, 98, 255, 0.7)' : 'rgba(167, 139, 250, 0.35)',
-      'stroke-width': isCard ? 1.5 : 1,
-    }));
-
-    const upLvl = table.find((l) => l.degree === deg);
-    const tx = cx + Math.cos(rad) * 110;
-    const ty = cy + Math.sin(rad) * 110;
-    svg.appendChild(svgEl('circle', { cx: tx, cy: ty, r: 19, fill: '#0b1220', stroke: isCard ? '#3b82f6' : '#a78bfa' }));
-    svg.appendChild(svgEl('text', { x: tx, y: ty - 2, fill: '#93c5fd', 'font-size': '8', 'text-anchor': 'middle' }, `${deg}°`));
-    svg.appendChild(svgEl('text', { x: tx, y: ty + 9, fill: '#2ecc71', 'font-size': '8.5', 'font-weight': '700', 'text-anchor': 'middle' },
-      upLvl ? (upLvl.price >= 100 ? upLvl.price.toFixed(0) : upLvl.price.toFixed(2)) : '—'));
+    const rad = radFor(deg);
+    const isCard = deg % 90 === 0 || (cfg.layout === 'hex' && deg % 180 === 0) || (cfg.layout === 'tri' && deg % 120 === 0);
+    const upLvl = layoutLevels.find((l) => Math.abs(l.degree - deg) <= 2);
+    const tx = cx + Math.cos(rad) * ringR;
+    const ty = cy + Math.sin(rad) * ringR;
+    svg.appendChild(svgEl('circle', { cx: tx, cy: ty, r: nodeR, fill: '#0b1220', stroke: isCard ? '#3b82f6' : '#a78bfa', 'stroke-width': isCard ? 1.4 : 1 }));
+    svg.appendChild(svgEl('text', { x: tx, y: ty - 2, fill: '#93c5fd', 'font-size': degs.length > 8 ? '7' : '7.5', 'text-anchor': 'middle' }, `${deg}°`));
+    svg.appendChild(svgEl('text', { x: tx, y: ty + 8, fill: '#2ecc71', 'font-size': degs.length > 8 ? '7' : '8', 'font-weight': '700', 'text-anchor': 'middle' },
+      upLvl?.price != null ? (upLvl.price >= 100 ? upLvl.price.toFixed(0) : upLvl.price.toFixed(2)) : '—'));
   });
 
+  // Current Price Wheel Angle Needle
+  if (analysis.msjSq9?.wheelAngle != null) {
+    const pRad = radFor(analysis.msjSq9.wheelAngle);
+    svg.appendChild(svgEl('line', {
+      x1: cx + Math.cos(pRad) * 30, y1: cy + Math.sin(pRad) * 30,
+      x2: cx + Math.cos(pRad) * 112, y2: cy + Math.sin(pRad) * 112,
+      stroke: '#facc15', 'stroke-width': 2, 'stroke-linecap': 'round',
+    }));
+  }
+
   return svg;
+}
+
+// Interactive MSJ_GannSQ9 Odd-Square Spiral Matrix
+function renderMsjSq9Matrix(msj, onSelectCell, selectedCell) {
+  if (!msj?.grid?.length) return empty('אין נתוני מטריצת MSJ_GannSQ9');
+  const dim = msj.dim;
+  return h('div', { style: { overflowX: 'auto' } },
+    h('div', {
+      dir: 'ltr',
+      style: {
+        display: 'grid',
+        gridTemplateColumns: `repeat(${dim}, minmax(42px, 1fr))`,
+        gap: '3px',
+        padding: '6px',
+        background: '#060b13',
+        borderRadius: '10px',
+        border: '1px solid #1e2d45',
+      },
+    }, msj.grid.flat().map((cell) => {
+      const isSel = selectedCell && selectedCell.row === cell.row && selectedCell.col === cell.col;
+      let bg = '#0e1726';
+      let border = '1px solid #1a2840';
+      let col = '#cbd5e1';
+      if (cell.isCenter) { bg = 'rgba(242, 204, 96, 0.25)'; border = '1px solid #f2cc60'; col = '#fde047'; }
+      else if (cell.isCardinal) { bg = 'rgba(59, 130, 246, 0.22)'; border = '1px solid rgba(59, 130, 246, 0.65)'; col = '#93c5fd'; }
+      else if (cell.isOrdinal) { bg = 'rgba(167, 139, 250, 0.18)'; border = '1px solid rgba(167, 139, 250, 0.5)'; col = '#d8b4fe'; }
+      if (cell.isClosest) { bg = 'rgba(46, 204, 113, 0.32)'; border = '2px solid #2ecc71'; col = '#ffffff'; }
+      if (isSel) { border = '2px solid #facc15'; }
+      const label = cell.scaledPrice >= 1000 ? Math.round(cell.scaledPrice) : cell.scaledPrice >= 10 ? +cell.scaledPrice.toFixed(1) : +cell.scaledPrice.toFixed(3);
+      return h('button', {
+        type: 'button',
+        title: `מחיר: ${cell.scaledPrice} | זווית: ${cell.angleDeg}° | טבעת #${cell.ring} | מרחק: ${cell.distPct}%`,
+        onclick: () => onSelectCell(cell),
+        style: {
+          background: bg,
+          border,
+          color: col,
+          borderRadius: '5px',
+          padding: '5px 2px',
+          fontSize: '10.5px',
+          fontFamily: 'var(--mono, monospace)',
+          fontWeight: cell.isClosest || cell.isCenter || cell.isCardinal ? '700' : '400',
+          cursor: 'pointer',
+          textAlign: 'center',
+        },
+      }, String(label));
+    })),
+    h('div', { class: 'row wrap', style: { gap: '10px', marginTop: '8px', fontSize: '11px' } },
+      h('span', { style: { color: '#93c5fd' }, text: '■ צלב קרדינלי (0°/90°/180°/270°)' }),
+      h('span', { style: { color: '#d8b4fe' }, text: '■ צלב אורדינלי (45°/135°/225°/315°)' }),
+      h('span', { style: { color: '#2ecc71' }, text: '■ תא הקרוב למחיר השוק' }),
+      h('span', { style: { color: '#fde047' }, text: '■ ערך התחלה (מרכז)' }),
+    ),
+    selectedCell ? h('div', { class: 'notice', style: { marginTop: '8px', fontSize: '12px' } },
+      `תא נבחר: מחיר ${num(selectedCell.scaledPrice, 4)} (מספר ${selectedCell.rawNumber}) · זווית ${selectedCell.angleDeg}° · טבעת #${selectedCell.ring} · מרחק מהשוק ${pct(selectedCell.distPct)} · סוג: ${selectedCell.isCenter ? 'מרכז' : selectedCell.isCardinal ? 'קרדינלי (90°)' : selectedCell.isOrdinal ? 'אורדינלי (45°)' : 'רגיל'}`,
+    ) : null,
+  );
 }
 
 export function renderGann(root, ui) {
@@ -366,9 +625,9 @@ export function renderGann(root, ui) {
   mount(root,
     h('div', { class: 'page-head' },
       h('div', {},
-        h('div', { class: 'eyebrow', text: 'Gannzilla · Michael Jenkins · Square of 9 · Hexagon · Fundamental Proof' }),
-        h('h1', { text: 'מעבדת גאן המורחבת (Gannzilla & Jenkins Lab)' }),
-        h('p', { text: 'מערכת חיזוי ויזואלית רב-נכסית הממזגת את Square of 9, הקסגון 60°, מחשבוני השורש הריבועי והשמיניות של מייקל ג׳נקינס, לוח השנה של Gannzilla והוכחה היסטורית מול אירועים פונדמנטליסטיים.' }),
+        h('div', { class: 'eyebrow', text: 'Gannzilla Pro v8.3 · MSJ_GannSQ9 · W.D. Gann Fan & Trading Tools · Fundamental Proof' }),
+        h('h1', { text: 'מעבדת גאן המלאה (Gannzilla Pro · MSJ_GannSQ9 · Gann Fan)' }),
+        h('p', { text: 'מערכת מחקר וחיזוי רב-נכסית המאחדת מניפת גאן (9 זוויות), תיבת גאן, סווינג גאן (Gann Explained), מטריצת MSJ_GannSQ9, גלגל Gannzilla Pro v8.3 עם ייבוא Gannzilla.ini, קוסמוגרם פלנטרי והוכחה מול אירועים פונדמנטליסטיים.' }),
       ),
       h('div', { class: 'head-actions' },
         h('select', {
@@ -497,63 +756,232 @@ export function renderGann(root, ui) {
     return;
   }
 
+  const cfg = getGannzillaConfig();
+  const effScale = cfg.scale === 'auto' || !Number(cfg.scale) ? autoScaleForPrice(a.currentPrice) : Number(cfg.scale);
+  const activeMsjPrice = gannViewState.msjCustomPrice && Number(gannViewState.msjCustomPrice) > 0
+    ? Number(gannViewState.msjCustomPrice)
+    : a.currentPrice;
+  const activeMsj = activeMsjPrice === a.currentPrice && a.msjSq9
+    ? a.msjSq9
+    : computeMsjSq9Analysis(activeMsjPrice, {
+      startValue: cfg.startValue || 1,
+      increment: cfg.increment || 1,
+      scale: effScale,
+      ringCount: cfg.ringCount || 5,
+      clockwise: cfg.clockwise !== false,
+      angleOffset: cfg.angleOffset || 0,
+    });
+
+  // Hidden file input for real Gannzilla-Pro-v.8.3\Gannzilla.ini import
+  const iniInput = h('input', {
+    type: 'file',
+    accept: '.ini,.txt',
+    style: { display: 'none' },
+    onchange: async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const { config, keyCount } = parseGannzillaIni(text, file.name);
+        updateGannzillaConfig(config, ui, { reloadAnalysis: true });
+        toast(`קובץ ${file.name} יובא בהצלחה (${keyCount} פרמטרים · פריסה ${config.layout.toUpperCase()})`, 'ok');
+      } catch (err) {
+        toast('ייבוא Gannzilla.ini נכשל: ' + err.message, 'bad');
+      } finally {
+        e.target.value = '';
+      }
+    },
+  });
+
+  const fanIconEl = h('img', {
+    src: './assets/gann-fan-icon.png',
+    alt: 'Gann Fan',
+    style: { width: '16px', height: '16px', verticalAlign: 'middle', marginInlineEnd: '5px', filter: 'invert(1) brightness(1.3)', borderRadius: '2px' },
+  });
+
   mount(root,
+    iniInput,
     // KPI Row
     h('div', { class: 'grid cols-4', style: { marginTop: '14px' } },
-      h('div', { class: 'metric' }, h('span', { text: 'טווח היסטורי נבדק' }), h('b', { text: `${a.spanDays} ימים (${a.candlesCount} נרות)` })),
+      h('div', { class: 'metric' }, h('span', { text: 'ציון התכנסות גאן (Gann Explained)' }), h('b', { class: (a.confluence?.score || 0) >= 65 ? 'green mono' : 'gold mono', text: `${a.confluence?.score ?? 0}/100 · ${a.swingChart?.trend === 'bullish' ? 'סווינג עולה' : a.swingChart?.trend === 'bearish' ? 'סווינג יורד' : 'דשדוש'}` })),
       h('div', { class: 'metric' }, h('span', { text: 'דיוק חיזוי צירים בעבר' }), h('b', { class: a.hitRatePct >= 50 ? 'green mono' : 'gold mono', text: `${a.hitRatePct}% (${a.totalHits}/${a.totalTests})` })),
       h('div', { class: 'metric' }, h('span', { text: 'אירועים פונדמנטליסטיים שנחזו ע"י גאן' }), h('b', { class: 'green mono', text: `${a.fundamentalProof.matchedCount}/${a.fundamentalProof.totalInSpan} (${a.fundamentalProof.matchRatePct}%)` })),
-      h('div', { class: 'metric' }, h('span', { text: 'טבעת Sq9 · זווית 1x1' }), h('b', { class: a.angle1x1?.abovePrice ? 'green' : 'red', text: `טבעת #${a.jenkins.ringNumber} · ${a.angle1x1?.abovePrice ? 'מעל 1x1 (שורי)' : 'מתחת ל-1x1 (דובי)'}` })),
+      h('div', { class: 'metric' }, h('span', { text: 'MSJ Sq9 · מניפת 1x1' }), h('b', { class: a.angle1x1?.abovePrice ? 'green' : 'red', text: `טבעת #${a.jenkins.ringNumber} (${a.msjSq9?.wheelAngle ?? 0}°) · ${a.angle1x1?.abovePrice ? 'מעל 1x1' : 'מתחת ל-1x1'}` })),
     ),
 
-    // Main Forecast SVG Chart
+    // Main Forecast SVG Chart + Interactive Gann Fan / Gann Box / Gann Swing Overlay Toolbar
     h('div', { class: 'card', style: { marginTop: '14px' } },
       h('div', { class: 'card-head' },
         h('div', {},
-          h('h2', { text: `${gannViewState.symbol} · מפת חיזוי ויזואלית (${marketState.provider || 'חי'})` }),
-          h('div', { class: 'card-sub', text: '★ כוכב זהב = אירוע פונדמנטליסטי שנחזה מראש ע"י מחזורי גאן · קווים אופקיים = Square of 9 · אזור סגול מימין = תאריכי מפנה קרובים' }),
+          h('h2', { text: `${gannViewState.symbol} · מפת חיזוי ומניפת גאן (${marketState.provider || 'חי'})` }),
+          h('div', { class: 'card-sub', text: 'מניפת גאן 9 זוויות (8x1–1x8) · תיבת גאן · סווינג גאן · רמות Sq9 · ★ אירועים פונדמנטליסטיים שאומתו' }),
         ),
         tag(`עוגן: ${num(a.anchorPivot.price, 2)} (${a.anchorPivot.manual ? 'ידני' : a.anchorPivot.type === 'low' ? 'שפל' : 'שיא'})`, 'live'),
       ),
-      renderGannForecastSvg(gannViewState.candles, a),
+      h('div', { class: 'row wrap', style: { gap: '8px', marginBottom: '10px', alignItems: 'center' } },
+        h('button', {
+          class: `btn btn-sm ${cfg.showFanOnChart !== false ? 'btn-primary' : ''}`,
+          onclick: () => updateGannzillaConfig({ showFanOnChart: cfg.showFanOnChart === false }, ui),
+        }, fanIconEl, 'מניפת גאן (9 זוויות)'),
+        h('select', {
+          class: 'input',
+          style: { width: '120px' },
+          value: cfg.fanDirection || 'auto',
+          onchange: (e) => updateGannzillaConfig({ fanDirection: e.target.value }, ui, { reloadAnalysis: true }),
+        }, [['auto', 'כיוון: אוטומטי'], ['up', 'מניפה עולה ↑'], ['down', 'מניפה יורדת ↓']].map(([v, l]) =>
+          h('option', { value: v, selected: (cfg.fanDirection || 'auto') === v }, l)
+        )),
+        h('input', {
+          class: 'input',
+          type: 'number',
+          step: 'any',
+          placeholder: `יחידה/נר (${a.gannFan?.autoUnit || 'אוטו'})`,
+          title: 'יחידת מחיר לנר עבור זווית 1x1 (השאר ריק לאוטומטי)',
+          style: { width: '150px' },
+          value: cfg.fanScale || '',
+          onchange: (e) => updateGannzillaConfig({ fanScale: e.target.value.trim() }, ui, { reloadAnalysis: true }),
+        }),
+        h('button', {
+          class: `btn btn-sm ${cfg.showBoxOnChart ? 'btn-primary' : ''}`,
+          onclick: () => updateGannzillaConfig({ showBoxOnChart: !cfg.showBoxOnChart }, ui),
+        }, '▦ תיבת גאן (Gann Box)'),
+        h('button', {
+          class: `btn btn-sm ${cfg.showSwingOnChart ? 'btn-primary' : ''}`,
+          onclick: () => updateGannzillaConfig({ showSwingOnChart: !cfg.showSwingOnChart }, ui),
+        }, `∿ סווינג גאן (${cfg.swingBarMode || 2}-Bar)`),
+        h('select', {
+          class: 'input',
+          style: { width: '115px' },
+          value: String(cfg.swingBarMode || 2),
+          onchange: (e) => updateGannzillaConfig({ swingBarMode: Number(e.target.value) || 2 }, ui, { reloadAnalysis: true }),
+        }, [['1', '1-Bar Swing'], ['2', '2-Bar Swing'], ['3', '3-Bar Swing']].map(([v, l]) =>
+          h('option', { value: v, selected: String(cfg.swingBarMode || 2) === v }, l)
+        )),
+      ),
+      renderGannForecastSvg(gannViewState.candles, a, cfg),
+      a.gannFan?.ruleOfAllAngles
+        ? h('div', { class: 'small muted', style: { marginTop: '8px' }, text: a.gannFan.ruleOfAllAngles })
+        : null,
     ),
 
-    // Gannzilla Interactive Wheel + Michael Jenkins / Excel Suite
+    // Gannzilla Pro v8.3 Interactive Wheel (+ Gannzilla.ini Import/Export) + MSJ_GannSQ9 / Gann Fan / Jenkins Suite
     h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },
       h('div', { class: 'card' },
         h('div', { class: 'card-head' },
           h('div', {},
-            h('h2', { text: '☸️ גלגל Gannzilla האינטראקטיבי' }),
-            h('div', { class: 'card-sub', text: 'מעבר בין Square of 9, הקסגון (60°) ולוח השנה העונתי-אסטרונומי' }),
+            h('h2', { text: '☸️ Gannzilla Pro v8.3 · גלגל רב-פריסות + מד-זווית + קוסמוגרם' }),
+            h('div', { class: 'card-sub', text: cfg.iniFileName ? `נטען קובץ תצורה: ${cfg.iniFileName} · מסונכרן בין מכשירים` : 'תואם Gannzilla Pro v8.3 (Sq9 / Sq4 / Sq144 / הקסגון / משולש / גלגל 24 / קוסמוגרם + ייבוא .ini)' }),
           ),
-          h('div', { class: 'row', style: { gap: '6px' } },
-            [['sq9', 'Square of 9'], ['hex', 'הקסגון 60°'], ['cosmos', 'לוח שנה עונתי']].map(([id, lbl]) =>
-              h('button', {
-                class: `btn btn-sm ${gannViewState.wheelMode === id ? 'btn-primary' : ''}`,
-                onclick: () => { gannViewState.wheelMode = id; ui.rerender(); },
-              }, lbl)
-            ),
+          h('div', { class: 'row wrap', style: { gap: '6px' } },
+            h('button', { class: 'btn btn-sm btn-primary', onclick: () => iniInput.click() }, '⬆ ייבוא Gannzilla.ini'),
+            h('button', {
+              class: 'btn btn-sm btn-ghost',
+              onclick: () => {
+                downloadFile('Gannzilla.ini', exportGannzillaIni(cfg), 'text/plain');
+                toast('קובץ Gannzilla.ini יוצא בהצלחה', 'ok');
+              },
+            }, '⬇ ייצוא .ini'),
           ),
         ),
-        renderGannzillaWheelSvg(a, gannViewState.wheelMode),
-        h('div', { class: 'tiny muted', style: { marginTop: '10px', textAlign: 'center' }, text: gannViewState.wheelMode === 'cosmos'
-          ? 'תאריכי המפנה העונתיים של גאן (21.3, 5.5, 21.6, 7.8, 23.9, 7.11, 21.12, 4.2)'
-          : `טבעת מספר #${a.jenkins.ringNumber} · טווח שיא-שפל: ${num(a.jenkins.swingLow, 2)} – ${num(a.jenkins.swingHigh, 2)}` }),
+        // Gannzilla Pro Layout Buttons
+        h('div', { class: 'row wrap', style: { gap: '5px', marginBottom: '8px' } },
+          [
+            ['sq9', 'Square of 9'],
+            ['sq4', 'Square of 4'],
+            ['sq144', 'Square of 144'],
+            ['hex', 'הקסגון 60°'],
+            ['tri', 'משולש 120°'],
+            ['wheel24', 'גלגל 24'],
+            ['cosmos', 'Cosmogram'],
+          ].map(([id, lbl]) =>
+            h('button', {
+              class: `btn btn-sm ${(cfg.layout || 'sq9') === id ? 'btn-primary' : ''}`,
+              onclick: () => updateGannzillaConfig({ layout: id }, ui),
+            }, lbl)
+          ),
+        ),
+        // Gannzilla Pro Protractor, Rotation, Start Value, Increment, Direction Controls
+        h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '10px', alignItems: 'center' } },
+          h('select', {
+            class: 'input',
+            style: { width: '145px' },
+            value: cfg.protractor || 'cross',
+            onchange: (e) => updateGannzillaConfig({ protractor: e.target.value }, ui),
+          }, [
+            ['cross', 'מד-זווית: צלב 90°/45°'],
+            ['square', 'מד-זווית: ריבוע 90°'],
+            ['triangle', 'מד-זווית: משולש 120°'],
+            ['hexagon', 'מד-זווית: הקסגון 60°'],
+            ['pentagon', 'מד-זווית: מחומש 72°'],
+            ['octagon', 'מד-זווית: מתומן 45°'],
+            ['none', 'מד-זווית: ללא'],
+          ].map(([v, l]) => h('option', { value: v, selected: (cfg.protractor || 'cross') === v }, l))),
+          h('input', {
+            class: 'input',
+            type: 'number',
+            title: 'StartValue (ערך התחלה במרכז)',
+            placeholder: 'התחלה (1)',
+            style: { width: '82px' },
+            value: cfg.startValue ?? 1,
+            onchange: (e) => updateGannzillaConfig({ startValue: Math.max(0.001, Number(e.target.value) || 1) }, ui, { reloadAnalysis: true }),
+          }),
+          h('input', {
+            class: 'input',
+            type: 'number',
+            step: 'any',
+            title: 'Increment (קפיצת צעד)',
+            placeholder: 'צעד (1)',
+            style: { width: '74px' },
+            value: cfg.increment ?? 1,
+            onchange: (e) => updateGannzillaConfig({ increment: Math.max(0.001, Number(e.target.value) || 1) }, ui, { reloadAnalysis: true }),
+          }),
+          h('input', {
+            class: 'input',
+            type: 'number',
+            title: 'Angle Offset (סיבוב גלגל 0°–359°)',
+            placeholder: 'זווית 0°',
+            style: { width: '76px' },
+            value: cfg.angleOffset ?? 0,
+            onchange: (e) => updateGannzillaConfig({ angleOffset: ((Number(e.target.value) || 0) % 360 + 360) % 360 }, ui, { reloadAnalysis: true }),
+          }),
+          h('button', {
+            class: 'btn btn-sm',
+            onclick: () => updateGannzillaConfig({ clockwise: cfg.clockwise === false }, ui, { reloadAnalysis: true }),
+          }, cfg.clockwise === false ? '↺ נגד השעון' : '↻ עם השעון'),
+          h('button', {
+            class: `btn btn-sm ${cfg.showChronometer !== false ? 'btn-primary' : ''}`,
+            onclick: () => updateGannzillaConfig({ showChronometer: cfg.showChronometer === false }, ui),
+          }, 'כרונומטר'),
+          h('button', {
+            class: `btn btn-sm ${cfg.showCosmogram !== false ? 'btn-primary' : ''}`,
+            onclick: () => updateGannzillaConfig({ showCosmogram: cfg.showCosmogram === false }, ui),
+          }, 'כוכבים'),
+        ),
+        renderGannzillaWheelSvg(a, cfg),
+        h('div', { class: 'tiny muted', style: { marginTop: '8px', textAlign: 'center' }, text: `פריסה: ${(cfg.layout || 'sq9').toUpperCase()} · מד-זווית: ${cfg.protractor || 'cross'} · זווית מחיר נוכחי (מחט צהובה): ${a.msjSq9?.wheelAngle ?? 0}° · טבעת #${a.jenkins.ringNumber}` }),
+        // Active Planetary Longitudes Strip
+        a.cosmogram?.planets?.length
+          ? h('div', { class: 'row wrap', style: { gap: '6px', marginTop: '8px', justifyContent: 'center' } },
+            ...a.cosmogram.planets.map((pl) => tag(`${pl.glyph} ${pl.lon}°`, 'dry')),
+          )
+          : null,
       ),
 
       h('div', { class: 'card' },
         h('div', { class: 'card-head' },
           h('div', {},
-            h('h2', { text: '🧮 תוכנת מחשבוני ג׳נקינס וגאן (Jenkins & Excel Suite)' }),
-            h('div', { class: 'card-sub', text: 'מיושם מהגיליונות שלך (ריבועים, ריבוע 9, זמנים, הקסגון) + שיטות Michael Jenkins' }),
+            h('h2', { text: '🧮 מנוע MSJ_GannSQ9, מניפת גאן ומחשבוני ג׳נקינס' }),
+            h('div', { class: 'card-sub', text: 'מניפת 9 הזוויות · מטריצת Square of 9 האינטראקטיבית של MSJ_GannSQ9 · מעלות 45°–720° · זמני שורש ריבועי ושמיניות' }),
           ),
         ),
         h('div', { class: 'row', style: { gap: '6px', marginBottom: '10px', flexWrap: 'wrap' } },
           [
-            ['jenkins', '√Price ג׳נקינס + ספירלת זמן'],
-            ['eighths', 'שמיניות טווח (1/8–8/8)'],
-            ['sq9', 'טבלת Square of 9'],
-            ['hex', 'טבלת הקסגון (60°)'],
+            ['fan', 'מניפת גאן (9 זוויות)'],
+            ['msj_grid', 'מטריצת MSJ_GannSQ9'],
+            ['msj_deg', 'מעלות וזמני MSJ'],
+            ['jenkins', '√Price + ספירלה'],
+            ['eighths', 'שמיניות (1/8–8/8)'],
+            ['hex', 'הקסגון (60°)'],
           ].map(([id, lbl]) =>
             h('button', {
               class: `btn btn-sm ${gannViewState.calcTab === id ? 'btn-primary' : ''}`,
@@ -561,58 +989,181 @@ export function renderGann(root, ui) {
             }, lbl)
           ),
         ),
-        gannViewState.calcTab === 'jenkins'
-          ? h('div', { class: 'table-wrap' },
-            h('table', {},
-              h('thead', {}, h('tr', {}, h('th', { text: 'נוסחת מייקל ג׳נקינס / ספירלה' }), h('th', { text: 'ימים' }), h('th', { text: 'תאריך יעד' }))),
-              h('tbody', {}, [
-                ...a.jenkins.jenkinsTimeCycles.map((c) => h('tr', {},
-                  h('td', { class: 'small', text: c.label }),
-                  h('td', { class: 'mono', text: `+${c.days}d` }),
-                  h('td', { class: 'mono green', text: c.projectedDate }),
-                )),
-                ...a.jenkins.spiralDates.slice(0, 3).map((s) => h('tr', {},
-                  h('td', { class: 'small', text: `ספירלה פנימה (${s.sqValue} × 30.437d)` }),
-                  h('td', { class: 'mono', text: `+${s.days}d` }),
-                  h('td', { class: 'mono gold', text: s.date }),
-                )),
-              ]),
-            ),
-          )
-          : gannViewState.calcTab === 'eighths'
-            ? h('div', { class: 'table-wrap' },
+        gannViewState.calcTab === 'fan'
+          ? h('div', {},
+            h('div', { class: 'table-wrap' },
               h('table', {},
-                h('thead', {}, h('tr', {}, h('th', { text: 'חלוקת טווח (גאן)' }), h('th', { text: 'מחיר יעד' }), h('th', { text: 'חשיבות' }))),
-                h('tbody', {}, a.jenkins.eighths.map((e) => h('tr', {},
-                  h('td', { class: 'small', text: e.label }),
-                  h('td', { class: 'mono', text: num(e.price, 2) }),
-                  h('td', {}, tag(e.strong ? 'רמת מפתח' : 'משנית', e.strong ? 'live' : 'dry')),
+                h('thead', {}, h('tr', {},
+                  h('th', { text: 'זווית מניפה' }),
+                  h('th', { text: 'מעלה' }),
+                  h('th', { text: 'מחיר היום' }),
+                  h('th', { text: 'מרחק' }),
+                  h('th', { text: 'מעמד' }),
+                )),
+                h('tbody', {}, (a.gannFan?.rays || []).map((r) => h('tr', {},
+                  h('td', { class: 'small', style: { color: r.color, fontWeight: r.isMain ? '700' : '400' }, text: r.name }),
+                  h('td', { class: 'mono', text: r.degLabel }),
+                  h('td', { class: 'mono', text: num(r.projectedNow, 2) }),
+                  h('td', { class: 'mono ' + (r.distPct >= 0 ? 'green' : 'red'), text: pct(r.distPct) }),
+                  h('td', {}, tag(r.abovePrice ? 'תמיכה' : 'התנגדות', r.abovePrice ? 'live' : 'red')),
                 ))),
               ),
+            ),
+            h('div', { class: 'tiny muted', style: { marginTop: '8px' }, text: `קנה מידה פעיל: ${a.gannFan?.unitPerBar} ליחידה לנר · ${a.gannFan?.barsElapsed} נרות מהעוגן (${a.gannFan?.dir > 0 ? 'מניפה עולה מהשפל' : 'מניפה יורדת מהשיא'})` }),
+          )
+          : gannViewState.calcTab === 'msj_grid'
+            ? h('div', {},
+              h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '8px', alignItems: 'center' } },
+                h('input', {
+                  class: 'input',
+                  type: 'number',
+                  step: 'any',
+                  placeholder: `מחיר לחישוב (${num(a.currentPrice, 2)})`,
+                  style: { width: '155px' },
+                  value: gannViewState.msjCustomPrice,
+                  onchange: (e) => { gannViewState.msjCustomPrice = e.target.value; ui.rerender(); },
+                }),
+                h('select', {
+                  class: 'input',
+                  style: { width: '125px' },
+                  value: String(cfg.scale || 'auto'),
+                  onchange: (e) => updateGannzillaConfig({ scale: e.target.value === 'auto' ? 'auto' : Number(e.target.value) }, ui, { reloadAnalysis: true }),
+                }, [
+                  ['auto', `Scale: אוטו (${effScale})`],
+                  ['0.01', 'Scale ×0.01 (מט"ח)'],
+                  ['0.1', 'Scale ×0.1'],
+                  ['1', 'Scale ×1 (מניות)'],
+                  ['10', 'Scale ×10'],
+                  ['100', 'Scale ×100 (BTC)'],
+                ].map(([v, l]) => h('option', { value: v, selected: String(cfg.scale || 'auto') === v }, l))),
+                tag(`√=${activeMsj.sqrtVal} · ${activeMsj.wheelAngle}° · טבעת #${activeMsj.ring}`, 'opt'),
+              ),
+              renderMsjSq9Matrix(activeMsj, (cell) => {
+                gannViewState.selectedMsjCell = cell;
+                ui.rerender();
+              }, gannViewState.selectedMsjCell),
             )
-            : gannViewState.calcTab === 'hex'
-              ? h('div', { class: 'table-wrap' },
-                h('table', {},
-                  h('thead', {}, h('tr', {}, h('th', { text: 'זווית' }), h('th', { text: 'משמעות גיאומטרית' }), h('th', { text: 'מחיר' }), h('th', { text: 'מרחק' }))),
-                  h('tbody', {}, a.hexLevels.slice(0, 10).map((l) => h('tr', {},
-                    h('td', { class: 'mono', text: `${l.degree}°` }),
-                    h('td', { class: 'small', text: l.meaning }),
-                    h('td', { class: 'mono', text: num(l.price, 2) }),
-                    h('td', { class: 'mono ' + (l.distPct >= 0 ? 'green' : 'red'), text: pct(l.distPct) }),
-                  ))),
+            : gannViewState.calcTab === 'msj_deg'
+              ? h('div', {},
+                h('div', { class: 'table-wrap', style: { maxHeight: '260px', overflowY: 'auto' } },
+                  h('table', {},
+                    h('thead', {}, h('tr', {},
+                      h('th', { text: 'מעלת MSJ_GannSQ9' }),
+                      h('th', { text: 'יעד למעלה (+)' }),
+                      h('th', { text: 'יעד למטה (-)' }),
+                      h('th', { text: 'סוג' }),
+                    )),
+                    h('tbody', {}, (activeMsj.degreeTargets || []).map((d) => h('tr', {},
+                      h('td', { class: 'small', text: d.label }),
+                      h('td', { class: 'mono green', text: `${num(d.upPrice, 2)} (${pct(d.upDistPct)})` }),
+                      h('td', { class: 'mono red', text: d.downPrice != null ? `${num(d.downPrice, 2)} (${pct(d.downDistPct)})` : '—' }),
+                      h('td', {}, tag(d.group, d.group === 'Cardinal' ? 'live' : d.group === 'Trine' ? 'opt' : 'dry')),
+                    ))),
+                  ),
+                ),
+                h('div', { class: 'table-wrap', style: { marginTop: '10px' } },
+                  h('table', {},
+                    h('thead', {}, h('tr', {}, h('th', { text: 'המרת זמן √Price (MSJ_GannSQ9)' }), h('th', { text: '0.5×' }), h('th', { text: '1.0× (Square)' }), h('th', { text: '2.0×' }))),
+                    h('tbody', {}, (activeMsj.timeConversions || []).map((tc) => h('tr', {},
+                      h('td', { class: 'small', text: tc.unit }),
+                      h('td', { class: 'mono', text: String(tc.half) }),
+                      h('td', { class: 'mono gold', text: String(tc.val) }),
+                      h('td', { class: 'mono green', text: String(tc.mult2) }),
+                    ))),
+                  ),
                 ),
               )
-              : h('div', { class: 'table-wrap' },
-                h('table', {},
-                  h('thead', {}, h('tr', {}, h('th', { text: 'מעלה' }), h('th', { text: 'סוג' }), h('th', { text: 'מחיר' }), h('th', { text: 'מרחק' }))),
-                  h('tbody', {}, a.sq9Levels.slice(0, 10).map((l) => h('tr', {},
-                    h('td', { class: 'mono', text: `${l.degree}°` }),
-                    h('td', {}, tag(l.type, l.isCardinal ? 'live' : 'dry')),
-                    h('td', { class: 'mono', text: num(l.price, 2) }),
-                    h('td', { class: 'mono ' + (l.distPct >= 0 ? 'green' : 'red'), text: pct(l.distPct) }),
-                  ))),
-                ),
-              ),
+              : gannViewState.calcTab === 'jenkins'
+                ? h('div', { class: 'table-wrap' },
+                  h('table', {},
+                    h('thead', {}, h('tr', {}, h('th', { text: 'נוסחת מייקל ג׳נקינס / ספירלה' }), h('th', { text: 'ימים' }), h('th', { text: 'תאריך יעד' }))),
+                    h('tbody', {}, [
+                      ...a.jenkins.jenkinsTimeCycles.map((c) => h('tr', {},
+                        h('td', { class: 'small', text: c.label }),
+                        h('td', { class: 'mono', text: `+${c.days}d` }),
+                        h('td', { class: 'mono green', text: c.projectedDate }),
+                      )),
+                      ...a.jenkins.spiralDates.slice(0, 3).map((s) => h('tr', {},
+                        h('td', { class: 'small', text: `ספירלה פנימה (${s.sqValue} × 30.437d)` }),
+                        h('td', { class: 'mono', text: `+${s.days}d` }),
+                        h('td', { class: 'mono gold', text: s.date }),
+                      )),
+                    ]),
+                  ),
+                )
+                : gannViewState.calcTab === 'eighths'
+                  ? h('div', { class: 'table-wrap' },
+                    h('table', {},
+                      h('thead', {}, h('tr', {}, h('th', { text: 'חלוקת טווח (גאן)' }), h('th', { text: 'מחיר יעד' }), h('th', { text: 'חשיבות' }))),
+                      h('tbody', {}, a.jenkins.eighths.map((e) => h('tr', {},
+                        h('td', { class: 'small', text: e.label }),
+                        h('td', { class: 'mono', text: num(e.price, 2) }),
+                        h('td', {}, tag(e.strong ? 'רמת מפתח' : 'משנית', e.strong ? 'live' : 'dry')),
+                      ))),
+                    ),
+                  )
+                  : h('div', { class: 'table-wrap' },
+                    h('table', {},
+                      h('thead', {}, h('tr', {}, h('th', { text: 'זווית' }), h('th', { text: 'משמעות גיאומטרית' }), h('th', { text: 'מחיר' }), h('th', { text: 'מרחק' }))),
+                      h('tbody', {}, a.hexLevels.slice(0, 10).map((l) => h('tr', {},
+                        h('td', { class: 'mono', text: `${l.degree}°` }),
+                        h('td', { class: 'small', text: l.meaning }),
+                        h('td', { class: 'mono', text: num(l.price, 2) }),
+                        h('td', { class: 'mono ' + (l.distPct >= 0 ? 'green' : 'red'), text: pct(l.distPct) }),
+                      ))),
+                    ),
+                  ),
+      ),
+    ),
+
+    // W.D. Gann Trading Tools — Gann Explained Confluence Checklist + Swing Trend & Cosmogram Aspects
+    h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },
+      h('div', { class: 'card' },
+        h('div', { class: 'card-head' },
+          h('div', {},
+            h('h2', { text: '📐 צ׳ק-ליסט כללי המסחר של W.D. Gann (Gann Explained)' }),
+            h('div', { class: 'card-sub', text: 'בדיקה אוטומטית של 6 חוקי הליבה של גאן: זווית 1x1, כלל 50%, מד סווינג, Sq9, חלון זמן וגיבוי היסטורי' }),
+          ),
+          tag(`${a.confluence?.score ?? 0}/100 · ${a.confluence?.verdict || ''}`, (a.confluence?.score || 0) >= 65 ? 'live' : 'opt'),
+        ),
+        h('div', { class: 'table-wrap' },
+          h('table', {},
+            h('thead', {}, h('tr', {}, h('th', { text: 'כלל גאן' }), h('th', { text: 'סטטוס' }), h('th', { text: 'פירוט חי' }))),
+            h('tbody', {}, (a.confluence?.rules || []).map((rule) => h('tr', {},
+              h('td', { class: 'small', text: rule.name }),
+              h('td', {}, tag(rule.status, rule.passed ? 'live' : 'dry')),
+              h('td', { class: 'tiny muted', text: rule.detail }),
+            ))),
+          ),
+        ),
+      ),
+
+      h('div', { class: 'card' },
+        h('div', { class: 'card-head' },
+          h('div', {},
+            h('h2', { text: '🔭 סווינג גאן + היבטים פלנטריים פעילים (Cosmogram)' }),
+            h('div', { class: 'card-sub', text: 'מבנה הסווינג הפעיל לפי כללי גאן + זוויות גיאומטריות פעילות בין כוכבי הלכת היום' }),
+          ),
+          tag(a.swingChart?.trend === 'bullish' ? 'מגמת סווינג עולה' : a.swingChart?.trend === 'bearish' ? 'מגמת סווינג יורדת' : 'דשדוש', a.swingChart?.trend === 'bullish' ? 'live' : 'red'),
+        ),
+        h('div', { class: 'notice', style: { marginBottom: '10px', fontSize: '12px' }, text: a.swingChart?.rule3BarSignal || '—' }),
+        h('div', { class: 'grid cols-3', style: { gap: '8px', marginBottom: '10px' } },
+          h('div', { class: 'metric' }, h('span', { text: 'שיא סווינג אחרון' }), h('b', { class: 'mono', text: a.swingChart?.lastSwingHigh ? num(a.swingChart.lastSwingHigh.price, 2) : '—' })),
+          h('div', { class: 'metric' }, h('span', { text: 'נקודת 50% סווינג' }), h('b', { class: 'mono gold', text: a.swingChart?.midpoint50 != null ? num(a.swingChart.midpoint50, 2) : '—' })),
+          h('div', { class: 'metric' }, h('span', { text: 'שפל סווינג אחרון' }), h('b', { class: 'mono', text: a.swingChart?.lastSwingLow ? num(a.swingChart.lastSwingLow.price, 2) : '—' })),
+        ),
+        (a.cosmogram?.aspects || []).length
+          ? h('div', { class: 'table-wrap' },
+            h('table', {},
+              h('thead', {}, h('tr', {}, h('th', { text: 'זוג פלנטרי' }), h('th', { text: 'היבט (Aspect)' }), h('th', { text: 'סטייה (Orb)' }))),
+              h('tbody', {}, a.cosmogram.aspects.slice(0, 6).map((asp) => h('tr', {},
+                h('td', { class: 'small', text: `${asp.glyphs} ${asp.p1} · ${asp.p2}` }),
+                h('td', {}, tag(asp.aspect, asp.strong ? 'live' : 'dry')),
+                h('td', { class: 'mono', text: `±${asp.orb}°` }),
+              ))),
+            ),
+          )
+          : h('div', { class: 'small muted', text: 'אין היבט פלנטרי הדוק (±5°) בדיוק היום.' }),
       ),
     ),
 
