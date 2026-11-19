@@ -1,6 +1,9 @@
-// LLM access with a free-model pool in front: pick the least recently used key,
-// call it, and fall through the rest of the pool when a provider says 429 or dies.
-// Keys stay in localStorage (browser) or in GitHub Secrets (24/7 runner).
+// LLM access with a unified rotating pool + Cloudflare Worker proxies + Netlify server proxy:
+// - Picks the least recently used entry from the pool (Cloudflare Workers proxies, Groq, Gemini,
+//   OpenRouter, Cloudflare Workers AI, Z.ai, Mistral, NVIDIA, DeepSeek, OpenAI, Anthropic, etc.)
+// - Automatically falls through the rest of the pool when a provider returns 429 or fails
+// - When running in the browser and a provider blocks CORS, automatically routes via /api/llm
+//   (Netlify Function proxy) or any active Cloudflare Worker proxy in the pool.
 
 import { LLM_PROVIDERS } from './config.js';
 import { store } from './store.js';
@@ -15,10 +18,6 @@ export class LlmError extends Error {
     this.name = 'LlmError';
     this.status = status;
   }
-}
-
-function joinUrl(base, path) {
-  return (base || '').replace(/\/+$/, '').replace('{account_id}', '') + path;
 }
 
 async function readError(res) {
@@ -83,8 +82,8 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
     };
   }
 
-  if (!entry.key && entry.provider !== 'ollama' && !(isProxyChat && /\/chat$/i.test(base))) throw new LlmError('חסר מפתח API');
-  const chatUrl = /\/chat$/i.test(base) ? base : (base + '/chat/completions');
+  if (!entry.key && entry.provider !== 'ollama' && !isProxyChat) throw new LlmError('חסר מפתח API');
+  const chatUrl = /\/chat(\/completions)?$/i.test(base) ? base : (base + '/chat/completions');
   return {
     url: chatUrl,
     init: {
@@ -106,7 +105,26 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
 function extractText(shape, data) {
   if (shape === 'anthropic') return (data.content || []).map((c) => c.text || '').join('\n').trim();
   if (shape === 'gemini') return (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('\n').trim();
+  if (typeof data?.reply === 'string') return data.reply.trim();
+  if (typeof data?.result?.response === 'string') return data.result.response.trim();
   return (data.choices?.[0]?.message?.content || '').trim();
+}
+
+async function callViaNetlifyProxy(url, init, shape) {
+  if (typeof window === 'undefined') throw new Error('no-browser');
+  const res = await fetch('/api/llm', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      targetUrl: url,
+      method: init.method || 'POST',
+      headers: init.headers || {},
+      body: init.body,
+    }),
+  });
+  if (!res.ok) throw await readError(res);
+  const data = await res.json();
+  return extractText(shape || 'openai', data);
 }
 
 async function callEntry(entry, opts) {
@@ -128,38 +146,75 @@ async function callEntry(entry, opts) {
     const data = await res.json();
     return extractText(entry.shape || 'openai', data);
   } catch (err) {
-    if (err?.name === 'AbortError') throw new LlmError('הפרוקסי לא ענה בזמן (timeout)', 408);
+    if (err?.name === 'AbortError') throw new LlmError('המודל/פרוקסי לא ענה בזמן (timeout)', 408);
     if (err instanceof LlmError) throw err;
-    throw new LlmError(err?.message || 'שגיאת רשת בחיבור לפרוקסי Cloudflare', 0);
+    // Browser CORS or network error -> try forwarding via Netlify Function /api/llm
+    try {
+      return await callViaNetlifyProxy(url, init, entry.shape || 'openai');
+    } catch {
+      throw new LlmError(err?.message || 'שגיאת רשת בחיבור למודל/פרוקסי', 0);
+    }
   } finally {
     clearTimeout(timer);
   }
 }
 
-// The single configured model is just another entry, so one code path serves both.
 export function legacyEntry(state = store.state) {
-  // מושבת: המערכת עובדת כרגע רק עם פרוקסי Cloudflare Worker
-  return null;
+  const llm = state?.settings?.llm;
+  if (!llm) return null;
+  const def = LLM_PROVIDERS[llm.provider] || {};
+  const key = (llm.apiKey || '').trim();
+  const baseUrl = (llm.baseUrl || def.baseUrl || '').trim();
+  const model = (llm.model || def.model || '').trim();
+  if (!baseUrl || !model) return null;
+  if (!key && llm.provider !== 'ollama') return null;
+  return {
+    id: 'legacy',
+    provider: llm.provider || 'openai',
+    label: def.label || llm.provider || 'Direct API',
+    shape: def.shape || 'openai',
+    baseUrl,
+    accountId: '',
+    model,
+    key,
+    enabled: true,
+    valid: true,
+  };
 }
 
 export function webllmEntry() {
-  // מושבת: המערכת עובדת כרגע רק עם פרוקסי Cloudflare Worker
-  return null;
+  if (!webllm.isReady()) return null;
+  const st = webllm.state();
+  return {
+    id: 'webllm',
+    provider: 'webllm',
+    label: 'WebLLM (מקומי בדפדפן)',
+    shape: 'openai',
+    baseUrl: 'webllm://local',
+    model: st.currentModel || 'local',
+    key: '',
+    enabled: true,
+    valid: true,
+  };
 }
 
 export function candidates(state = store.state) {
-  // רק חיבורי פרוקסי Cloudflare/Worker (gateway)
-  return availableEntries(state).filter((e) =>
-    e.provider === 'gateway' || /workers\.dev|cloudflare/i.test(e.baseUrl || '') || /\/chat(\/completions)?$/i.test(e.baseUrl || '')
-  );
+  const list = [...availableEntries(state)];
+  const leg = legacyEntry(state);
+  if (leg) list.push(leg);
+  const w = webllmEntry();
+  if (w) list.push(w);
+  return list;
 }
 
 export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
   const state = store.state;
   const temperature = Number(state.settings?.llm?.temperature ?? 0.4);
   const list = candidates(state);
-  if (!list.length) throw new LlmError('לא הוגדר פרוקסי Cloudflare Worker פעיל. בהגדרות > חיבור AI לסוכנים הזן כתובת Worker, בחר מודל ושמור.', 0);
-  const queue = list.slice(0, 8);
+  if (!list.length) {
+    throw new LlmError('אין מודל או פרוקסי זמין בבריכה. הוסף פרוקסי Cloudflare Worker או מפתח API בהגדרות.', 0);
+  }
+  const queue = list.slice(0, 10);
 
   const attempts = [];
   for (const entry of queue) {
@@ -177,12 +232,14 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
         attempts,
       };
     } catch (err) {
-      if (entry.id !== 'legacy' && entry.id !== 'webllm') markFailure(state, entry, { status: err.status || 0, message: err.message });
-      attempts.push({ provider: entry.provider, model: entry.model, error: err.message, status: err.status || 0 });
+      if (entry.id !== 'legacy' && entry.id !== 'webllm') {
+        markFailure(state, entry, { status: err.status || 0, message: err.message });
+      }
+      attempts.push({ provider: entry.label || entry.provider, model: entry.model, error: err.message, status: err.status || 0 });
     }
   }
   store.save();
-  throw new LlmError('כל הנסיונות להתחבר לפרוקסי Cloudflare נכשלו · ' + attempts.map((a) => `${a.provider}: ${a.error}`).join(' | '));
+  throw new LlmError('כל המודלים והפרוקסים בבריכה נכשלו · ' + attempts.map((a) => `${a.provider}: ${a.error}`).join(' | '));
 }
 
 export async function chat(opts) {
@@ -229,5 +286,5 @@ export async function testConnection() {
     messages: [{ role: 'user', content: 'ping' }],
     maxTokens: 20,
   });
-  return `${(res.text || '(תשובה ריקה)').slice(0, 60)} · ${res.provider}/${res.model}`;
+  return `${(res.text || '(תשובה ריקה)').slice(0, 60)} · ${res.label || res.provider}/${res.model}`;
 }

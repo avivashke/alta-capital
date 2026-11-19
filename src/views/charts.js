@@ -137,38 +137,105 @@ function renderMACD(candles){
   return chartWrap(svg,width);
 }
 
-function gannLevels(price){
-  // Square of 9 style cardinal levels around current price (approximation)
-  const root=Math.sqrt(Math.max(price,1)); const levels=[];
-  [-2,-1,-0.5,0,0.5,1,2].forEach(k=>{ const v=Math.pow(root+k*0.25,2); if(v>0) levels.push({k,v}); });
+function gannVibrationPrice(anchor, degree, direction = 1) {
+  const root = Math.sqrt(Math.max(anchor, 1e-9));
+  const val = root + (degree / 180) * direction;
+  return val > 0 ? Math.pow(val, 2) : 0;
+}
+
+function detectAutoPivot(slice, lookback = 20) {
+  const n = slice.length;
+  let anchorIdx = 0;
+  let isBullish = true;
+  let anchorPrice = slice[0]?.l || 1;
+  for (let i = lookback; i < n - 2; i++) {
+    let isHi = true;
+    let isLo = true;
+    for (let j = Math.max(0, i - lookback); j <= Math.min(n - 1, i + lookback); j++) {
+      if (slice[j].h > slice[i].h) isHi = false;
+      if (slice[j].l < slice[i].l) isLo = false;
+    }
+    if (isLo) { anchorIdx = i; anchorPrice = slice[i].l; isBullish = true; }
+    if (isHi) { anchorIdx = i; anchorPrice = slice[i].h; isBullish = false; }
+  }
+  if (!anchorIdx) {
+    for (let i = 1; i < n; i++) {
+      if (slice[i].l < anchorPrice) { anchorPrice = slice[i].l; anchorIdx = i; isBullish = true; }
+    }
+  }
+  return { anchorIdx, anchorPrice, isBullish };
+}
+
+function gannLevels(anchor, currentPrice) {
+  const degrees = [45, 90, 135, 180, 225, 270, 315, 360];
+  const levels = [];
+  for (const deg of degrees) {
+    const isCardinal = deg % 90 === 0;
+    const up = gannVibrationPrice(anchor, deg, 1);
+    const dn = gannVibrationPrice(anchor, deg, -1);
+    if (up > 0 && Math.abs(up - currentPrice) / currentPrice < 0.35) {
+      levels.push({ degree: deg, v: up, isCardinal, dir: 1 });
+    }
+    if (dn > 0 && Math.abs(dn - currentPrice) / currentPrice < 0.35) {
+      levels.push({ degree: -deg, v: dn, isCardinal, dir: -1 });
+    }
+  }
   return levels;
 }
 
-function renderGann(candles){
-  const n=candles.length, show=Math.min(n,MAX_BARS), start=n-show;
-  const slice=candles.slice(start); const closes=slice.map(c=>c.c);
-  const highs=slice.map(c=>c.h), lows=slice.map(c=>c.l);
-  const lastP=closes[closes.length-1]||1; const lv=gannLevels(lastP).map(x=>x.v);
-  const maxV=Math.max(...highs, ...lv), minV=Math.min(...lows, ...lv);
-  const width=60+show*(W+GAP), height=280, pad=20;
-  const svg=svgEl('svg',{width,height,viewBox:`0 0 ${width} ${height}`}); svg.style.display='block'; svg.style.background='#0b1220';
-  drawGrid(svg,width,height,minV,maxV,pad);
-  // price line
-  polyline(svg, closes, 0, show, minV,maxV,pad,height,'#58a6ff',2);
-  // Gann horizontal levels
-  lv.forEach((v,idx)=>{ const y=yScale(v,minV,maxV,pad,height); const major=Math.abs(v-lastP)/lastP < 0.001 || idx%3===0;
-    svg.appendChild(svgEl('line',{x1:40,x2:width,y1:y,y2:y,stroke:major?'rgba(242,204,96,.75)':'rgba(242,204,96,.28)','stroke-width':major?1.6:1,'stroke-dasharray':major?'0':'6,5'}));
-    const t=svgEl('text',{x:width-120,y:y-3,fill:'#f2cc60','font-size':'10'}); t.textContent='Gann '+v.toFixed(2); svg.appendChild(t);
+function renderGann(candles) {
+  const n = candles.length, show = Math.min(n, MAX_BARS), start = n - show;
+  const slice = candles.slice(start);
+  const closes = slice.map((c) => c.c);
+  const highs = slice.map((c) => c.h), lows = slice.map((c) => c.l);
+  const lastP = closes[closes.length - 1] || 1;
+  const pivot = detectAutoPivot(slice, 16);
+  const levels = gannLevels(pivot.anchorPrice, lastP);
+  const lv = levels.map((x) => x.v);
+  const maxV = Math.max(...highs, ...lv);
+  const minV = Math.min(...lows, ...lv);
+  const width = 60 + show * (W + GAP), height = 310, pad = 20;
+  const svg = svgEl('svg', { width, height, viewBox: `0 0 ${width} ${height}` });
+  svg.style.display = 'block';
+  svg.style.background = '#0b1220';
+  drawGrid(svg, width, height, minV, maxV, pad);
+
+  // Price line
+  polyline(svg, closes, 0, show, minV, maxV, pad, height, '#58a6ff', 2);
+
+  // Anchor line & marker
+  const px = xAt(pivot.anchorIdx), py = yScale(pivot.anchorPrice, minV, maxV, pad, height);
+  svg.appendChild(svgEl('circle', { cx: px, cy: py, r: 4.5, fill: pivot.isBullish ? '#2ecc71' : '#f05b5b' }));
+
+  // Gann Square of 9 Vibration Levels (Cardinal 90° solid, Ordinal 45° dashed)
+  levels.forEach((lvl) => {
+    const y = yScale(lvl.v, minV, maxV, pad, height);
+    const stroke = lvl.isCardinal ? 'rgba(41, 98, 255, 0.85)' : 'rgba(167, 139, 250, 0.55)';
+    svg.appendChild(svgEl('line', {
+      x1: px, x2: width, y1: y, y2: y,
+      stroke,
+      'stroke-width': lvl.isCardinal ? 1.6 : 1,
+      'stroke-dasharray': lvl.isCardinal ? '0' : '5,4',
+    }));
+    const t = svgEl('text', { x: width - 135, y: y - 3, fill: lvl.isCardinal ? '#7dd3fc' : '#c4b5fd', 'font-size': '10' });
+    t.textContent = `${lvl.degree}° (${lvl.isCardinal ? 'Cardinal' : 'Ordinal'}) ${lvl.v.toFixed(2)}`;
+    svg.appendChild(t);
   });
-  // Gann fan rays from pivot (recent low)
-  let pIdx=0; for(let i=1;i<slice.length;i++) if(slice[i].l < slice[pIdx].l) pIdx=i;
-  const px=xAt(pIdx), py=yScale(slice[pIdx].l,minV,maxV,pad,height);
-  const angles=[82.5,75,71.25,63.75,45,26.25,18.75,15,7.5];
-  angles.forEach((ang,i)=>{ const rad=ang*Math.PI/180; const dir = i<4? -1 : (i===4? -0.2: 1);
-    const x2=width, dx=x2-px; const y2=py + dir*Math.tan(rad)*dx*0.15; // scaled for readability
-    svg.appendChild(svgEl('line',{x1:px,y1:py,x2,y2,stroke:i===4?'rgba(46,204,113,.6)':'rgba(167,139,250,.35)','stroke-width':i===4?1.5:1}));
+
+  // Gann fan rays from pivot
+  const angles = [82.5, 75, 71.25, 63.75, 45, 26.25, 18.75, 15, 7.5];
+  angles.forEach((ang, i) => {
+    const rad = (ang * Math.PI) / 180;
+    const dir = i < 4 ? -1 : (i === 4 ? -0.2 : 1);
+    const x2 = width, dx = x2 - px;
+    const y2 = py + dir * Math.tan(rad) * dx * 0.15;
+    svg.appendChild(svgEl('line', {
+      x1: px, y1: py, x2, y2,
+      stroke: i === 4 ? 'rgba(46,204,113,.65)' : 'rgba(242,204,96,.24)',
+      'stroke-width': i === 4 ? 1.5 : 1,
+    }));
   });
-  return chartWrap(svg,width);
+  return chartWrap(svg, width);
 }
 
 function signalSummary(candles){

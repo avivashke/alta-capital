@@ -45,7 +45,117 @@ export class PaperPortfolio {
 
   buy({ symbol, price, quantity, timestamp = Date.now(), isTaker = true }) {
     if (!this.isActive) {
-      return {
+      return { success: false, error: 'תיק הדמה לא פעיל — יש לעבור בדיקת עבר רווחית קודם' };
+    }
+
+    const notional = price * quantity;
+    const fee = this.feeAmount(isTaker, price, quantity);
+    const totalCost = notional + fee;
+
+    if (totalCost > this.cash) {
+      return { success: false, error: 'אין מספיק מזומן בתיק הדמה' };
+    }
+
+    this.cash -= totalCost;
+
+    const existing = this.positions[symbol];
+    if (existing) {
+      const totalCostBefore = existing.quantity * existing.averageEntryPrice;
+      const newQuantity = existing.quantity + quantity;
+      existing.averageEntryPrice = (totalCostBefore + notional + fee) / newQuantity;
+      existing.quantity = newQuantity;
+    } else {
+      this.positions[symbol] = {
+        quantity,
+        averageEntryPrice: (notional + fee) / quantity,
+      };
+    }
+
+    const trade = {
+      timestamp,
+      symbol,
+      side: 'BUY',
+      price,
+      quantity,
+      notional,
+      fee,
+      cashAfter: this.cash,
+    };
+    this.trades.push(trade);
+    return { success: true, trade };
+  }
+
+  sell({ symbol, price, quantity, timestamp = Date.now(), isTaker = true }) {
+    if (!this.isActive) {
+      return { success: false, error: 'תיק הדמה לא פעיל — יש לעבור בדיקת עבר רווחית קודם' };
+    }
+
+    const existing = this.positions[symbol];
+    if (!existing || existing.quantity < quantity) {
+      return { success: false, error: 'אין כמות מספיקה למכירה בתיק הדמה' };
+    }
+
+    const notional = price * quantity;
+    const fee = this.feeAmount(isTaker, price, quantity);
+    const netProceeds = notional - fee;
+    this.cash += netProceeds;
+
+    const costOfSold = quantity * existing.averageEntryPrice;
+    const realizedPnL = netProceeds - costOfSold;
+
+    let tax = 0;
+    if (realizedPnL > 0) {
+      const taxableGain = Math.max(0, realizedPnL - this.capitalLossesCarryForward);
+      tax = taxableGain * this.taxRate;
+      this.capitalLossesCarryForward = Math.max(0, this.capitalLossesCarryForward - realizedPnL);
+      this.taxAccumulated += tax;
+      this.cash -= tax;
+    } else if (realizedPnL < 0) {
+      this.capitalLossesCarryForward += Math.abs(realizedPnL);
+    }
+
+    existing.quantity -= quantity;
+    if (existing.quantity <= 0) {
+      delete this.positions[symbol];
+    }
+
+    const trade = {
+      timestamp,
+      symbol,
+      side: 'SELL',
+      price,
+      quantity,
+      notional,
+      fee,
+      realizedPnL,
+      tax,
+      cashAfter: this.cash,
+    };
+    this.trades.push(trade);
+    return { success: true, trade, realizedPnL, tax };
+  }
+
+  getEquity(currentPrices = {}) {
+    let positionsValue = 0;
+    for (const [symbol, pos] of Object.entries(this.positions)) {
+      const raw = currentPrices[symbol];
+      const currentPrice = (typeof raw === 'object' && raw !== null ? raw.price : raw) ?? pos.averageEntryPrice;
+      positionsValue += pos.quantity * currentPrice;
+    }
+    return this.cash + positionsValue;
+  }
+
+  getReport(currentPrices = {}) {
+    const equity = this.getEquity(currentPrices);
+    const grossPnL = equity - this.initialBalance;
+
+    const totalFees = this.trades.reduce((sum, t) => sum + (t.fee || 0), 0);
+    const totalTax = this.taxAccumulated;
+
+    const netPnL = grossPnL - totalFees - totalTax;
+    const returnPct = (netPnL / this.initialBalance) * 100;
+
+    return {
       initialBalance: this.initialBalance,
       equity: Math.round(equity * 100) / 100,
       cash: Math.round(this.cash * 100) / 100,
@@ -65,6 +175,33 @@ export class PaperPortfolio {
   isProfitableAfterFeesAndTax(currentPrices = {}) {
     const report = this.getReport(currentPrices);
     return report.netPnL > 0;
+  }
+
+  toJSON() {
+    return {
+      initialBalance: this.initialBalance,
+      cash: this.cash,
+      positions: this.positions,
+      trades: this.trades.slice(-150),
+      makerFee: this.makerFee,
+      takerFee: this.takerFee,
+      taxRate: this.taxRate,
+      taxAccumulated: this.taxAccumulated,
+      capitalLossesCarryForward: this.capitalLossesCarryForward,
+      isActive: this.isActive,
+    };
+  }
+
+  fromJSON(data) {
+    if (!data || typeof data !== 'object') return this;
+    if (Number.isFinite(data.initialBalance)) this.initialBalance = data.initialBalance;
+    if (Number.isFinite(data.cash)) this.cash = data.cash;
+    if (data.positions && typeof data.positions === 'object') this.positions = data.positions;
+    if (Array.isArray(data.trades)) this.trades = data.trades;
+    if (Number.isFinite(data.taxAccumulated)) this.taxAccumulated = data.taxAccumulated;
+    if (Number.isFinite(data.capitalLossesCarryForward)) this.capitalLossesCarryForward = data.capitalLossesCarryForward;
+    if (typeof data.isActive === 'boolean') this.isActive = data.isActive;
+    return this;
   }
 }
 

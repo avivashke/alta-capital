@@ -65,7 +65,9 @@ export function addPoolEntry(state, input = {}, now = Date.now()) {
     lastError: '',
   };
   const duplicate = pool.entries.find((e) => e.provider === provider && e.model === model
-    && (e.accountId || '') === accountId && e.key && e.key === key);
+    && (e.accountId || '') === accountId
+    && (e.baseUrl || '').replace(/\/+$/, '') === entry.baseUrl.replace(/\/+$/, '')
+    && (e.key || '') === key);
   if (duplicate) return { entry: duplicate, duplicate: true };
   pool.entries.push(entry);
   pool.updatedAt = now;
@@ -257,8 +259,21 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
       provider: 'gateway',
       key: env.LLM_GATEWAY_KEY || '',
       baseUrl: env.LLM_GATEWAY_URL,
-      model: env.LLM_GATEWAY_MODEL || 'auto',
+      model: env.LLM_GATEWAY_MODEL || 'openai/gpt-oss-120b',
+      label: 'Cloudflare Worker Proxy',
     });
+  }
+
+  if (env.CLOUDFLARE_WORKER_URLS) {
+    for (const item of parseWorkerProxies(env.CLOUDFLARE_WORKER_URLS)) {
+      add({
+        provider: 'gateway',
+        key: item.key,
+        baseUrl: item.url,
+        model: item.model || 'openai/gpt-oss-120b',
+        label: item.label || `CF Worker · ${new URL(item.url).hostname.split('.')[0]}`,
+      });
+    }
   }
 
   // Explicit list wins: LLM_KEYS='[{"provider":"groq","key":"gsk_...","model":"..."}]'
@@ -288,7 +303,7 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
 // The published state keeps the pool with blank keys, so the next CI run can inherit
 // yesterday's usage: without this every fresh env pool would restart at the first key
 // and the Cloudflare accounts would never rotate.
-export const poolIdentity = (entry) => `${entry.provider}|${entry.accountId || ''}|${entry.model}`;
+export const poolIdentity = (entry) => `${entry.provider}|${entry.accountId || ''}|${(entry.baseUrl || '').replace(/\/+$/, '')}|${entry.model}`;
 
 export function mergePoolUsage(state, fresh, now = Date.now()) {
   const previous = new Map(poolEntries(state).map((e) => [poolIdentity(e), e]));
@@ -335,11 +350,40 @@ export function parseCloudflareKeys(text = '') {
   for (const line of raw.split(/[\n;]+/)) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
+    // Support both "ACCOUNT_ID,TOKEN[,MODEL]" and "ACCOUNT_ID:KEY_ID:SECRET" or "ACCOUNT_ID:TOKEN"
+    if (trimmed.includes(':') && !trimmed.includes(',')) {
+      const colonParts = trimmed.split(':').map((s) => s.trim()).filter(Boolean);
+      if (colonParts.length >= 2) {
+        const accountId = colonParts[0];
+        const key = colonParts.length >= 3 ? colonParts.slice(2).join(':') : colonParts[1];
+        out.push({ accountId, key, model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast' });
+        continue;
+      }
+    }
     const parts = trimmed.split(/[,\t]+/).map((s) => s.trim()).filter(Boolean);
     if (parts.length < 2) continue;
     const [accountId, key, model] = parts;
     if (!accountId || !key) continue;
     out.push({ accountId, key, model: model || '' });
+  }
+  return out;
+}
+
+export function parseWorkerProxies(text = '') {
+  const raw = String(text || '').trim();
+  if (!raw) return [];
+  const out = [];
+  for (const line of raw.split(/[\n;]+/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const parts = trimmed.split(/[,\t]+/).map((s) => s.trim()).filter(Boolean);
+    const url = parts[0] || '';
+    if (!/^https?:\/\//i.test(url)) continue;
+    out.push({
+      url,
+      model: parts[1] || 'openai/gpt-oss-120b',
+      key: parts[2] || '',
+    });
   }
   return out;
 }

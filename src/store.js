@@ -37,6 +37,23 @@ export function defaults() {
       platform: 'freqtrade',
       llm: { provider: 'openai', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', apiKey: '', temperature: 0.4 },
       pool: { entries: [], updatedAt: null },
+      db: {
+        enabled: true,
+        mode: 'auto',
+        supabaseUrl: 'https://lqiakdsdpdvdlobeeovz.supabase.co',
+        supabaseKey: '',
+        netlifyToken: '',
+        workerDbUrl: '',
+        workerDbKey: '',
+        apiEndpoint: '/api/db',
+      },
+      binance: {
+        apiKey: '',
+        apiSecret: '',
+        proxyUrl: '',
+        makerFee: 0.001,
+        takerFee: 0.001,
+      },
       github: { token: '', owner: '', repo: '', path: 'firm/context.json' },
       news: { endpoint: '', apiKey: '' },
     },
@@ -88,6 +105,7 @@ export const store = {
       console.warn('[store] load failed, starting fresh', err);
     }
     this.ensureTeam();
+    this.ensureCloudflareProxy();
     return this.state;
   },
 
@@ -99,10 +117,10 @@ export const store = {
     st.cloudflareProxyUrl = url;
     st.cloudflareProxyModel = model;
     if (!st.pool || !Array.isArray(st.pool.entries)) st.pool = { entries: [], updatedAt: null };
-    // keep only/ensure our embedded gateway proxy as available default
+    // ensure our embedded gateway proxy is in the pool alongside any other API keys & proxies
     const exists = st.pool.entries.find((e) => e.provider === 'gateway' && (e.baseUrl || '').replace(/\/+$/,'') === url.replace(/\/+$/,''));
     if (!exists) {
-      st.pool.entries = [{
+      st.pool.entries.unshift({
         id: 'cf_proxy_default',
         provider: 'gateway',
         label: 'Cloudflare Worker Proxy (Alta)',
@@ -124,10 +142,13 @@ export const store = {
         cooldownUntil: 0,
         failStreak: 0,
         lastError: '',
-      }];
+      });
       st.pool.updatedAt = Date.now();
     } else {
-      exists.enabled = true; exists.valid = true; exists.model = exists.model || model; exists.key = exists.key || (st.cloudflareProxyKey || '');
+      exists.enabled = exists.enabled !== false;
+      exists.valid = exists.valid !== false;
+      exists.model = exists.model || model;
+      exists.key = exists.key || (st.cloudflareProxyKey || '');
     }
   },
 
@@ -234,6 +255,7 @@ export const store = {
     localStorage.removeItem(STORAGE_KEY);
     this.state = defaults();
     this.ensureTeam();
+    this.ensureCloudflareProxy();
     this.save();
     this.emit();
   },
@@ -253,6 +275,7 @@ export const store = {
       knowledge: deepMerge(base.knowledge, parsed.knowledge || {}),
     };
     this.ensureTeam();
+    this.ensureCloudflareProxy();
     this.save();
     this.emit();
   },

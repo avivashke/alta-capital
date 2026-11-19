@@ -1,4 +1,4 @@
-﻿// The firm: orchestration of desks, agents, optimization cycles, versioning and paper execution.
+// The firm: orchestration of desks, agents, optimization cycles, versioning and paper execution.
 
 import { BARS_PER_YEAR, DESKS, BINANCE_TESTNET, PAPER_TRADING } from './config.js';
 import { store } from './store.js';
@@ -13,6 +13,8 @@ import { analyze } from './ta.js';
 import { scanIfDue, refreshSentiment } from './research.js';
 import { createBinanceClient } from './binance_testnet.js';
 import { createPaperPortfolio } from './paper_portfolio.js';
+import { recordVersionInDb, recordTradeInDb, recordCycleInDb, scheduleDatabasePush } from './db.js';
+import { runAiDirector } from './ai.js';
 
 const LIMITS = { '5m': 800, '15m': 800, '1h': 800, '1d': 600, '1w': 420 };
 const ROUNDS = { intraday: { rounds: 26, climb: 12 }, swing: { rounds: 30, climb: 14 } };
@@ -20,15 +22,18 @@ const ROUNDS = { intraday: { rounds: 26, climb: 12 }, swing: { rounds: 30, climb
 let lastEmit = 0;
 let ticking = false;
 
-// ×ž× ×•×¢ ×ª×™×§ ×“×ž×” ×’×œ×•×‘×œ×™ â€” ×ž×•×¤×¢×œ ×¨×§ ×œ××—×¨ ×‘×“×™×§×ª ×¢×‘×¨ ×¨×•×•×—×™×ª
+// מנוע תיק דמה גלובלי — מופעל רק לאחר בדיקת עבר רווחית
 let paperPortfolio = null;
-// ×œ×§×•×— Binance Testnet â€” ×ž×•×’×“×¨ ×¨×§ ×× ×™×© ×ž×¤×ª×—×•×ª API ×‘×”×’×“×¨×•×ª
+// לקוח Binance Testnet — מוגדר רק אם יש מפתחות API בהגדרות
 let binanceClient = null;
 
 export function ensurePaperPortfolio() {
   if (!paperPortfolio) {
     const s = store.state.settings;
     paperPortfolio = createPaperPortfolio(s);
+    if (store.state.paperPortfolio) {
+      paperPortfolio.fromJSON(store.state.paperPortfolio);
+    }
     binanceClient = createBinanceClient(s);
     if (binanceClient.apiKey && binanceClient.apiSecret) {
       console.log('[firm] Binance Testnet client initialized');
@@ -37,6 +42,12 @@ export function ensurePaperPortfolio() {
     }
   }
   return paperPortfolio;
+}
+
+function savePaperPortfolio() {
+  if (paperPortfolio) {
+    store.state.paperPortfolio = paperPortfolio.toJSON();
+  }
 }
 
 export function getPaperPortfolio() {
@@ -54,7 +65,7 @@ function isBacktestProfitableAfterFeesAndTax(metrics) {
   const totalFees = metrics.totalFees || 0;
   const trades = metrics.trades || 0;
 
-  // ×‘×“×™×§×ª ×¡×£ ×¨×•×•×—×™×•×ª ××—×¨×™ ×¢×ž×œ×•×ª (××•×ž×“×Ÿ ×ž×¡)
+  // בדיקת סף רווחיות אחרי עמלות (אומדן מס)
   const estimatedTax = Math.max(0, returnPct) * (PAPER_TRADING.taxRate / 100);
   const netReturnPct = returnPct - (totalFees * 100) - estimatedTax;
 
@@ -117,13 +128,13 @@ function setAgent(id, patch) {
 function idleAgents() {
   const now = Date.now();
   for (const a of store.state.agents) {
-        if (a.status === 'busy') {
+    if (a.status === 'busy') {
       a.completed = (a.completed || 0) + 1;
       a.progress = 100;
-      a.speech = a.task ? ('סיים: ' + a.task) : 'פנוי למשימה הבאה';
+      a.speech = a.task ? ('סיים: ' + a.task) : 'מחזור הושלם';
       a.speechType = 'speak';
       a.thinking = null;
-      a.thoughtUntil = now + 45000;
+      a.thoughtUntil = now + 45000; // השארת מחשבה/עדכון גלוי למשך זמן
       a.lastActive = now;
     } else {
       // fade old completed thought after window
@@ -134,7 +145,7 @@ function idleAgents() {
       }
     }
     a.status = 'idle';
-    if (!a.task || a.task.indexOf('�~�~ת�"�x') === 0) a.task = 'ס�"רק ש�"ק, �~�קר �"�~�"���"� �~ת�~ש�a';
+    if (!a.task || a.task.indexOf('ממתין') === 0) a.task = 'סורק שוק, מחקר ומיטוב מתמשך';
   }
 }
 function downsample(values, maxPoints = 160) {
@@ -167,6 +178,8 @@ export function ensureDeskFields() {
 
 export function nextDesk(state) {
   const desks = state.desks;
+  const planned = desks.find((d) => d.aiPlan && !d.aiPlan.consumed);
+  if (planned) return planned;
   const idx = (state.stats.cycles || 0) % desks.length;
   return desks[idx];
 }
@@ -191,7 +204,7 @@ export async function runDeskCycle(desk, opts = {}) {
   setAgent('gann_square', { status: 'busy', task: `חוקר ריבוע התשע ומחיר-זמן · ${desk.symbol}`, progress: 14, thinking: 'מחשב רמות ריבוע התשע, איזוני מחיר/זמן ואזורי מפנה פוטנציאליים לשיפור אסטרטגיה', speech: 'מיישם חישובי ריבוע התשע במחקר', speechType: 'think' });
   setAgent('gann_master', { status: 'busy', task: `חוקרת מחזורי שוק ומיטוב גאן · ${desk.symbol}`, progress: 12, thinking: 'בוחנת מחזורי שוק היסטוריים ומתרגמת ממצאי גאן לפרמטרים ואופטימיזציה לרובוטים', speech: 'משלבת ממצאי גאן במיטוב האסטרטגיות', speechType: 'speak' });
 
-  store.log('info', 'א�"ר�"� · CIO', `פ�"ת� �~���"ר ע�S ${desk.label} (${desk.symbol} · ${desk.tf})`);
+  store.log('info', 'אוריה · CIO', `פותח מחזור על ${desk.label} (${desk.symbol} · ${desk.tf})`);
   liveEmit(true);
 
   try {
@@ -203,8 +216,8 @@ export async function runDeskCycle(desk, opts = {}) {
     // AI director decision, consumed once by the next cycle on this desk.
     const aiPlan = desk.aiPlan && !desk.aiPlan.consumed ? desk.aiPlan : null;
     if (aiPlan?.strategyId && STRATEGIES[aiPlan.strategyId] && aiPlan.strategyId !== desk.strategyId) {
-      store.log('info', 'א�"ר�"� · CIO',
-        `${desk.label}: ע�"�ר�"ם �S�~שפ�� ${STRATEGIES[aiPlan.strategyId].label} �Sפ�" ���S��ת �ס�"�:�x ���:ם`);
+      store.log('info', 'אוריה · CIO',
+        `${desk.label}: עוברים למשפחה ${STRATEGIES[aiPlan.strategyId].label} לפי החלטת הסוכן החכם`);
       desk.strategyId = aiPlan.strategyId;
       desk.params = null;
       desk.version = null;
@@ -230,7 +243,7 @@ export async function runDeskCycle(desk, opts = {}) {
       onProgress: ({ done, total }) => {
         const pct = Math.round((done / total) * 100);
         setAgent('optimizer', { progress: pct });
-        setAgent('backtest', { progress: pct, task: `��"�ק ${done}/${total} �"ר�"אצ�"�"ת` });
+        setAgent('backtest', { progress: pct, task: `בודק ${done}/${total} וריאציות` });
         if (done % 6 === 0) liveEmit();
       },
     });
@@ -239,7 +252,7 @@ export async function runDeskCycle(desk, opts = {}) {
 
     if (!result.best) {
       desk.status = desk.status === 'live' ? 'live' : (desk.metrics ? 'optimizing' : 'research');
-      store.log('warn', '�S�"� · א�"פ���"�~�"�צ�"�', `${desk.label}: �Sא נ�~צא� �"ר�"אצ�"� עם �~ספ�"ק עסקא�"ת �נת�"נ�"ם �ק�"�"�~�"ם`);
+      store.log('warn', 'ליה · אופטימיזציה', `${desk.label}: לא נמצאה וריאציה עם מספיק עסקאות בנתונים הקיימים`);
       idleAgents();
       liveEmit(true);
       return { ok: false, reason: 'no-candidate' };
@@ -248,7 +261,7 @@ export async function runDeskCycle(desk, opts = {}) {
     const ev = result.best.evaluation;
 
     // Statistical hardening before anything is allowed to become a version.
-    setAgent('ta', { status: 'busy', task: `מנתח מגמה ומבנה מחיר · ${desk.tf}`, progress: 45, thinking: 'מזהה תמיכה/התנגדות, מומנטום ותנודתיות לאימות האות', speechType: 'think' });
+    setAgent('ta', { status: 'busy', task: `קוראת מגמה, מומנטום ומבנה · ${desk.tf}`, progress: 45, thinking: 'מזהה רמות תמיכה והתנגדות, בודקת מומנטום ומבנה מחיר', speechType: 'think' });
     const assessment = assessStrategy({
       candles,
       strategyId: desk.strategyId,
@@ -273,9 +286,9 @@ export async function runDeskCycle(desk, opts = {}) {
 
     setAgent('risk', {
       status: 'busy',
-      task: `��"�ק DD ${ev.full.maxDrawdownPct}% · PF ${ev.full.profitFactor}`,
+      task: `בודק DD ${ev.full.maxDrawdownPct}% · PF ${ev.full.profitFactor}`,
       progress: 60,
-      speech: `�~��x ע�S ���"�x · ��"�ק.Drawdown ${ev.full.maxDrawdownPct}% �"-Profit Factor ${ev.full.profitFactor}`, speechType: 'speak' });
+      speech: `מגן על ההון · בודק.Drawdown ${ev.full.maxDrawdownPct}% ו-Profit Factor ${ev.full.profitFactor}`, speechType: 'speak' });
 
     if (publish) {
       const improvement = prevReturn == null ? null : +(ev.oos.returnPct - prevReturn).toFixed(2);
@@ -295,9 +308,9 @@ export async function runDeskCycle(desk, opts = {}) {
 
       setAgent('dev', {
         status: 'busy',
-        task: `א�"ר� ${desk.version} �S־${s.platform}`,
+        task: `אורז ${desk.version} ל־${s.platform}`,
         progress: 70,
-        speech: `�~�"�"צא ק�"� �S��"�� ${desk.version} �Sפ�S��פ�"ר�~� ${s.platform}`, speechType: 'speak' });
+        speech: `מייצא קוד לבוט ${desk.version} לפלטפורמה ${s.platform}`, speechType: 'speak' });
       const artifact = buildArtifact(desk, s.platform);
       desk.generatedCode = artifact.code;
       desk.artifactName = artifact.filename;
@@ -318,17 +331,18 @@ export async function runDeskCycle(desk, opts = {}) {
         improvement,
         robustness: assessment.robustness,
         note: improvement == null
-          ? '�רס� ראש�"נ� שע�ר� את סף �ר�"�"��"�"ת'
-          : `ש�"פ�"ר ש�S ${improvement}% �־out-of-sample`,
+          ? 'גרסה ראשונה שעברה את סף הרווחיות'
+          : `שיפור של ${improvement}% ב־out-of-sample`,
       });
       if (desk.history.length > 40) desk.history.length = 40;
       state.stats.deployments = (state.stats.deployments || 0) + 1;
 
       store.log(
         'ok',
-        '��"א · פ�"ת�"�',
-        `${desk.label}: פ�"רס�~� ${desk.version} (${desk.strategyId}) · OOS ${ev.oos.returnPct}% · PF ${ev.full.profitFactor}`,
+        'גיא · פיתוח',
+        `${desk.label}: פורסמה ${desk.version} (${desk.strategyId}) · OOS ${ev.oos.returnPct}% · PF ${ev.full.profitFactor}`,
       );
+      recordVersionInDb(desk, ev, assessment).catch(() => {});
 
     } else if (!hasVersion) {
       // Working hypothesis: keep the best candidate so the desk is measurable, but publish
@@ -341,7 +355,7 @@ export async function runDeskCycle(desk, opts = {}) {
       desk.fitness = +result.best.score.toFixed(2);
       desk.equity = downsample(ev.curve.map((p) => p.v));
       desk.lastCandles = candles.length;
-      store.log('info', 'נ�"ע� · אנ�S�"ס���"ת', `${desk.label}: נש�~רת �שערת ע��"�� (${desk.strategyId}) � �~�~ת�"נ�"ם �S-OOS ��"�"��" �Sפנ�" פרס�"ם �רס�`);
+      store.log('info', 'נועה · אנליסטית', `${desk.label}: נשמרת השערת עבודה (${desk.strategyId}) — ממתינים ל-OOS חיובי לפני פרסום גרסה`);
     } else {
       const current = runBacktest(candles, desk.strategyId, desk.params, cfg);
       desk.metrics = current.metrics;
@@ -350,8 +364,8 @@ export async function runDeskCycle(desk, opts = {}) {
       desk.lastCandles = candles.length;
       store.log(
         'warn',
-        '�S�"� · א�"פ���"�~�"�צ�"�',
-        `${desk.label}: ��~�"ע�~� ����"� (${result.best.strategyId || desk.strategyId}) �ש�"� OOS ${ev.oos.returnPct}% · ��"ס�x ${assessment.robustness}/100 � �Sא ע�"�~� �סף (ש�"פ�"ר ${threshold}% · ��"ס�x ${s.minRobustness ?? 50})`,
+        'ליה · אופטימיזציה',
+        `${desk.label}: המועמד הטוב (${result.best.strategyId || desk.strategyId}) השיג OOS ${ev.oos.returnPct}% · חוסן ${assessment.robustness}/100 — לא עומד בסף (שיפור ${threshold}% · חוסן ${s.minRobustness ?? 50})`,
       );
     }
 
@@ -364,17 +378,17 @@ export async function runDeskCycle(desk, opts = {}) {
         desk.status = 'optimizing';
         desk.dryRunCycles = 0;
         desk.openTrade = null;
-        store.log('warn', '×“× ×™××œ Â· ×¡×™×›×•× ×™×', `${desk.label}: ��~���"ם �"ר��" �~ת�ת �Sשער�"ם � ��ר� �S�:�"�"�S �"ס��"רת פ�"��"צ�"�"ת �נ�"�"ר`);
+        store.log('warn', 'דניאל · סיכונים', `${desk.label}: המדדים ירדו מתחת לשערים — חזרה לכיול וסגירת פוזיציית הנייר`);
       }
     } else if (desk.version && gateCheck.ok && oosPositive && robustOk) {
       desk.dryRunCycles = (desk.dryRunCycles || 0) + 1;
       desk.status = 'dry-run';
-      setAgent('exec', { status: 'busy', task: `dry-run ${desk.dryRunCycles}/3 · ${desk.version}`, progress: 80, speech: `�~ר�"צת dry-run �S�~���"ר ${desk.dryRunCycles}/3 �Sפנ�" א�"ש�"ר �~ס�ר ��" ע�S נ�"�"ר`, speechType: 'speak' });
-      store.log('info', '×ª×ž×¨ Â· ×‘×™×¦×•×¢', `${desk.label}: dry-run ${desk.dryRunCycles}/3 Â· ${desk.version}`);
+      setAgent('exec', { status: 'busy', task: `dry-run ${desk.dryRunCycles}/3 · ${desk.version}`, progress: 80, speech: `מריצת dry-run למחזור ${desk.dryRunCycles}/3 לפני אישור מסחר חי על נייר`, speechType: 'speak' });
+      store.log('info', 'תמר · ביצוע', `${desk.label}: dry-run ${desk.dryRunCycles}/3 · ${desk.version}`);
       if (desk.dryRunCycles >= 3) {
         desk.status = 'live';
         desk.liveSince = Date.now();
-        store.log('ok', '××•×¨×™×” Â· CIO', `${desk.label}: א�"שר� �רצ� ��"� ע�S נ�"�"ר · ${desk.version}`);
+        store.log('ok', 'אוריה · CIO', `${desk.label}: אושרה הרצה חיה על נייר · ${desk.version}`);
       }
     } else {
       desk.status = desk.metrics ? 'optimizing' : 'research';
@@ -383,20 +397,33 @@ export async function runDeskCycle(desk, opts = {}) {
 
     setAgent('cio', {
       status: 'busy',
-      task: publish ? `�~אשר ${desk.version} �"�~קצ� ��"�x` : '×ž×¢×“×™×£ ×œ×”×ž×ª×™×Ÿ ×œ×©×™×¤×•×¨ ×ž×•×‘×”×§',
+      task: publish ? `מאשר ${desk.version} ומקצה הון` : 'מעדיף להמתין לשיפור מובהק',
       progress: 90,
-      speech: publish ? `�~אשר ${desk.version} �"�~קצ� ��"�x �Sש�"�S��x ${desk.label}` : '×ž×¢×“×™×£ ×œ×”×ž×ª×™×Ÿ ×œ×©×™×¤×•×¨ ×ž×•×‘×”×§ ×œ×¤× ×™ ×§×™×“×•× ×’×¨×¡×”', speechType: 'speak' });
+      speech: publish ? `מאשר ${desk.version} ומקצה הון לשולחן ${desk.label}` : 'מעדיף להמתין לשיפור מובהק לפני קידום גרסה', speechType: 'speak' });
     if (aiPlan) {
       desk.aiPlan = { ...aiPlan, consumed: true, appliedAt: Date.now() };
     }
 
     idleAgents();
     liveEmit(true);
+    recordCycleInDb({
+      deskId: desk.id,
+      tf: desk.tf,
+      strategyId: desk.strategyId,
+      ok: true,
+      published: publish,
+      version: desk.version,
+      oosReturn: ev.oos?.returnPct ?? null,
+      robustness: assessment?.robustness ?? null,
+      aiProvider: state.aiDirector?.source || null,
+      aiModel: state.aiDirector?.model || null,
+    }).catch(() => {});
+    scheduleDatabasePush();
     return { ok: true, published: publish, evaluation: ev };
   } catch (err) {
     console.error('[firm] cycle failed', err);
     desk.status = desk.status === 'live' ? 'live' : 'research';
-    store.log('bad', '×ž×¢×¨×š ×”×¡×•×›× ×™×', `${desk.label}: ��~���"ר נ�:ש�S � ${err.message}`);
+    store.log('bad', 'מערך הסוכנים', `${desk.label}: המחזור נכשל — ${err.message}`);
     idleAgents();
     liveEmit(true);
     return { ok: false, error: err.message };
@@ -417,39 +444,55 @@ async function closePaperTrade(desk, price, reason) {
   });
   if (desk.liveTrades.length > 25) desk.liveTrades.length = 25;
 
-  // �¡��"����¨�⬝ ��"� ���-Binance Testnet �� ����© ���§�⬢�� �ž�⬢��"��S�¨ �⬢�¤�§�⬢��S�⬝ �¤�ª�⬢���⬝ �©�
+  // סגירה בתיק הנייר המשותף + Binance Testnet אם הוגדרו מפתחות
   const pf = ensurePaperPortfolio();
+  if (!pf.isActive) pf.activate({ reason: 'מסחר נייר פעיל' });
+  const qty = t.binanceQuantity || t.quantity || 0;
+  if (qty > 0 && pf.positions[desk.symbol]) {
+    pf.sell({
+      symbol: desk.symbol,
+      price,
+      quantity: Math.min(qty, pf.positions[desk.symbol].quantity),
+      timestamp: Date.now(),
+      isTaker: true,
+    });
+  }
+  savePaperPortfolio();
+
   if (binanceClient && binanceClient.apiKey && binanceClient.apiSecret && t.binanceOrderId) {
     try {
       const side = t.dir > 0 ? 'SELL' : 'BUY';
-      const qty = t.binanceQuantity;
       await binanceClient.createMarketOrder({
         symbol: desk.symbol,
         side,
         quantity: qty,
       });
-      pf.sell({
-        symbol: desk.symbol,
-        price,
-        quantity: qty,
-        timestamp: Date.now(),
-        isTaker: true,
-      });
-      store.log('info', 'Ã—ÂªÃ—Å¾Ã—Â¨ Ã‚Â· Ã—â€˜Ã—â„¢Ã—Â¦Ã—â€¢Ã—Â¢',
-        `${desk.label}: Ã—Â¤Ã—Â§Ã—â€¢Ã—â€œÃ—Âª Ã—Â¡Ã—â€™Ã—â„¢Ã—Â¨Ã—â€ Ã—â€˜Ã—â€¢Ã—Â¦Ã—Â¢Ã—â€ Ã—â€˜-Binance Testnet Ã‚Â· ${side} ${qty}`);
+      store.log('info', 'תמר · ביצוע',
+        `${desk.label}: פקודת סגירה בוצעה ב-Binance Testnet · ${side} ${qty}`);
     } catch (err) {
       console.warn('[firm] binance close failed', desk.id, err.message);
     }
   }
 
-  store.log(sized >= 0 ? 'ok' : 'warn', 'Ã—ÂªÃ—Å¾Ã—Â¨ Ã‚Â· Ã—â€˜Ã—â„¢Ã—Â¦Ã—â€¢Ã—Â¢',
-    `${desk.label}: Ã—Â¡Ã—â€™Ã—â„¢Ã—Â¨Ã—Âª Ã—Â¤Ã—â€¢Ã—â€“Ã—â„¢Ã—Â¦Ã—â„¢Ã—â„¢Ã—Âª Ã—Â Ã—â„¢Ã—â„¢Ã—Â¨ ${t.dir > 0 ? 'Ã—Å“Ã—â€¢Ã—Â Ã—â€™' : 'Ã—Â©Ã—â€¢Ã—Â¨Ã—Ëœ'} Ã‚Â· ${sized.toFixed(2)}% (${reason})`);
+  store.log(sized >= 0 ? 'ok' : 'warn', 'תמר · ביצוע',
+    `${desk.label}: סגירת פוזיציית נייר ${t.dir > 0 ? 'לונג' : 'שורט'} · ${sized.toFixed(2)}% (${reason})`);
+  recordTradeInDb({
+    deskId: desk.id,
+    symbol: desk.symbol,
+    dir: t.dir,
+    price,
+    quantity: t.binanceQuantity || 0,
+    pct: +sized.toFixed(3),
+    reason,
+    at: Date.now(),
+  }).catch(() => {});
+  scheduleDatabasePush();
   desk.openTrade = null;
 }
 
 export async function analyzeManualClose(deskId) {
   const desk = store.state.desks.find((d) => d.id === deskId);
-  if (!desk || !desk.openTrade) return { ok: false, error: '××™×Ÿ ×¤×•×–×™×¦×™×” ×¤×ª×•×—×”' };
+  if (!desk || !desk.openTrade) return { ok: false, error: 'אין פוזיציה פתוחה' };
   let price = lastPrice(desk.symbol);
   try {
     const candles = await getCandles(desk.symbol, desk.tf, { limit: 120 });
@@ -465,18 +508,18 @@ export async function analyzeManualClose(deskId) {
     const contradicts = desired === t.dir && desired !== 0;
     const reasons = [];
     if (contradicts) {
-      reasons.push(`�Sפ�" �אס��ר����"� (${STRATEGIES[desk.strategyId]?.label || desk.strategyId || '× ×•×›×—×™×ª'}) �א�"ת �נ�"�:��" ע��"�"�x ת�"�~�a ��:�"�"�"�x ${t.dir > 0 ? '×œ×•× ×’' : '×©×•×¨×˜'}. �"צ�"א� �~�"ק��~ת ע�S�"�S� �Sפספס ��~ש�a �~��S�a ש�אס��ר����"� �~נס� �S�S�:�"�.`);
+      reasons.push(`לפי האסטרטגיה (${STRATEGIES[desk.strategyId]?.label || desk.strategyId || 'נוכחית'}) האות הנוכחי עדיין תומך בכיוון ${t.dir > 0 ? 'לונג' : 'שורט'}. יציאה מוקדמת עלולה לפספס המשך מהלך שהאסטרטגיה מנסה ללכוד.`);
     }
     if (t.target != null && ((t.dir > 0 && price < t.target) || (t.dir < 0 && price > t.target))) {
-      reasons.push(`�"ע� �ר�"�"� (${t.target.toFixed(2)}) ע��"�"�x �Sא ��"ש� � ��~תנ� �~אפשרת �Sאס��ר����"� �S�~�~ש את ��"�ס ס�"�:�"�x/ס�"�:�"�" שת�"�:נ�x.`);
+      reasons.push(`יעד הרווח (${t.target.toFixed(2)}) עדיין לא הושג — המתנה מאפשרת לאסטרטגיה לממש את יחס סיכון/סיכוי שתוכנן.`);
     }
     if (t.stop != null && ((t.dir > 0 && price > t.stop) || (t.dir < 0 && price < t.stop))) {
-      reasons.push(`ס���"פ ��פס� (${t.stop.toFixed(2)}) �Sא ��"פע�S � נ�"��"�S �ס�"�:�"�x ��~ק�"ר�" ע��"�"�x �~��x ע�S �פ�"��"צ�"�.`);
+      reasons.push(`סטופ ההפסד (${t.stop.toFixed(2)}) לא הופעל — ניהול הסיכון המקורי עדיין מגן על הפוזיציה.`);
     }
     if (pnlPct < 0) {
-      reasons.push(`�פ�"��"צ�"� �:ר�ע ��פס� (${pnlPct.toFixed(2)}%). ס��"ר� ע�:ש�"�" תק�ע �פס�; �Sפ�" ר�"� �אס��ר����"�"ת ע��"ף �Sתת �Sס���"פ/א�"ת ��"צ�"א� �Sנ��S את �עסק� א�Sא אם �שתנ�" �תנא�"ם.`);
+      reasons.push(`הפוזיציה כרגע בהפסד (${pnlPct.toFixed(2)}%). סגירה עכשיו תקבע הפסד; לפי רוב האסטרטגיות עדיף לתת לסטופ/אות היציאה לנהל את העסקה אלא אם השתנו התנאים.`);
     } else {
-      reasons.push(`�פ�"��"צ�"� �:ר�ע �ר�"�"� (${pnlPct.toFixed(2)}%). ס��"ר� �~�"ק��~ת עש�"�"� �S�ק���"�x ר�"�"� אם ��~��S�a ע�"� �Sא ���"ע �S�"ע� א�" �Sא�"ת �"צ�"א� ש�S �אס��ר����"�.`);
+      reasons.push(`הפוזיציה כרגע ברווח (${pnlPct.toFixed(2)}%). סגירה מוקדמת עשויה להקטין רווח אם המהלך עוד לא הגיע ליעד או לאות יציאה של האסטרטגיה.`);
     }
     return { ok: true, desk, price, pnlPct, contradicts, desired, reasons };
   } catch (err) {
@@ -486,7 +529,7 @@ export async function analyzeManualClose(deskId) {
 
 export async function manualCloseDesk(deskId, reason = 'manual') {
   const desk = store.state.desks.find((d) => d.id === deskId);
-  if (!desk || !desk.openTrade) return { ok: false, error: '××™×Ÿ ×¤×•×–×™×¦×™×” ×¤×ª×•×—×”' };
+  if (!desk || !desk.openTrade) return { ok: false, error: 'אין פוזיציה פתוחה' };
   let price = lastPrice(desk.symbol);
   if (!price) {
     try {
@@ -552,28 +595,39 @@ export async function tickLive() {
         const quantity = stopDistance > 0 ? riskAmount / stopDistance : 0;
 
         let binanceOrderId = null;
-        let binanceQuantity = 0;
+        let binanceQuantity = Number(quantity.toFixed(6));
+        if (!pf.isActive) pf.activate({ reason: `פתיחת עסקת נייר על ${desk.label}` });
 
-        // ��"צ�"ע פק�"�� א�~ת �-Binance Testnet אם �~�"��ר�" �~פת��"ת API
-        if (binanceClient && binanceClient.apiKey && binanceClient.apiSecret && quantity > 0) {
+        // ביצוע פקודה בתיק הנייר המשותף (עמלות + מעקב יתרה)
+        if (binanceQuantity > 0 && price > 0) {
+          const maxQtyByCash = (pf.cash * 0.25) / price;
+          const paperQty = Math.min(binanceQuantity, maxQtyByCash);
+          if (paperQty > 0) {
+            pf.buy({
+              symbol: desk.symbol,
+              price,
+              quantity: paperQty,
+              timestamp: Date.now(),
+              isTaker: true,
+            });
+            binanceQuantity = +paperQty.toFixed(6);
+            savePaperPortfolio();
+          }
+        }
+
+        // ביצוע פקודה אמת ב-Binance Testnet אם מוגדרו מפתחות API
+        if (binanceClient && binanceClient.apiKey && binanceClient.apiSecret && binanceQuantity > 0) {
           try {
             const side = dir > 0 ? 'BUY' : 'SELL';
             const order = await binanceClient.createMarketOrder({
               symbol: desk.symbol,
               side,
-              quantity: Number(quantity).toFixed(6),
+              quantity: Number(binanceQuantity).toFixed(6),
             });
             binanceOrderId = order.orderId || null;
-            binanceQuantity = Number(order.executedQty || quantity);
-            pf.buy({
-              symbol: desk.symbol,
-              price,
-              quantity: binanceQuantity,
-              timestamp: Date.now(),
-              isTaker: true,
-            });
-            store.log('info', '×ª×ž×¨ Â· ×‘×™×¦×•×¢',
-              `${desk.label}: פק�"�ת קנ�"�"� ��"צע� �-Binance Testnet · ${side} ${binanceQuantity} @ ${price.toFixed(2)}`);
+            binanceQuantity = Number(order.executedQty || binanceQuantity);
+            store.log('info', 'תמר · ביצוע',
+              `${desk.label}: פקודת קנייה בוצעה ב-Binance Testnet · ${side} ${binanceQuantity} @ ${price.toFixed(2)}`);
           } catch (err) {
             console.warn('[firm] binance open failed', desk.id, err.message);
           }
@@ -587,10 +641,21 @@ export async function tickLive() {
           at: Date.now(),
           sizeFactor: Math.min(1, s.riskPerTrade / 0.015),
           markPct: 0,
+          quantity: binanceQuantity,
           binanceOrderId,
           binanceQuantity,
         };
-        store.log('info', '×ª×ž×¨ Â· ×‘×™×¦×•×¢', `${desk.label}: פת�"�ת פ�"��"צ�"�"ת נ�"�"ר ${dir > 0 ? '×œ×•× ×’' : '×©×•×¨×˜'} �־${price.toFixed(2)}`);
+        recordTradeInDb({
+          deskId: desk.id,
+          symbol: desk.symbol,
+          side: dir > 0 ? 'BUY' : 'SELL',
+          price,
+          quantity: binanceQuantity,
+          reason: 'open_paper',
+          at: Date.now(),
+        }).catch(() => {});
+        scheduleDatabasePush();
+        store.log('info', 'תמר · ביצוע', `${desk.label}: פתיחת פוזיציית נייר ${dir > 0 ? 'לונג' : 'שורט'} ב־${price.toFixed(2)}`);
       }
     } catch (err) {
       console.warn('[firm] live tick failed', desk.id, err);
@@ -612,13 +677,13 @@ export async function promoteDryRuns() {
       desk.status = 'live';
       desk.liveSince = Date.now();
       pf.activate({
-        reason: `אס��ר����"� ${desk.strategyId} ע�S ${desk.label} �ר�"�"�"�� ${desk.metrics.returnPct}% ��ק��ס�� א�ר�" ע�~�S�"ת`,
+        reason: `אסטרטגיה ${desk.strategyId} על ${desk.label} הרוויחה ${desk.metrics.returnPct}% בבקטסט אחרי עמלות`,
       });
-      store.log('ok', '××•×¨×™×” Â· CIO',
-        `${desk.label}: א�"שר� �S�~ס�ר ��~� ע�S Binance Testnet � ${desk.version} · ${desk.metrics.returnPct}% נ���" ��ק��ס��`);
+      store.log('ok', 'אוריה · CIO',
+        `${desk.label}: אושרה למסחר דמה על Binance Testnet — ${desk.version} · ${desk.metrics.returnPct}% נטו בבקטסט`);
     } else if (desk.dryRunCycles >= PAPER_TRADING.dryRunCyclesBeforeLive && gatesOk && !profitableAfterFees) {
-      store.log('warn', '××•×¨×™×” Â· CIO',
-        `${desk.label}: ע�ר� ��ר�"ת א�a א�"נ� ר�"�"��"ת א�ר�" ע�~�S�"ת �"�~ס � �Sא ת�"פע�S ��~ס�ר ��~�`);
+      store.log('warn', 'אוריה · CIO',
+        `${desk.label}: עברה גדרות אך אינה רווחית אחרי עמלות ומס — לא תופעל במסחר דמה`);
     }
   }
 }
@@ -632,13 +697,16 @@ export async function tick({ reason = 'auto' } = {}) {
     const state = store.state;
     if (reason === 'auto' && !state.settings.autopilot) return { skipped: true };
     ensureDeskFields();
+    if (state.settings.autoOptimize !== false && ((state.stats.cycles || 0) % 3 === 0)) {
+      runAiDirector({ useFallback: true }).catch((e) => console.warn('[ai-director]', e));
+    }
     const desk = nextDesk(state);
     state.stats.cycles = (state.stats.cycles || 0) + 1;
     state.lastTickAt = Date.now();
     const result = await runDeskCycle(desk, { deep: (state.stats.cycles||0) % 4 === 0 });
     await tickLive();
     await promoteDryRuns();
-    // ע��"�� רצ�"פ�: �~�קר, נ�"ת�"� ���:נ�", סנ���"�~נ�� �"א�"פ���"�~�"�צ�"� ��:�S �~���"ר
+    // עבודה רציפה: מחקר, ניתוח טכני, סנטימנט ואופטימיזציה בכל מחזור
     refreshTechnicals({ force: true }).catch((e) => console.warn('[ta]', e));
     scanIfDue().catch((e) => console.warn('[research]', e));
     refreshSentiment().catch((e) => console.warn('[sentiment]', e));
@@ -677,7 +745,7 @@ export function switchStrategy(deskId, strategyId) {
     desk.dryRunCycles = 0;
     desk.livePnl = 0;
     desk.openTrade = null;
-    store.log('info', '× ×•×¢×” Â· ×× ×œ×™×¡×˜×™×ª', `${desk.label}: ע�"�ר�"ם �S�~שפ�ת אס��ר����"�"ת ${STRATEGIES[strategyId]?.label || strategyId}`);
+    store.log('info', 'נועה · אנליסטית', `${desk.label}: עוברים למשפחת אסטרטגיות ${STRATEGIES[strategyId]?.label || strategyId}`);
   });
 }
 
@@ -690,7 +758,7 @@ export function resetDesk(deskId) {
       baselineReturn: null, metrics: null, oosMetrics: null, equity: [], history: [],
       dryRunCycles: 0, livePnl: 0, openTrade: null, liveTrades: [], fitness: null,
     });
-    store.log('info', '××•×¨×™×” Â· CIO', `${desk.label}: א�"פס ש�"�S��x ��~ס�ר`);
+    store.log('info', 'אוריה · CIO', `${desk.label}: אופס שולחן המסחר`);
   });
 }
 
@@ -701,7 +769,7 @@ export function setDeskStatus(deskId, status) {
     desk.status = status;
     if (status === 'live') desk.liveSince = Date.now();
     if (status !== 'live') desk.openTrade = null;
-    store.log('info', '××•×¨×™×” Â· CIO', `${desk.label}: ס�����"ס ש�"נ� �S־${status}`);
+    store.log('info', 'אוריה · CIO', `${desk.label}: סטטוס שונה ל־${status}`);
   });
 }
 
@@ -720,9 +788,9 @@ export async function testIdea(ideaId, deskId) {
   if (idea.suggestedStrategy && idea.suggestedStrategy !== desk.strategyId) {
     switchStrategy(desk.id, idea.suggestedStrategy);
   }
-  store.log('info', '×¢×•×ž×¨ Â· ×ž×•×“×™×¢×™×Ÿ', `ש�"�S� את "${idea.title}" �S���"ק� ע�S ${desk.label}`);
+  store.log('info', 'עומר · מודיעין', `שולח את "${idea.title}" לבדיקה על ${desk.label}`);
   const res = await runDeskCycle(desk, { focus: true, deep: false });
-  idea.result = res?.evaluation?.oos ? `${res.evaluation.oos.returnPct}% OOS` : '×œ× ×¢×‘×¨';
+  idea.result = res?.evaluation?.oos ? `${res.evaluation.oos.returnPct}% OOS` : 'לא עבר';
   store.save();
   store.emit();
 }

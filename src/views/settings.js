@@ -4,8 +4,9 @@ import { LLM_PROVIDERS, PLATFORMS, DISCLAIMER } from '../config.js';
 import { testConnection, testPoolEntry } from '../llm.js';
 import { PROVIDERS, PROVIDER_ORDER } from '../providers.js';
 import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, parseCloudflareKeys, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
-import { h, notice, toast, openModal, downloadFile, timeAgo, tag } from '../ui.js';
+import { h, notice, toast, openModal, downloadFile, timeAgo, tag, copyText } from '../ui.js';
 import { syncFromCloud } from '../remote.js';
+import { dbState, testDatabaseConnection, pushStateToDatabase, pullFromDatabase, SUPABASE_SQL_SCHEMA } from '../db.js';
 import * as webllm from '../webllm.js';
 
 export function renderSettings(root, ui) {
@@ -94,37 +95,114 @@ export function renderSettings(root, ui) {
   mount(root, 
     h('div', { class: 'page-head' },
       h('div', {},
-        h('div', { class: 'eyebrow', text: 'Control room' }),
-        h('h1', { text: 'הגדרות ומפתחות' }),
-        h('p', { text: 'כאן מחברים את הסוכנים לפרוקסי Cloudflare Worker, מגדירים סיכון ומנהלים הגדרות פלטפורמה וזיכרון.' }),
+        h('div', { class: 'eyebrow', text: 'Control room · Database · Model Pool · Netlify 24/7' }),
+        h('h1', { text: 'הגדרות, מסד נתונים ובריכת מודלים' }),
+        h('p', { text: 'חיבור מסד הנתונים (Netlify DB / Supabase / Cloudflare), בריכת המודלים (API + Cloudflare Workers Proxies), וריצה 24/7 ב-Netlify.' }),
       ),
       h('div', { class: 'head-actions' },
-        h('button', { class: 'btn btn-primary', onclick: async () => { save(); try { const r = await testConnection(); toast('הפרוקסי ענה: ' + r, 'ok'); } catch (err) { toast('בדיקת חיבור נכשלה: ' + err.message, 'bad'); } } }, 'שמור ובדוק חיבור פרוקסי'),
+        h('button', { class: 'btn btn-primary', onclick: async () => { save(); try { const r = await testConnection(); toast('בריכת המודלים ענתה: ' + r, 'ok'); } catch (err) { toast('בדיקת חיבור נכשלה: ' + err.message, 'bad'); } } }, 'שמור ובדוק בריכת מודלים'),
       ),
     ),
-    notice('המפתחות נשמרים ב-localStorage של הדפדפן הזה בלבד. אין שרת, אין בסיס נתונים ואין שליחת מפתחות לשום מקום מלבד ספק המודל. אל תעלה קובץ הגדרות עם מפתחות לריפו ציבורי.', 'bad'),
   );
 
-  // --- חיבור AI: פעיל רק דרך Cloudflare Workers Proxy (מופרד מחיבור API ישיר) ---
-  mount(root, h('section', { 'aria-label': 'חיבור AI לסוכנים', style: { marginTop: '14px' } },
-    h('h2', { style: { margin: '0 0 6px', fontSize: '20px' }, text: 'חיבור AI לסוכנים' }),
-    h('p', { class: 'small muted', style: { margin: '0 0 10px', lineHeight: '1.7' } },
-      'המערכת מוגדרת כרגע לעבוד ', h('strong', { text: 'רק' }), ' עם פרוקסי Cloudflare Worker. ההגדרה הפעילה נמצאת בכרטיס הייעודי למטה ומופרדת לחלוטין מחיבור API ישיר.'),
-    proxyCard(ui),
-    h('details', { class: 'card', style: { marginTop: '12px' } },
-      h('summary', { style: { cursor: 'pointer', padding: '14px 16px', fontWeight: '600', fontSize: '15px' } },
-        'חיבור API ישיר לספקים (מושבת זמנית — מופרד מהפרוקסי)',
-        ' ', tag('לא פעיל', 'dry'),
+  mount(root, dbCard(ui));
+
+  const directApiCard = h('div', { class: 'card', style: { marginTop: '14px' } },
+    h('div', { class: 'card-head' },
+      h('div', {},
+        h('h2', { text: 'הגדרת חיבור API ישיר (Direct LLM API / Custom Endpoint)' }),
+        h('div', { class: 'card-sub', text: 'חיבור ישיר לכל ספק מודל (OpenAI, Groq, Gemini, Anthropic, OpenRouter, Cloudflare או שרת פרוקסי מותאם)' }),
       ),
-      h('div', { style: { padding: '0 16px 16px' } },
-        notice('מושבת זמנית: חיבור API ישיר, בריכת מודלים ו-WebLLM אינם בשימוש ולא יפעילו את הסוכנים. כדי שהמערכת תעבוד יש להגדיר ולשמור פרוקסי Cloudflare Worker פעיל בכרטיס שמעל.', 'blue'),
-        h('ul', { style: { margin: '8px 0 0', paddingInlineStart: '20px', lineHeight: '1.8' } },
-          h('li', {}, h('strong', { text: 'פרוקסי Cloudflare Worker (החיבור הפעיל): ' }), 'מזינים כתובת Worker (למשל https://name.workers.dev/chat), בוחרים מודל ושומרים. ה-Worker מעביר את הבקשה למודל ומחזיק את מפתח הספק כסוד ב-Cloudflare — לא בדפדפן.'),
-          h('li', {}, h('strong', { text: 'חיבור API ישיר / בריכה (מושבת): ' }), 'הזנת מפתחות ספקים ישירות בדפדפן או ניהול בריכת מפתחות — כרגע לא בשימוש כדי לעבוד דרך Worker בלבד.'),
-          h('li', {}, h('strong', { text: 'למה ההפרדה? ' }), 'כרטיס הפרוקסי ייעודי ונגיש (תוויות, הוראות שלב-אחר-שלב, סטטוס ובדיקת חיבור) ועומד בפני עצמו; הגדרות API ישירות מופרדות ואינן משפיעות בזמן שהן מושבתות.'),
-        ),
-      ),
+      tag(s.llm?.apiKey ? 'מפתח API מוגדר' : 'ללא מפתח ישיר', s.llm?.apiKey ? 'live' : 'dry'),
     ),
+    h('div', { class: 'form-grid' },
+      field('ספק מודל (Provider)', provider),
+      field('שם מודל (Model)', model),
+      h('div', { class: 'full' }, field('כתובת API / Proxy Base URL', baseUrl)),
+      field('מפתח API / Token', keyInput),
+      field('Temperature (יצירתיות 0-1.5)', temperature),
+    ),
+    h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '12px' } },
+      h('button', {
+        class: 'btn btn-sm btn-primary',
+        onclick: () => {
+          save();
+          if (keyInput.value.trim() || baseUrl.value.trim()) {
+            addPoolEntry(store.state, {
+              provider: provider.value in PROVIDERS ? provider.value : 'custom',
+              baseUrl: baseUrl.value.trim(),
+              model: model.value.trim(),
+              key: keyInput.value.trim(),
+              label: `API · ${LLM_PROVIDERS[provider.value]?.label || provider.value}`,
+            });
+            store.save(true);
+            store.emit();
+          }
+          toast('הגדרות ה-API הישיר נשמרו ונוספו לבריכה', 'ok');
+          ui.rerender();
+        },
+      }, 'שמור חיבור API והוסף לבריכה'),
+      h('button', {
+        class: 'btn btn-sm',
+        onclick: async () => {
+          save();
+          try {
+            const r = await testConnection();
+            toast('חיבור ה-API ענה בהצלחה: ' + r, 'ok');
+          } catch (err) {
+            toast('בדיקת ה-API נכשלה: ' + err.message, 'bad');
+          }
+        },
+      }, 'בדוק חיבור API'),
+    ),
+  );
+
+  const binanceCfg = s.binance || {};
+  const binKey = h('input', { type: 'password', value: binanceCfg.apiKey || '', placeholder: 'Binance Testnet API Key', dir: 'ltr', autocomplete: 'off' });
+  const binSecret = h('input', { type: 'password', value: binanceCfg.apiSecret || '', placeholder: 'Binance Testnet Secret Key', dir: 'ltr', autocomplete: 'off' });
+  const binProxy = h('input', { type: 'url', value: binanceCfg.proxyUrl || '', placeholder: 'https://your-market-proxy.workers.dev (אופציונלי)', dir: 'ltr' });
+
+  const exchangeApiCard = h('div', { class: 'card', style: { marginTop: '14px' } },
+    h('div', { class: 'card-head' },
+      h('div', {},
+        h('h2', { text: 'הגדרת API ופרוקסי לבורסה (Binance Testnet & Market Proxy)' }),
+        h('div', { class: 'card-sub', text: 'מפתחות API למסחר דמה מול Binance Testnet ופרוקסי אופציונלי לנתוני שוק' }),
+      ),
+      tag(binanceCfg.apiKey ? 'Binance API מוגדר' : 'סימולציה מקומית', binanceCfg.apiKey ? 'live' : 'dry'),
+    ),
+    h('div', { class: 'form-grid' },
+      field('Binance Testnet API Key', binKey),
+      field('Binance Testnet Secret Key', binSecret),
+      h('div', { class: 'full' }, field('כתובת פרוקסי לנתוני שוק / בורסה (Proxy URL — אופציונלי)', binProxy)),
+    ),
+    h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '12px' } },
+      h('button', {
+        class: 'btn btn-sm btn-primary',
+        onclick: () => {
+          store.mutate((st) => {
+            st.settings.binance = {
+              ...(st.settings.binance || {}),
+              apiKey: binKey.value.trim(),
+              apiSecret: binSecret.value.trim(),
+              proxyUrl: binProxy.value.trim(),
+            };
+          });
+          toast('הגדרות ה-API והפרוקסי לבורסה נשמרו', 'ok');
+          ui.rerender();
+        },
+      }, 'שמור מפתחות ופרוקסי בורסה'),
+    ),
+  );
+
+  mount(root, h('section', { 'aria-label': 'חיבור AI ובריכת מודלים', style: { marginTop: '14px' } },
+    h('h2', { style: { margin: '0 0 6px', fontSize: '20px' }, text: 'הגדרת פרוקסי, חיבורי API ובריכת מודלים' }),
+    h('p', { class: 'small muted', style: { margin: '0 0 10px', lineHeight: '1.7' } },
+      'הסוכנים עובדים עם בריכת מודלים משולבת: פרוקסים של Cloudflare Workers, חיבור API ישיר, חשבונות Cloudflare Workers AI, מפתחות ספקים (Groq, Gemini, OpenRouter ועוד) וגיבוי אוטומטי דרך Netlify Function Proxy (/api/llm).'),
+    proxyCard(ui),
+    directApiCard,
+    poolCard(ui),
+    exchangeApiCard,
+    webllmCard(ui),
   ));
 
   mount(root, tradingviewCard(ui));
@@ -405,18 +483,23 @@ function proxyCard(ui) {
     const url = proxyUrl.value.trim();
     if (!url) { toast('יש להזין כתובת Worker (URL)', 'bad'); proxyUrl.focus(); return; }
     if (!/^https?:\/\//i.test(url)) { toast('כתובת ה-Worker חייבת להתחיל ב-https://', 'bad'); proxyUrl.focus(); return; }
-    // replace previous gateway entries to keep "Cloudflare proxy only"
     store.mutate((x) => {
-      if (x.settings && x.settings.pool && Array.isArray(x.settings.pool.entries)) {
-        x.settings.pool.entries = x.settings.pool.entries.filter((e) => e.provider !== 'gateway');
-      }
       x.settings.cloudflareProxyUrl = url;
       x.settings.cloudflareProxyKey = proxyKey.value.trim();
       x.settings.cloudflareProxyModel = modelIn.value.trim() || 'openai/gpt-oss-120b';
     });
-    const res = addPoolEntry(store.state, { provider: 'gateway', model: modelIn.value.trim() || 'openai/gpt-oss-120b', key: proxyKey.value.trim(), baseUrl: url, label: 'Cloudflare Worker Proxy' });
-    if (!res.duplicate) { store.save(true); store.emit(); }
-    toast('פרוקסי Cloudflare נשמר — המערכת תשתמש בו', 'ok');
+    let hostLabel = 'Cloudflare Worker Proxy';
+    try { hostLabel = `CF Worker · ${new URL(url).hostname.split('.')[0]}`; } catch {}
+    const res = addPoolEntry(store.state, {
+      provider: 'gateway',
+      model: modelIn.value.trim() || 'openai/gpt-oss-120b',
+      key: proxyKey.value.trim(),
+      baseUrl: url,
+      label: hostLabel,
+    });
+    store.save(true);
+    store.emit();
+    toast(res.duplicate ? 'פרוקסי Cloudflare עודכן בבריכה' : 'פרוקסי Cloudflare נוסף לבריכה ונשמר', 'ok');
     ui.rerender();
   };
 
@@ -425,18 +508,18 @@ function proxyCard(ui) {
     if (!pool.length) return tag('לא מחובר', 'dry');
     const s = entryStatus(pool[0]);
     const [label, color] = STATUS_LABEL[s] || [s, 'dry'];
-    return tag('מחובר · ' + label, color === 'green' ? 'live' : (color === 'red' ? 'dry' : 'opt'));
+    return tag(`${pool.length} פרוקסים · ${label}`, color === 'green' ? 'live' : (color === 'red' ? 'dry' : 'opt'));
   })();
 
   return h('div', { class: 'card', style: { marginTop: '14px' } },
     h('div', { class: 'card-head' },
       h('div', {},
-        h('h2', { text: 'חיבור AI דרך Cloudflare Workers (פרוקסי)' }),
-        h('div', { class: 'card-sub', text: 'הגדרת החיבור הפעילה היחידה כרגע — הסוכנים ישתמשו רק ב-Worker הזה' }),
+        h('h2', { text: 'פרוקסים של Cloudflare Workers בבריכה' }),
+        h('div', { class: 'card-sub', text: 'אפשר להוסיף פרוקסי אחד או כמה וורקרים שיסתובבו יחד עם מפתחות ה-API בבריכה' }),
       ),
       status,
     ),
-    notice('כרגע המערכת מוגדרת לעבוד רק עם פרוקסי Cloudflare Worker. חיבורים ישירים לספקים אחרים מושבתים עד לשינוי הגדרה.', 'bad'),
+    notice('כל Worker שתוסיף כאן מצטרף לבריכת המודלים (ללא מחיקת מפתחות או וורקרים קיימים) ומשמש את הסוכנים למיטוב האסטרטגיות.', 'blue'),
 
     h('div', { role: 'group', 'aria-label': 'הגדרות פרוקסי Cloudflare', style: { marginTop: '12px' } },
       h('div', { class: 'form-grid' },
@@ -586,7 +669,7 @@ function poolCard(ui) {
     return h('div', { class: 'row', style: { gap: '10px', padding: '10px 0', borderTop: '1px solid rgba(255,255,255,0.06)', alignItems: 'flex-start' } },
       h('div', { class: 'grow' },
         h('div', { class: 'row wrap', style: { gap: '6px' } },
-          h('b', { style: { fontSize: '13px' }, text: def.label }),
+          h('b', { style: { fontSize: '13px' }, text: entry.label || def.label }),
           tag(entry.model || '—', 'dry'),
           tag(label, color),
         ),
@@ -724,6 +807,143 @@ function helpBlock(providerSel) {
       h('li', { class: 'small muted', text: 'ספקים כמו Groq ו-NVIDIA חוסמים קריאה ישירה מהדפדפן (CORS) — הבדיקה כאן תחזיר שגיאת רשת, אבל הריצה בענן תקינה. Gemini ו-OpenRouter עובדים גם כאן.' }),
       h('li', { class: 'small muted', text: 'כל המפתחות נשמרים מקומית בדפדפן הזה, וה-runner מנקה אותם מ-data/state.json לפני כל commit.' }),
     ),
+  );
+}
+
+function dbCard(ui) {
+  const dbCfg = store.state.settings.db || {};
+  const modeSel = h('select', {}, [
+    ['auto', 'אוטומטי (Netlify DB + Supabase אם הוגדר)'],
+    ['netlify', 'Netlify Database (/api/db · ללא הגדרות נוספות)'],
+    ['supabase', 'Supabase PostgreSQL (REST API)'],
+    ['worker', 'Cloudflare Worker D1 / KV'],
+  ].map(([val, label]) => h('option', { value: val, selected: (dbCfg.mode || 'auto') === val }, label)));
+
+  const supaUrl = h('input', {
+    type: 'url',
+    value: dbCfg.supabaseUrl || 'https://lqiakdsdpdvdlobeeovz.supabase.co',
+    placeholder: 'https://lqiakdsdpdvdlobeeovz.supabase.co',
+    dir: 'ltr',
+  });
+  const supaKey = h('input', {
+    type: 'password',
+    value: dbCfg.supabaseKey || '',
+    placeholder: 'Supabase Anon Key (eyJ...)',
+    dir: 'ltr',
+    autocomplete: 'off',
+  });
+  const workerDbUrl = h('input', {
+    type: 'url',
+    value: dbCfg.workerDbUrl || '',
+    placeholder: 'https://alta-db.your-subdomain.workers.dev',
+    dir: 'ltr',
+  });
+  const netlifyTok = h('input', {
+    type: 'password',
+    value: dbCfg.netlifyToken || '',
+    placeholder: 'Netlify / Cloud Auth Token (אופציונלי)',
+    dir: 'ltr',
+    autocomplete: 'off',
+  });
+
+  const saveDb = () => {
+    store.mutate((st) => {
+      st.settings.db = {
+        ...(st.settings.db || {}),
+        enabled: true,
+        mode: modeSel.value,
+        supabaseUrl: supaUrl.value.trim(),
+        supabaseKey: supaKey.value.trim(),
+        workerDbUrl: workerDbUrl.value.trim(),
+        netlifyToken: netlifyTok.value.trim(),
+        apiEndpoint: '/api/db',
+      };
+    });
+  };
+
+  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(46, 204, 113, 0.35)' } },
+    h('div', { class: 'card-head' },
+      h('div', {},
+        h('h2', { text: 'מסד נתונים חינמי + ריצה 24/7 ב-Netlify' }),
+        h('div', { class: 'card-sub', text: 'שמירה אוטומטית של מצב השולחנות, היסטוריית בקטסטים, גרסאות רובוטים ועסקאות נייר' }),
+      ),
+      h('div', { class: 'row', style: { gap: '6px' } },
+        tag(dbState.connected ? `מחובר · ${dbState.provider}` : 'מוכן לסנכרון', dbState.connected ? 'live' : 'opt'),
+        tag(`מחזורים: ${dbState.counts.cycles || store.state.stats.cycles || 0}`, 'dry'),
+        tag(`גרסאות: ${dbState.counts.versions || store.state.stats.deployments || 0}`, 'dry'),
+      ),
+    ),
+    notice('ב-Netlify פועלות פונקציות שרת מובנות (/api/db, /api/llm ו-/api/firm-cron שרץ אוטומטית כל 15 דקות 24/7). בנוסף ניתן לחבר ישירות Supabase PostgreSQL או Cloudflare D1.', 'blue'),
+    h('div', { class: 'form-grid', style: { marginTop: '12px' } },
+      field('מצב מסד נתונים', modeSel),
+      field('Supabase Project URL (אופציונלי)', supaUrl),
+      field('Supabase Key / Token (הוזן)', supaKey),
+      field('Cloudflare D1 Worker URL (אופציונלי)', workerDbUrl),
+      h('div', { class: 'full' }, field('Netlify / Cloud Auth Token (הוזן)', netlifyTok)),
+    ),
+    h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '12px' } },
+      h('button', {
+        class: 'btn btn-sm btn-primary',
+        onclick: async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true;
+          saveDb();
+          try {
+            const res = await testDatabaseConnection();
+            if (res?.ok) {
+              toast(`מסד הנתונים סונכרן בהצלחה (${res.provider || 'Netlify DB'})`, 'ok');
+            } else {
+              toast(`שגיאה בחיבור למסד הנתונים: ${res?.error || res?.reason || 'לא זמין'}`, 'bad');
+            }
+          } catch (err) {
+            toast('שגיאת מסד נתונים: ' + err.message, 'bad');
+          } finally {
+            btn.disabled = false;
+            ui.rerender();
+          }
+        },
+      }, 'שמור וסנכרן עם הדאטה-בייס'),
+      h('button', {
+        class: 'btn btn-sm',
+        onclick: async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true;
+          btn.textContent = 'מריץ מחזור ענן…';
+          try {
+            const res = await fetch('/api/firm-cron', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cycles: 2, deep: false }),
+            });
+            const data = await res.json();
+            if (data?.ok) {
+              await syncFromCloud({ force: true });
+              toast(`מחזור Netlify 24/7 הושלם ונשמר בדאטה-בייס (${data.summary?.length || 2} שולחנות)`, 'ok');
+            } else {
+              toast('שגיאה בהרצת מחזור ענן: ' + (data?.error || 'נכשל'), 'bad');
+            }
+          } catch (err) {
+            toast('שגיאה: ' + err.message, 'bad');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = '⚡ הרץ מחזור אופטימיזציה בשרת (Netlify)';
+            ui.rerender();
+          }
+        },
+      }, '⚡ הרץ מחזור אופטימיזציה בשרת (Netlify)'),
+      h('button', {
+        class: 'btn btn-sm btn-ghost',
+        onclick: () => {
+          copyText(SUPABASE_SQL_SCHEMA);
+          toast('סכמת SQL ל-Supabase הועתקה ללוח', 'ok');
+        },
+      }, '📋 העתק סכמת SQL ל-Supabase'),
+      h('button', {
+        class: 'btn btn-sm btn-ghost',
+        onclick: () => openModal('סכמת טבלאות PostgreSQL עבור Supabase', h('pre', { class: 'code', text: SUPABASE_SQL_SCHEMA }), { wide: true }),
+      }, '👁 הצג SQL ל-Supabase'),
+    ),
+    dbState.lastError ? h('div', { class: 'small red', style: { marginTop: '8px' }, text: `שגיאה אחרונה: ${dbState.lastError}` }) : null,
   );
 }
 

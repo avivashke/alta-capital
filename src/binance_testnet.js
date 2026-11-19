@@ -23,7 +23,6 @@ async function hmacSign(secret, queryString) {
   const sig = await subtle.sign('HMAC', key, enc.encode(queryString));
   return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
-}
 
 function buildQuery(params) {
   return Object.entries(params)

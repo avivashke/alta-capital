@@ -1,0 +1,25 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Run the autonomous optimization & paper-trading engine every 15 minutes 24/7 on Netlify
+[functions."firm-cron"]
+  schedule = "*/15 * * * *"
+
+[[redirects]]
+  from = "/api/db"
+  to = "/.netlify/functions/db"
+  status = 200
+
+[[redirects]]
+  from = "/api/llm"
+  to = "/.netlify/functions/llm"
+  status = 200
+
+[[redirects]]
+  from = "/api/firm-cron"
+  to = "/.netlify/functions/firm-cron"
+  status = 200

@@ -152,6 +152,7 @@ export const NAV = [
   { id: 'sentiment', label: 'סנטימנט וחדשות', icon: '◉' },
   { id: 'portfolio', label: 'תיק מסחר', icon: '💼' },
   { id: 'charts', label: 'גרפים ואינדיקטורים', icon: '📈' },
+  { id: 'academy', label: 'צ׳אט חינוכי ואסטרטגיות', icon: '🎓' },
   { id: 'advisor', label: 'יועץ AI', icon: '✦' },
   { id: 'settings', label: 'הגדרות ומפתחות', icon: '⚙' },
   { id: 'docs', label: 'מדריך הקמה', icon: '❯' },
