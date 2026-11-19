@@ -370,3 +370,67 @@ export async function saveContextToGitHub() {
   store.emit();
   return out.commit?.html_url || null;
 }
+
+// --- Nadav: Continuous GitHub & Web Research Scout (Gann, Indicators & System Optimization) ---
+
+export const CURATED_GITHUB_INTEL = [
+  {
+    name: 'allanninal/gann-toolkit-pro-pine',
+    url: 'https://github.com/allanninal/gann-toolkit-pro-pine',
+    category: 'גאן (Gann)',
+    benefit: 'יישום Pine Script v6 של Square of 9, מניפות זוויות, תיבות גאן וניתוח רב-נכסי — מקור לחידוד זיהוי נקודות מפנה.',
+  },
+  {
+    name: 'Galarius/gann-square',
+    url: 'https://github.com/Galarius/gann-square',
+    category: 'גאן (Gann)',
+    benefit: 'אלגוריתם Python לבניית תתי-ריבועים של גאן ויחסי מחיר-תאריך פרוגרמטיים.',
+  },
+  {
+    name: 'monch1962/gann-swing',
+    url: 'https://github.com/monch1962/gann-swing',
+    category: 'גאן (Gann)',
+    benefit: 'מבנה Gann Swings לזיהוי נקי יותר של שיאים ושפלים היסטוריים עבור עוגני Square of 9.',
+  },
+  {
+    name: 'polakowo/vectorbt',
+    url: 'https://github.com/polakowo/vectorbt',
+    category: 'ייעול מערכת ובקטסט',
+    benefit: 'השראה לבקטסט וקטורי מהיר של אלפי קומבינציות פרמטרים בו-זמנית להאצת מנוע האופטימיזציה.',
+  },
+  {
+    name: 'twopirllc/pandas-ta',
+    url: 'https://github.com/twopirllc/pandas-ta',
+    category: 'אינדיקטורים ואסטרטגיות',
+    benefit: 'מעל 130 אינדיקטורים טכניים מתקדמים (ADX, SuperTrend, Efficiency Ratio, Z-Score) להרחבת תפריט האסטרטגיות.',
+  },
+  {
+    name: 'freqtrade/freqtrade-strategies',
+    url: 'https://github.com/freqtrade/freqtrade-strategies',
+    category: 'אסטרטגיות מסחר',
+    benefit: 'מאגר קהילתי של אסטרטגיות מוכחות לחיזוק ביצועי הבוטים במבחני הנוסטרו.',
+  },
+];
+
+export async function runNadavGitHubScout({ quiet = false } = {}) {
+  const queries = ['"square of 9" OR "wd gann"', 'freqtrade strategy indicators', 'vectorbt backtesting'];
+  let totalAdded = 0;
+  for (const q of queries) {
+    if (!canUse('github')) break;
+    try {
+      const r = await scanGitHub(q, { quiet: true });
+      totalAdded += r.added || 0;
+    } catch { /* respect quota/network */ }
+  }
+  const latestIdeas = (store.state.ideas || []).filter((i) => i.source === 'GitHub').slice(0, 12);
+  store.state.githubScout = {
+    updatedAt: Date.now(),
+    curated: CURATED_GITHUB_INTEL,
+    liveReposCount: latestIdeas.length,
+    lastAdded: totalAdded,
+  };
+  store.log('ok', 'נדב · חוקר GitHub', `סריקת GitHub ואינטרנט הושלמה: ${CURATED_GITHUB_INTEL.length} ריפואי ליבה + ${totalAdded} ריפואים חדשים מהרשת לעדכון גאן ואינדיקטורים.`);
+  store.save();
+  if (!quiet) store.emit();
+  return store.state.githubScout;
+}

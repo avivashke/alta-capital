@@ -22,6 +22,7 @@ import { renderDocs } from './views/docs.js';
 import { renderPortfolio } from './views/portfolio.js';
 import { renderCharts } from './views/charts.js';
 import { renderGann } from './views/gann.js';
+import { renderFundamentals } from './views/fundamentals.js';
 import { renderNostro } from './views/nostro.js';
 import { renderAcademy } from './views/academy.js';
 
@@ -36,6 +37,7 @@ const VIEWS = {
   advisor: renderAdvisor,
   academy: renderAcademy,
   gann: renderGann,
+  fundamentals: renderFundamentals,
   nostro: renderNostro,
   settings: renderSettings,
   docs: renderDocs,

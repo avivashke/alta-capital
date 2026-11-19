@@ -183,9 +183,41 @@ async function fetchYahooChart(symbol, tf = '1d', limit = 500) {
   };
 }
 
+async function fetchAssetNews(symbol) {
+  const cleanSym = symbol.replace(/USDT$/i, '-USD');
+  const rssUrls = [
+    `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(cleanSym)}&region=US&lang=en-US`,
+    `https://news.google.com/rss/search?q=${encodeURIComponent(symbol.replace('USDT', '') + ' market finance')}&hl=en-US&gl=US&ceid=US:en`,
+  ];
+  for (const url of rssUrls) {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      if (!res.ok) continue;
+      const xml = await res.text();
+      const items = [];
+      const itemRe = /<item>([\s\S]*?)<\/item>/gi;
+      let m;
+      while ((m = itemRe.exec(xml)) !== null && items.length < 8) {
+        const block = m[1];
+        const title = (block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>|<title>([\s\S]*?)<\/title>/i)?.[1] || block.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || '').trim();
+        const link = (block.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || '').trim();
+        const pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || '').trim();
+        if (title) items.push({ title, link, pubDate });
+      }
+      if (items.length) return { ok: true, symbol, source: url.includes('yahoo') ? 'Yahoo Finance RSS' : 'Google News RSS', items };
+    } catch { /* try next feed */ }
+  }
+  return { ok: false, symbol, items: [] };
+}
+
 export async function handleMarketRequest(query = {}) {
   if (query.action === 'macro') {
     return await fetchMacroSnapshot();
+  }
+
+  if (query.action === 'news') {
+    const sym = String(query.symbol || 'NVDA').trim();
+    return await fetchAssetNews(sym);
   }
 
   if (query.action === 'fundamentals') {

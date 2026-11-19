@@ -2,7 +2,7 @@ import { mount } from '../ui.js';
 import { store } from '../store.js';
 import { RESEARCH_SOURCES } from '../config.js';
 import { h, pct, num, section, tag, notice, empty, toast, timeAgo, downloadFile, openModal } from '../ui.js';
-import { budgetSnapshot, scanGitHub, scanFearGreed, scanTrending, scanReddit, scanNews, refreshSentiment, saveContextToGitHub, buildContextDocument, scoreText } from '../research.js';
+import { budgetSnapshot, scanGitHub, scanFearGreed, scanTrending, scanReddit, scanNews, refreshSentiment, saveContextToGitHub, buildContextDocument, scoreText, CURATED_GITHUB_INTEL, runNadavGitHubScout } from '../research.js';
 import { testIdea } from '../firm.js';
 import { testAllFeeds } from '../conncheck.js';
 
@@ -35,7 +35,8 @@ export function renderResearch(root, ui) {
         h('p', { text: 'הסוכנים סורקים מקורות חינמיים וציבוריים, שומרים מכסת שאילתות כדי לא לשרוף מפתחות, ומזרימים רעיונות לבדיקה על השולחנות.' }),
       ),
       h('div', { class: 'head-actions' },
-        h('button', { class: 'btn', onclick: () => act(() => refreshSentiment(), 'כל המקורות נסרקו') }, '⟳ סרוק הכל'),
+        h('button', { class: 'btn btn-primary btn-sm', onclick: () => act(() => runNadavGitHubScout(), 'נדב סרק ריפואים ב-GitHub לגאן וייעול המערכת') }, '⌘ סריקת נדב (GitHub גאן וייעול)'),
+        h('button', { class: 'btn btn-sm', onclick: () => act(() => refreshSentiment(), 'כל המקורות נסרקו') }, '⟳ סרוק הכל'),
       ),
     ),
   );
@@ -52,6 +53,26 @@ export function renderResearch(root, ui) {
       )),
     ),
     notice('GitHub ללא טוקן: 10 בקשות/דקה. מומלץ להוסיף טוקן קריאה בהגדרות כדי להעלות את המכסה. Fear & Greed ו-CoinGecko חינמיים ללא מפתח.', 'blue'),
+  ));
+
+  mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
+    h('div', { class: 'card-head' },
+      h('div', {},
+        h('h2', { text: '⌘ נדב · חוקר GitHub וחדשנות קוד (גאן, אינדיקטורים וייעול מערכת)' }),
+        h('div', { class: 'card-sub', text: 'מאגר ריפואים שנבדקו להעשרת מודול גאן, אפקטיביות אינדיקטורים ומהירות בקטסט + סריקת GitHub חיה' }),
+      ),
+      tag(state.githubScout?.updatedAt ? `עודכן ${timeAgo(state.githubScout.updatedAt)}` : 'מאגר ליבה פעיל', 'live'),
+    ),
+    h('div', { class: 'table-wrap' },
+      h('table', {},
+        h('thead', {}, h('tr', {}, h('th', { text: 'ריפוזיטורי (GitHub)' }), h('th', { text: 'תחום' }), h('th', { text: 'תרומה למערכת ולאסטרטגיות' }))),
+        h('tbody', {}, (state.githubScout?.curated || CURATED_GITHUB_INTEL).map((r) => h('tr', {},
+          h('td', { class: 'small' }, h('a', { href: r.url, target: '_blank', rel: 'noopener noreferrer', style: { color: '#7dd3fc', fontWeight: '600' } }, r.name)),
+          h('td', {}, tag(r.category, 'opt')),
+          h('td', { class: 'small muted', text: r.benefit }),
+        ))),
+      ),
+    ),
   ));
 
   mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
