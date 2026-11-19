@@ -911,19 +911,36 @@ function dbCard(ui) {
     });
   };
 
-  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(46, 204, 113, 0.35)' } },
+  if (!dbState.lastSyncAt && !dbState.saving) {
+    pullFromDatabase().then(() => ui.rerender()).catch(() => {});
+  }
+
+  const supaBadge = dbState.supabaseConnected
+    ? tag('🟢 Supabase מחובר ופעיל', 'live')
+    : tag('🔴 Supabase לא מחובר', 'red');
+
+  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: dbState.supabaseConnected ? 'rgba(46, 204, 113, 0.55)' : 'rgba(224, 182, 74, 0.4)' } },
     h('div', { class: 'card-head' },
       h('div', {},
         h('h2', { text: 'מסד נתונים חינמי + ריצה 24/7 ב-Netlify' }),
         h('div', { class: 'card-sub', text: 'שמירה אוטומטית של מצב השולחנות, היסטוריית בקטסטים, גרסאות רובוטים ועסקאות נייר' }),
       ),
-      h('div', { class: 'row', style: { gap: '6px' } },
-        tag(dbState.connected ? `מחובר · ${dbState.provider}` : 'מוכן לסנכרון', dbState.connected ? 'live' : 'opt'),
+      h('div', { class: 'row wrap', style: { gap: '6px' } },
+        supaBadge,
+        tag(dbState.connected ? `מסד פעיל · ${dbState.provider}` : 'מוכן לסנכרון', dbState.connected ? 'live' : 'opt'),
         tag(`מחזורים: ${dbState.counts.cycles || store.state.stats.cycles || 0}`, 'dry'),
         tag(`גרסאות: ${dbState.counts.versions || store.state.stats.deployments || 0}`, 'dry'),
       ),
     ),
-    notice('ב-Netlify פועלות פונקציות שרת מובנות (/api/db, /api/llm ו-/api/firm-cron שרץ אוטומטית כל 15 דקות 24/7). בנוסף ניתן לחבר ישירות Supabase PostgreSQL או Cloudflare D1.', 'blue'),
+    notice(
+      dbState.supabaseConnected
+        ? '✅ חיבור ל-Supabase PostgreSQL מאומת ופעיל! כל מחזור, גרסה ועסקה נשמרים ישירות ב-Supabase.'
+        : 'הדרך הכי פשוטה לחיבור קבוע: הגדר ב-Netlify → Site configuration → Environment variables את SUPABASE_URL ו-SUPABASE_ANON_KEY, והמערכת תתחבר אוטומטית בלי להזין מפתח בדפדפן. לחילופין הדבק מפתח (eyJ... / sb_publishable_...) למטה ולחץ שמור.',
+      dbState.supabaseConnected ? 'blue' : 'blue',
+    ),
+    dbState.supabaseError && !dbState.supabaseConnected
+      ? h('div', { class: 'notice bad', style: { marginTop: '8px' }, text: 'סטטוס Supabase: ' + dbState.supabaseError })
+      : null,
     h('div', { class: 'form-grid', style: { marginTop: '12px' } },
       field('מצב מסד נתונים', modeSel),
       field('Supabase Project URL (אופציונלי)', supaUrl),

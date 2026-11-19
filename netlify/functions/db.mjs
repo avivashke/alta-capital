@@ -55,47 +55,74 @@ function writeDbFile(db) {
   }
 }
 
-async function supaFetch(table, { method = 'GET', query = '', body = null, upsert = false } = {}) {
-  const url = (process.env.SUPABASE_URL || 'https://lqiakdsdpdvdlobeeovz.supabase.co').replace(/\/+$/, '');
+function getSupaEnv() {
+  const url = (process.env.SUPABASE_URL || 'https://lqiakdsdpdvdlobeeovz.supabase.co').trim().replace(/\/+$/, '');
   const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
-  if (!url || !key) return null;
+  return { url, key, configured: !!(url && key) };
+}
+
+async function supaFetch(table, { method = 'GET', query = '', body = null, upsert = false } = {}) {
+  const { url, key } = getSupaEnv();
+  if (!url || !key) return { ok: false, error: 'SUPABASE_ANON_KEY not set in Netlify Environment Variables' };
   const res = await fetch(`${url}/rest/v1/${table}${query ? '?' + query : ''}`, {
     method,
     headers: {
       apikey: key,
-      Authorization: `Bearer ${key}`,
+      ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}),
       'Content-Type': 'application/json',
       Prefer: upsert ? 'resolution=merge-duplicates,return=minimal' : 'return=representation',
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) return null;
-  return method === 'GET' ? await res.json() : { ok: true };
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    return { ok: false, status: res.status, error: `HTTP ${res.status}: ${txt.slice(0, 180)}` };
+  }
+  const data = method === 'GET' ? await res.json() : null;
+  return { ok: true, data };
 }
 
 export async function handleDbRequest(method, bodyObj = {}) {
   const db = readDbFile();
+  const supaEnv = getSupaEnv();
 
   if (method === 'GET' || bodyObj.action === 'pull') {
-    try {
-      const rows = await supaFetch('firm_state', { method: 'GET', query: 'id=eq.main&select=state,updated_at' });
-      if (Array.isArray(rows) && rows[0]?.state) {
-        return {
-          ok: true,
-          provider: 'Supabase PostgreSQL',
-          updatedAt: rows[0].updated_at,
-          state: rows[0].state,
-          counts: {
-            versions: (db.versions || []).length,
-            trades: (db.trades || []).length,
-            cycles: rows[0].state?.stats?.cycles || 0,
-          },
-        };
+    let supabaseConnected = false;
+    let supabaseError = supaEnv.configured ? null : 'משתנה SUPABASE_ANON_KEY לא מוגדר ב-Netlify Environment Variables';
+    if (supaEnv.configured) {
+      try {
+        const res = await supaFetch('firm_state', { method: 'GET', query: 'id=eq.main&select=state,updated_at' });
+        if (res.ok) {
+          supabaseConnected = true;
+          const rows = res.data;
+          if (Array.isArray(rows) && rows[0]?.state) {
+            return {
+              ok: true,
+              provider: 'Supabase PostgreSQL (Netlify Env)',
+              supabaseConfigured: true,
+              supabaseConnected: true,
+              updatedAt: rows[0].updated_at,
+              state: rows[0].state,
+              counts: {
+                versions: (db.versions || []).length,
+                trades: (db.trades || []).length,
+                cycles: rows[0].state?.stats?.cycles || 0,
+              },
+            };
+          }
+        } else {
+          supabaseError = res.error;
+        }
+      } catch (err) {
+        supabaseError = err.message;
       }
-    } catch { /* fall through to local db */ }
+    }
     return {
       ok: true,
-      provider: 'Netlify Database',
+      provider: supabaseConnected ? 'Supabase PostgreSQL (Netlify Env)' : 'Netlify Database',
+      supabaseConfigured: supaEnv.configured,
+      supabaseConnected,
+      supabaseError,
       updatedAt: db.updatedAt,
       state: db.state,
       counts: {
@@ -109,41 +136,58 @@ export async function handleDbRequest(method, bodyObj = {}) {
   }
 
   const action = bodyObj.action || 'push_state';
+  let supaWrite = null;
 
   if (action === 'push_state' && bodyObj.state) {
     db.state = bodyObj.state;
     writeDbFile(db);
-    await supaFetch('firm_state', {
-      method: 'POST',
-      upsert: true,
-      body: {
-        id: 'main',
-        state: bodyObj.state,
-        cycles: bodyObj.state.stats?.cycles || 0,
-        backtests: bodyObj.state.stats?.backtests || 0,
-        deployments: bodyObj.state.stats?.deployments || 0,
-        updated_at: new Date().toISOString(),
-      },
-    }).catch(() => {});
+    if (supaEnv.configured) {
+      supaWrite = await supaFetch('firm_state', {
+        method: 'POST',
+        upsert: true,
+        body: {
+          id: 'main',
+          state: bodyObj.state,
+          cycles: bodyObj.state.stats?.cycles || 0,
+          backtests: bodyObj.state.stats?.backtests || 0,
+          deployments: bodyObj.state.stats?.deployments || 0,
+          updated_at: new Date().toISOString(),
+        },
+      });
+    }
   } else if (action === 'record_version' && bodyObj.record) {
     db.versions = db.versions || [];
     db.versions.push(bodyObj.record);
     if (db.versions.length > 200) db.versions = db.versions.slice(-200);
     writeDbFile(db);
-    await supaFetch('firm_versions', { method: 'POST', upsert: true, body: bodyObj.record }).catch(() => {});
+    if (supaEnv.configured) supaWrite = await supaFetch('firm_versions', { method: 'POST', upsert: true, body: bodyObj.record });
   } else if (action === 'record_trade' && bodyObj.record) {
     db.trades = db.trades || [];
     db.trades.push(bodyObj.record);
     if (db.trades.length > 500) db.trades = db.trades.slice(-500);
     writeDbFile(db);
-    await supaFetch('firm_trades', { method: 'POST', upsert: true, body: bodyObj.record }).catch(() => {});
+    if (supaEnv.configured) supaWrite = await supaFetch('firm_trades', { method: 'POST', upsert: true, body: bodyObj.record });
   } else if (action === 'record_cycle' && bodyObj.record) {
     db.cycles = db.cycles || [];
     db.cycles.push(bodyObj.record);
     if (db.cycles.length > 500) db.cycles = db.cycles.slice(-500);
     writeDbFile(db);
-    await supaFetch('firm_cycles', { method: 'POST', upsert: true, body: bodyObj.record }).catch(() => {});
+    if (supaEnv.configured) supaWrite = await supaFetch('firm_cycles', { method: 'POST', upsert: true, body: bodyObj.record });
   }
+
+  return {
+    ok: true,
+    provider: supaWrite?.ok ? 'Supabase PostgreSQL (Netlify Env)' : 'Netlify Database',
+    supabaseConfigured: supaEnv.configured,
+    supabaseConnected: !!supaWrite?.ok,
+    supabaseError: supaWrite && !supaWrite.ok ? supaWrite.error : null,
+    updatedAt: db.updatedAt,
+    counts: {
+      versions: (db.versions || []).length,
+      trades: (db.trades || []).length,
+      cycles: (db.cycles || []).length || (db.state?.stats?.cycles || 0),
+    },
+  };
 
   return {
     ok: true,

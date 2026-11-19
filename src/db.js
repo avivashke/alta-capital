@@ -15,6 +15,9 @@ import { store } from './store.js';
 export const dbState = {
   connected: false,
   provider: 'none',
+  supabaseConnected: false,
+  supabaseConfigured: false,
+  supabaseError: null,
   lastSyncAt: null,
   lastPushAt: null,
   lastError: null,
@@ -198,11 +201,17 @@ export async function pullFromDatabase() {
       });
       if (Array.isArray(rows) && rows[0]?.state) {
         dbState.connected = true;
+        dbState.supabaseConnected = true;
+        dbState.supabaseConfigured = true;
+        dbState.supabaseError = null;
         dbState.provider = 'Supabase PostgreSQL';
         dbState.lastSyncAt = Date.now();
         dbState.lastError = null;
-        return { ok: true, provider: 'Supabase PostgreSQL', state: rows[0].state, updatedAt: rows[0].updated_at };
+        return { ok: true, provider: 'Supabase PostgreSQL', supabaseConnected: true, state: rows[0].state, updatedAt: rows[0].updated_at };
       }
+      dbState.supabaseConnected = true;
+      dbState.supabaseConfigured = true;
+      dbState.supabaseError = null;
     }
 
     // 2. Try Cloudflare Worker DB if configured
@@ -217,19 +226,22 @@ export async function pullFromDatabase() {
       }
     }
 
-    // 3. Try Netlify Database API (/api/db)
+    // 3. Try Netlify Database API (/api/db -> automatically uses Netlify SUPABASE_URL / SUPABASE_ANON_KEY env vars if set!)
     if (cfg.mode === 'netlify' || cfg.mode === 'auto') {
       const data = await netlifyApiRequest(cfg, 'pull');
       if (data?.ok) {
         dbState.connected = true;
         dbState.provider = data.provider || 'Netlify Database';
+        dbState.supabaseConnected = !!data.supabaseConnected;
+        dbState.supabaseConfigured = !!data.supabaseConfigured;
+        dbState.supabaseError = data.supabaseError || null;
         dbState.lastSyncAt = Date.now();
         dbState.lastError = null;
         if (data.counts) Object.assign(dbState.counts, data.counts);
         if (data.state) {
-          return { ok: true, provider: dbState.provider, state: data.state, updatedAt: data.updatedAt };
+          return { ok: true, provider: dbState.provider, supabaseConnected: dbState.supabaseConnected, state: data.state, updatedAt: data.updatedAt };
         }
-        return { ok: true, provider: dbState.provider, state: null };
+        return { ok: true, provider: dbState.provider, supabaseConnected: dbState.supabaseConnected, state: null };
       }
     }
   } catch (err) {
@@ -263,6 +275,9 @@ export async function pushStateToDatabase(state = store.state) {
         },
       });
       usedProvider = 'Supabase PostgreSQL';
+      dbState.supabaseConnected = true;
+      dbState.supabaseConfigured = true;
+      dbState.supabaseError = null;
     }
 
     if ((cfg.mode === 'worker' || cfg.mode === 'auto') && cfg.workerDbUrl) {
@@ -275,6 +290,13 @@ export async function pushStateToDatabase(state = store.state) {
         const res = await netlifyApiRequest(cfg, 'push_state', { state: clean });
         if (res?.ok) {
           usedProvider = usedProvider || res.provider || 'Netlify Database';
+          if (res.supabaseConnected) {
+            dbState.supabaseConnected = true;
+            dbState.supabaseConfigured = true;
+            dbState.supabaseError = null;
+          } else if (res.supabaseError && !usedProvider.includes('Supabase')) {
+            dbState.supabaseError = res.supabaseError;
+          }
           if (res.counts) Object.assign(dbState.counts, res.counts);
         }
       } catch (err) {
