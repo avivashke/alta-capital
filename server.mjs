@@ -233,6 +233,90 @@ async function runScheduledBaseCron() {
   }
 }
 
+let localAiCache = { at: 0, data: null };
+
+async function probeLocalAiEngines({ force = false } = {}) {
+  if (!force && localAiCache.data && Date.now() - localAiCache.at < 15000) {
+    return localAiCache.data;
+  }
+  const models = [];
+  const engines = [];
+  const tryJson = async (url) => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 1800);
+    try {
+      const r = await fetch(url, { signal: ctrl.signal });
+      if (!r.ok) return null;
+      return await r.json();
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(t);
+    }
+  };
+
+  // 1. Ollama (default 11434)
+  const ollamaHost = (process.env.OLLAMA_URL || 'http://127.0.0.1:11434').replace(/\/+$/, '');
+  const ollamaTags = await tryJson(`${ollamaHost}/api/tags`);
+  if (Array.isArray(ollamaTags?.models) && ollamaTags.models.length) {
+    engines.push({ engine: 'ollama', host: ollamaHost, count: ollamaTags.models.length });
+    for (const m of ollamaTags.models) {
+      const name = m.name || m.model;
+      if (!name) continue;
+      models.push({
+        engine: 'ollama',
+        model: name,
+        sizeGB: m.size ? +(m.size / 1e9).toFixed(1) : null,
+        upstreamBase: `${ollamaHost}/v1`,
+      });
+    }
+  }
+
+  // 2. LM Studio (default 1234)
+  const lmHost = (process.env.LMSTUDIO_URL || 'http://127.0.0.1:1234').replace(/\/+$/, '');
+  const lmModels = await tryJson(`${lmHost}/v1/models`);
+  if (Array.isArray(lmModels?.data) && lmModels.data.length) {
+    engines.push({ engine: 'lmstudio', host: lmHost, count: lmModels.data.length });
+    for (const m of lmModels.data) {
+      if (!m?.id) continue;
+      models.push({
+        engine: 'lmstudio',
+        model: m.id,
+        sizeGB: null,
+        upstreamBase: `${lmHost}/v1`,
+      });
+    }
+  }
+
+  // 3. llama.cpp / LocalAI (default 8080)
+  const llamaHost = (process.env.LLAMACPP_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+  const llamaModels = await tryJson(`${llamaHost}/v1/models`);
+  if (Array.isArray(llamaModels?.data) && llamaModels.data.length) {
+    engines.push({ engine: 'llamacpp', host: llamaHost, count: llamaModels.data.length });
+    for (const m of llamaModels.data) {
+      if (!m?.id) continue;
+      models.push({
+        engine: 'llamacpp',
+        model: m.id,
+        sizeGB: null,
+        upstreamBase: `${llamaHost}/v1`,
+      });
+    }
+  }
+
+  const data = {
+    ok: models.length > 0,
+    hostname: os.hostname(),
+    cpus: os.cpus()?.length || 0,
+    ramGB: +(os.totalmem() / 1e9).toFixed(1),
+    engines,
+    models,
+    checkedAt: Date.now(),
+  };
+  localAiCache = { at: Date.now(), data };
+  return data;
+}
+
 function buildHealthPayload() {
   const db = readDbFile();
   const st = db.state || {};
@@ -247,6 +331,9 @@ function buildHealthPayload() {
     port: PORT,
     lanUrls: getLanUrls(),
     uptimeSec: Math.round((Date.now() - startedAt) / 1000),
+    localAi: localAiCache.data
+      ? { ok: localAiCache.data.ok, modelsCount: localAiCache.data.models.length, models: localAiCache.data.models.map((m) => m.model) }
+      : { ok: false, modelsCount: 0, models: [] },
     revision: st.stateRevision || 0,
     updatedAt: st.updatedAt || db.updatedAt || null,
     sync: {
@@ -327,6 +414,46 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/local-ai/status') {
+    const info = await probeLocalAiEngines();
+    res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(info));
+    return;
+  }
+
+  if (pathname === '/api/local-ai/v1/chat/completions' || pathname === '/api/local-ai/chat') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: { message: 'Method not allowed' } }));
+      return;
+    }
+    try {
+      const raw = await readBody(req);
+      const parsed = raw ? JSON.parse(raw) : {};
+      const info = await probeLocalAiEngines();
+      const targetModel = parsed.model || info.models[0]?.model;
+      const matched = info.models.find((m) => m.model === targetModel) || info.models[0];
+      if (!matched) {
+        res.writeHead(503, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: { message: 'אין מנוע AI מקומי פעיל על שרת הבסיס (הפעל Ollama או הרץ scripts/install-local-ai-windows.ps1)' } }));
+        return;
+      }
+      const upstreamUrl = `${matched.upstreamBase}/chat/completions`;
+      const upstreamRes = await fetch(upstreamUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...parsed, model: matched.model, stream: false }),
+      });
+      const txt = await upstreamRes.text();
+      res.writeHead(upstreamRes.status, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(txt);
+    } catch (err) {
+      res.writeHead(502, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: { message: `Local AI proxy error: ${err.message}` } }));
     }
     return;
   }

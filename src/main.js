@@ -7,6 +7,7 @@ import { marketState, onQuotes, quotes } from './market.js';
 import { openingMessage } from './advisor.js';
 import { syncFromCloud } from './remote.js';
 import { dbState, pushStateToDatabase, checkBaseServerHealth } from './db.js';
+import { discoverLocalAiModels, syncLocalModelsToPool } from './local_ai.js';
 import { mountPageChat } from './page_chat.js';
 import { h, timeAgo, num, toast } from './ui.js';
 
@@ -356,8 +357,20 @@ function boot() {
   });
   window.addEventListener('pagehide', flushOnExit);
 
-  // Check if served by or connected to a local Base Server
-  checkBaseServerHealth(store.state.settings?.db?.baseServerUrl || '').then(() => updateTopbar()).catch(() => {});
+  // Check if served by or connected to a local Base Server + auto-attach free local machine AI models (Ollama/LM Studio)
+  const baseUrl = store.state.settings?.db?.baseServerUrl || '';
+  checkBaseServerHealth(baseUrl).then(() => updateTopbar()).catch(() => {});
+  discoverLocalAiModels({ baseServerUrl: baseUrl })
+    .then((found) => {
+      if (found?.ok && found.models?.length) {
+        const res = syncLocalModelsToPool(store.state, found.models);
+        if (res.addedCount > 0) {
+          store.save();
+          toast(`חוברו ${res.addedCount} מודלי AI מקומיים חינמיים מכוח המחשב לבריכה`, 'ok');
+        }
+      }
+    })
+    .catch(() => {});
 
   syncFromCloud()
     .then((res) => {

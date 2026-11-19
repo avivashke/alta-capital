@@ -169,14 +169,15 @@ export const PROVIDERS = {
     note: 'אם הרמת free-api-gateway או llm-keypool — הזן כאן את הכתובת והמפתח המאוחד.',
   },
   ollama: {
-    label: 'Ollama (מקומי)',
+    label: 'Ollama / מנוע מקומי (GPU/CPU של המחשב)',
     shape: 'openai',
     baseUrl: 'http://localhost:11434/v1',
-    models: ['llama3.1', 'qwen2.5'],
+    models: ['qwen2.5:7b', 'qwen2.5:3b', 'deepseek-r1:7b', 'llama3.2:3b'],
     free: true,
+    noKey: true,
     limits: {},
     keyUrl: 'https://ollama.com',
-    note: 'רץ על המחשב שלך, בלי מפתח ובלי הגבלה.',
+    note: 'רץ ישירות על המעבד/כרטיס המסך של המחשב שלך — בחינם, ללא מפתח וללא הגבלות.',
   },
   webllm: {
     label: 'WebLLM (in-browser, no limits)',

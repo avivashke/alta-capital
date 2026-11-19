@@ -10,9 +10,11 @@
 const CDN = 'https://esm.run/@mlc-ai/web-llm';
 
 export const WEBLLM_MODELS = [
-  { id: 'Llama-3.2-1B-Instruct-q4f16_1-MLC', label: 'Llama 3.2 - 1B (fast, ~0.7GB)', size: '0.7 GB' },
-  { id: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC', label: 'Qwen 2.5 - 1.5B (balanced, ~1GB)', size: '1 GB' },
-  { id: 'Llama-3.2-3B-Instruct-q4f16_1-MLC', label: 'Llama 3.2 - 3B (smarter, ~2GB)', size: '2 GB' },
+  { id: 'Qwen2.5-3B-Instruct-q4f16_1-MLC', label: 'Qwen 2.5 - 3B (עברית חזקה + ניתוח, ~2.1GB)', size: '2.1 GB' },
+  { id: 'DeepSeek-R1-Distill-Qwen-1.5B-q4f16_1-MLC', label: 'DeepSeek R1 - 1.5B (חשיבה והסקה, ~1.1GB)', size: '1.1 GB' },
+  { id: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC', label: 'Qwen 2.5 - 1.5B (מאוזן ומהיר, ~1GB)', size: '1 GB' },
+  { id: 'Llama-3.2-3B-Instruct-q4f16_1-MLC', label: 'Llama 3.2 - 3B (חכם, ~2GB)', size: '2 GB' },
+  { id: 'Llama-3.2-1B-Instruct-q4f16_1-MLC', label: 'Llama 3.2 - 1B (הכי מהיר, ~0.7GB)', size: '0.7 GB' },
   { id: 'Phi-3.5-mini-instruct-q4f16_1-MLC', label: 'Phi 3.5 mini (~2GB)', size: '2 GB' },
 ];
 

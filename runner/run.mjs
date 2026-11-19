@@ -67,6 +67,7 @@ if (process.env.GITHUB_TOKEN) store.state.settings.github.token = process.env.GI
 
 // Model credentials come from GitHub Secrets, never from the repo.
 // Every provider key found in the environment joins one pool, so free tiers stack.
+const { discoverLocalAiModels, syncLocalModelsToPool } = await import('../src/local_ai.js');
 const envPool = buildPoolFromEnv(process.env);
 const llmKey = process.env.LLM_API_KEY || '';
 if (envPool.length) {
@@ -78,6 +79,14 @@ if (envPool.length) {
   // Never reuse keys persisted by an earlier local run; CI must use secrets only.
   store.state.settings.pool = { entries: [], updatedAt: Date.now() };
 }
+// Auto-attach free local machine models (Ollama / LM Studio) if running on this host!
+try {
+  const localFound = await discoverLocalAiModels();
+  if (localFound.ok && localFound.models.length) {
+    const synced = syncLocalModelsToPool(store.state, localFound.models);
+    console.log(`[runner] local compute AI attached: ${localFound.models.map((m) => m.model).join(', ')} (+${synced.addedCount} in pool)`);
+  }
+} catch { /* ignore if no local engine running */ }
 if (llmKey) {
   store.state.settings.llm = {
     provider: process.env.LLM_PROVIDER || 'openai',

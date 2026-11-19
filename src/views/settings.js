@@ -4,10 +4,13 @@ import { LLM_PROVIDERS, PLATFORMS, DISCLAIMER } from '../config.js';
 import { testConnection, testPoolEntry } from '../llm.js';
 import { PROVIDERS, PROVIDER_ORDER } from '../providers.js';
 import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, parseCloudflareKeys, parseWorkerProxies, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
-import { h, notice, toast, openModal, downloadFile, timeAgo, tag, copyText } from '../ui.js';
+import { h, notice, toast, openModal, downloadFile, timeAgo, tag, copyText, commandBlock } from '../ui.js';
 import { syncFromCloud, syncBidirectional } from '../remote.js';
 import { dbState, testDatabaseConnection, pushStateToDatabase, pullFromDatabase, checkBaseServerHealth, SUPABASE_SQL_SCHEMA } from '../db.js';
 import * as webllm from '../webllm.js';
+import { discoverLocalAiModels, syncLocalModelsToPool, RECOMMENDED_LOCAL_MODELS } from '../local_ai.js';
+
+let localAiScanState = { scanning: false, result: null };
 
 export function renderSettings(root, ui) {
   const s = store.state.settings;
@@ -202,6 +205,7 @@ export function renderSettings(root, ui) {
     proxyCard(ui),
     directApiCard,
     poolCard(ui),
+    localComputeAiCard(ui),
     exchangeApiCard,
     webllmCard(ui),
   ));
@@ -374,6 +378,86 @@ const STATUS_LABEL = {
   ready: ['מוכן', 'green'], cooling: ['קירור', 'opt'], exhausted: ['נגמר היומי', 'dry'],
   throttled: ['מגבלת דקה', 'dry'], invalid: ['מפתח פסול', 'red'], disabled: ['מושבת', 'red'],
 };
+
+function localComputeAiCard(ui) {
+  const localInPool = poolEntries(store.state).filter((e) => e.provider === 'ollama');
+  const scanResult = localAiScanState.result;
+
+  const scanBtn = h('button', {
+    class: 'btn btn-sm btn-primary',
+    disabled: localAiScanState.scanning,
+    onclick: async () => {
+      localAiScanState.scanning = true;
+      ui.rerender();
+      try {
+        const baseUrl = store.state.settings?.db?.baseServerUrl || '';
+        const found = await discoverLocalAiModels({ baseServerUrl: baseUrl });
+        localAiScanState.result = found;
+        if (found.ok && found.models.length) {
+          const synced = syncLocalModelsToPool(store.state, found.models);
+          store.save(true);
+          toast(`נמצאו ${found.models.length} מודלים מקומיים (${synced.addedCount} נוספו לבריכה)!`, 'ok');
+        } else {
+          toast('לא זוהה מנוע AI מקומי פעיל — הרץ את פקודת ההתקנה במחשב והפעל Ollama', 'bad');
+        }
+      } catch (err) {
+        toast('סריקת מודלים מקומיים נכשלה: ' + err.message, 'bad');
+      } finally {
+        localAiScanState.scanning = false;
+        ui.rerender();
+      }
+    },
+  }, localAiScanState.scanning ? '⏳ סורק מודלים מקומיים…' : '🔍 סרוק והוסף מודלים מקומיים לבריכה');
+
+  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(46, 204, 113, 0.38)' } },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: '🖥️ מודלים חינמיים על כוח המחשוב של המחשב המקומי (Ollama / LM Studio)' }),
+        h('div', { class: 'card-sub', text: 'מנצל את ה-GPU/CPU של המחשב שלך ככוח בינה מלאכותית נוסף בחינם וללא מגבלות — גם לשרת הבסיס, גם לדפדפן וגם לנייד ברשת הביתית' }),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px' } },
+        tag(localInPool.length ? `${localInPool.length} מודלים מקומיים בבריכה` : 'טרם חובר מנוע מקומי', localInPool.length ? 'live' : 'dry'),
+        scanBtn,
+      ),
+    ),
+
+    scanResult?.ok
+      ? h('div', { class: 'notice ok', style: { marginBottom: '10px' } },
+        `✔ זוהו ${scanResult.models.length} מודלים מקומיים פעילים: ${scanResult.models.map((m) => `${m.model}${m.sizeGB ? ` (${m.sizeGB}GB)` : ''}`).join(' · ')}`,
+      )
+      : notice('להתקנה חד-פעמית על המחשב שלך (Windows / Mac / Linux) הרץ את הפקודה למטה — הסקריפט מתקין Ollama, פותח CORS, בוחר אוטומטית את המודלים הכי מתאימים ל-RAM/GPU שלך ומחבר אותם לבריכת ה-AI.', 'blue'),
+
+    h('div', { class: 'grid cols-2', style: { gap: '10px', marginTop: '10px' } },
+      h('div', { class: 'card', style: { background: 'rgba(8, 14, 24, 0.85)', padding: '10px 12px' } },
+        h('div', { style: { fontWeight: '700', marginBottom: '6px', color: '#7dd3fc' }, text: '🪟 התקנה בלחיצה אחת ב-Windows (PowerShell)' }),
+        commandBlock('powershell -ExecutionPolicy Bypass -File .\\scripts\\install-local-ai-windows.ps1'),
+        h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: 'או דרך npm: npm run setup:local-ai:win' }),
+      ),
+      h('div', { class: 'card', style: { background: 'rgba(8, 14, 24, 0.85)', padding: '10px 12px' } },
+        h('div', { style: { fontWeight: '700', marginBottom: '6px', color: '#4ade80' }, text: '🐧 / 🍎 התקנה ב-Linux או macOS' }),
+        commandBlock('bash scripts/install-local-ai-unix.sh'),
+        h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: 'או דרך npm: npm run setup:local-ai' }),
+      ),
+    ),
+
+    h('div', { class: 'table-wrap', style: { marginTop: '10px' } },
+      h('table', {},
+        h('thead', {}, h('tr', {},
+          h('th', { text: 'מודל חינמי מומלץ' }),
+          h('th', { text: 'גודל' }),
+          h('th', { text: 'דרישת RAM' }),
+          h('th', { text: 'ייעוד במערכת' }),
+        )),
+        h('tbody', {}, RECOMMENDED_LOCAL_MODELS.map((m) => h('tr', {},
+          h('td', { class: 'mono', text: m.id }),
+          h('td', { class: 'mono muted', text: m.size }),
+          h('td', { class: 'tiny', text: m.ram }),
+          h('td', { class: 'small muted', text: m.role }),
+        ))),
+      ),
+    ),
+  );
+}
 
 function webllmCard(ui) {
   const supported = webllm.isSupported();

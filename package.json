@@ -8,6 +8,8 @@
     "start": "node server.mjs",
     "dev": "node server.mjs",
     "base-server": "node scripts/start-base-server.mjs",
+    "setup:local-ai": "bash scripts/install-local-ai-unix.sh",
+    "setup:local-ai:win": "powershell -ExecutionPolicy Bypass -File scripts/install-local-ai-windows.ps1",
     "firm": "node runner/run.mjs --cycles=5",
     "firm:deep": "node runner/run.mjs --cycles=5 --deep"
   },
