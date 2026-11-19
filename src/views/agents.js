@@ -366,7 +366,7 @@ function stepPhysics(now) {
   const dt = Math.min(0.05, (now - (sim.lastTs || now)) / 1000 || 0.016);
   sim.lastTs = now;
 
-  if (sim.meetings.length < 2 && now - sim.lastMeetSpawn > 2000) {
+  if (sim.meetings.length < 1 && now - sim.lastMeetSpawn > 11000) {
     sim.lastMeetSpawn = now;
     spawnMeeting();
   }
@@ -451,7 +451,7 @@ function stepPhysics(now) {
 
     if (dist < 1.3) {
       if (n.state === 'roaming') {
-        n.pauseUntil = now + 1800 + Math.random() * 2000;
+        n.pauseUntil = now + 7500 + Math.random() * 7000;
         n.slotOffset = (n.slotOffset + 1) % 4;
         const pt = slotCoordsInZone(n.targetZoneId || n.homeZoneId, n.slotOffset);
         n.tx = pt.x;
@@ -460,7 +460,7 @@ function stepPhysics(now) {
       n.vx = 0;
       n.vy = 0;
     } else {
-      const speed = n.state === 'walking-to-meet' ? 12.0 : 6.2;
+      const speed = n.state === 'walking-to-meet' ? 6.8 : 3.4;
       n.vx = (dx / dist) * speed;
       n.vy = (dy / dist) * speed;
       n.x += n.vx * dt;
@@ -513,10 +513,12 @@ function stepPhysics(now) {
 
     const isWalking = Math.hypot(n.vx, n.vy) > 0.3 && n.state !== 'meeting';
     const showBubble = !!n.isSpeakingNow;
+    const depthScale = (0.86 + (n.y / 100) * 0.24).toFixed(3);
     n.el.style.left = `${n.x.toFixed(2)}%`;
     n.el.style.top = `${n.y.toFixed(2)}%`;
     n.el.style.zIndex = String(showBubble ? 95 : (10 + Math.round(n.y)));
     n.el.style.setProperty('--face', String(n.face));
+    n.el.style.setProperty('--depth-scale', depthScale);
 
     n.el.classList.toggle('is-walking', isWalking);
     n.el.classList.toggle('is-meeting', n.state === 'meeting');

@@ -1413,14 +1413,29 @@ td{font-size:15px;font-weight:500}
    ============================================================ */
 .bot3d {
   position: absolute;
-  transform: translate(-50%, -100%);
+  transform: translate(-50%, -100%) scale(var(--depth-scale, 1));
+  transform-origin: center bottom;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 110px;
   pointer-events: auto;
   cursor: pointer;
-  will-change: left, top;
+  will-change: left, top, transform;
+  transition: filter 0.25s ease;
+}
+.bot3d::after {
+  content: '';
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  width: 44px;
+  height: 14px;
+  transform: translateX(-50%) rotateX(62deg);
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 229, 255, 0.45);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.35), inset 0 0 8px rgba(59, 130, 246, 0.25);
+  pointer-events: none;
 }
 .bot3d:hover {
   z-index: 120 !important;
