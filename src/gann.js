@@ -28,32 +28,136 @@ const HEX_DEGREES = [60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720];
 
 // Real-world Macro, Fed, Geopolitical, Earnings & Crypto Fundamental Shocks (for historical proof + upcoming catalysts)
 export const FUNDAMENTAL_EVENTS_CALENDAR = [
-  { date: '2020-03-16', title: 'משבר הקורונה · הורדת ריבית חירום Fed', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2020-05-11', title: 'חציית ביטקוין (Bitcoin Halving 2020)', category: 'פונדמנטל קריפטו', kinds: ['crypto'] },
-  { date: '2021-11-10', title: 'שיא אינפלציה CPI 6.2% בארה"ב', category: 'מאקרו / אינפלציה', kinds: ['all'] },
-  { date: '2022-06-15', title: 'העלאת ריבית חדה 0.75% ע"י הפד', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2022-11-08', title: 'קריסת בורסת FTX (זעזוע נזילות)', category: 'אירוע שוק / קריפטו', kinds: ['crypto'] },
-  { date: '2023-03-13', title: 'משבר הבנקים SVB והתערבות הפד', category: 'מאקרו / בנקים', kinds: ['all'] },
-  { date: '2023-10-27', title: 'התכנסות תשואות אג"ח 5% · תחילת ראלי סוף שנה', category: 'מאקרו / אג"ח', kinds: ['all'] },
-  { date: '2024-01-11', title: 'אישור ETF ביטקוין ספוט ע"י SEC', category: 'רגולציה / ETF', kinds: ['crypto', 'etf'] },
-  { date: '2024-04-19', title: 'חציית ביטקוין 2024 (Halving)', category: 'פונדמנטל קריפטו', kinds: ['crypto'] },
-  { date: '2024-05-22', title: 'דוחות Q1 היסטוריים של NVIDIA + פיצול 10:1', category: 'דוחות כספיים', kinds: ['stock', 'etf'] },
-  { date: '2024-08-05', title: 'קריסת היין היפני (BOJ Carry Trade Unwind)', category: 'מאקרו / מט"ח', kinds: ['all'] },
-  { date: '2024-09-18', title: 'הורדת ריבית ראשונה של הפד (0.50%)', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2024-11-05', title: 'בחירות לנשיאות ארה"ב 2024', category: 'גיאופוליטיקה / מאקרו', kinds: ['all'] },
-  { date: '2024-12-18', title: 'החלטת פד נצית (Hawkish Cut) · זעזוע סוף שנה', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2025-01-27', title: 'זעזוע DeepSeek במניות ה-AI והשבבים', category: 'פונדמנטל טכנולוגיה', kinds: ['stock', 'etf', 'crypto'] },
-  { date: '2025-04-02', title: 'הכרזת המכסים "Liberation Day" בארה"ב', category: 'מאקרו / סחר', kinds: ['all'] },
-  { date: '2025-05-07', title: 'החלטת ריבית FOMC · מאי 2025', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2025-07-30', title: 'החלטת ריבית FOMC + עונת דוחות Q2', category: 'מאקרו / דוחות', kinds: ['all'] },
-  { date: '2025-09-17', title: 'החלטת ריבית FOMC · ספטמבר 2025', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2025-12-17', title: 'החלטת ריבית FOMC · דצמבר 2025', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2026-03-18', title: 'החלטת ריבית FOMC · מרץ 2026', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2026-06-17', title: 'החלטת ריבית FOMC · יוני 2026', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2026-09-16', title: 'החלטת ריבית FOMC · ספטמבר 2026', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2026-12-16', title: 'החלטת ריבית FOMC + סוף שנה 2026', category: 'מאקרו / ריבית', kinds: ['all'] },
-  { date: '2027-01-27', title: 'החלטת ריבית FOMC + דוחות Q4', category: 'מאקרו / דוחות', kinds: ['all'] },
-  { date: '2027-03-17', title: 'החלטת ריבית FOMC · מרץ 2027', category: 'מאקרו / ריבית', kinds: ['all'] },
+  {
+    date: '2020-03-16', title: 'משבר הקורונה · הורדת ריבית חירום Fed', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'ב-15–16 במרץ 2020 הפחית הפדרל ריזרב את הריבית בהחלטת חירום ל-0%–0.25% והשיק תוכנית QE של $700B בעקבות סגרי הקורונה — נקודת מפנה היסטורית בשווקים.',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/newsevents/pressreleases/monetary20200315a.htm',
+  },
+  {
+    date: '2020-05-11', title: 'חציית ביטקוין (Bitcoin Halving 2020)', category: 'פונדמנטל קריפטו', kinds: ['crypto'],
+    details: 'בלוק 630,000 חצה את תגמול הכרייה מ-12.5 ל-6.25 BTC לבלוק — זעזוע היצע מתוכנן שהצית את מחזור השור של 2020–2021.',
+    sourceName: 'Bitcoin Block 630,000', sourceUrl: 'https://mempool.space/block/000000000000000000024bead8df69990852c202db0e0097c1a12ea637d7e96d',
+  },
+  {
+    date: '2021-11-10', title: 'שיא אינפלציה CPI 6.2% בארה"ב', category: 'מאקרו / אינפלציה', kinds: ['all'],
+    details: 'מדד המחירים לצרכן (CPI) בארה"ב זינק ל-6.2% שנתי — שיא של 31 שנה שסימן את שיא הנזילות ואת תחילת תמחור העלאות הריבית.',
+    sourceName: 'U.S. Bureau of Labor Statistics', sourceUrl: 'https://www.bls.gov/cpi/',
+  },
+  {
+    date: '2022-06-15', title: 'העלאת ריבית חדה 0.75% ע"י הפד', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'הפד העלה ריבית ב-75 נקודות בסיס בפעם הראשונה מאז 1994 כדי לבלום אינפלציה דוהרת, מה שיצר תחתית מחזורית חדה בקריפטו ובמניות הצמיחה.',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2022-11-08', title: 'קריסת בורסת FTX (זעזוע נזילות)', category: 'אירוע שוק / קריפטו', kinds: ['crypto'],
+    details: 'קריסת בורסת FTX והקפאת משיכות הלקוחות הובילו למכירת חיסול כלל-שוקית וליצירת שפל מחזורי מרכזי במחזור ה-4 שנים.',
+    sourceName: 'SEC / Bankruptcy Filing', sourceUrl: 'https://www.sec.gov/news/press-release',
+  },
+  {
+    date: '2023-03-13', title: 'משבר הבנקים SVB והתערבות הפד', category: 'מאקרו / בנקים', kinds: ['all'],
+    details: 'קריסת Silicon Valley Bank והשקת תוכנית BTFP להזרקת נזילות לבנקים בארה"ב הפכו את המגמה הדובית לתחילת מגמת עלייה חזקה.',
+    sourceName: 'Federal Reserve BTFP', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/bank-term-funding-program.htm',
+  },
+  {
+    date: '2023-10-27', title: 'התכנסות תשואות אג"ח 5% · תחילת ראלי סוף שנה', category: 'מאקרו / אג"ח', kinds: ['all'],
+    details: 'תשואת אג"ח ממשלת ארה"ב ל-10 שנים הגיעה לשיא של ~5% וסימנה תחתית מרכזית במדדי המניות לקראת ראלי הרבעון הרביעי.',
+    sourceName: 'U.S. Treasury Yields', sourceUrl: 'https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics',
+  },
+  {
+    date: '2024-01-11', title: 'אישור ETF ביטקוין ספוט ע"י SEC', category: 'רגולציה / ETF', kinds: ['crypto', 'etf'],
+    details: 'תחילת המסחר ב-11 קרנות הסל (Spot Bitcoin ETF) בארה"ב (BlackRock IBIT, Fidelity FBTC) שפתחו את השוק לכניסה מוסדית ישירה.',
+    sourceName: 'SEC Spot Bitcoin ETF Approval', sourceUrl: 'https://www.sec.gov/news/statement/gensler-statement-spot-bitcoin-011023',
+  },
+  {
+    date: '2024-04-19', title: 'חציית ביטקוין 2024 (Halving)', category: 'פונדמנטל קריפטו', kinds: ['crypto'],
+    details: 'בלוק 840,000 חצה את תגמול הכרייה מ-6.25 ל-3.125 BTC לבלוק, והקטין את האינפלציה השנתית של הביטקוין מתחת לזהב.',
+    sourceName: 'Bitcoin Block 840,000', sourceUrl: 'https://mempool.space/',
+  },
+  {
+    date: '2024-05-22', title: 'דוחות Q1 היסטוריים של NVIDIA + פיצול 10:1', category: 'דוחות כספיים', kinds: ['stock', 'etf'],
+    details: 'NVIDIA דיווחה על זינוק של 262% בהכנסות משנה לשנה והכריזה על פיצול מניות 10:1 — אישור לביקוש הגלובלי לשבבי AI.',
+    sourceName: 'SEC EDGAR / NVIDIA IR', sourceUrl: 'https://investor.nvidia.com/',
+  },
+  {
+    date: '2024-08-05', title: 'קריסת היין היפני (BOJ Carry Trade Unwind)', category: 'מאקרו / מט"ח', kinds: ['all'],
+    details: 'העלאת ריבית מפתיעה של הבנק המרכזי ביפן גרמה לסגירה המונית של עסקאות Carry Trade, זינוק ב-VIX ושפל תוך-יומי חד בכל השווקים.',
+    sourceName: 'Bank of Japan / BIS', sourceUrl: 'https://www.boj.or.jp/en/mopo/mpmdeci/index.htm',
+  },
+  {
+    date: '2024-09-18', title: 'הורדת ריבית ראשונה של הפד (0.50%)', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'הפד פתח את מחזור הורדות הריבית בהפחתה של 50 נקודות בסיס — שינוי כיוון מוניטרי מרכזי לאחר תקופת הריסון.',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2024-11-05', title: 'בחירות לנשיאות ארה"ב 2024', category: 'גיאופוליטיקה / מאקרו', kinds: ['all'],
+    details: 'תוצאות הבחירות בארה"ב הובילו לתמחור מחדש של רגולציה, מיסים, תשואות אג"ח וקריפטו.',
+    sourceName: 'Federal Election Commission', sourceUrl: 'https://www.fec.gov/',
+  },
+  {
+    date: '2024-12-18', title: 'החלטת פד נצית (Hawkish Cut) · זעזוע סוף שנה', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'הפד הוריד ריבית ב-0.25% אך עדכן כלפי מעלה את תחזית האינפלציה ל-2025 והפחית את מספר ההורדות הצפויות.',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2025-01-27', title: 'זעזוע DeepSeek במניות ה-AI והשבבים', category: 'פונדמנטל טכנולוגיה', kinds: ['stock', 'etf', 'crypto'],
+    details: 'פרסום מודל DeepSeek-R1 הוביל לתנודתיות חריפה בסקטור השבבים וה-AI ולבחינה מחודשת של הוצאות ההון על תשתיות מחשוב.',
+    sourceName: 'Market / SEC Filings', sourceUrl: 'https://www.sec.gov/edgar/searchedgar/companysearch',
+  },
+  {
+    date: '2025-04-02', title: 'הכרזת המכסים "Liberation Day" בארה"ב', category: 'מאקרו / סחר', kinds: ['all'],
+    details: 'הכרזת מכסי סחר רחבים בארה"ב יצרה גל תנודתיות חד בשווקי המניות, הסחורות והמט"ח.',
+    sourceName: 'U.S. Trade Representative', sourceUrl: 'https://ustr.gov/',
+  },
+  {
+    date: '2025-05-07', title: 'החלטת ריבית FOMC · מאי 2025', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'החלטת הריבית ותחזיית המדיניות של ועדת השוק הפתוח של הפדרל ריזרב.',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2025-07-30', title: 'החלטת ריבית FOMC + עונת דוחות Q2', category: 'מאקרו / דוחות', kinds: ['all'],
+    details: 'מפגש כפול של החלטת ריבית הפד ושיא עונת הדוחות לרבעון השני.',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2025-09-17', title: 'החלטת ריבית FOMC · ספטמבר 2025', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'החלטת ריבית + פרסום תחזיות כלכליות רבעוניות (SEP / Dot Plot) של הפד.',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2025-12-17', title: 'החלטת ריבית FOMC · דצמבר 2025', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'החלטת ריבית סוף שנה ותחזיות מאקרו לשנה הבאה.',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2026-03-18', title: 'החלטת ריבית FOMC · מרץ 2026', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'ישיבת הריבית הרבעונית של הפד בחפיפה לשוויון האביב של גאן (21 במרץ).',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2026-06-17', title: 'החלטת ריבית FOMC · יוני 2026', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'ישיבת הריבית הרבעונית של הפד בסמוך להיפוך הקיץ (21 ביוני).',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2026-09-16', title: 'החלטת ריבית FOMC · ספטמבר 2026', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'ישיבת הריבית הרבעונית של הפד בחפיפה לשוויון הסתיו (23 בספטמבר).',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2026-12-16', title: 'החלטת ריבית FOMC + סוף שנה 2026', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'ישיבת הריבית האחרונה לשנת 2026 בסמוך להיפוך החורף (21 בדצמבר).',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2027-01-27', title: 'החלטת ריבית FOMC + דוחות Q4', category: 'מאקרו / דוחות', kinds: ['all'],
+    details: 'החלטת הריבית הראשונה של 2027 לצד עונת הדוחות השנתית.',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
+  {
+    date: '2027-03-17', title: 'החלטת ריבית FOMC · מרץ 2027', category: 'מאקרו / ריבית', kinds: ['all'],
+    details: 'ישיבת הריבית הרבעונית של מרץ 2027.',
+    sourceName: 'Federal Reserve FOMC', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+  },
 ];
 
 export function gannSq9Price(anchor, degree, direction = 1) {
@@ -457,6 +561,9 @@ function proveGannAgainstFundamentals(candles, pivots, sq9Levels, hexLevels, ass
       date: ev.date,
       title: ev.title,
       category: ev.category,
+      details: ev.details || '',
+      sourceName: ev.sourceName || 'מקור מאקרו רשמי',
+      sourceUrl: ev.sourceUrl || '',
       marketPrice: +bestCandle.c.toFixed(4),
       proven,
       bestTimeMatch,

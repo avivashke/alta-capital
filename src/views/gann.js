@@ -2,7 +2,7 @@
 // Integrates Square of 9, Hexagon (60°), Jenkins Square-Root Time & Eighths, Gannzilla Seasonal Wheel,
 // Multi-Asset Proof Scanner, and Gann vs. Fundamental Events Historical Proof.
 
-import { h, mount, num, pct, tag, notice, empty, toast } from '../ui.js';
+import { h, mount, num, pct, tag, notice, empty, toast, openModal } from '../ui.js';
 import { getCandles, marketState, ASSET_CATALOG } from '../market.js';
 import { analyzeGannHistoryAndForecast, generateGannWorkingProposals } from '../gann.js';
 import { chatDetailed } from '../llm.js';
@@ -54,6 +54,39 @@ async function askAiForGannProposal(a, ui) {
     gannViewState.aiLoading = false;
     ui.rerender();
   }
+}
+
+function openFundamentalEventModal(fe) {
+  openModal(`${fe.title} (${fe.date})`,
+    h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+      h('div', { class: 'row wrap', style: { gap: '8px' } },
+        tag(fe.category, 'opt'),
+        tag(`מחיר בשוק: ${num(fe.marketPrice, 2)}`, 'dry'),
+        tag(fe.proven ? '✓ נחזה מראש ע"י גאן' : 'ללא פגיעה ישירה בטווח', fe.proven ? 'live' : 'dry'),
+      ),
+      h('div', { class: 'card', style: { background: 'rgba(10, 17, 30, 0.9)' } },
+        h('h3', { text: '📖 הסבר מורחב על האירוע הפונדמנטליסטי' }),
+        h('p', { class: 'small', style: { lineHeight: '1.6' }, text: fe.details || fe.title }),
+      ),
+      h('div', { class: 'card', style: { background: 'rgba(10, 17, 30, 0.9)' } },
+        h('h3', { text: '◬ הוכחת החיזוי של גאן (לפני פרסום החדשות)' }),
+        h('p', { class: 'small', style: { lineHeight: '1.6' }, text: fe.explanation }),
+        fe.bestTimeMatch ? h('div', { class: 'tiny muted', style: { marginTop: '6px' }, text: `• ציר מקור מוקדם: ${fe.bestTimeMatch.originType} בתאריך ${fe.bestTimeMatch.originDate} · מחזור: ${fe.bestTimeMatch.cycleLabel} · סטייה: ±${fe.bestTimeMatch.errDays} ימים` }) : null,
+        fe.bestPriceMatch ? h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: `• רמת מחיר גיאומטרית: ${fe.bestPriceMatch.tool} ${fe.bestPriceMatch.degree}° (${num(fe.bestPriceMatch.price, 2)}, סטייה ${fe.bestPriceMatch.distPct}%)` }) : null,
+      ),
+      h('div', { class: 'card', style: { background: 'rgba(10, 17, 30, 0.9)' } },
+        h('h3', { text: '🔗 מקורות וסימוכין' }),
+        h('div', { class: 'small', style: { marginBottom: '4px' } },
+          h('span', { class: 'muted', text: 'מקור האירוע הרשמי: ' }),
+          fe.sourceUrl
+            ? h('a', { href: fe.sourceUrl, target: '_blank', rel: 'noopener noreferrer', style: { color: '#7dd3fc', fontWeight: '600' } }, `${fe.sourceName || 'מקור רשמי'} ↗`)
+            : h('span', { text: fe.sourceName || 'מקור מאקרו רשמי' }),
+        ),
+        h('div', { class: 'tiny muted', text: 'מקור חישובי גאן: Square of 9 (gann indicator script sq9.txt), Hexagon 60° (הקסגון.xlsx) ומחזורי Master Time Cycles (wdgannbook_copy.pdf).' }),
+      ),
+    ),
+    { wide: true },
+  );
 }
 
 function assetKindFor(symbol) {
@@ -590,14 +623,22 @@ export function renderGann(root, ui) {
               h('th', { text: 'האירוע הפונדמנטליסטי' }),
               h('th', { text: 'מחיר בשוק' }),
               h('th', { text: 'אימות גאן מוקדם' }),
-              h('th', { text: 'הסבר ההוכחה (איך גאן חזה זאת מראש)' }),
+              h('th', { text: 'הסבר ההוכחה (לחץ להסבר מורחב ומקורות)' }),
+              h('th', { text: 'פירוט' }),
             )),
-            h('tbody', {}, a.fundamentalProof.events.map((fe) => h('tr', {},
+            h('tbody', {}, a.fundamentalProof.events.map((fe) => h('tr', {
+              style: { cursor: 'pointer' },
+              onclick: () => openFundamentalEventModal(fe),
+            },
               h('td', { class: 'mono', text: fe.date }),
               h('td', { class: 'small', text: `${fe.title} (${fe.category})` }),
               h('td', { class: 'mono', text: num(fe.marketPrice, 2) }),
               h('td', {}, tag(fe.proven ? '✓ נחזה ע"י גאן' : 'ללא פגיעה ישירה', fe.proven ? 'live' : 'dry')),
               h('td', { class: 'small muted', text: fe.explanation }),
+              h('td', {}, h('button', {
+                class: 'btn btn-sm',
+                onclick: (e) => { e.stopPropagation(); openFundamentalEventModal(fe); },
+              }, '🔍 הסבר ומקורות')),
             ))),
           ),
         )
