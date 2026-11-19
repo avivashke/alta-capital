@@ -1,19 +1,89 @@
-// Prop Firm / Nostro Challenge Simulator & Bot Fleet.
-// Evaluates multiple strategy bots against strict Nostro rules:
-//  - Phase 1 Profit Target (e.g. +8% / +10%)
-//  - Phase 2 Profit Target (e.g. +5%)
-//  - Max Daily Loss Limit (e.g. -5%)
-//  - Max Overall Drawdown Limit (e.g. -10%)
-//  - Minimum Trades & Consistency Check
-//  - Simulated Funded Account (80% profit split)
+// Prop Firm / Nostro Challenge Autonomous Engine & Proof Reporter.
+// Evaluates multiple strategy bots on LIVE real-time market data against real Prop Firm rules:
+//  - FTMO, The5ers, FundedNext, Topstep, Apex Trader Funding
+//  - Tracks exact pass dates, drawdown compliance, live data provider, and trade-level proof
+//  - Supports autonomous auto-refresh + multi-sheet Excel (.xls) report export
 
 import { BARS_PER_YEAR } from './config.js';
 import { store } from './store.js';
-import { getCandles } from './market.js';
+import { getCandles, marketState } from './market.js';
 import { runBacktest } from './backtest.js';
 import { optimize } from './optimizer.js';
 import { STRATEGIES, defaultsFor } from './strategies.js';
 import { scheduleDatabasePush } from './db.js';
+
+export const PROP_FIRM_PROFILES = [
+  {
+    id: 'ftmo',
+    name: 'FTMO',
+    program: '2-Step Standard Challenge',
+    phase1TargetPct: 10,
+    phase2TargetPct: 5,
+    maxDailyLossPct: 5,
+    maxTotalDdPct: 10,
+    minTrades: 8,
+    profitSplitPct: 80,
+    focus: 'קריפטו, מדדים, מט"ח, סחורות',
+    sourceUrl: 'https://ftmo.com/en/objectives/',
+    sourceNote: 'חוקי FTMO הרשמיים: יעד שלב 1 (10%), שלב 2 (5%), הפסד יומי מקס׳ 5% (Equity/Balance), הפסד כולל 10%, חלוקת רווחים 80%–90%.',
+  },
+  {
+    id: 'the5ers',
+    name: 'The5ers',
+    program: 'High Stakes 2-Step',
+    phase1TargetPct: 8,
+    phase2TargetPct: 5,
+    maxDailyLossPct: 5,
+    maxTotalDdPct: 10,
+    minTrades: 6,
+    profitSplitPct: 80,
+    focus: 'מט"ח, זהב, מדדים וקריפטו',
+    sourceUrl: 'https://the5ers.com/high-stakes/',
+    sourceNote: 'חוקי The5ers High Stakes: יעד שלב 1 (8%), שלב 2 (5%), הפסד יומי 5%, Stop-Out כולל 10%, מינימום 3 ימים רווחיים.',
+  },
+  {
+    id: 'fundednext',
+    name: 'FundedNext',
+    program: 'Stellar 2-Step Challenge',
+    phase1TargetPct: 8,
+    phase2TargetPct: 5,
+    maxDailyLossPct: 5,
+    maxTotalDdPct: 10,
+    minTrades: 8,
+    profitSplitPct: 80,
+    focus: 'רב-נכסי (קריפטו, מדדים, מניות, מט"ח)',
+    sourceUrl: 'https://fundednext.com/stellar-challenge',
+    sourceNote: 'חוקי FundedNext Stellar: יעד שלב 1 (8%), שלב 2 (5%), הפסד יומי 5%, הפסד כולל 10%, חלוקת רווחים 80% (+15% בונוס שלב מבחן).',
+  },
+  {
+    id: 'topstep',
+    name: 'Topstep',
+    program: 'Trading Combine (1-Step)',
+    phase1TargetPct: 6,
+    phase2TargetPct: 0,
+    maxDailyLossPct: 2.5,
+    maxTotalDdPct: 4,
+    minTrades: 6,
+    profitSplitPct: 90,
+    focus: 'חוזים עתידיים, מדדים (SPY/QQQ) וסחורות (זהב)',
+    sourceUrl: 'https://www.topstep.com/trading-combine/',
+    sourceNote: 'חוקי Topstep Combine: שלב אחד (6% יעד רווח), מגבלת הפסד מקסימלית 3%–4% (EOD Trailing), משמעת יומית 2.5%, חלוקת רווחים 90%.',
+  },
+  {
+    id: 'apex',
+    name: 'Apex Trader Funding',
+    program: '1-Step Evaluation',
+    phase1TargetPct: 6,
+    phase2TargetPct: 0,
+    maxDailyLossPct: 3,
+    maxTotalDdPct: 4,
+    minTrades: 6,
+    profitSplitPct: 90,
+    focus: 'מדדים וסחורות (S&P 500, Nasdaq, Gold)',
+    sourceUrl: 'https://apextraderfunding.com/',
+    sourceNote: 'חוקי Apex 1-Step: יעד רווח 6%, סף נגרר (Trailing Threshold) של 3%–4%, ללא מגבלת ימים מינימלית קשיחה, חלוקת רווחים 90%–100%.',
+  },
+];
 
 export const NOSTRO_BOT_TEMPLATES = [
   {
@@ -73,19 +143,24 @@ export const DEFAULT_NOSTRO_RULES = {
   profitSplitPct: 80,
 };
 
-function evaluateCurveAgainstNostro(curve, trades, rules) {
+function fmtDate(ts) {
+  if (!ts) return '—';
+  try { return new Date(ts).toISOString().slice(0, 10); } catch { return '—'; }
+}
+
+export function evaluateCurveAgainstNostro(curve, trades, rules) {
   const startCap = rules.accountSize;
   let peak = startCap;
   let maxTotalDdPct = 0;
   let maxDailyLossPct = 0;
+  let worstDailyLossDate = null;
   let breached = null;
   let phase1PassedAt = null;
   let phase2PassedAt = null;
 
   const p1Target = startCap * (1 + rules.phase1TargetPct / 100);
-  const p2Target = startCap * (1 + (rules.phase1TargetPct + rules.phase2TargetPct) / 100);
+  const p2Target = startCap * (1 + (rules.phase1TargetPct + (rules.phase2TargetPct || 0)) / 100);
 
-  // Track rolling daily/session drops (~24h or step-to-step)
   const dayBuckets = new Map();
   for (let i = 0; i < curve.length; i++) {
     const pt = curve[i];
@@ -101,11 +176,14 @@ function evaluateCurveAgainstNostro(curve, trades, rules) {
     const b = dayBuckets.get(dayKey);
     if (eq < b.min) b.min = eq;
     const dailyDrop = ((b.start - b.min) / b.start) * 100;
-    if (dailyDrop > maxDailyLossPct) maxDailyLossPct = dailyDrop;
+    if (dailyDrop > maxDailyLossPct) {
+      maxDailyLossPct = dailyDrop;
+      worstDailyLossDate = dayKey;
+    }
 
     if (!breached) {
       if (dailyDrop >= rules.maxDailyLossPct) {
-        breached = `חריגה מהפסד יומי מקסימלי (${dailyDrop.toFixed(2)}% ≥ ${rules.maxDailyLossPct}%)`;
+        breached = `חריגה מהפסד יומי מקסימלי (${dailyDrop.toFixed(2)}% ≥ ${rules.maxDailyLossPct}%) בתאריך ${dayKey}`;
       } else if (effectiveDd >= rules.maxTotalDdPct) {
         breached = `חריגה מ-Drawdown כולל (${effectiveDd.toFixed(2)}% ≥ ${rules.maxTotalDdPct}%)`;
       }
@@ -113,7 +191,9 @@ function evaluateCurveAgainstNostro(curve, trades, rules) {
 
     if (!breached) {
       if (!phase1PassedAt && eq >= p1Target) phase1PassedAt = pt.t || i;
-      if (phase1PassedAt && !phase2PassedAt && eq >= p2Target) phase2PassedAt = pt.t || i;
+      if (phase1PassedAt && !phase2PassedAt && (rules.phase2TargetPct <= 0 || eq >= p2Target)) {
+        phase2PassedAt = pt.t || i;
+      }
     }
   }
 
@@ -121,7 +201,6 @@ function evaluateCurveAgainstNostro(curve, trades, rules) {
   const totalReturnPct = +(((finalEq - startCap) / startCap) * 100).toFixed(2);
   const enoughTrades = (trades?.length || 0) >= rules.minTrades;
 
-  // Consistency: best single trade share of positive gross profit
   const posTrades = (trades || []).filter((t) => (t.pnl || 0) > 0);
   const sumPos = posTrades.reduce((s, t) => s + t.pnl, 0);
   const maxSingle = posTrades.reduce((m, t) => Math.max(m, t.pnl || 0), 0);
@@ -153,18 +232,25 @@ function evaluateCurveAgainstNostro(curve, trades, rules) {
     breached,
     totalReturnPct,
     finalEquity: Math.round(finalEq),
+    peakEquity: Math.round(peak),
     maxTotalDdPct: +maxTotalDdPct.toFixed(2),
     maxDailyLossPct: +maxDailyLossPct.toFixed(2),
+    worstDailyLossDate,
     phase1Passed: !!phase1PassedAt && !breached,
     phase2Passed: !!phase2PassedAt && !breached,
+    phase1PassedDate: typeof phase1PassedAt === 'number' ? fmtDate(phase1PassedAt) : null,
+    phase2PassedDate: typeof phase2PassedAt === 'number' ? fmtDate(phase2PassedAt) : null,
     bestTradeSharePct,
     fundedProfitUsd,
   };
 }
 
-export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { doOptimize = false } = {}) {
+export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { doOptimize = false, forceLive = true } = {}) {
   const s = store.state.settings;
-  const candles = await getCandles(botTemplate.symbol, botTemplate.tf, { limit: 700, force: false });
+  const candles = await getCandles(botTemplate.symbol, botTemplate.tf, { limit: 700, force: forceLive });
+  const dataProvider = marketState.provider || 'Live';
+  const isSynthetic = !!marketState.synthetic;
+
   const cfg = {
     capital: rules.accountSize,
     riskPerTrade: botTemplate.riskPerTrade,
@@ -196,17 +282,65 @@ export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { 
   const bt = runBacktest(candles, botTemplate.strategyId, params, cfg);
   const evalRes = evaluateCurveAgainstNostro(bt.curve || [], bt.trades || [], rules);
 
+  // Evaluate against every real Prop Firm profile so we know EXACTLY which company this bot can pass
+  const firmEvaluations = PROP_FIRM_PROFILES.map((firm) => {
+    const firmRules = {
+      accountSize: rules.accountSize,
+      phase1TargetPct: firm.phase1TargetPct,
+      phase2TargetPct: firm.phase2TargetPct,
+      maxDailyLossPct: firm.maxDailyLossPct,
+      maxTotalDdPct: firm.maxTotalDdPct,
+      minTrades: firm.minTrades,
+      profitSplitPct: firm.profitSplitPct,
+    };
+    const fEval = evaluateCurveAgainstNostro(bt.curve || [], bt.trades || [], firmRules);
+    return {
+      firmId: firm.id,
+      firmName: firm.name,
+      program: firm.program,
+      passed: fEval.status === 'funded',
+      phase1Passed: fEval.phase1Passed,
+      status: fEval.status,
+      breached: fEval.breached,
+      fundedProfitUsd: fEval.fundedProfitUsd,
+      phase1PassedDate: fEval.phase1PassedDate,
+      phase2PassedDate: fEval.phase2PassedDate,
+      sourceUrl: firm.sourceUrl,
+    };
+  });
+
+  const readyFirms = firmEvaluations.filter((f) => f.passed).map((f) => f.firmName);
+  const trades = bt.trades || [];
+  const tradeProofSample = trades.slice(-15).map((tr) => ({
+    side: tr.side || 'long',
+    entryDate: fmtDate(tr.entryTime || tr.t),
+    exitDate: fmtDate(tr.exitTime || tr.t),
+    entryPrice: +(tr.entryPrice || 0).toFixed(4),
+    exitPrice: +(tr.exitPrice || 0).toFixed(4),
+    pnlUsd: +(tr.pnl || 0).toFixed(2),
+    retPct: +(tr.retPct || 0).toFixed(2),
+  }));
+
   return {
     ...botTemplate,
     params,
     metrics: bt.metrics,
+    dataProvider,
+    isSynthetic,
+    lastPrice: candles[candles.length - 1]?.c ?? null,
+    dataFromDate: fmtDate(candles[0]?.t),
+    dataToDate: fmtDate(candles[candles.length - 1]?.t),
+    candlesCount: candles.length,
     curve: (bt.curve || []).filter((_, idx, arr) => idx % Math.max(1, Math.floor(arr.length / 80)) === 0).map((p) => p.v),
+    firmEvaluations,
+    readyFirms,
+    tradeProofSample,
     ...evalRes,
     testedAt: Date.now(),
   };
 }
 
-export async function runNostroFleetSimulation(customRules = {}, { doOptimize = false } = {}) {
+export async function runNostroFleetSimulation(customRules = {}, { doOptimize = false, forceLive = true } = {}) {
   const rules = { ...DEFAULT_NOSTRO_RULES, ...(store.state.nostro?.rules || {}), ...customRules };
   const existingBots = store.state.nostro?.bots || [];
   const results = [];
@@ -215,7 +349,7 @@ export async function runNostroFleetSimulation(customRules = {}, { doOptimize = 
     const prev = existingBots.find((b) => b.id === tpl.id);
     const botInput = prev?.params ? { ...tpl, params: prev.params } : tpl;
     try {
-      const res = await runNostroBot(botInput, rules, { doOptimize });
+      const res = await runNostroBot(botInput, rules, { doOptimize, forceLive });
       results.push(res);
     } catch (err) {
       results.push({
@@ -227,6 +361,9 @@ export async function runNostroFleetSimulation(customRules = {}, { doOptimize = 
         maxTotalDdPct: 0,
         maxDailyLossPct: 0,
         fundedProfitUsd: 0,
+        readyFirms: [],
+        firmEvaluations: [],
+        tradeProofSample: [],
         metrics: null,
         curve: [],
       });
@@ -236,12 +373,90 @@ export async function runNostroFleetSimulation(customRules = {}, { doOptimize = 
   store.state.nostro = {
     rules,
     bots: results,
+    autoMode: store.state.nostro?.autoMode ?? true,
     updatedAt: Date.now(),
   };
-  const fundedCount = results.filter((r) => r.status === 'funded').length;
-  store.log('ok', 'מערך נוסטרו', `הושלם מבחן דמה ל-${results.length} בוטים · ${fundedCount} עברו לשלב Funded`);
+
+  const readyBots = results.filter((r) => (r.readyFirms || []).length > 0);
+  if (readyBots.length) {
+    const summaryText = readyBots.map((b) => `${b.name} -> ${b.readyFirms.join('/')}`).join(' · ');
+    store.log('ok', 'מערך נוסטרו אוטומטי', `נמצאו ${readyBots.length} בוטים מוכנים למעבר נוסטרו על נתוני אמת: ${summaryText}`);
+  } else {
+    store.log('info', 'מערך נוסטרו אוטומטי', `הושלמה בדיקת ${results.length} בוטים בזמן אמת`);
+  }
+
   store.save();
   store.emit();
   scheduleDatabasePush();
   return store.state.nostro;
+}
+
+// Multi-sheet Excel (.xls SpreadsheetML) Export with full Proof + Prop Firm Sources + Trade Log
+function xmlEsc(v) {
+  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function xmlRow(cells, isHeader = false) {
+  const styleAttr = isHeader ? ' ss:StyleID="hdr"' : '';
+  return `<Row>${cells.map((c) => {
+    const isNum = typeof c === 'number' && Number.isFinite(c);
+    return `<Cell${styleAttr}><Data ss:Type="${isNum ? 'Number' : 'String'}">${xmlEsc(c)}</Data></Cell>`;
+  }).join('')}</Row>`;
+}
+
+export function buildNostroExcelXml(nostroState) {
+  const bots = nostroState?.bots || [];
+  const rules = nostroState?.rules || DEFAULT_NOSTRO_RULES;
+
+  const sheet1Rows = [
+    xmlRow([
+      'מזהה בוט', 'שם בוט', 'נכס', 'טיימפריים', 'אסטרטגיה', 'מקור נתונים',
+      'מחיר אחרון', 'טווח נתונים', 'תשואה (%)', 'Max Total DD (%)', 'Max Daily Loss (%)',
+      'Profit Factor', 'Sharpe', 'מספר עסקאות', 'תאריך מעבר שלב 1', 'תאריך מעבר שלב 2',
+      'חברות נוסטרו שהבוט מוכן לעבור', 'רווח Funded משוער ($)', 'סטטוס',
+    ], true),
+    ...bots.map((b) => xmlRow([
+      b.id, b.name, b.symbol, b.tf, STRATEGIES[b.strategyId]?.label || b.strategyId,
+      `${b.dataProvider || 'Live'} (${b.isSynthetic ? 'סינתטי' : 'נתוני אמת'})`,
+      b.lastPrice ?? '', `${b.dataFromDate || ''} -> ${b.dataToDate || ''}`,
+      b.totalReturnPct ?? 0, b.maxTotalDdPct ?? 0, b.maxDailyLossPct ?? 0,
+      b.metrics?.profitFactor ?? 0, b.metrics?.sharpe ?? 0, b.metrics?.trades ?? 0,
+      b.phase1PassedDate || '—', b.phase2PassedDate || '—',
+      (b.readyFirms || []).join(', ') || 'טרם עבר',
+      b.fundedProfitUsd || 0, b.statusLabel || '',
+    ])),
+  ].join('');
+
+  const sheet2Rows = [
+    xmlRow([
+      'חברת נוסטרו', 'תוכנית מבחן', 'יעד שלב 1 (%)', 'יעד שלב 2 (%)',
+      'הפסד יומי מקסימלי (%)', 'Drawdown כולל מקסימלי (%)', 'חלוקת רווחים (%)',
+      'מינימום עסקאות', 'נכסים מומלצים', 'קישור למקור החוקים הרשמי', 'תיאור החוקים',
+    ], true),
+    ...PROP_FIRM_PROFILES.map((f) => xmlRow([
+      f.name, f.program, f.phase1TargetPct, f.phase2TargetPct,
+      f.maxDailyLossPct, f.maxTotalDdPct, f.profitSplitPct,
+      f.minTrades, f.focus, f.sourceUrl, f.sourceNote,
+    ])),
+    xmlRow(['הגדרת המשתמש הפעילה', 'Custom Fleet Rules', rules.phase1TargetPct, rules.phase2TargetPct, rules.maxDailyLossPct, rules.maxTotalDdPct, rules.profitSplitPct, rules.minTrades, 'כל הנכסים', 'Alta Capital Simulator', 'חוקי המבחן הפעילים בסימולציה הנוכחית']),
+  ].join('');
+
+  const sheet3Rows = [
+    xmlRow(['שם בוט', 'נכס', 'כיוון', 'תאריך כניסה', 'תאריך יציאה', 'מחיר כניסה', 'מחיר יציאה', 'רווח/הפסד ($)', 'תשואה (%)'], true),
+    ...bots.flatMap((b) => (b.tradeProofSample || []).map((tr) => xmlRow([
+      b.name, b.symbol, tr.side, tr.entryDate, tr.exitDate, tr.entryPrice, tr.exitPrice, tr.pnlUsd, tr.retPct,
+    ]))),
+  ].join('');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>
+  <Style ss:ID="hdr"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1E3A5F" ss:Pattern="Solid"/></Style>
+ </Styles>
+ <Worksheet ss:Name="דוח מוכנות והוכחות"><Table>${sheet1Rows}</Table></Worksheet>
+ <Worksheet ss:Name="מקורות וחוקי חברות נוסטרו"><Table>${sheet2Rows}</Table></Worksheet>
+ <Worksheet ss:Name="יומן עסקאות הוכחה"><Table>${sheet3Rows}</Table></Worksheet>
+</Workbook>`;
 }
