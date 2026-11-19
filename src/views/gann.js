@@ -2,9 +2,16 @@
 // Integrates Square of 9, Hexagon (60°), Jenkins Square-Root Time & Eighths, Gannzilla Seasonal Wheel,
 // Multi-Asset Proof Scanner, and Gann vs. Fundamental Events Historical Proof.
 
-import { h, mount, num, pct, tag, notice, empty, toast, openModal } from '../ui.js';
+import { store } from '../store.js';
+import { h, mount, num, pct, tag, notice, empty, toast, openModal, timeAgo } from '../ui.js';
 import { getCandles, marketState, ASSET_CATALOG } from '../market.js';
-import { analyzeGannHistoryAndForecast, generateGannWorkingProposals } from '../gann.js';
+import {
+  analyzeGannHistoryAndForecast,
+  generateGannWorkingProposals,
+  searchGannLibrary,
+  runAutonomousGannLibraryAudit,
+  runAutonomousGannLibraryAuditIfDue,
+} from '../gann.js';
 import { chatDetailed } from '../llm.js';
 
 let gannViewState = {
@@ -25,6 +32,9 @@ let gannViewState = {
   multiScanResults: null,
   aiLoading: false,
   aiAdvice: null,
+  libQuery: '',
+  libKind: 'all',
+  libLoading: false,
 };
 
 async function askAiForGannProposal(a, ui) {
@@ -794,6 +804,87 @@ export function renderGann(root, ui) {
       gannViewState.aiAdvice
         ? h('div', { class: 'notice ok', style: { whiteSpace: 'pre-wrap', lineHeight: '1.6' }, text: gannViewState.aiAdvice })
         : null,
+    ),
+  );
+
+  // Autonomous Gann Events Library with Smart Search (Fundamental + Regular Trend Reversals + Web Archive)
+  const lib = store.state.gannLibrary || { items: [], stats: null, updatedAt: null };
+  if (!lib.items?.length && !gannViewState.libLoading) {
+    gannViewState.libLoading = true;
+    runAutonomousGannLibraryAuditIfDue().finally(() => {
+      gannViewState.libLoading = false;
+      ui.rerender();
+    });
+  }
+  const filteredLib = searchGannLibrary(lib.items || [], gannViewState.libQuery, gannViewState.libKind);
+
+  mount(root,
+    h('div', { class: 'card', style: { marginTop: '14px' } },
+      h('div', { class: 'card-head' },
+        h('div', {},
+          h('h2', { text: '📚 ספריית האירועים ושינויי המגמה של גאן (מחקר עצמאי + חיפוש חכם)' }),
+          h('div', { class: 'card-sub', text: `משלבת אירועים פונדמנטליסטיים שנחזו ע"י גאן, שינויי מגמה רגילים ממחקר אוטונומי ותחזיות היסטוריות מתועדות מהרשת · ${lib.updatedAt ? 'עודכן ' + timeAgo(lib.updatedAt) : 'מאתחל סריקה…'}` }),
+        ),
+        h('button', {
+          class: 'btn btn-sm btn-primary',
+          disabled: gannViewState.libLoading,
+          onclick: async () => {
+            gannViewState.libLoading = true;
+            ui.rerender();
+            try {
+              await runAutonomousGannLibraryAudit();
+              toast('הבדיקה העצמאית הושלמה וספריית האירועים עודכנה!', 'ok');
+            } finally {
+              gannViewState.libLoading = false;
+              ui.rerender();
+            }
+          },
+        }, gannViewState.libLoading ? '⏳ סורק היסטוריה…' : '🔬 הרץ בדיקה עצמאית אוטומטית'),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '8px', marginBottom: '12px', alignItems: 'center' } },
+        h('input', {
+          class: 'input',
+          type: 'search',
+          placeholder: '🔍 חיפוש חכם: נכס (NVDA, BTC), מחזור (144d, 90d), ריבית, חצייה, 1929, חיטה…',
+          style: { flex: '1', minWidth: '240px' },
+          value: gannViewState.libQuery,
+          oninput: (e) => { gannViewState.libQuery = e.target.value; ui.rerender(); },
+        }),
+        [
+          ['all', `הכל (${lib.items?.length || 0})`],
+          ['fundamental_proven', `פונדמנטליסטיים (${lib.stats?.fundamentalProven || 0})`],
+          ['trend_reversal', `שינויי מגמה רגילים (${lib.stats?.trendReversals || 0})`],
+          ['web_documented', `מתועדים מהרשת (${lib.stats?.webDocumented || 0})`],
+        ].map(([k, lbl]) =>
+          h('button', {
+            class: `btn btn-sm ${gannViewState.libKind === k ? 'btn-primary' : ''}`,
+            onclick: () => { gannViewState.libKind = k; ui.rerender(); },
+          }, lbl)
+        ),
+      ),
+      filteredLib.length
+        ? h('div', { class: 'table-wrap' },
+          h('table', {},
+            h('thead', {}, h('tr', {},
+              h('th', { text: 'תאריך' }),
+              h('th', { text: 'נכס' }),
+              h('th', { text: 'האירוע / שינוי המגמה' }),
+              h('th', { text: 'סיווג' }),
+              h('th', { text: 'מקור והוכחת גאן (לחץ לפירוט)' }),
+            )),
+            h('tbody', {}, filteredLib.slice(0, 35).map((item) => h('tr', {
+              style: { cursor: 'pointer' },
+              onclick: () => openFundamentalEventModal(item),
+            },
+              h('td', { class: 'mono', text: item.date }),
+              h('td', { class: 'mono', text: item.symbol }),
+              h('td', { class: 'small', text: item.title }),
+              h('td', {}, tag(item.category, item.kind === 'fundamental_proven' ? 'live' : item.kind === 'web_documented' ? 'opt' : 'dry')),
+              h('td', { class: 'tiny muted', text: item.explanation }),
+            ))),
+          ),
+        )
+        : empty('לא נמצאו אירועים תואמים לחיפוש.'),
     ),
   );
 }
