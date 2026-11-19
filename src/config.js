@@ -25,8 +25,23 @@ export const DESKS = [
   },
   {
     id: 'desk_1w', label: 'סווינג · שנתי (שבועי)', short: '1w', tf: '1w', kind: 'swing',
-    symbol: 'ETHUSDT', venue: 'Binance / Kraken', weight: 0.2, horizon: 'חודשים עד שנה',
+    symbol: 'ETHUSDT', venue: 'Binance / Kraken', weight: 0.14, horizon: 'חודשים עד שנה',
     mandate: 'פוזיציות ארוכות טווח עם פילטר מומנטום רחב וסטופ רחב.',
+  },
+  {
+    id: 'desk_nvda', label: 'מניות · NVIDIA (שעתי)', short: 'NVDA', tf: '1h', kind: 'intraday',
+    symbol: 'NVDA', venue: 'Yahoo Finance · NASDAQ', weight: 0.12, horizon: 'תוך־יומי / סווינג',
+    mandate: 'בדיקת אסטרטגיות גאן ומומנטום על מניית NVDA מנתוני Yahoo Finance.',
+  },
+  {
+    id: 'desk_spy', label: 'מדדים · S&P 500 (יומי)', short: 'SPY', tf: '1d', kind: 'swing',
+    symbol: 'SPY', venue: 'Yahoo Finance · NYSE', weight: 0.12, horizon: 'סווינג רב־שבועי',
+    mandate: 'אימות חוסן אסטרטגיות גאן ומגמה על מדד השוק הרחב SPY.',
+  },
+  {
+    id: 'desk_aapl', label: 'מניות · Apple (יומי)', short: 'AAPL', tf: '1d', kind: 'swing',
+    symbol: 'AAPL', venue: 'Yahoo Finance · NASDAQ', weight: 0.12, horizon: 'סווינג רב־שבועי',
+    mandate: 'בחינת מחזורי זמן וריבוע התשע של גאן על מניית AAPL.',
   },
 ];
 

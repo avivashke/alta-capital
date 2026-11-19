@@ -23,3 +23,8 @@
   from = "/api/firm-cron"
   to = "/.netlify/functions/firm-cron"
   status = 200
+
+[[redirects]]
+  from = "/api/market"
+  to = "/.netlify/functions/market"
+  status = 200

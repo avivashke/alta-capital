@@ -10,10 +10,34 @@ const TF = {
 };
 
 const SYMBOLS = {
-  BTCUSDT: { kraken: 'XBTUSD', coinbase: 'BTC-USD', base: 68000 },
-  ETHUSDT: { kraken: 'ETHUSD', coinbase: 'ETH-USD', base: 3400 },
-  SOLUSDT: { kraken: 'SOLUSD', coinbase: 'SOL-USD', base: 165 },
+  BTCUSDT: { kraken: 'XBTUSD', coinbase: 'BTC-USD', base: 68000, kind: 'crypto' },
+  ETHUSDT: { kraken: 'ETHUSD', coinbase: 'ETH-USD', base: 3400, kind: 'crypto' },
+  SOLUSDT: { kraken: 'SOLUSD', coinbase: 'SOL-USD', base: 165, kind: 'crypto' },
+  NVDA:    { yahoo: 'NVDA', label: 'NVIDIA (NVDA)', base: 140, kind: 'stock' },
+  AAPL:    { yahoo: 'AAPL', label: 'Apple (AAPL)', base: 225, kind: 'stock' },
+  TSLA:    { yahoo: 'TSLA', label: 'Tesla (TSLA)', base: 250, kind: 'stock' },
+  MSFT:    { yahoo: 'MSFT', label: 'Microsoft (MSFT)', base: 420, kind: 'stock' },
+  SPY:     { yahoo: 'SPY',  label: 'S&P 500 ETF (SPY)', base: 580, kind: 'etf' },
+  QQQ:     { yahoo: 'QQQ',  label: 'Nasdaq 100 ETF (QQQ)', base: 500, kind: 'etf' },
+  'GC=F':  { yahoo: 'GC=F', label: 'Gold Futures (GC=F)', base: 2650, kind: 'commodity' },
 };
+
+export const ASSET_CATALOG = [
+  { symbol: 'BTCUSDT', label: 'Bitcoin (BTC/USDT)' },
+  { symbol: 'ETHUSDT', label: 'Ethereum (ETH/USDT)' },
+  { symbol: 'SOLUSDT', label: 'Solana (SOL/USDT)' },
+  { symbol: 'NVDA', label: 'NVIDIA (NVDA · מניה)' },
+  { symbol: 'AAPL', label: 'Apple (AAPL · מניה)' },
+  { symbol: 'TSLA', label: 'Tesla (TSLA · מניה)' },
+  { symbol: 'MSFT', label: 'Microsoft (MSFT · מניה)' },
+  { symbol: 'SPY', label: 'S&P 500 (SPY · מדד)' },
+  { symbol: 'QQQ', label: 'Nasdaq 100 (QQQ · מדד)' },
+  { symbol: 'GC=F', label: 'זהב (GC=F · סחורה)' },
+];
+
+function isCryptoSymbol(symbol) {
+  return /USDT$|USD$/i.test(symbol) && !symbol.includes('=');
+}
 
 const VOL_PER_BAR = { '5m': 0.0019, '15m': 0.0033, '1h': 0.0062, '1d': 0.024, '1w': 0.055 };
 
@@ -72,6 +96,37 @@ async function fromCoinbase(symbol, tf, limit) {
   if (out.length < 60) throw new Error('coinbase: thin');
   const map = new Map(out.map((c) => [c.t, c]));
   return [...map.values()].sort((a, b) => a.t - b.t).slice(-limit);
+}
+
+async function fromYahoo(symbol, tf, limit) {
+  const yahooSym = SYMBOLS[symbol]?.yahoo || symbol;
+  if (typeof window !== 'undefined') {
+    const data = await fetchJson(`/api/market?symbol=${encodeURIComponent(yahooSym)}&tf=${encodeURIComponent(tf)}&limit=${limit}`, 10000);
+    if (!data?.ok || !Array.isArray(data.candles) || data.candles.length < 30) {
+      throw new Error(data?.error || 'yahoo: empty');
+    }
+    if (data.price != null) {
+      quotes[symbol] = { price: data.price, changePct: data.changePct || 0, at: Date.now(), provider: 'Yahoo Finance' };
+    }
+    return data.candles;
+  }
+  const intervalMap = { '5m': '5m', '15m': '15m', '1h': '60m', '1d': '1d', '1w': '1wk' };
+  const rangeMap = { '5m': '5d', '15m': '1mo', '1h': '3mo', '1d': '2y', '1w': '5y' };
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${intervalMap[tf] || '1d'}&range=${rangeMap[tf] || '2y'}`;
+  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' } });
+  if (!res.ok) throw new Error('yahoo HTTP ' + res.status);
+  const json = await res.json();
+  const r = json?.chart?.result?.[0];
+  const ts = r?.timestamp || [];
+  const q = r?.indicators?.quote?.[0] || {};
+  const candles = [];
+  for (let i = 0; i < ts.length; i++) {
+    const o = q.open?.[i], h = q.high?.[i], l = q.low?.[i], c = q.close?.[i];
+    if (o == null || h == null || l == null || c == null) continue;
+    candles.push({ t: ts[i] * 1000, o: +o, h: +h, l: +l, c: +c, v: +(q.volume?.[i] || 0) });
+  }
+  if (candles.length < 30) throw new Error('yahoo: thin');
+  return candles.slice(-limit);
 }
 
 function hash(str) {
@@ -152,9 +207,28 @@ export function startQuotes(symbols, onChange) {
   const same = symbols.length === quoteSymbols.length && symbols.every((s, i) => s === quoteSymbols[i]);
   quoteSymbols = symbols.slice();
   if (ws || pollTimer) { if (same) return; stopQuotes(); quoteSymbols = symbols.slice(); }
+
+  const cryptoSyms = symbols.filter(isCryptoSymbol);
+  const stockSyms = symbols.filter((s) => !isCryptoSymbol(s));
+
+  if (stockSyms.length && typeof window !== 'undefined') {
+    const pollStocks = async () => {
+      try {
+        const data = await fetchJson(`/api/market?action=quotes&symbols=${encodeURIComponent(stockSyms.join(','))}`, 9000);
+        if (data?.quotes) {
+          Object.assign(quotes, data.quotes);
+          emitQuotes();
+        }
+      } catch { /* ignore */ }
+    };
+    pollStocks();
+    pollTicker = setInterval(pollStocks, 30000);
+  }
+
+  if (!cryptoSyms.length) return;
   if (typeof WebSocket === 'undefined') { startPolling(); return; }
   try {
-    const streams = symbols.map((s) => s.toLowerCase() + '@miniTicker').join('/');
+    const streams = cryptoSyms.map((s) => s.toLowerCase() + '@miniTicker').join('/');
     ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
     ws.onmessage = (ev) => {
       try {
@@ -199,15 +273,19 @@ export async function getCandles(symbol, tf, { limit = 700, force = false } = {}
     return hit.candles;
   }
   const errors = [];
-  const providers = [
-    ['Binance', () => fromBinance(symbol, tf, limit)],
-    ['Kraken', () => fromKraken(symbol, tf, limit)],
-    ['Coinbase', () => fromCoinbase(symbol, tf, limit)],
-  ];
+  const providers = isCryptoSymbol(symbol)
+    ? [
+        ['Binance', () => fromBinance(symbol, tf, limit)],
+        ['Kraken', () => fromKraken(symbol, tf, limit)],
+        ['Coinbase', () => fromCoinbase(symbol, tf, limit)],
+      ]
+    : [
+        ['Yahoo Finance', () => fromYahoo(symbol, tf, limit)],
+      ];
   for (const [name, fn] of providers) {
     try {
       const candles = await fn();
-      if (candles.length >= 60) {
+      if (candles.length >= 30) {
         cache.set(key, { at: Date.now(), candles, provider: name, synthetic: false });
         Object.assign(marketState, { provider: name, synthetic: false, fetchedAt: Date.now(), error: null });
         return candles;

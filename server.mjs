@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { handleDbRequest } from './netlify/functions/db.mjs';
 import { handleLlmProxy } from './netlify/functions/llm.mjs';
 import { runFirmCronJob } from './netlify/functions/firm-cron.mjs';
+import { handleMarketRequest } from './netlify/functions/market.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 process.chdir(ROOT);
@@ -72,6 +73,19 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ error: { message: err.message } }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/market' || pathname === '/.netlify/functions/market') {
+    try {
+      const q = Object.fromEntries(urlObj.searchParams.entries());
+      const out = await handleMarketRequest(q);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(out));
+    } catch (err) {
+      res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
     }
     return;
   }

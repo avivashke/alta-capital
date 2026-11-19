@@ -1,6 +1,6 @@
 import { mount, h, num, notice } from '../ui.js';
 import { store } from '../store.js';
-import { marketState, getCandles, lastPrice, quotes } from '../market.js';
+import { marketState, getCandles, lastPrice, quotes, ASSET_CATALOG } from '../market.js';
 import { ema, sma, rsi, macd, donchian, bollinger, atr } from '../indicators.js';
 
 const MAX_BARS = 160;
@@ -254,8 +254,8 @@ export function renderCharts(root, ui) {
   const state = store.state;
   const deskId = ui.selectedDesk || (state.desks[0] && state.desks[0].id) || null;
   const desk = deskId ? state.desks.find(d=>d.id===deskId) : state.desks[0];
-  const symbol = desk ? desk.symbol : 'BTCUSDT';
-  const tf = desk ? desk.tf : '1h';
+  const symbol = ui.customChartSymbol || (desk ? desk.symbol : 'BTCUSDT');
+  const tf = ui.customChartTf || (desk ? desk.tf : '1h');
   const key = symbol + '|' + tf;
 
   if (chartState.key !== key && !chartState.loading) {
@@ -275,9 +275,24 @@ export function renderCharts(root, ui) {
       ),
       h('div', { class: 'head-actions' },
         h('span', { class: marketState.synthetic ? 'pill pill-warn' : 'pill pill-sim', text: marketState.synthetic ? 'נתוני הדגמה (fallback)' : ('שוק חי · ' + (marketState.provider || 'Binance')) }),
-        h('select', { class: 'input', value: deskId || '', onchange: (e)=>{ ui.selectedDesk=e.target.value; chartState={key:null,loading:false,error:null,candles:null}; ui.rerender(); } },
-          state.desks.map(d=>h('option',{value:d.id}, d.label + ' · ' + d.symbol + ' · ' + d.tf))
-        ),
+        h('select', {
+          class: 'input',
+          value: symbol,
+          onchange: (e) => {
+            ui.customChartSymbol = e.target.value;
+            chartState = { key: null, loading: false, error: null, candles: null };
+            ui.rerender();
+          },
+        }, ASSET_CATALOG.map((a) => h('option', { value: a.symbol, selected: symbol === a.symbol }, a.label))),
+        h('select', {
+          class: 'input',
+          value: tf,
+          onchange: (e) => {
+            ui.customChartTf = e.target.value;
+            chartState = { key: null, loading: false, error: null, candles: null };
+            ui.rerender();
+          },
+        }, ['5m', '15m', '1h', '1d', '1w'].map((t) => h('option', { value: t, selected: tf === t }, t))),
         h('button', { class: 'btn btn-sm btn-primary', onclick: ()=>loadCandles(ui,symbol,tf) }, 'רענן'),
       ),
     ),

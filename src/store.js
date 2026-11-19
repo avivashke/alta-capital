@@ -191,6 +191,30 @@ export const store = {
         lastRunAt: null,
         generatedCode: null,
       }));
+    } else {
+      const haveDesks = new Set(this.state.desks.map((d) => d.id));
+      for (const d of DESKS) {
+        if (!haveDesks.has(d.id)) {
+          this.state.desks.push({
+            ...d,
+            status: 'research',
+            strategyId: null,
+            params: null,
+            version: null,
+            bestReturn: null,
+            baselineReturn: null,
+            metrics: null,
+            fitness: null,
+            equity: [],
+            history: [],
+            dryRunCycles: 0,
+            liveTrades: [],
+            livePnl: 0,
+            lastRunAt: null,
+            generatedCode: null,
+          });
+        }
+      }
     }
   },
 
