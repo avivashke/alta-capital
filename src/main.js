@@ -20,6 +20,7 @@ import { renderSettings } from './views/settings.js';
 import { renderDocs } from './views/docs.js';
 import { renderPortfolio } from './views/portfolio.js';
 import { renderCharts } from './views/charts.js';
+import { renderGann } from './views/gann.js';
 import { renderAcademy } from './views/academy.js';
 
 const VIEWS = {
@@ -32,6 +33,7 @@ const VIEWS = {
   sentiment: renderSentiment,
   advisor: renderAdvisor,
   academy: renderAcademy,
+  gann: renderGann,
   settings: renderSettings,
   docs: renderDocs,
   portfolio: renderPortfolio,
