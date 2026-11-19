@@ -207,13 +207,37 @@ export function candidates(state = store.state) {
   return list;
 }
 
+async function callServerEnvChat({ system, messages, maxTokens = 1200, temperature = 0.4 }) {
+  if (typeof window === 'undefined') throw new LlmError('env_chat browser only', 0);
+  const res = await fetch('/api/llm', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      action: 'env_chat',
+      system,
+      messages: historyOf(messages),
+      maxTokens,
+      temperature,
+    }),
+  });
+  if (!res.ok) throw await readError(res);
+  const data = await res.json();
+  if (!data?.ok || !data?.text) throw new LlmError(data?.error || 'env_chat failed', res.status);
+  return {
+    text: data.text,
+    entryId: 'netlify-env',
+    provider: data.provider || 'nvidia',
+    model: data.model || 'nvidia/nemotron-3-ultra-550b-a55b',
+    accountId: null,
+    label: data.label || 'Netlify AI (NVIDIA Env)',
+    attempts: [],
+  };
+}
+
 export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
   const state = store.state;
   const temperature = Number(state.settings?.llm?.temperature ?? 0.4);
   const list = candidates(state);
-  if (!list.length) {
-    throw new LlmError('אין מודל או פרוקסי זמין בבריכה. הוסף פרוקסי Cloudflare Worker או מפתח API בהגדרות.', 0);
-  }
   const queue = list.slice(0, 10);
 
   const attempts = [];
@@ -238,7 +262,21 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
       attempts.push({ provider: entry.label || entry.provider, model: entry.model, error: err.message, status: err.status || 0 });
     }
   }
+
+  // Fallback to server-side Netlify Env AI (/api/llm env_chat, e.g. NVIDIA_API_KEY)
+  if (typeof window !== 'undefined') {
+    try {
+      const envRes = await callServerEnvChat({ system, messages, maxTokens, temperature });
+      return { ...envRes, attempts };
+    } catch (err) {
+      attempts.push({ provider: 'Netlify Env AI', model: 'env_chat', error: err.message, status: err.status || 0 });
+    }
+  }
+
   store.save();
+  if (!attempts.length) {
+    throw new LlmError('אין מודל או פרוקסי זמין בבריכה. הוסף מפתח בהגדרות או הגדר NVIDIA_API_KEY ב-Netlify.', 0);
+  }
   throw new LlmError('כל המודלים והפרוקסים בבריכה נכשלו · ' + attempts.map((a) => `${a.provider}: ${a.error}`).join(' | '));
 }
 
