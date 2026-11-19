@@ -3,7 +3,7 @@
 // Multi-Asset Proof Scanner, and Gann vs. Fundamental Events Historical Proof.
 
 import { store } from '../store.js';
-import { h, mount, num, pct, tag, notice, empty, toast, openModal, timeAgo, downloadFile } from '../ui.js';
+import { h, mount, num, pct, tag, notice, empty, toast, openModal, timeAgo, downloadFile, copyText } from '../ui.js';
 import { getCandles, marketState, ASSET_CATALOG } from '../market.js';
 import { scheduleDatabasePush } from '../db.js';
 import {
@@ -18,6 +18,7 @@ import {
   autoScaleForPrice,
   parseGannzillaIni,
   exportGannzillaIni,
+  parsePriceTimeCsv,
 } from '../gann.js';
 import { chatDetailed } from '../llm.js';
 
@@ -1166,6 +1167,95 @@ export function renderGann(root, ui) {
           : h('div', { class: 'small muted', text: 'אין היבט פלנטרי הדוק (±5°) בדיוק היום.' }),
       ),
     ),
+
+    // PriceChartingTool / printPriceTimeInfoDatetimes.py Compatible Ephemeris & Price-Time Info Panel
+    a.priceTimeInfo ? (() => {
+      const pt = a.priceTimeInfo;
+      const ptCsvInput = h('input', {
+        type: 'file',
+        accept: '.csv,.txt,.log',
+        style: { display: 'none' },
+        onchange: async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          try {
+            const pts = parsePriceTimeCsv(await file.text());
+            if (!pts.length) {
+              toast('לא זוהו שורות בפורמט YYYY-MM-DD,price', 'bad');
+              return;
+            }
+            updateGannzillaConfig({ customPriceTimePoints: pts }, ui, { reloadAnalysis: true });
+            toast(`יובאו ${pts.length} נקודות Price-Time (Julian Day) בהצלחה`, 'ok');
+          } catch (err) {
+            toast('ייבוא Price-Time נכשל: ' + err.message, 'bad');
+          } finally {
+            e.target.value = '';
+          }
+        },
+      });
+      return h('div', { class: 'card', style: { marginTop: '14px' } },
+        ptCsvInput,
+        h('div', { class: 'card-head' },
+          h('div', {},
+            h('h2', { text: '🪐 נתוני Price-Time ו-Julian Day (תואם PriceChartingTool · Ephemeris)' }),
+            h('div', { class: 'card-sub', text: 'מיישם את printPriceTimeInfoDatetimes.py: תאריך התחלה/סיום ו-Julian Day, שיא/שפל טווח, נקודות Price-Time ממוינות כרונולוגית, אורך שמש (☉) וייצוא/ייבוא CSV' }),
+          ),
+          h('div', { class: 'row wrap', style: { gap: '6px' } },
+            h('button', {
+              class: 'btn btn-sm btn-primary',
+              onclick: () => copyText(pt.csvCompact),
+            }, '📋 העתק YYYY-MM-DD,price'),
+            h('button', {
+              class: 'btn btn-sm',
+              onclick: () => {
+                downloadFile(`${gannViewState.symbol}-price-time-julian.csv`, pt.csvFull, 'text/csv');
+                toast('קובץ CSV עם Julian Day ו-Ephemeris הורד בהצלחה', 'ok');
+              },
+            }, '⬇ ייצוא CSV (Julian Day)'),
+            h('button', {
+              class: 'btn btn-sm btn-ghost',
+              onclick: () => ptCsvInput.click(),
+            }, '⬆ ייבוא פלט PriceChartingTool'),
+            (cfg.customPriceTimePoints?.length)
+              ? h('button', {
+                class: 'btn btn-sm btn-ghost',
+                onclick: () => updateGannzillaConfig({ customPriceTimePoints: [] }, ui, { reloadAnalysis: true }),
+              }, 'נקה מיובאים')
+              : null,
+          ),
+        ),
+        h('div', { class: 'grid cols-4', style: { gap: '8px', marginBottom: '12px' } },
+          h('div', { class: 'metric' }, h('span', { text: 'נר ראשון (Earliest · JD)' }), h('b', { class: 'mono', text: `${pt.earliest.date} · JD ${pt.earliest.julianDay}` })),
+          h('div', { class: 'metric' }, h('span', { text: 'נר אחרון (Latest · JD)' }), h('b', { class: 'mono', text: `${pt.latest.date} · JD ${pt.latest.julianDay}` })),
+          h('div', { class: 'metric' }, h('span', { text: 'שיא טווח (Highest High)' }), h('b', { class: 'mono green', text: `${num(pt.highest.price, 2)} (${pt.highest.date})` })),
+          h('div', { class: 'metric' }, h('span', { text: 'שפל טווח (Lowest Low)' }), h('b', { class: 'mono red', text: `${num(pt.lowest.price, 2)} (${pt.lowest.date})` })),
+        ),
+        h('div', { class: 'table-wrap', style: { maxHeight: '280px', overflowY: 'auto' } },
+          h('table', {},
+            h('thead', {}, h('tr', {},
+              h('th', { text: 'תאריך (UTC)' }),
+              h('th', { text: 'Julian Day (JD)' }),
+              h('th', { text: 'מחיר' }),
+              h('th', { text: 'סוג נקודה' }),
+              h('th', { text: 'Δ ימים' }),
+              h('th', { text: 'קצב מחיר/יום' }),
+              h('th', { text: 'אורך שמש ☉' }),
+              h('th', { text: 'זווית Sq9' }),
+            )),
+            h('tbody', {}, pt.points.slice().reverse().slice(0, 40).map((p) => h('tr', {},
+              h('td', { class: 'mono', text: p.date }),
+              h('td', { class: 'mono muted', text: String(p.julianDay) }),
+              h('td', { class: 'mono', text: num(p.price, 2) }),
+              h('td', {}, tag(p.type, p.source === 'imported' ? 'opt' : p.type.includes('Low') ? 'live' : 'red')),
+              h('td', { class: 'mono', text: p.deltaDays != null ? `+${p.deltaDays}d` : '—' }),
+              h('td', { class: 'mono ' + ((p.ratePerDay || 0) >= 0 ? 'green' : 'red'), text: p.ratePerDay != null ? num(p.ratePerDay, 2) : '—' }),
+              h('td', { class: 'mono gold', text: p.sunLon != null ? `${p.sunLon}°` : '—' }),
+              h('td', { class: 'mono', text: `${p.wheelAngle}°` }),
+            ))),
+          ),
+        ),
+      );
+    })() : null,
 
     // Gann vs. Fundamental Events Proof Section
     h('div', { class: 'card', style: { marginTop: '14px' } },

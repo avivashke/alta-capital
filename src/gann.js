@@ -1111,6 +1111,128 @@ export function evaluateGannConfluenceChecklist(analysis) {
   return { score, verdict, rules };
 }
 
+// --- PriceChartingTool / printPriceTimeInfoDatetimes.py Compatible Ephemeris & Price-Time Analyzer ---
+
+export function toJulianDay(ts) {
+  const ms = typeof ts === 'number' ? ts : Date.parse(ts);
+  if (!Number.isFinite(ms)) return null;
+  // Standard Astronomical Julian Day (Unix epoch 1970-01-01T00:00:00Z = JD 2440587.5)
+  return +(ms / DAY_MS + 2440587.5).toFixed(4);
+}
+
+export function buildPriceTimeInfoReport(candles = [], pivots = [], customPoints = []) {
+  if (!Array.isArray(candles) || !candles.length) return null;
+  const earliest = candles[0];
+  const latest = candles[candles.length - 1];
+
+  let highest = candles[0];
+  let lowest = candles[0];
+  for (const c of candles) {
+    if (c.h > highest.h) highest = c;
+    if (c.l < lowest.l) lowest = c;
+  }
+
+  // Build chronologically sorted Price-Time Info points (matching PriceBarChartPriceTimeInfoArtifact)
+  const rawPoints = [
+    ...(pivots || []).map((p) => ({
+      t: p.t,
+      date: new Date(p.t).toISOString().slice(0, 10),
+      price: +Number(p.price).toFixed(4),
+      type: p.type === 'low' ? 'שפל (Low)' : 'שיא (High)',
+      source: 'pivot',
+    })),
+    ...(customPoints || []).map((cp) => ({
+      t: cp.t,
+      date: cp.date,
+      price: +Number(cp.price).toFixed(4),
+      type: cp.type || 'נקודת Price-Time מיובאת',
+      source: 'imported',
+    })),
+  ].sort((a, b) => a.t - b.t);
+
+  const points = rawPoints.map((pt, idx) => {
+    const prev = idx > 0 ? rawPoints[idx - 1] : null;
+    const jd = toJulianDay(pt.t);
+    const deltaDays = prev ? Math.round((pt.t - prev.t) / DAY_MS) : null;
+    const deltaPrice = prev ? +(pt.price - prev.price).toFixed(4) : null;
+    const ratePerDay = deltaDays && deltaDays > 0 ? +(deltaPrice / deltaDays).toFixed(4) : null;
+    const sunLon = computePlanetaryLongitudes(pt.t).planets[0]?.lon ?? null;
+    const scale = autoScaleForPrice(pt.price);
+    const sqrtNorm = Math.sqrt(Math.max(1e-6, pt.price / scale));
+    const wheelAngle = +((((sqrtNorm - 1) * 180) % 360 + 360) % 360).toFixed(1);
+    return {
+      ...pt,
+      julianDay: jd,
+      deltaDays,
+      deltaPrice,
+      ratePerDay,
+      sunLon,
+      wheelAngle,
+    };
+  });
+
+  // Exact printPriceTimeInfoDatetimes.py output format: YYYY-MM-DD,price
+  const csvCompact = points.map((p) => `${p.date},${p.price}`).join('\n');
+  const csvFull = [
+    'date,julian_day,price,type,delta_days,delta_price,price_per_day,sun_lon_deg,sq9_angle_deg',
+    ...points.map((p) => [
+      p.date, p.julianDay, p.price, p.type, p.deltaDays ?? '', p.deltaPrice ?? '', p.ratePerDay ?? '', p.sunLon ?? '', p.wheelAngle ?? '',
+    ].join(',')),
+  ].join('\n');
+
+  return {
+    earliest: {
+      date: new Date(earliest.t).toISOString().slice(0, 10),
+      iso: new Date(earliest.t).toISOString(),
+      julianDay: toJulianDay(earliest.t),
+      close: earliest.c,
+    },
+    latest: {
+      date: new Date(latest.t).toISOString().slice(0, 10),
+      iso: new Date(latest.t).toISOString(),
+      julianDay: toJulianDay(latest.t),
+      close: latest.c,
+    },
+    highest: {
+      date: new Date(highest.t).toISOString().slice(0, 10),
+      julianDay: toJulianDay(highest.t),
+      price: highest.h,
+    },
+    lowest: {
+      date: new Date(lowest.t).toISOString().slice(0, 10),
+      julianDay: toJulianDay(lowest.t),
+      price: lowest.l,
+    },
+    totalJulianDays: +((latest.t - earliest.t) / DAY_MS).toFixed(2),
+    barsCount: candles.length,
+    points,
+    csvCompact,
+    csvFull,
+  };
+}
+
+// Parse CSV lines produced by printPriceTimeInfoDatetimes.py (e.g. "2024-04-19,63800.5" or "INFO: 2024-04-19,63800.5")
+export function parsePriceTimeCsv(text) {
+  const out = [];
+  for (const rawLine of String(text || '').split(/\r?\n/)) {
+    const cleaned = rawLine.replace(/^INFO:\s*/i, '').trim();
+    if (!cleaned || cleaned.startsWith('#') || cleaned.toLowerCase().startsWith('date,')) continue;
+    const parts = cleaned.split(/[,\t;]+/).map((s) => s.trim());
+    if (parts.length < 2) continue;
+    const dateStr = parts[0];
+    const ts = Date.parse(dateStr.includes('T') ? dateStr : `${dateStr}T00:00:00Z`);
+    const price = Number(parts[1]);
+    if (!Number.isFinite(ts) || !Number.isFinite(price) || price <= 0) continue;
+    out.push({
+      t: ts,
+      date: new Date(ts).toISOString().slice(0, 10),
+      price,
+      type: parts[2] || 'PriceChartingTool',
+    });
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+
 // Prove Gann against Fundamental Events: check if prior Gann cycles + Sq9/Hex predicted the event BEFORE the news!
 function proveGannAgainstFundamentals(candles, pivots, sq9Levels, hexLevels, assetKind = 'all') {
   const firstTs = candles[0].t;
@@ -1380,6 +1502,8 @@ export function analyzeGannHistoryAndForecast(
       };
     });
 
+  const priceTimeInfo = buildPriceTimeInfoReport(candles, pivots, gzCfg.customPriceTimePoints || []);
+
   const out = {
     ok: true,
     candlesCount: candles.length,
@@ -1398,6 +1522,7 @@ export function analyzeGannHistoryAndForecast(
     gannBox,
     swingChart,
     msjSq9,
+    priceTimeInfo,
     angles,
     angle1x1,
     totalTests,
