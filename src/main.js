@@ -197,8 +197,11 @@ function boot() {
     }
   });
 
+  let cloudReady = false;
+
   setInterval(() => {
     updateTopbar();
+    if (!cloudReady) return;
     const s = store.state.settings;
     if (!s.autopilot) return;
     const cloudMode = !!(store.state.remote?.updatedAt && s.cloudSync);
@@ -209,28 +212,32 @@ function boot() {
     }
   }, 1000);
 
+  // Periodic cross-device sync every 30s so phone/PC stay aligned with Supabase
+  setInterval(() => {
+    if (cloudReady) syncFromCloud().catch(() => {});
+  }, 30000);
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       startMarketFeed();
-      const cloudMode = !!(store.state.remote?.updatedAt && store.state.settings.cloudSync);
-      if (cloudMode) syncFromCloud().catch(() => {});
-      else if (store.state.settings.autopilot) catchUp().catch(() => {});
+      syncFromCloud().catch(() => {});
     }
   });
 
   syncFromCloud()
     .then((res) => {
-      if (res?.ok) toast('נטען מצב ההרצה מהענן (GitHub Actions)', 'ok');
+      if (res?.ok) toast(`נטען מצב התיק מהענן (${res.source || 'Supabase'})`, 'ok');
     })
-    .catch((err) => console.warn('[cloud]', err));
-
-  setTimeout(() => {
-    if (store.state.settings.autopilot) {
-      tick({ reason: 'boot' }).catch(() => {});
-      const cloudMode = !!(store.state.remote?.updatedAt && store.state.settings.cloudSync);
-      if (!cloudMode) catchUp().catch((err) => console.warn('[catchup]', err));
-    }
-  }, 600);
+    .catch((err) => console.warn('[cloud]', err))
+    .finally(() => {
+      cloudReady = true;
+      render();
+      if (store.state.settings.autopilot) {
+        tick({ reason: 'boot' }).catch(() => {});
+        const cloudMode = !!(store.state.remote?.updatedAt && store.state.settings.cloudSync);
+        if (!cloudMode) catchUp().catch((err) => console.warn('[catchup]', err));
+      }
+    });
 }
 
 boot();

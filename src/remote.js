@@ -35,6 +35,7 @@ export async function fetchRemoteState() {
 
 export function remoteIsNewer(state, remote) {
   if (!remote?.updatedAt) return false;
+  if (!state.remote?.updatedAt && (state.stats?.cycles || 0) === 0) return true;
   const remoteTs = Date.parse(remote.updatedAt) || 0;
   const localTs = state.remote?.updatedAt ? Date.parse(state.remote.updatedAt) : (state.lastTickAt || 0);
   return remoteTs > localTs;
@@ -53,6 +54,18 @@ export function mergeRemote(state, remote) {
   state.knowledge = remote.knowledge || state.knowledge;
   if (remote.paperPortfolio && typeof remote.paperPortfolio === 'object') {
     state.paperPortfolio = remote.paperPortfolio;
+  }
+  if (remote.nostro && typeof remote.nostro === 'object') {
+    state.nostro = remote.nostro;
+  }
+  if (remote.gannLibrary && typeof remote.gannLibrary === 'object') {
+    state.gannLibrary = remote.gannLibrary;
+  }
+  if (remote.fundamentals && typeof remote.fundamentals === 'object') {
+    state.fundamentals = remote.fundamentals;
+  }
+  if (remote.githubScout && typeof remote.githubScout === 'object') {
+    state.githubScout = remote.githubScout;
   }
   state.lastTickAt = Date.parse(remote.updatedAt) || Date.now();
   state.remote = {
