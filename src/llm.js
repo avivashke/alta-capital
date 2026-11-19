@@ -42,7 +42,7 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
   if (!entry.model) throw new LlmError('לא הוגדר שם מודל');
   const history = historyOf(messages);
   const shape = entry.shape || 'openai';
-  const isProxyChat = /\/chat$/i.test(base) || entry.provider === 'gateway';
+  const isProxyChat = /\/chat$/i.test(base) || /\/openai$/i.test(base) || entry.provider === 'gateway' || entry.provider === 'pollinations';
 
   if (shape === 'anthropic') {
     return {
@@ -198,6 +198,35 @@ export function webllmEntry() {
   };
 }
 
+export function freeZeroKeyEntries() {
+  return [
+    {
+      id: 'free_pollinations_openai',
+      provider: 'pollinations',
+      label: 'Pollinations AI (חינמי ללא מפתח)',
+      shape: 'openai',
+      baseUrl: 'https://text.pollinations.ai/openai',
+      accountId: '',
+      model: 'openai',
+      key: 'free',
+      enabled: true,
+      valid: true,
+    },
+    {
+      id: 'free_pollinations_mistral',
+      provider: 'pollinations',
+      label: 'Pollinations Mistral (חינמי ללא מפתח)',
+      shape: 'openai',
+      baseUrl: 'https://text.pollinations.ai/openai',
+      accountId: '',
+      model: 'mistral',
+      key: 'free',
+      enabled: true,
+      valid: true,
+    },
+  ];
+}
+
 export function candidates(state = store.state) {
   const list = [...availableEntries(state)];
   const leg = legacyEntry(state);
@@ -263,13 +292,33 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
     }
   }
 
-  // Fallback to server-side Netlify Env AI (/api/llm env_chat, e.g. NVIDIA_API_KEY)
+  // Fallback 1: server-side Netlify Env AI (/api/llm env_chat, e.g. NVIDIA_API_KEY)
   if (typeof window !== 'undefined') {
     try {
       const envRes = await callServerEnvChat({ system, messages, maxTokens, temperature });
       return { ...envRes, attempts };
     } catch (err) {
       attempts.push({ provider: 'Netlify Env AI', model: 'env_chat', error: err.message, status: err.status || 0 });
+    }
+  }
+
+  // Fallback 2: Free Zero-Key Public AI Pool (Pollinations.ai)
+  for (const freeEntry of freeZeroKeyEntries()) {
+    try {
+      const text = await callEntry(freeEntry, { system, messages, maxTokens, temperature });
+      if (text) {
+        return {
+          text,
+          entryId: freeEntry.id,
+          provider: freeEntry.provider,
+          model: freeEntry.model,
+          accountId: null,
+          label: freeEntry.label,
+          attempts,
+        };
+      }
+    } catch (err) {
+      attempts.push({ provider: freeEntry.label, model: freeEntry.model, error: err.message, status: err.status || 0 });
     }
   }
 

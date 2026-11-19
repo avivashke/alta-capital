@@ -204,10 +204,10 @@ export function renderNostro(root, ui) {
     mount(root, notice('טרם נמצאו בוטים שעברו את כל תנאי המבחן — לחץ על "⚡ מטב + אמת מחדש" כדי לכייל את הפרמטרים לנוסטרו.', 'blue'));
   }
 
-  // KPI Row
+  // KPI Row (using exact bots.length so counts always match the cards below!)
   mount(root, h('div', { class: 'grid cols-4', style: { marginTop: '14px' } },
-    h('div', { class: 'metric' }, h('span', { text: 'בוטים מוכנים לחברות נוסטרו' }), h('b', { class: readyBots.length ? 'green mono' : 'mono', text: `${readyBots.length}/${NOSTRO_BOT_TEMPLATES.length}` })),
-    h('div', { class: 'metric' }, h('span', { text: 'עברו Funded בחוקי התיק' }), h('b', { class: fundedBots.length ? 'green mono' : 'mono', text: `${fundedBots.length}/${NOSTRO_BOT_TEMPLATES.length}` })),
+    h('div', { class: 'metric' }, h('span', { text: 'בוטים מוכנים לחברות נוסטרו' }), h('b', { class: readyBots.length ? 'green mono' : 'mono', text: `${readyBots.length}/${bots.length}` })),
+    h('div', { class: 'metric' }, h('span', { text: 'עברו Funded בחוקי התיק' }), h('b', { class: fundedBots.length ? 'green mono' : 'mono', text: `${fundedBots.length}/${bots.length}` })),
     h('div', { class: 'metric' }, h('span', { text: 'רווח משוער למשיכה (Funded)' }), h('b', { class: 'green mono', text: money(totalFundedPayout) })),
     h('div', { class: 'metric' }, h('span', { text: 'עדכון נתוני אמת אחרון' }), h('b', { class: 'small', text: nostro.updatedAt ? timeAgo(nostro.updatedAt) : 'מאתחל…' })),
   ));
@@ -235,93 +235,131 @@ export function renderNostro(root, ui) {
     return;
   }
 
-  // Bot Scorecards with Live Data Source + Ready Prop Firms
-  mount(root, h('div', { class: 'grid cols-2', style: { marginTop: '14px', gap: '14px' } },
-    ...bots.map((bot) => {
-      const cls = bot.status === 'funded' ? 'live' : bot.status === 'phase2' ? 'opt' : bot.status === 'failed' ? 'red' : 'dry';
-      return h('div', {
-        class: 'card',
-        style: { borderColor: (bot.readyFirms || []).length ? 'rgba(46, 204, 113, 0.5)' : bot.status === 'failed' ? 'rgba(240, 91, 91, 0.35)' : undefined },
-      },
-        h('div', { class: 'card-head' },
-          h('div', {},
-            h('h2', { text: bot.name }),
-            h('div', { class: 'card-sub', text: `${bot.symbol} · ${bot.tf} · ${STRATEGIES[bot.strategyId]?.label || bot.strategyId} · מקור: ${bot.dataProvider || 'Live'} (${bot.isSynthetic ? 'גיבוי' : 'זמן אמת'})` }),
-          ),
-          tag(bot.statusLabel, cls),
+  const inProgressBots = bots.filter((b) => !(b.readyFirms || []).length && b.status !== 'failed');
+  const failedBots = bots.filter((b) => !(b.readyFirms || []).length && b.status === 'failed');
+
+  const renderBotCard = (bot) => {
+    const isReady = (bot.readyFirms || []).length > 0;
+    const badgeText = isReady
+      ? (bot.status === 'funded' ? bot.statusLabel : `🏆 מוכן ל-${bot.readyFirms.length} חברות`)
+      : bot.statusLabel;
+    const cls = isReady || bot.status === 'funded' ? 'live' : bot.status === 'phase2' ? 'opt' : bot.status === 'failed' ? 'red' : 'dry';
+    return h('div', {
+      class: 'card',
+      style: { borderColor: isReady ? 'rgba(46, 204, 113, 0.55)' : bot.status === 'failed' ? 'rgba(240, 91, 91, 0.35)' : undefined },
+    },
+      h('div', { class: 'card-head' },
+        h('div', {},
+          h('h2', { text: bot.name }),
+          h('div', { class: 'card-sub', text: `${bot.symbol} · ${bot.tf} · ${STRATEGIES[bot.strategyId]?.label || bot.strategyId} · מקור: ${bot.dataProvider || 'Live'} (${bot.isSynthetic ? 'גיבוי' : 'זמן אמת'})` }),
         ),
-        h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '8px' } },
-          tag(bot.sourceDeskLabel ? `🧬 מופרד מבוט קיים: ${bot.sourceDeskLabel}` : '🏆 בוט נוסטרו ייעודי', 'opt'),
-          tag(`סיכון: ${((bot.riskPerTrade || 0.0055) * 100).toFixed(2)}%`, 'dry'),
-          (bot.readyFirms || []).length
-            ? bot.readyFirms.map((fn) => tag(`✓ מוכן ל-${fn}`, 'live'))
-            : tag('טרם עמד בתנאי חברה', 'dry'),
-        ),
-        bot.breached ? h('div', { class: 'notice bad', style: { marginBottom: '8px' }, text: bot.breached }) : null,
-        h('div', { class: 'grid cols-3', style: { gap: '8px', marginBottom: '10px' } },
-          h('div', { class: 'metric' }, h('span', { text: 'תשואה כוללת' }), h('b', { class: (bot.totalReturnPct >= 0 ? 'green ' : 'red ') + 'mono', text: pct(bot.totalReturnPct) })),
-          h('div', { class: 'metric' }, h('span', { text: 'Max DD כולל' }), h('b', { class: (bot.maxTotalDdPct < rules.maxTotalDdPct ? 'green ' : 'red ') + 'mono', text: `${bot.maxTotalDdPct}% / ${rules.maxTotalDdPct}%` })),
-          h('div', { class: 'metric' }, h('span', { text: 'הפסד יומי שיא' }), h('b', { class: (bot.maxDailyLossPct < rules.maxDailyLossPct ? 'green ' : 'red ') + 'mono', text: `${bot.maxDailyLossPct}% / ${rules.maxDailyLossPct}%` })),
-          h('div', { class: 'metric' }, h('span', { text: 'Profit Factor' }), h('b', { class: 'mono', text: bot.metrics?.profitFactor ?? '—' })),
-          h('div', { class: 'metric' }, h('span', { text: 'עסקאות' }), h('b', { class: 'mono', text: bot.metrics?.trades ?? 0 })),
-          h('div', { class: 'metric' }, h('span', { text: 'משיכה Funded' }), h('b', { class: 'green mono', text: money(bot.fundedProfitUsd || 0) })),
-        ),
-        bot.curve?.length ? chart(bot.curve, { height: 90, color: bot.status === 'failed' ? 'red' : 'green', showZero: false }) : null,
-        h('div', { class: 'tiny muted', style: { marginTop: '8px' }, text: `פרמטרים: ${describeParams(bot.strategyId, bot.params)} · מעבר שלב 1: ${bot.phase1PassedDate || '—'} · שלב 2: ${bot.phase2PassedDate || '—'}` }),
-        h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '10px' } },
-          h('button', {
-            class: 'btn btn-sm',
-            onclick: async (e) => {
-              const btn = e.currentTarget;
-              btn.disabled = true;
-              btn.textContent = 'ממטב…';
-              try {
-                const updated = await runNostroBot(bot, rules, { doOptimize: true, forceLive: true });
-                const idx = store.state.nostro.bots.findIndex((b) => b.id === bot.id);
-                if (idx >= 0) store.state.nostro.bots[idx] = updated;
-                store.save();
-                toast(`${bot.name}: ${updated.readyFirms?.length ? 'מוכן ל-' + updated.readyFirms.join(', ') : updated.statusLabel}`, updated.readyFirms?.length ? 'ok' : '');
-              } catch (err) {
-                toast('שגיאה: ' + err.message, 'bad');
-              } finally {
-                btn.disabled = false;
-                ui.rerender();
-              }
-            },
-          }, '⚙ מטב בוט זה לנוסטרו'),
-          h('button', {
-            class: 'btn btn-sm',
-            onclick: () => {
-              const platform = store.state.settings.platform || 'freqtrade';
-              const art = buildArtifact({
-                id: bot.id,
-                label: bot.name,
-                short: bot.symbol,
-                symbol: bot.symbol,
-                tf: bot.tf,
-                version: 'nostro-v1',
-                params: bot.params,
-                strategyId: bot.strategyId,
-                metrics: bot.metrics || { returnPct: bot.totalReturnPct, profitFactor: 0, maxDrawdownPct: bot.maxTotalDdPct, trades: 0 },
-                oosMetrics: { returnPct: bot.totalReturnPct },
-              }, platform);
-              const pre = h('pre', { class: 'code', text: art.code });
-              openModal(`${bot.name} · ${art.filename}`,
-                h('div', {},
-                  h('div', { class: 'row between', style: { marginBottom: '8px' } },
-                    h('span', { class: 'small muted', text: `קוד בוט נוסטרו מופרד (${platform}) · סיכון ${((bot.riskPerTrade || 0.0055) * 100).toFixed(2)}%` }),
-                    h('button', { class: 'btn btn-sm btn-primary', onclick: () => downloadFile(art.filename, art.code, 'text/plain') }, 'הורד קובץ'),
-                  ),
-                  pre,
+        tag(badgeText, cls),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '8px' } },
+        tag(bot.sourceDeskLabel ? `🧬 מופרד מבוט קיים: ${bot.sourceDeskLabel}` : '🏆 בוט נוסטרו ייעודי', 'opt'),
+        tag(`סיכון: ${((bot.riskPerTrade || 0.0055) * 100).toFixed(2)}%`, 'dry'),
+        isReady
+          ? bot.readyFirms.map((fn) => tag(`✓ מוכן ל-${fn}`, 'live'))
+          : tag('טרם עמד בתנאי חברה', 'dry'),
+      ),
+      bot.breached ? h('div', { class: 'notice bad', style: { marginBottom: '8px' }, text: bot.breached }) : null,
+      h('div', { class: 'grid cols-3', style: { gap: '8px', marginBottom: '10px' } },
+        h('div', { class: 'metric' }, h('span', { text: 'תשואה כוללת' }), h('b', { class: (bot.totalReturnPct >= 0 ? 'green ' : 'red ') + 'mono', text: pct(bot.totalReturnPct) })),
+        h('div', { class: 'metric' }, h('span', { text: 'Max DD כולל' }), h('b', { class: (bot.maxTotalDdPct < rules.maxTotalDdPct ? 'green ' : 'red ') + 'mono', text: `${bot.maxTotalDdPct}% / ${rules.maxTotalDdPct}%` })),
+        h('div', { class: 'metric' }, h('span', { text: 'הפסד יומי שיא' }), h('b', { class: (bot.maxDailyLossPct < rules.maxDailyLossPct ? 'green ' : 'red ') + 'mono', text: `${bot.maxDailyLossPct}% / ${rules.maxDailyLossPct}%` })),
+        h('div', { class: 'metric' }, h('span', { text: 'Profit Factor' }), h('b', { class: 'mono', text: bot.metrics?.profitFactor ?? '—' })),
+        h('div', { class: 'metric' }, h('span', { text: 'עסקאות' }), h('b', { class: 'mono', text: bot.metrics?.trades ?? 0 })),
+        h('div', { class: 'metric' }, h('span', { text: 'משיכה Funded' }), h('b', { class: 'green mono', text: money(bot.fundedProfitUsd || 0) })),
+      ),
+      bot.curve?.length ? chart(bot.curve, { height: 90, color: bot.status === 'failed' && !isReady ? 'red' : 'green', showZero: false }) : null,
+      h('div', { class: 'tiny muted', style: { marginTop: '8px' }, text: `פרמטרים: ${describeParams(bot.strategyId, bot.params)} · מעבר שלב 1: ${bot.phase1PassedDate || '—'} · שלב 2: ${bot.phase2PassedDate || '—'}` }),
+      h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '10px' } },
+        h('button', {
+          class: 'btn btn-sm',
+          onclick: async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            btn.textContent = 'ממטב…';
+            try {
+              const updated = await runNostroBot(bot, rules, { doOptimize: true, forceLive: true });
+              const idx = store.state.nostro.bots.findIndex((b) => b.id === bot.id);
+              if (idx >= 0) store.state.nostro.bots[idx] = updated;
+              store.save();
+              toast(`${bot.name}: ${updated.readyFirms?.length ? 'מוכן ל-' + updated.readyFirms.join(', ') : updated.statusLabel}`, updated.readyFirms?.length ? 'ok' : '');
+            } catch (err) {
+              toast('שגיאה: ' + err.message, 'bad');
+            } finally {
+              btn.disabled = false;
+              ui.rerender();
+            }
+          },
+        }, '⚙ מטב בוט זה לנוסטרו'),
+        h('button', {
+          class: 'btn btn-sm',
+          onclick: () => {
+            const platform = store.state.settings.platform || 'freqtrade';
+            const art = buildArtifact({
+              id: bot.id,
+              label: bot.name,
+              short: bot.symbol,
+              symbol: bot.symbol,
+              tf: bot.tf,
+              version: 'nostro-v1',
+              params: bot.params,
+              strategyId: bot.strategyId,
+              metrics: bot.metrics || { returnPct: bot.totalReturnPct, profitFactor: 0, maxDrawdownPct: bot.maxTotalDdPct, trades: 0 },
+              oosMetrics: { returnPct: bot.totalReturnPct },
+            }, platform);
+            const pre = h('pre', { class: 'code', text: art.code });
+            openModal(`${bot.name} · ${art.filename}`,
+              h('div', {},
+                h('div', { class: 'row between', style: { marginBottom: '8px' } },
+                  h('span', { class: 'small muted', text: `קוד בוט נוסטרו מופרד (${platform}) · סיכון ${((bot.riskPerTrade || 0.0055) * 100).toFixed(2)}%` }),
+                  h('button', { class: 'btn btn-sm btn-primary', onclick: () => downloadFile(art.filename, art.code, 'text/plain') }, 'הורד קובץ'),
                 ),
-                { wide: true },
-              );
-            },
-          }, '</> ייצא קוד בוט נוסטרו מופרד'),
+                pre,
+              ),
+              { wide: true },
+            );
+          },
+        }, '</> ייצא קוד בוט נוסטרו מופרד'),
+      ),
+    );
+  };
+
+  const renderCategorySection = (title, subtitle, accentColor, list) => {
+    if (!list.length) return null;
+    return h('div', { class: 'card', style: { marginTop: '16px', borderColor: accentColor } },
+      h('div', { class: 'card-head' },
+        h('div', {},
+          h('h2', { text: `${title} (${list.length})` }),
+          h('div', { class: 'card-sub', text: subtitle }),
         ),
-      );
-    }),
-  ));
+      ),
+      h('div', { class: 'grid cols-2', style: { gap: '14px' } }, ...list.map(renderBotCard)),
+    );
+  };
+
+  mount(root,
+    renderCategorySection(
+      '🏆 בוטים מוכנים לעבור חברות נוסטרו (Passed Prop Firm Rules)',
+      'בוטים שעמדו בפועל בכללי חברה אחת או יותר (FTMO, The5ers, FundedNext, Topstep, Apex) על נתוני אמת',
+      'rgba(46, 204, 113, 0.5)',
+      readyBots,
+    ),
+    renderCategorySection(
+      '⏳ בוטים בתהליך מבחן והכנה (In Progress)',
+      'בוטים שעומדים בתקרות הסיכון ונמצאים בדרך להשגת יעד הרווח המלא',
+      'rgba(59, 130, 246, 0.4)',
+      inProgressBots,
+    ),
+    renderCategorySection(
+      '❌ בוטים שנכשלו בכללי הסיכון (דורשים מיטוב)',
+      'בוטים שחרגו ממגבלת הפסד יומי (5%) או Drawdown כולל (10%) — לחץ על "⚙ מטב בוט זה לנוסטרו" לכיול מחדש',
+      'rgba(240, 91, 91, 0.35)',
+      failedBots,
+    ),
+  );
 
   // Detailed Proof & Prop Firm Rule Sources Report
   if (showDetailedReport) {
