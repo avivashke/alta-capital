@@ -1,4 +1,4 @@
-﻿import { store } from '../store.js';
+import { store } from '../store.js';
 import { h, pct, num, money, section, statusTag, chart, tag, notice, empty } from '../ui.js';
 import { metricsTable, gateList, strategyName } from './shared.js';
 import { runDeskCycle, resetDesk, setDeskStatus, getPaperPortfolio, ensurePaperPortfolio } from '../firm.js';
@@ -62,8 +62,22 @@ export function renderDesks(root, ui) {
             tag(desk.symbol),
             tag(`${desk.tf} candles`),
             desk.version ? tag(desk.version, 'green') : null,
+            desk.marketRegime?.label ? tag(`🌡 ${desk.marketRegime.label}`, 'opt') : null,
+            desk.lastAudit
+              ? tag(
+                  desk.lastAudit.vetoed ? `⚖ נחסם · אמיר (${desk.lastAudit.score}/100)` : `⚖ מאומת · אמיר (${desk.lastAudit.score}/100)`,
+                  desk.lastAudit.vetoed ? 'paused' : 'live',
+                )
+              : null,
           ),
           h('div', { class: 'small muted', style: { marginTop: '4px' }, text: `${desk.mandate} · אופק: ${desk.horizon}` }),
+          desk.lastAudit?.summary
+            ? h('div', {
+                class: 'tiny ' + (desk.lastAudit.vetoed ? 'red' : 'muted'),
+                style: { marginTop: '3px' },
+                text: `⚖ אמיר (מבקר אמת): ${desk.lastAudit.summary}${desk.marketRegime ? ` · ER ${desk.marketRegime.er} · תנודתיות ×${desk.marketRegime.volRatio}` : ''}`,
+              })
+            : null,
         ),
       ),
       h('div', { class: 'profit-strip ' + ((desk.livePnl ?? desk.bestReturn ?? 0) >= 0 ? 'up' : 'down') },

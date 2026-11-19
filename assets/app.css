@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg: #070a0f;
   --bg-alt: #0b1017;
   --panel: #0e141d;
@@ -23,6 +23,7 @@
 
 * { box-sizing: border-box; }
 
+html { scrollbar-gutter: stable; overflow-anchor: auto; }
 html, body { margin: 0; padding: 0; }
 
 body {
@@ -45,6 +46,7 @@ h3 { font-size: 15px; }
 p { margin: 0 0 10px; }
 a { color: var(--blue); text-decoration: none; }
 a:hover { text-decoration: underline; }
+code, .mono, .pill, .metric b, .kpi, td { font-variant-numeric: tabular-nums; }
 code, .mono { font-family: var(--mono); font-size: 12px; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
@@ -396,24 +398,23 @@ details.acc p, details.acc li { font-size: 12px; color: var(--muted); }
 .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 
 @keyframes bubbleIn {
-  from { opacity: 0; transform: translateY(10px) scale(0.95); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes typing {
-  0%, 100% { opacity: 0.45; transform: scale(1); }
-  50%      { opacity: 1; transform: scale(1.35); }
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
 }
 
 .agent-active .av {
-  animation: agentPulse 2.5s infinite;
-  box-shadow: 0 0 0 0 rgba(46,204,113,0.5);
+  animation: agentPulse 3.2s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(46,204,113,0.45);
 }
 
 @keyframes agentPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(46,204,113,0.6); }
-  70%  { box-shadow: 0 0 0 10px rgba(46,204,113,0); }
-  100% { box-shadow: 0 0 0 0 rgba(46,204,113,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(46,204,113,0.45); }
+  50%      { box-shadow: 0 0 0 6px rgba(46,204,113,0.08); }
 }
 
 /* Live price pill */

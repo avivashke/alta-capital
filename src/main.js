@@ -46,25 +46,37 @@ const VIEWS = {
   charts: renderCharts,
 };
 
+const STATIC_ROUTES = new Set([
+  'gann', 'academy', 'settings', 'docs', 'charts', 'fundamentals', 'nostro', 'advisor',
+]);
+const BG_RENDER_MIN_MS = 4000;
+const BG_RENDER_AGENTS_MS = 10000;
+const SCROLL_SETTLE_MS = 1400;
+
+let isPointerDown = false;
+let lastScrollAt = 0;
+let lastRenderAt = 0;
+let bgRenderTimer = null;
+
 const ui = {
   route: 'overview',
   selectedDesk: null,
   go(route) {
     if (!VIEWS[route]) route = 'overview';
-    if (location.hash === '#/' + route) render();
+    if (location.hash === '#/' + route) render({ force: true, resetScroll: false });
     else location.hash = '#/' + route;
   },
   setDesk(id) {
     ui.selectedDesk = id;
-    render();
+    render({ force: true });
   },
   rerender() {
-    render();
+    render({ force: true });
   },
 };
 
 let renderQueued = false;
-let pendingRender = false;
+let pendingBgRender = false;
 
 function routeFromHash() {
   const route = location.hash.replace(/^#\/?/, '');
@@ -138,37 +150,124 @@ function errorBox(err) {
   );
 }
 
-function render() {
+function isUserBusy(view) {
+  if (isPointerDown) return true;
+  if (Date.now() - lastScrollAt < SCROLL_SETTLE_MS) return true;
+  const modalRoot = document.getElementById('modal-root');
+  if (modalRoot && modalRoot.childElementCount > 0) return true;
+  const sel = window.getSelection?.();
+  if (sel && sel.toString().trim().length > 0) return true;
+  const active = document.activeElement;
+  if (active && view && view.contains(active) && (/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName) || active.isContentEditable)) {
+    return true;
+  }
+  return false;
+}
+
+function captureViewUiState(view) {
+  const mainEl = view?.closest('main') || document.querySelector('main');
+  const scrollables = [...(view?.querySelectorAll('.table-wrap, .chat, .edu-chat-scroll, .card-body') || [])]
+    .map((el) => ({ top: el.scrollTop, left: el.scrollLeft }));
+  const detailsOpen = [...(view?.querySelectorAll('details') || [])].map((el) => !!el.open);
+  return {
+    winX: window.scrollX || 0,
+    winY: window.scrollY || 0,
+    mainTop: mainEl ? mainEl.scrollTop : 0,
+    viewTop: view ? view.scrollTop : 0,
+    scrollables,
+    detailsOpen,
+  };
+}
+
+function restoreViewUiState(view, snap) {
+  if (!snap || !view) return;
+  const details = view.querySelectorAll('details');
+  snap.detailsOpen.forEach((open, i) => {
+    if (details[i]) details[i].open = open;
+  });
+  const scrollables = view.querySelectorAll('.table-wrap, .chat, .edu-chat-scroll, .card-body');
+  snap.scrollables.forEach((pos, i) => {
+    if (scrollables[i]) {
+      scrollables[i].scrollTop = pos.top;
+      scrollables[i].scrollLeft = pos.left;
+    }
+  });
+  const mainEl = view.closest('main') || document.querySelector('main');
+  if (mainEl && snap.mainTop) mainEl.scrollTop = snap.mainTop;
+  if (snap.viewTop) view.scrollTop = snap.viewTop;
+  if (snap.winY || snap.winX) {
+    window.scrollTo({ top: snap.winY, left: snap.winX, behavior: 'instant' });
+  }
+}
+
+function render({ force = false, resetScroll = false } = {}) {
   const view = document.getElementById('view');
   if (!view) return;
-  const active = document.activeElement;
-  if (active && view.contains(active) && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) {
-    pendingRender = true;
+  const nextRoute = routeFromHash();
+  const routeChanged = nextRoute !== ui.route;
+
+  if (!force && !routeChanged && isUserBusy(view)) {
+    pendingBgRender = true;
     return;
   }
-  pendingRender = false;
-  ui.route = routeFromHash();
+  // Even on forced rerender of same route, never yank focus from an active input inside #view unless route changed
+  const active = document.activeElement;
+  if (!routeChanged && !force && active && view.contains(active) && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) {
+    pendingBgRender = true;
+    return;
+  }
+
+  pendingBgRender = false;
+  const prevSnap = (!routeChanged && !resetScroll) ? captureViewUiState(view) : null;
+  ui.route = nextRoute;
   updateNav();
-  view.innerHTML = '';
+
+  // Build offscreen fragment so the DOM swaps atomically without height-collapse jitter
+  const frag = document.createDocumentFragment();
   const fn = VIEWS[ui.route] || renderOverview;
   try {
-    fn(view, ui);
+    fn(frag, ui);
   } catch (err) {
     console.error('[render]', err);
-    view.appendChild(errorBox(err));
+    frag.appendChild(errorBox(err));
   }
+  view.replaceChildren(frag);
+  lastRenderAt = Date.now();
+
+  if (prevSnap) {
+    restoreViewUiState(view, prevSnap);
+  } else if (routeChanged || resetScroll) {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }
+
   updateTopbar();
   const label = NAV.find((n) => n.id === ui.route)?.label || '';
   document.title = `Alta Capital · ${label}`;
 }
 
-function scheduleRender() {
-  if (renderQueued) return;
-  renderQueued = true;
-  requestAnimationFrame(() => {
-    renderQueued = false;
-    render();
-  });
+function scheduleBackgroundRender() {
+  updateTopbar();
+  const route = routeFromHash();
+  // Never wipe interactive/reading tabs on background autopilot or sync ticks
+  if (STATIC_ROUTES.has(route)) return;
+
+  const minGap = route === 'agents' ? BG_RENDER_AGENTS_MS : BG_RENDER_MIN_MS;
+  const elapsed = Date.now() - lastRenderAt;
+  const run = () => {
+    bgRenderTimer = null;
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(() => {
+      renderQueued = false;
+      render({ force: false });
+    });
+  };
+
+  if (elapsed >= minGap) {
+    if (!bgRenderTimer) bgRenderTimer = setTimeout(run, 180);
+  } else if (!bgRenderTimer) {
+    bgRenderTimer = setTimeout(run, Math.max(200, minGap - elapsed));
+  }
 }
 
 function boot() {
@@ -182,15 +281,29 @@ function boot() {
   if (!location.hash) history.replaceState(null, '', '#/overview');
 
   buildNav();
-  render();
+  render({ force: true });
   mountPageChat(ui);
   startMarketFeed();
   onQuotes(updateTopbar);
-  store.subscribe(scheduleRender);
-  window.addEventListener('hashchange', render);
+  store.subscribe(scheduleBackgroundRender);
+  window.addEventListener('hashchange', () => render({ force: true, resetScroll: true }));
+
+  // Track user interactions so background ticks never interrupt scrolling, clicking, or typing
+  window.addEventListener('pointerdown', () => { isPointerDown = true; }, { passive: true });
+  const releasePointer = () => {
+    isPointerDown = false;
+    if (pendingBgRender) {
+      setTimeout(() => { if (pendingBgRender && !isUserBusy(document.getElementById('view'))) render({ force: false }); }, 350);
+    }
+  };
+  window.addEventListener('pointerup', releasePointer, { passive: true });
+  window.addEventListener('pointercancel', releasePointer, { passive: true });
+  window.addEventListener('scroll', () => { lastScrollAt = Date.now(); }, { passive: true, capture: true });
 
   document.addEventListener('focusout', () => {
-    setTimeout(() => { if (pendingRender) render(); }, 0);
+    setTimeout(() => {
+      if (pendingBgRender && !isUserBusy(document.getElementById('view'))) render({ force: false });
+    }, 120);
   });
 
   document.getElementById('btn-quick-tick')?.addEventListener('click', async (e) => {
@@ -257,7 +370,7 @@ function boot() {
     .finally(() => {
       rehydratePaperPortfolio();
       cloudReady = true;
-      render();
+      render({ force: true });
       if (store.state.settings.autopilot) {
         tick({ reason: 'boot' }).catch(() => {});
         const cloudMode = !!(store.state.remote?.updatedAt && store.state.settings.cloudSync);

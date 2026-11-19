@@ -1,4 +1,4 @@
-﻿import { store } from '../store.js';
+import { store } from '../store.js';
 import { LLM_PROVIDERS } from '../config.js';
 import { PROVIDERS } from '../providers.js';
 import { addPoolEntry, poolEntries } from '../keypool.js';
@@ -7,13 +7,16 @@ import { h, num, section, notice, timeAgo, toast, tag } from '../ui.js';
 import { feedList } from './shared.js';
 import { tick } from '../firm.js';
 import { runAiDirector } from '../ai.js';
+import { auditSystemTruth } from '../auditor.js';
+import { marketState } from '../market.js';
 import { renderEducationalChatWidget } from './academy.js';
 
 const PIPELINE = [
   ['סריקה', 'איסוף אסטרטגיות, קוד ומחקר מ-GitHub, חדשות ומקורות פתוחים'],
   ['מחקר גאן וזמן', 'ניתוח רב-שנתי של נתונים וגרפים: מחזורי זמן, לוח שנה מסחרי, זוויות/רמות גאן ודפוסים חוזרים'],
   ['בקטסט', 'הרצה על נתוני עבר עם עמלות, walk-forward וניהול סיכון'],
-  ['אופטימיזציה', 'כיול מתמטי: grid/random search, hill-climb ו-Walk-Forward'],
+  ['אופטימיזציה', 'כיול מתמטי מותאם למשטר השוק הנוכחי: grid/random search, hill-climb ו-Walk-Forward'],
+  ['ביקורת אמת (אמיר)', 'אימות מחמיר של נתוני אמת, חסימת הזיות/נתונים סינתטיים ומניעת Overfitting לפני קידום'],
   ['שערי סיכון', 'PF, DD, יציבות, OOS, expectancy ומספר עסקאות מינימלי'],
   ['גרסה/רובוט', 'אריזת קוד, יצירת רובוט חדש או עדכון קיים לאסטרטגיות שעברו אימות'],
   ['dry-run', 'הרצה על נייר בזמן אמת לאימות לפני קידום'],
@@ -65,16 +68,17 @@ const MISSION_ZONES = {
   },
   ops: {
     id: 'ops',
-    label: 'מרחב פיקוד, סיכון וביצוע',
-    short: 'ביצוע וסיכון',
+    label: 'מרחב פיקוד, סיכון, ביקורת אמת וביצוע',
+    short: 'ביצוע וביקורת',
     icon: '🛡',
     bounds: { x1: 57, y1: 56, x2: 94, y2: 88 },
     slots: [
       { x: 60, y: 64 },
-      { x: 76, y: 63 },
+      { x: 75, y: 63 },
       { x: 89, y: 66 },
-      { x: 66, y: 84 },
-      { x: 83, y: 85 },
+      { x: 63, y: 84 },
+      { x: 76, y: 85 },
+      { x: 89, y: 83 },
     ],
   },
   nexus: {
@@ -92,6 +96,25 @@ const MISSION_ZONES = {
 
 // Task-driven cross-zone mission workflows: agents travel from their home zone to another zone to collaborate on a task!
 const TASK_MISSIONS = [
+  {
+    a: 'auditor', b: 'backtest',
+    zone: 'quant',
+    taskTitle: 'ביקורת אמת ומניעת הזיות: אימות נרות OHLCV ו-OOS לפני קידום',
+    turns: [
+      { speaker: 'a', text: 'איתי, הגעתי לבדוק שהבקטסט רץ אך ורק על נתוני אמת מהבורסה ושכל העמלות שוקללו.' },
+      { speaker: 'b', text: 'אמיר, הנה הנתונים: 800 נרות אמת מ-Binance, יחס IS מול OOS מאוזן ואפס פערים.' },
+      { speaker: 'a', text: 'מאומת. בלי הוכחת אמת ומובהקות סטטיסטית אני מפעיל וטו מיידי.' },
+    ],
+  },
+  {
+    a: 'auditor', b: 'cio',
+    zone: 'ops',
+    taskTitle: 'אימות המלצות AI Director ועקביות חשבונאית של התיק',
+    turns: [
+      { speaker: 'a', text: 'אוריה, בדקתי את החלטות ה-AI — כל הפרמטרים בטווח החוקי ואין אסטרטגיות מומצאות.' },
+      { speaker: 'b', text: 'מצוין אמיר. אף שולחן לא מקודם לנייר חי בלי חותמת האמת שלך.' },
+    ],
+  },
   {
     a: 'gann_square', b: 'quant',
     zone: 'quant',
@@ -150,7 +173,7 @@ const TASK_MISSIONS = [
 ];
 
 function homeZoneFor(agentId = '') {
-  if (agentId === 'intel') return 'research';
+  if (agentId === 'intel' || agentId === 'github_scout') return 'research';
   if (agentId.startsWith('gann')) return 'gann';
   if (['quant', 'backtest', 'optimizer', 'ta'].includes(agentId)) return 'quant';
   return 'ops';
@@ -161,7 +184,7 @@ function taskZoneFor(agent) {
   const id = agent.id || '';
   const txt = `${agent.task || ''} ${agent.speech || ''} ${agent.thinking || ''}`.toLowerCase();
   if (agent.status === 'busy') {
-    if (/סיכון|dd|drawdown|ביצוע|dry-run|אורז|פיתוח|רובוט|מאשר|הון/.test(txt)) return 'ops';
+    if (/אמת|ביקורת|אימות|הזיות|וטו|סיכון|dd|drawdown|ביצוע|dry-run|אורז|פיתוח|רובוט|מאשר|הון/.test(txt)) return 'ops';
     if (/walk-forward|בקטסט|וריאציות|פרמטרים|hill-climb|מונטה|מגמה|מומנטום/.test(txt)) return 'quant';
     if (/גאן|ריבוע התשע|זוויות|מחזורי זמן|תבניות/.test(txt)) return 'gann';
     if (/github|חדשות|סורק|מודיעין|סנטימנט/.test(txt)) return 'research';
@@ -927,6 +950,8 @@ export function renderAgents(root, ui) {
     build3DArena(agents),
   ));
 
+  mount(root, renderTruthAuditorCard(state, ui));
+
   mount(root, renderEducationalChatWidget(ui, { compact: false }));
 
   if (!sim.showProxyPanel) {
@@ -943,13 +968,60 @@ export function renderAgents(root, ui) {
         stat('סריקות מחקר', num(state.stats.scans || 0)),
       ),
       h('div', { class: 'grid cols-1' },
-        PIPELINE.slice(0, 5).map(([title, desc], i) => h('div', { class: 'agent pipe-step', title: desc },
+        PIPELINE.slice(0, 6).map(([title, desc], i) => h('div', { class: 'agent pipe-step', title: desc },
           h('div', { class: 'av', text: String(i + 1) }),
           h('div', { class: 'grow' }, h('div', { class: 'who', text: title }), h('div', { class: 'small muted', text: desc })),
         )),
       ),
     ),
   ));
+}
+
+function renderTruthAuditorCard(state, ui) {
+  const audit = state.truthAudit || auditSystemTruth(state, marketState);
+  const statusTagCls = audit.status === 'verified' ? 'live' : audit.status === 'warning' ? 'opt' : 'paused';
+  const statusLabel = audit.status === 'verified' ? 'מאומת · נתוני אמת' : audit.status === 'warning' ? 'מעקב פעיל' : 'הגנת וטו פעילה';
+
+  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: audit.status === 'blocked' ? 'rgba(240, 91, 91, 0.5)' : 'rgba(46, 204, 113, 0.4)' } },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: '⚖ אמיר · מבקר אמת, אימות עובדות ומניעת הזיות (Anti-Hallucination)' }),
+        h('div', { class: 'card-sub', text: 'בודק בכל מחזור שהמערכת פועלת אך ורק על נתוני אמת מהשוק, חוסם Overfitting/עמלות חסרות/המלצות AI מומצאות ומאמת ביצועי אסטרטגיות' }),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px' } },
+        tag(`ציון אמינות: ${audit.score}/100`, statusTagCls),
+        tag(statusLabel, statusTagCls),
+        tag(`וטו מצטבר: ${audit.vetoesTotal || 0}`, 'dry'),
+        h('button', {
+          class: 'btn btn-sm',
+          onclick: () => {
+            store.state.truthAudit = auditSystemTruth(store.state, marketState);
+            store.log('info', 'אמיר · ביקורת אמת', store.state.truthAudit.summary);
+            store.save();
+            toast(`אמיר השלים ביקורת אמת: ${store.state.truthAudit.score}/100`, store.state.truthAudit.status === 'blocked' ? 'bad' : 'ok');
+            ui.rerender();
+          },
+        }, '⚖ הרץ ביקורת אמת עכשיו'),
+      ),
+    ),
+    h('div', { class: 'grid cols-2', style: { gap: '8px', marginTop: '6px' } },
+      ...(audit.checks || []).map((c) => h('div', {
+        class: 'card',
+        style: {
+          padding: '9px 11px',
+          background: 'rgba(8, 14, 24, 0.85)',
+          borderColor: c.status === 'veto' ? 'rgba(240, 91, 91, 0.45)' : c.status === 'warn' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(46, 204, 113, 0.25)',
+        },
+      },
+        h('div', { class: 'row between', style: { marginBottom: '3px' } },
+          h('strong', { style: { fontSize: '12.5px', color: '#f8fafc' }, text: c.label }),
+          tag(c.status === 'pass' ? '✔ עבר' : c.status === 'warn' ? '⚠ מעקב' : '⛔ וטו', c.status === 'pass' ? 'live' : c.status === 'warn' ? 'opt' : 'paused'),
+        ),
+        h('div', { class: 'tiny muted', text: c.detail }),
+      )),
+    ),
+    h('div', { class: 'tiny muted', style: { marginTop: '8px' }, text: `${audit.summary} · נבדק ${timeAgo(audit.checkedAt)}` }),
+  );
 }
 
 function stat(label, value) {

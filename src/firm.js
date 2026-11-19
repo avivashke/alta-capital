@@ -2,9 +2,10 @@
 
 import { BARS_PER_YEAR, DESKS, BINANCE_TESTNET, PAPER_TRADING } from './config.js';
 import { store } from './store.js';
-import { getCandles, lastPrice, startQuotes } from './market.js';
+import { getCandles, lastPrice, startQuotes, marketState } from './market.js';
 import { STRATEGIES } from './strategies.js';
-import { optimize } from './optimizer.js';
+import { optimize, detectMarketRegime } from './optimizer.js';
+import { auditDeskPromotion, auditSystemTruth } from './auditor.js';
 import { runBacktest, passesGates } from './backtest.js';
 import { buildArtifact } from './platforms.js';
 import { atr } from './indicators.js';
@@ -90,7 +91,7 @@ function isBacktestProfitableAfterFeesAndTax(metrics) {
 
 function liveEmit(force = false) {
   const now = Date.now();
-  if (force || now - lastEmit > 420) {
+  if (force || now - lastEmit > 1800) {
     lastEmit = now;
     store.emit();
   }
@@ -223,9 +224,20 @@ export async function runDeskCycle(desk, opts = {}) {
       force: !!opts.focus,
     });
 
-    // AI director decision, consumed once by the next cycle on this desk.
+    // Detect live market regime from real OHLCV candles for continuous adaptive optimization
+    const regime = detectMarketRegime(candles);
+    const prevRegime = desk.marketRegime?.regime;
+    desk.marketRegime = regime;
+    if (prevRegime && prevRegime !== regime.regime) {
+      store.log('info', 'יעל · משטר שוק', `${desk.label}: זוהה שינוי משטר שוק → ${regime.label} (ER ${regime.er} · Vol×${regime.volRatio})`);
+    }
+
+    // AI director decision, consumed once by the next cycle on this desk (grounded against real STRATEGIES).
     const aiPlan = desk.aiPlan && !desk.aiPlan.consumed ? desk.aiPlan : null;
-    if (aiPlan?.strategyId && STRATEGIES[aiPlan.strategyId] && aiPlan.strategyId !== desk.strategyId) {
+    if (aiPlan?.strategyId && !STRATEGIES[aiPlan.strategyId]) {
+      store.log('warn', 'אמיר · ביקורת אמת', `${desk.label}: יורטה המלצת AI לאסטרטגיה לא קיימת (${aiPlan.strategyId}) — נחסמה הזיה`);
+      desk.aiPlan = { ...aiPlan, consumed: true, rejectedByAuditor: 'unknown-strategy' };
+    } else if (aiPlan?.strategyId && STRATEGIES[aiPlan.strategyId] && aiPlan.strategyId !== desk.strategyId) {
       store.log('info', 'אוריה · CIO',
         `${desk.label}: עוברים למשפחה ${STRATEGIES[aiPlan.strategyId].label} לפי החלטת הסוכן החכם`);
       desk.strategyId = aiPlan.strategyId;
@@ -239,28 +251,64 @@ export async function runDeskCycle(desk, opts = {}) {
       desk.equity = [];
       desk.dryRunCycles = 0;
     }
-    if (!desk.strategyId) desk.strategyId = pickStrategy(desk);
+    if (!desk.strategyId) {
+      const regPool = (regime.recommendedFamilies || []).filter((id) => STRATEGIES[id]);
+      desk.strategyId = regPool.length ? regPool[0] : pickStrategy(desk);
+    }
 
     const baseRounds = ROUNDS[desk.kind] || ROUNDS.intraday;
+    setAgent('optimizer', {
+      status: 'busy',
+      task: `מיטוב למשטר "${regime.label}" · ${desk.label}`,
+      progress: 12,
+      thinking: `מכיילת פרמטרים ל-${regime.label} (שיפוע ${regime.slopePct}% · תנודתיות ×${regime.volRatio})`,
+    });
     const result = await optimize({
       candles,
       strategyId: desk.strategyId,
       cfg,
       seed: desk.params,
       spaceOverride: aiPlan?.paramBias || null,
+      regime,
       rounds: opts.deep ? baseRounds.rounds * 2 : baseRounds.rounds,
       climb: opts.deep ? baseRounds.climb * 2 : baseRounds.climb,
       onProgress: ({ done, total }) => {
         const pct = Math.round((done / total) * 100);
         setAgent('optimizer', { progress: pct });
         setAgent('backtest', { progress: pct, task: `בודק ${done}/${total} וריאציות` });
-        if (done % 6 === 0) liveEmit();
+        if (done % 10 === 0) liveEmit();
       },
     });
 
     state.stats.backtests = (state.stats.backtests || 0) + (result.backtests || 0);
 
-    if (!result.best) {
+    // Continuous Market-Regime Challenger: if incumbent is misaligned with live regime or losing in recent window,
+    // automatically pit a regime-recommended challenger family against it on the exact same real candles.
+    let winner = result.best;
+    const regimeMismatch = !(regime.recommendedFamilies || []).includes(desk.strategyId);
+    const recentWeak = !winner?.recentMetrics || (winner.recentMetrics.returnPct ?? 0) < 0;
+    if (regimeMismatch || recentWeak || !winner) {
+      const challengerId = (regime.recommendedFamilies || []).find((id) => STRATEGIES[id] && id !== desk.strategyId);
+      if (challengerId) {
+        const chalRes = await optimize({
+          candles,
+          strategyId: challengerId,
+          cfg,
+          regime,
+          rounds: 16,
+          climb: 8,
+        });
+        state.stats.backtests = (state.stats.backtests || 0) + (chalRes.backtests || 0);
+        const cb = chalRes.best;
+        if (cb && (!winner || (cb.score > winner.score + 0.8 && (cb.evaluation?.oos?.returnPct ?? -999) > (winner.evaluation?.oos?.returnPct ?? -999) + 0.4))) {
+          store.log('info', 'ליה · הסתגלות לשוק',
+            `${desk.label}: משטר "${regime.label}" — מתמודדת ${STRATEGIES[challengerId].label} (OOS ${cb.evaluation.oos.returnPct}%) גברה על ${STRATEGIES[desk.strategyId]?.label || desk.strategyId}`);
+          winner = cb;
+        }
+      }
+    }
+
+    if (!winner) {
       desk.status = desk.status === 'live' ? 'live' : (desk.metrics ? 'optimizing' : 'research');
       store.log('warn', 'ליה · אופטימיזציה', `${desk.label}: לא נמצאה וריאציה עם מספיק עסקאות בנתונים הקיימים`);
       idleAgents();
@@ -268,14 +316,15 @@ export async function runDeskCycle(desk, opts = {}) {
       return { ok: false, reason: 'no-candidate' };
     }
 
-    const ev = result.best.evaluation;
+    const candStrategyId = winner.strategyId || desk.strategyId;
+    const ev = { ...winner.evaluation, strategyId: candStrategyId, params: winner.params };
 
     // Statistical hardening before anything is allowed to become a version.
     setAgent('ta', { status: 'busy', task: `קוראת מגמה, מומנטום ומבנה · ${desk.tf}`, progress: 45, thinking: 'מזהה רמות תמיכה והתנגדות, בודקת מומנטום ומבנה מחיר', speechType: 'think' });
     const assessment = assessStrategy({
       candles,
-      strategyId: desk.strategyId,
-      params: result.best.params,
+      strategyId: candStrategyId,
+      params: winner.params,
       cfg,
       isMetrics: ev.is,
       oosMetrics: ev.oos,
@@ -284,13 +333,54 @@ export async function runDeskCycle(desk, opts = {}) {
     });
     desk.assessment = assessment;
     desk.robustness = assessment.robustness;
+    desk.recentMetrics = winner.recentMetrics || null;
     desk.technical = analyze(candles) || desk.technical;
+
+    // Critical Truth & Anti-Hallucination Audit by Amir ("אמיר") BEFORE publication or promotion!
+    setAgent('auditor', {
+      status: 'busy',
+      task: `מאמת נתוני אמת ו-OOS · ${desk.label}`,
+      progress: 65,
+      thinking: 'בודק שאין נתוני הדגמה, שאין Overfitting, שעמלות משוקללות ושהמדדים ריאליים',
+      speech: `מבצע ביקורת אמת קפדנית על ${desk.label}`,
+      speechType: 'think',
+    });
+    const audit = auditDeskPromotion({
+      desk: { ...desk, strategyId: candStrategyId, params: winner.params },
+      candles,
+      evaluation: ev,
+      assessment,
+      marketState,
+      settings: gates,
+      recentMetrics: winner.recentMetrics || null,
+    });
+    desk.lastAudit = audit;
+    if (audit.vetoed) {
+      if (!state.truthAudit) state.truthAudit = { vetoesTotal: 0 };
+      state.truthAudit.vetoesTotal = (state.truthAudit.vetoesTotal || 0) + 1;
+      setAgent('auditor', {
+        status: 'busy',
+        task: `חסם קידום · ${desk.short}`,
+        progress: 100,
+        speech: audit.summary,
+        speechType: 'speak',
+      });
+      store.log('warn', 'אמיר · ביקורת אמת', `${desk.label}: ${audit.summary}`);
+    } else {
+      setAgent('auditor', {
+        status: 'busy',
+        task: `אימת אמת (${audit.score}/100) · ${desk.short}`,
+        progress: 100,
+        speech: audit.summary,
+        speechType: 'speak',
+      });
+    }
 
     const prevReturn = desk.bestReturn;
     const threshold = s.promotionDelta;
     const hasVersion = desk.version != null;
     const robustEnough = assessment.robustness >= (s.minRobustness ?? 50);
-    const publish = ev.oos.returnPct > 0 && robustEnough && (
+    const publish = !audit.vetoed && ev.oos.returnPct > 0 && robustEnough && (
       desk.version == null || ev.oos.returnPct >= (prevReturn ?? ev.oos.returnPct) + threshold
     );
 
@@ -298,21 +388,21 @@ export async function runDeskCycle(desk, opts = {}) {
       status: 'busy',
       task: `בודק DD ${ev.full.maxDrawdownPct}% · PF ${ev.full.profitFactor}`,
       progress: 60,
-      speech: `מגן על ההון · בודק.Drawdown ${ev.full.maxDrawdownPct}% ו-Profit Factor ${ev.full.profitFactor}`, speechType: 'speak' });
+      speech: `מגן על ההון · בודק Drawdown ${ev.full.maxDrawdownPct}% ו-Profit Factor ${ev.full.profitFactor}`, speechType: 'speak' });
 
     if (publish) {
       const improvement = prevReturn == null ? null : +(ev.oos.returnPct - prevReturn).toFixed(2);
       const minor = desk.version ? Number(desk.version.split('.')[1]) + 1 : 0;
       desk.version = `v1.${minor}`;
-      desk.params = result.best.params;
-      desk.strategyId = result.best.strategyId || desk.strategyId;
+      desk.params = winner.params;
+      desk.strategyId = candStrategyId;
       desk.bestReturn = +ev.oos.returnPct.toFixed(2);
       desk.baselineReturn = desk.baselineReturn ?? +ev.oos.returnPct.toFixed(2);
       desk.metrics = ev.full;
       desk.oosMetrics = ev.oos;
       desk.isMetrics = ev.is;
       desk.equity = downsample(ev.curve.map((p) => p.v));
-      desk.fitness = +result.best.score.toFixed(2);
+      desk.fitness = +winner.score.toFixed(2);
       desk.lastCandles = candles.length;
       desk.dataProvider = candles.__provider || null;
 
@@ -340,9 +430,11 @@ export async function runDeskCycle(desk, opts = {}) {
         bytes: artifact.code.length,
         improvement,
         robustness: assessment.robustness,
+        auditScore: audit.score,
+        regime: regime.label,
         note: improvement == null
-          ? 'גרסה ראשונה שעברה את סף הרווחיות'
-          : `שיפור של ${improvement}% ב־out-of-sample`,
+          ? `גרסה ראשונה מאומתת (משטר: ${regime.label})`
+          : `שיפור של ${improvement}% ב־OOS (משטר: ${regime.label})`,
       });
       if (desk.history.length > 40) desk.history.length = 40;
       state.stats.deployments = (state.stats.deployments || 0) + 1;
@@ -350,47 +442,51 @@ export async function runDeskCycle(desk, opts = {}) {
       store.log(
         'ok',
         'גיא · פיתוח',
-        `${desk.label}: פורסמה ${desk.version} (${desk.strategyId}) · OOS ${ev.oos.returnPct}% · PF ${ev.full.profitFactor}`,
+        `${desk.label}: פורסמה ${desk.version} (${desk.strategyId}) · OOS ${ev.oos.returnPct}% · PF ${ev.full.profitFactor} · אימות אמיר ${audit.score}/100`,
       );
       recordVersionInDb(desk, ev, assessment).catch(() => {});
 
     } else if (!hasVersion) {
       // Working hypothesis: keep the best candidate so the desk is measurable, but publish
-      // nothing until out-of-sample turns positive.
-      desk.params = result.best.params;
-      desk.strategyId = result.best.strategyId || desk.strategyId;
+      // nothing until out-of-sample turns positive AND Amir verifies truth.
+      desk.params = winner.params;
+      desk.strategyId = candStrategyId;
       desk.metrics = ev.full;
       desk.oosMetrics = ev.oos;
       desk.isMetrics = ev.is;
-      desk.fitness = +result.best.score.toFixed(2);
+      desk.fitness = +winner.score.toFixed(2);
       desk.equity = downsample(ev.curve.map((p) => p.v));
       desk.lastCandles = candles.length;
-      store.log('info', 'נועה · אנליסטית', `${desk.label}: נשמרת השערת עבודה (${desk.strategyId}) — ממתינים ל-OOS חיובי לפני פרסום גרסה`);
+      store.log('info', 'נועה · אנליסטית', `${desk.label}: נשמרת השערת עבודה (${desk.strategyId}) — ממתינים ל-OOS חיובי ולאישור אמיר`);
     } else {
       const current = runBacktest(candles, desk.strategyId, desk.params, cfg);
       desk.metrics = current.metrics;
       desk.equity = downsample(current.curve.map((p) => p.v));
-      desk.fitness = +result.best.score.toFixed(2);
+      desk.fitness = +winner.score.toFixed(2);
       desk.lastCandles = candles.length;
-      store.log(
-        'warn',
-        'ליה · אופטימיזציה',
-        `${desk.label}: המועמד הטוב (${result.best.strategyId || desk.strategyId}) השיג OOS ${ev.oos.returnPct}% · חוסן ${assessment.robustness}/100 — לא עומד בסף (שיפור ${threshold}% · חוסן ${s.minRobustness ?? 50})`,
-      );
+      if (!audit.vetoed) {
+        store.log(
+          'warn',
+          'ליה · אופטימיזציה',
+          `${desk.label}: המועמד הטוב (${candStrategyId}) השיג OOS ${ev.oos.returnPct}% · חוסן ${assessment.robustness}/100 — לא עומד בסף (שיפור ${threshold}% · חוסן ${s.minRobustness ?? 50})`,
+        );
+      }
     }
 
-    // Promotion ladder, decided from the desk's own frozen parameters.
+    // Promotion ladder, decided from the desk's own frozen parameters AND Amir's truth verification.
     const gateCheck = desk.metrics ? passesGates(desk.metrics, gates) : { ok: false };
     const oosPositive = (desk.oosMetrics?.returnPct ?? 0) > 0;
     const robustOk = (desk.assessment?.robustness ?? 0) >= (s.minRobustness ?? 50);
+    const auditOk = !desk.lastAudit?.vetoed;
     if (desk.status === 'live') {
-      if (!gateCheck.ok || !oosPositive || !robustOk) {
+      if (!gateCheck.ok || !oosPositive || !robustOk || !auditOk) {
         desk.status = 'optimizing';
         desk.dryRunCycles = 0;
         desk.openTrade = null;
-        store.log('warn', 'דניאל · סיכונים', `${desk.label}: המדדים ירדו מתחת לשערים — חזרה לכיול וסגירת פוזיציית הנייר`);
+        store.log('warn', !auditOk ? 'אמיר · ביקורת אמת' : 'דניאל · סיכונים',
+          `${desk.label}: ${!auditOk ? 'נחסם בביקורת אמת' : 'המדדים ירדו מתחת לשערים'} — חזרה לכיול וסגירת פוזיציית הנייר`);
       }
-    } else if (desk.version && gateCheck.ok && oosPositive && robustOk) {
+    } else if (desk.version && gateCheck.ok && oosPositive && robustOk && auditOk) {
       desk.dryRunCycles = (desk.dryRunCycles || 0) + 1;
       desk.status = 'dry-run';
       setAgent('exec', { status: 'busy', task: `dry-run ${desk.dryRunCycles}/3 · ${desk.version}`, progress: 80, speech: `מריצת dry-run למחזור ${desk.dryRunCycles}/3 לפני אישור מסחר חי על נייר`, speechType: 'speak' });
@@ -398,7 +494,7 @@ export async function runDeskCycle(desk, opts = {}) {
       if (desk.dryRunCycles >= 3) {
         desk.status = 'live';
         desk.liveSince = Date.now();
-        store.log('ok', 'אוריה · CIO', `${desk.label}: אושרה הרצה חיה על נייר · ${desk.version}`);
+        store.log('ok', 'אוריה · CIO', `${desk.label}: אושרה הרצה חיה על נייר (מאומתת אמיר ${audit.score}/100) · ${desk.version}`);
       }
     } else {
       desk.status = desk.metrics ? 'optimizing' : 'research';
@@ -407,9 +503,9 @@ export async function runDeskCycle(desk, opts = {}) {
 
     setAgent('cio', {
       status: 'busy',
-      task: publish ? `מאשר ${desk.version} ומקצה הון` : 'מעדיף להמתין לשיפור מובהק',
+      task: publish ? `מאשר ${desk.version} ומקצה הון` : (audit.vetoed ? 'מכבד וטו של אמיר · ממתין לאימות' : 'מעדיף להמתין לשיפור מובהק'),
       progress: 90,
-      speech: publish ? `מאשר ${desk.version} ומקצה הון לשולחן ${desk.label}` : 'מעדיף להמתין לשיפור מובהק לפני קידום גרסה', speechType: 'speak' });
+      speech: publish ? `מאשר ${desk.version} ומקצה הון לשולחן ${desk.label}` : (audit.vetoed ? `אמיר חסם קידום ב-${desk.label} — חוזרים לכיול על נתוני אמת` : 'מעדיף להמתין לשיפור מובהק לפני קידום גרסה'), speechType: 'speak' });
     if (aiPlan) {
       desk.aiPlan = { ...aiPlan, consumed: true, appliedAt: Date.now() };
     }
@@ -717,16 +813,20 @@ export async function promoteDryRuns() {
 
     const gatesOk = passesGates(desk.metrics, gateSettings(desk)).ok;
     const profitableAfterFees = isBacktestProfitableAfterFeesAndTax(desk.metrics);
+    const auditOk = !desk.lastAudit?.vetoed && !marketState.synthetic;
 
-    if (desk.dryRunCycles >= PAPER_TRADING.dryRunCyclesBeforeLive && gatesOk && profitableAfterFees) {
+    if (desk.dryRunCycles >= PAPER_TRADING.dryRunCyclesBeforeLive && gatesOk && profitableAfterFees && auditOk) {
       desk.status = 'live';
       desk.liveSince = Date.now();
       pf.activate({
-        reason: `אסטרטגיה ${desk.strategyId} על ${desk.label} הרוויחה ${desk.metrics.returnPct}% בבקטסט אחרי עמלות`,
+        reason: `אסטרטגיה ${desk.strategyId} על ${desk.label} הרוויחה ${desk.metrics.returnPct}% בבקטסט אחרי עמלות (מאומת אמיר)`,
       });
       promoted = true;
       store.log('ok', 'אוריה · CIO',
         `${desk.label}: אושרה למסחר דמה על Binance Testnet — ${desk.version} · ${desk.metrics.returnPct}% נטו בבקטסט`);
+    } else if (desk.dryRunCycles >= PAPER_TRADING.dryRunCyclesBeforeLive && gatesOk && !auditOk) {
+      store.log('warn', 'אמיר · ביקורת אמת',
+        `${desk.label}: קידום לנייר חי נחסם — ממתין לאימות נתוני אמת ותנאי ביקורת מחמירים`);
     } else if (desk.dryRunCycles >= PAPER_TRADING.dryRunCyclesBeforeLive && gatesOk && !profitableAfterFees) {
       store.log('warn', 'אוריה · CIO',
         `${desk.label}: עברה גדרות אך אינה רווחית אחרי עמלות ומס — לא תופעל במסחר דמה`);
@@ -757,6 +857,7 @@ export async function tick({ reason = 'auto' } = {}) {
     await tickLive();
     await promoteDryRuns();
     savePaperPortfolio();
+    state.truthAudit = auditSystemTruth(state, marketState);
     // עבודה רציפה: מחקר, ניתוח טכני, פונדמנטליסטי, סנטימנט ואופטימיזציה בכל מחזור
     refreshTechnicals({ force: true }).catch((e) => console.warn('[ta]', e));
     refreshFundamentals().catch((e) => console.warn('[fundamentals]', e));

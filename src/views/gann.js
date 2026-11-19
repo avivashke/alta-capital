@@ -19,6 +19,7 @@ import {
   parseGannzillaIni,
   exportGannzillaIni,
   parsePriceTimeCsv,
+  computePriceCircleAngles,
 } from '../gann.js';
 import { chatDetailed } from '../llm.js';
 
@@ -30,6 +31,9 @@ let gannViewState = {
   manualDate: '',
   calcTab: 'fan', // 'fan' | 'msj_grid' | 'msj_deg' | 'jenkins' | 'eighths' | 'hex'
   calendarTab: 'zodiac12', // 'zodiac12' | 'planetary' | 'squares' | 'seasonal'
+  pctTab: 'circles', // 'circles' | 'musical' | 'lookback'
+  customCircleInput: '',
+  musicalSystem: 'just', // 'just' | 'pythagorean'
   msjCustomPrice: '',
   selectedMsjCell: null,
   loading: false,
@@ -1423,6 +1427,9 @@ export function renderGann(root, ui) {
             ),
     ),
 
+    // rluu-pricechartingtool-f05e608 Suite: Price Circles, Musical Octave Ratios & Lookback Multiple
+    renderPriceChartingToolPanel(a, ui),
+
     // Smart AI Working Proposals Panel
     h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(167, 139, 250, 0.45)' } },
       h('div', { class: 'card-head' },
@@ -1527,5 +1534,129 @@ export function renderGann(root, ui) {
         )
         : empty('לא נמצאו אירועים תואמים לחיפוש.'),
     ),
+  );
+}
+
+function renderPriceChartingToolPanel(a, ui) {
+  const pctData = a.priceChartingTool || {};
+  const customList = gannViewState.customCircleInput
+    .split(/[,\s]+/)
+    .map((x) => Number(x.trim()))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  const circleRows = customList.length
+    ? computePriceCircleAngles(a.currentPrice, customList)
+    : (pctData.circleAngles || []);
+  const musical = gannViewState.musicalSystem === 'pythagorean'
+    ? pctData.musicalPythagorean
+    : pctData.musicalJust;
+  const lookbacks = pctData.lookbackMultiples || [];
+
+  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(56, 189, 248, 0.42)' } },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: '🎼 PriceChartingTool (rluu) · מעגלי מחיר, אוקטבות מוזיקליות ו-Lookback Multiple' }),
+        h('div', { class: 'card-sub', text: 'שילוב אלגוריתמי rluu-pricechartingtool-f05e608: המרת מחיר לזוויות על מעגלים (12–360), מרווחים מוזיקליים (Just Intonation & Pythagorean) ושכפול מחזורי עבר (Lookback Multiple)' }),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px' } },
+        [
+          ['circles', '⭕ מעגלי מחיר (Circles)'],
+          ['musical', '🎵 אוקטבות מוזיקליות (Ratios)'],
+          ['lookback', '🔁 Lookback Multiple'],
+        ].map(([id, lbl]) => h('button', {
+          class: `btn btn-sm ${gannViewState.pctTab === id ? 'btn-primary' : ''}`,
+          onclick: () => { gannViewState.pctTab = id; ui.rerender(); },
+        }, lbl)),
+      ),
+    ),
+
+    gannViewState.pctTab === 'circles'
+      ? h('div', {},
+        h('div', { class: 'row wrap', style: { gap: '8px', marginBottom: '10px', alignItems: 'center' } },
+          h('span', { class: 'small muted', text: `מחיר נוכחי: ${num(a.currentPrice, 4)} · נוסחת convertPriceToAnglesOnCircles: ((price % circle) / circle) × 360°` }),
+          h('input', {
+            class: 'input',
+            type: 'text',
+            placeholder: 'מעגלים מותאמים (למשל 3600, 20736)',
+            style: { maxWidth: '250px' },
+            value: gannViewState.customCircleInput,
+            onchange: (e) => { gannViewState.customCircleInput = e.target.value; ui.rerender(); },
+          }),
+        ),
+        h('div', { class: 'table-wrap' },
+          h('table', {},
+            h('thead', {}, h('tr', {},
+              h('th', { text: 'גודל מעגל (Circle)' }),
+              h('th', { class: 'num', text: 'מחזורים שלמים' }),
+              h('th', { class: 'num', text: 'זווית על המעגל' }),
+              h('th', { text: 'היבט הרמוני' }),
+              h('th', { class: 'num', text: 'סגירת מחזור הבאה' }),
+            )),
+            h('tbody', {}, circleRows.map((row) => h('tr', {},
+              h('td', { class: 'mono', text: `${row.circleSize}${row.isCustom ? ' (מותאם)' : ''}` }),
+              h('td', { class: 'num mono', text: num(row.cyclesCompleted, 0) }),
+              h('td', { class: 'num mono ' + (row.isExactAspect ? 'green' : ''), text: `${row.angle}°` }),
+              h('td', {}, row.isExactAspect ? tag(row.aspect, 'live') : h('span', { class: 'tiny muted', text: row.aspect })),
+              h('td', { class: 'num mono muted', text: num(row.nextFullCyclePrice, 2) }),
+            ))),
+          ),
+        ),
+      )
+      : gannViewState.pctTab === 'musical'
+        ? h('div', {},
+          h('div', { class: 'row between wrap', style: { gap: '8px', marginBottom: '10px' } },
+            h('div', { class: 'small muted', text: `עוגן פיבוט: ${num(musical?.anchorPrice, 2)} · תמיכה מוזיקלית קרובה: ${musical?.nearestSupport ? `${num(musical.nearestSupport.price, 2)} (${musical.nearestSupport.frac})` : '—'} · התנגדות קרובה: ${musical?.nearestResistance ? `${num(musical.nearestResistance.price, 2)} (${musical.nearestResistance.frac})` : '—'}` }),
+            h('div', { class: 'row', style: { gap: '6px' } },
+              h('button', {
+                class: `btn btn-sm ${gannViewState.musicalSystem === 'just' ? 'btn-primary' : ''}`,
+                onclick: () => { gannViewState.musicalSystem = 'just'; ui.rerender(); },
+              }, 'Just Intonation (אינטונציה טהורה)'),
+              h('button', {
+                class: `btn btn-sm ${gannViewState.musicalSystem === 'pythagorean' ? 'btn-primary' : ''}`,
+                onclick: () => { gannViewState.musicalSystem = 'pythagorean'; ui.rerender(); },
+              }, 'Pythagorean (פיתגוראי)'),
+            ),
+          ),
+          h('div', { class: 'table-wrap' },
+            h('table', {},
+              h('thead', {}, h('tr', {},
+                h('th', { text: 'מרווח מוזיקלי' }),
+                h('th', { text: 'יחס' }),
+                h('th', { class: 'num', text: 'מכפיל' }),
+                h('th', { class: 'num', text: 'יעד מחיר' }),
+                h('th', { class: 'num', text: 'מרחק מהשוק' }),
+              )),
+              h('tbody', {}, (musical?.all || []).map((row) => h('tr', {},
+                h('td', { class: 'small', text: `${row.he} · ${row.name}` }),
+                h('td', {}, tag(row.frac, row.dir === 'up' ? 'live' : 'dry')),
+                h('td', { class: 'num mono', text: String(row.ratioDisplay) }),
+                h('td', { class: 'num mono', text: num(row.price, 2) }),
+                h('td', { class: 'num mono ' + (row.distPct >= 0 ? 'green' : 'red'), text: pct(row.distPct) }),
+              ))),
+            ),
+          ),
+        )
+        : h('div', {},
+          h('div', { class: 'small muted', style: { marginBottom: '10px' }, text: 'אלגוריתם Lookback Multiple משכפל מקטעי מחיר היסטוריים קדימה במחזורים של 30–365 ימים, מחשב מקדם סקאלה והסטה לטווח המחיר הנוכחי, ומדרג את המחזור הדומה ביותר לקצב השוק היום.' }),
+          lookbacks.length
+            ? h('div', { class: 'table-wrap' },
+              h('table', {},
+                h('thead', {}, h('tr', {},
+                  h('th', { text: 'מחזור Lookback' }),
+                  h('th', { class: 'num', text: 'מתאם צורה (Pearson)' }),
+                  h('th', { text: 'קוטביות' }),
+                  h('th', { class: 'num', text: 'סקאלה (Scale)' }),
+                  h('th', { text: 'תאריך מפנה צפוי משוכפל' }),
+                )),
+                h('tbody', {}, lookbacks.map((lb) => h('tr', {},
+                  h('td', { class: 'small', text: lb.label }),
+                  h('td', { class: 'num mono ' + (lb.correlation >= 0.35 ? 'green' : lb.correlation <= -0.35 ? 'red' : 'muted'), text: String(lb.correlation) }),
+                  h('td', {}, tag(lb.polarity, Math.abs(lb.correlation) >= 0.35 ? 'live' : 'dry')),
+                  h('td', { class: 'num mono', text: `×${lb.scaleFactor}` }),
+                  h('td', { class: 'small', text: lb.projectedDate ? `${lb.projectedDate} (+${lb.projectedDaysAhead}d) · ${lb.projectedType}` : '—' }),
+                ))),
+              ),
+            )
+            : empty('נדרשת היסטוריה ארוכה יותר לחישוב Lookback Multiple (עבור לטווח יומי 1d).'),
+        ),
   );
 }

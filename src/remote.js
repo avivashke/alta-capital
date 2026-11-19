@@ -94,6 +94,9 @@ export function mergeRemote(state, remote) {
   if (merged.githubScout && typeof merged.githubScout === 'object') {
     state.githubScout = merged.githubScout;
   }
+  if (merged.truthAudit && typeof merged.truthAudit === 'object') {
+    state.truthAudit = merged.truthAudit;
+  }
 
   state.updatedAt = merged.updatedAt || remote.updatedAt || new Date().toISOString();
   state.lastTickAt = merged.lastTickAt || Date.parse(state.updatedAt) || Date.now();

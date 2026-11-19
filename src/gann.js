@@ -1334,6 +1334,210 @@ function proveGannAgainstFundamentals(candles, pivots, sq9Levels, hexLevels, ass
   };
 }
 
+// --- rluu-pricechartingtool-f05e608 Suite (Price Circles, Musical Octave Ratios, Lookback Multiple) ---
+
+const DEFAULT_PRICE_CIRCLES = [12, 24, 36, 52, 90, 144, 360];
+
+/**
+ * Port of convertPriceToAnglesOnCircles.py (Ryan Luu · PriceChartingTool).
+ * Converts a price to its exact degree angle (0°–360°) on standard Gann circles
+ * [12, 24, 36, 52, 90, 144, 360] plus any custom user circles.
+ */
+export function computePriceCircleAngles(price, customCircles = []) {
+  const p = Math.abs(Number(price) || 0);
+  const customClean = (Array.isArray(customCircles) ? customCircles : [])
+    .map((v) => Number(v))
+    .filter((v) => Number.isFinite(v) && v > 0);
+  const circles = [...new Set([...DEFAULT_PRICE_CIRCLES, ...customClean])];
+
+  const classifyAspect = (deg) => {
+    const keyAngles = [
+      { a: 0, lbl: '0° צמידות/אפס (קרדינלי)' },
+      { a: 45, lbl: '45° אורדינלי' },
+      { a: 90, lbl: '90° ריבוע (קרדינלי)' },
+      { a: 120, lbl: '120° משולש (הרמוני)' },
+      { a: 135, lbl: '135° אורדינלי' },
+      { a: 180, lbl: '180° מולות (קרדינלי)' },
+      { a: 225, lbl: '225° אורדינלי' },
+      { a: 240, lbl: '240° משולש (הרמוני)' },
+      { a: 270, lbl: '270° ריבוע (קרדינלי)' },
+      { a: 315, lbl: '315° אורדינלי' },
+      { a: 360, lbl: '360° מחזור שלם' },
+    ];
+    let best = null;
+    for (const k of keyAngles) {
+      const orb = Math.abs(deg - k.a);
+      if (orb <= 6 && (!best || orb < best.orb)) best = { ...k, orb: +orb.toFixed(2) };
+    }
+    return best ? `${best.lbl} (±${best.orb}°)` : 'ביניים';
+  };
+
+  return circles.map((circleSize) => {
+    const rem = ((p % circleSize) + circleSize) % circleSize;
+    const angle = +((rem / circleSize) * 360.0).toFixed(2);
+    const cycles = Math.floor(p / circleSize);
+    const nextFullCyclePrice = +((cycles + 1) * circleSize).toFixed(4);
+    const aspect = classifyAspect(angle);
+    return {
+      circleSize,
+      isCustom: !DEFAULT_PRICE_CIRCLES.includes(circleSize),
+      cyclesCompleted: cycles,
+      remainder: +rem.toFixed(4),
+      angle,
+      nextFullCyclePrice,
+      aspect,
+      isExactAspect: aspect !== 'ביניים',
+    };
+  });
+}
+
+const JUST_INTONATION_UP = [
+  { name: 'Unison (1/1)', he: 'אוניסון (בסיס)', frac: '1/1', ratio: 1 / 1 },
+  { name: 'Major 2nd (9/8)', he: 'סקונדה גדולה', frac: '9/8', ratio: 9 / 8 },
+  { name: 'Major 3rd (5/4)', he: 'טרצה גדולה', frac: '5/4', ratio: 5 / 4 },
+  { name: 'Perfect 4th (4/3)', he: 'קוורטה זכה', frac: '4/3', ratio: 4 / 3 },
+  { name: 'Perfect 5th (3/2)', he: 'קווינטה זכה', frac: '3/2', ratio: 3 / 2 },
+  { name: 'Major 6th (5/3)', he: 'סקסטה גדולה', frac: '5/3', ratio: 5 / 3 },
+  { name: 'Major 7th (15/8)', he: 'ספטימה גדולה', frac: '15/8', ratio: 15 / 8 },
+  { name: 'Octave (2/1)', he: 'אוקטבה מלאה', frac: '2/1', ratio: 2 / 1 },
+];
+
+const PYTHAGOREAN_UP = [
+  { name: 'Unison (1/1)', he: 'אוניסון', frac: '1/1', ratio: 1 / 1 },
+  { name: 'Minor 2nd (256/243)', he: 'סקונדה קטנה', frac: '256/243', ratio: 256 / 243 },
+  { name: 'Major 2nd (9/8)', he: 'סקונדה גדולה', frac: '9/8', ratio: 9 / 8 },
+  { name: 'Minor 3rd (32/27)', he: 'טרצה קטנה', frac: '32/27', ratio: 32 / 27 },
+  { name: 'Major 3rd (81/64)', he: 'טרצה גדולה', frac: '81/64', ratio: 81 / 64 },
+  { name: 'Perfect 4th (4/3)', he: 'קוורטה זכה', frac: '4/3', ratio: 4 / 3 },
+  { name: 'Diminished 5th (1024/729)', he: 'קווינטה מוקטנת', frac: '1024/729', ratio: 1024 / 729 },
+  { name: 'Augmented 4th (729/512)', he: 'קוורטה מוגדלת', frac: '729/512', ratio: 729 / 512 },
+  { name: 'Perfect 5th (3/2)', he: 'קווינטה זכה', frac: '3/2', ratio: 3 / 2 },
+  { name: 'Minor 6th (128/81)', he: 'סקסטה קטנה', frac: '128/81', ratio: 128 / 81 },
+  { name: 'Major 6th (27/16)', he: 'סקסטה גדולה', frac: '27/16', ratio: 27 / 16 },
+  { name: 'Minor 7th (16/9)', he: 'ספטימה קטנה', frac: '16/9', ratio: 16 / 9 },
+  { name: 'Major 7th (243/128)', he: 'ספטימה גדולה', frac: '243/128', ratio: 243 / 128 },
+];
+
+/**
+ * Port of PrintMusicalRatios.py (Ryan Luu · PriceChartingTool).
+ * Computes W.D. Gann Musical Octave Harmonic Price Levels (Just Intonation & Pythagorean,
+ * both ascending and inverted descending intervals) anchored to a major pivot.
+ */
+export function computeMusicalOctaveHarmonics(anchorPrice, currentPrice, system = 'just') {
+  const base = Math.max(1e-6, Number(anchorPrice) || 100);
+  const curr = Math.max(1e-6, Number(currentPrice) || base);
+  const table = system === 'pythagorean' ? PYTHAGOREAN_UP : JUST_INTONATION_UP;
+
+  const up = table.map((item) => {
+    const price = +(base * item.ratio).toFixed(4);
+    const distPct = +(((price - curr) / curr) * 100).toFixed(2);
+    return { ...item, dir: 'up', ratioDisplay: +item.ratio.toFixed(6), price, distPct };
+  });
+
+  const down = table
+    .filter((item) => item.ratio > 1)
+    .map((item) => {
+      const invRatio = 1 / item.ratio;
+      const [numPart, denPart] = item.frac.split('/');
+      const invFrac = `${denPart}/${numPart}`;
+      const price = +(base * invRatio).toFixed(4);
+      const distPct = +(((price - curr) / curr) * 100).toFixed(2);
+      return {
+        name: `${item.name.split('(')[0].trim()} Inverted (${invFrac})`,
+        he: `${item.he} (הפוך)`,
+        frac: invFrac,
+        ratio: invRatio,
+        ratioDisplay: +invRatio.toFixed(6),
+        dir: 'down',
+        price,
+        distPct,
+      };
+    })
+    .sort((a, b) => a.price - b.price);
+
+  const all = [...down, ...up].sort((a, b) => a.price - b.price);
+  const nearestSupport = [...all].reverse().find((r) => r.price <= curr) || null;
+  const nearestResistance = all.find((r) => r.price > curr) || null;
+
+  return { system, anchorPrice: base, currentPrice: curr, up, down, all, nearestSupport, nearestResistance };
+}
+
+/**
+ * Port of notes_algorithm_for_lookbackmultiple.txt (Ryan Luu · PriceChartingTool).
+ * Shifts historical price bars forward by Gann/planetary lookback multiples, computes
+ * offset & scaling factors to align with the current viewport min/max, measures
+ * historical-vs-current shape correlation, and projects upcoming repeat rhythm pivots.
+ */
+export function computeLookbackMultiples(candles, pivots = [], multiplesDays = [30, 60, 90, 144, 180, 225, 365]) {
+  if (!Array.isArray(candles) || candles.length < 40) return [];
+  const lastTs = candles[candles.length - 1].t;
+  const spanDays = (lastTs - candles[0].t) / DAY_MS;
+  const viewLen = Math.min(45, Math.max(15, Math.floor(candles.length * 0.25)));
+  const currSlice = candles.slice(-viewLen);
+  const currStartTs = currSlice[0].t;
+  const currMin = Math.min(...currSlice.map((c) => c.l));
+  const currMax = Math.max(...currSlice.map((c) => c.h));
+  const currRange = Math.max(1e-6, currMax - currMin);
+
+  const pearson = (a, b) => {
+    const m = Math.min(a.length, b.length);
+    if (m < 6) return 0;
+    let sumA = 0; let sumB = 0;
+    for (let i = 0; i < m; i++) { sumA += a[i]; sumB += b[i]; }
+    const meanA = sumA / m; const meanB = sumB / m;
+    let num = 0; let dA = 0; let dB = 0;
+    for (let i = 0; i < m; i++) {
+      const da = a[i] - meanA; const db = b[i] - meanB;
+      num += da * db; dA += da * da; dB += db * db;
+    }
+    return dA > 0 && dB > 0 ? +(num / Math.sqrt(dA * dB)).toFixed(3) : 0;
+  };
+
+  const results = [];
+  for (const days of multiplesDays) {
+    if (days >= spanDays - 10) continue;
+    const shiftMs = days * DAY_MS;
+    const histStartTs = currStartTs - shiftMs;
+    const histEndTs = lastTs - shiftMs;
+    const histSlice = candles.filter((c) => c.t >= histStartTs && c.t <= histEndTs);
+    if (histSlice.length < 8) continue;
+
+    const histMin = Math.min(...histSlice.map((c) => c.l));
+    const histMax = Math.max(...histSlice.map((c) => c.h));
+    const histRange = Math.max(1e-6, histMax - histMin);
+    const scaleFactor = +(currRange / histRange).toFixed(4);
+    const offset = +(currMin - histMin * scaleFactor).toFixed(4);
+
+    // Resample histSlice to match currSlice length for shape correlation
+    const resampledHist = [];
+    for (let i = 0; i < currSlice.length; i++) {
+      const idx = Math.min(histSlice.length - 1, Math.floor((i / currSlice.length) * histSlice.length));
+      resampledHist.push(histSlice[idx].c * scaleFactor + offset);
+    }
+    const corr = pearson(currSlice.map((c) => c.c), resampledHist);
+
+    // Look forward from the historic window: find next historic pivot after histEndTs and project it forward by shiftMs!
+    const nextHistPivot = (pivots || []).find((pv) => pv.t > histEndTs && pv.t <= histEndTs + 90 * DAY_MS);
+    const projectedDate = nextHistPivot ? new Date(nextHistPivot.t + shiftMs).toISOString().slice(0, 10) : null;
+    const projectedDaysAhead = nextHistPivot ? Math.max(1, Math.round((nextHistPivot.t + shiftMs - lastTs) / DAY_MS)) : null;
+
+    results.push({
+      lookbackDays: days,
+      label: days === 225 ? '225d (מחזור נוגה)' : days === 365 ? '365d (מחזור שמש שנתי)' : `${days}d Lookback`,
+      histBarsCount: histSlice.length,
+      scaleFactor,
+      offset,
+      correlation: corr,
+      polarity: corr >= 0.35 ? 'תואם (ישיר)' : corr <= -0.35 ? 'היפוך מראה (הפוך)' : 'ניטרלי',
+      projectedDate,
+      projectedDaysAhead,
+      projectedType: nextHistPivot ? (nextHistPivot.type === 'high' ? 'שיא היסטורי משוכפל' : 'שפל היסטורי משוכפל') : 'ללא פיבוט סמוך',
+    });
+  }
+
+  return results.sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
+}
+
 export function analyzeGannHistoryAndForecast(
   candles,
   { lookback = 10, manualAnchorPrice = null, manualAnchorDate = null, assetKind = 'all', gannzillaConfig = null } = {},
@@ -1503,6 +1707,12 @@ export function analyzeGannHistoryAndForecast(
     });
 
   const priceTimeInfo = buildPriceTimeInfoReport(candles, pivots, gzCfg.customPriceTimePoints || []);
+  const priceChartingTool = {
+    circleAngles: computePriceCircleAngles(currentPrice, gzCfg.customCircles || []),
+    musicalJust: computeMusicalOctaveHarmonics(anchorPivot.price, currentPrice, 'just'),
+    musicalPythagorean: computeMusicalOctaveHarmonics(anchorPivot.price, currentPrice, 'pythagorean'),
+    lookbackMultiples: computeLookbackMultiples(candles, pivots),
+  };
 
   const out = {
     ok: true,
@@ -1523,6 +1733,7 @@ export function analyzeGannHistoryAndForecast(
     swingChart,
     msjSq9,
     priceTimeInfo,
+    priceChartingTool,
     angles,
     angle1x1,
     totalTests,

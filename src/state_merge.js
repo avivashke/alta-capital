@@ -352,6 +352,8 @@ export function mergeFirmStates(base, incoming, { forceReset = false, bumpRevisi
   if (scout) shell.githubScout = scout;
   const sent = pickFresherRicher(base.sentiment, incoming.sentiment, (s) => (s.headlines?.length || 0));
   if (sent) shell.sentiment = sent;
+  const audit = pickFresherRicher(base.truthAudit, incoming.truthAudit, (a) => (a.checkedAt || 0));
+  if (audit) shell.truthAudit = audit;
   shell.budget = pickFresherRicher(base.budget, incoming.budget) || shell.budget || {};
 
   // Keep richer agent completed counters
