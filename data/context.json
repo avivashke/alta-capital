@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-19T10:42:53.836Z",
+ "generatedAt": "2026-11-19T19:12:20.948Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -14,7 +14,7 @@
    "label": "תוך־יומי · 5 דקות",
    "timeframe": "5m",
    "symbol": "BTCUSDT",
-   "status": "dry-run",
+   "status": "optimizing",
    "version": "v1.0",
    "strategyId": "breakout",
    "params": {
@@ -24,21 +24,21 @@
     "filter": false
    },
    "metrics": {
-    "returnPct": 3.91,
-    "maxDrawdownPct": 1.8,
-    "sharpe": 15.07,
-    "profitFactor": 1.79,
-    "winRate": 44.4,
-    "trades": 18,
-    "avgR": 0.145,
-    "expectancy": 8.15,
-    "exposurePct": 51,
-    "bestTradePct": 2.299,
-    "worstTradePct": -1.387,
-    "finalEquity": 3896.69,
-    "curvePoints": 721,
-    "totalFees": 94.0958,
-    "barsInMarket": 368
+    "returnPct": -0.19,
+    "maxDrawdownPct": 1.68,
+    "sharpe": -1.71,
+    "profitFactor": 0.61,
+    "winRate": 33.3,
+    "trades": 3,
+    "avgR": -0.043,
+    "expectancy": -2.42,
+    "exposurePct": 41.7,
+    "bestTradePct": 0.303,
+    "worstTradePct": -0.292,
+    "finalEquity": 3742.73,
+    "curvePoints": 300,
+    "totalFees": 15.6435,
+    "barsInMarket": 125
    },
    "oos": {
     "returnPct": 5.77,
@@ -71,7 +71,7 @@
    "label": "תוך־יומי · 15 דקות",
    "timeframe": "15m",
    "symbol": "ETHUSDT",
-   "status": "dry-run",
+   "status": "optimizing",
    "version": "v1.0",
    "strategyId": "momentum",
    "params": {
@@ -81,21 +81,21 @@
     "rr": 2.2
    },
    "metrics": {
-    "returnPct": 1.71,
-    "maxDrawdownPct": 4.04,
-    "sharpe": 2.33,
-    "profitFactor": 1.24,
-    "winRate": 27.6,
-    "trades": 29,
-    "avgR": 0.042,
-    "expectancy": 2.95,
-    "exposurePct": 32.6,
-    "bestTradePct": 2.997,
-    "worstTradePct": -0.839,
-    "finalEquity": 5085.62,
-    "curvePoints": 721,
-    "totalFees": 181.8482,
-    "barsInMarket": 235
+    "returnPct": 0.6,
+    "maxDrawdownPct": 2.45,
+    "sharpe": 2.06,
+    "profitFactor": 1.11,
+    "winRate": 33.3,
+    "trades": 15,
+    "avgR": 0.024,
+    "expectancy": 1.62,
+    "exposurePct": 42,
+    "bestTradePct": 2.951,
+    "worstTradePct": -1.028,
+    "finalEquity": 5029.87,
+    "curvePoints": 300,
+    "totalFees": 88.3186,
+    "barsInMarket": 126
    },
    "oos": {
     "returnPct": 4.07,
@@ -138,7 +138,7 @@
    "label": "תוך־יומי · נר שעה",
    "timeframe": "1h",
    "symbol": "BTCUSDT",
-   "status": "live",
+   "status": "optimizing",
    "version": "v1.0",
    "strategyId": "ema_trend",
    "params": {
@@ -149,21 +149,21 @@
     "trendFilter": false
    },
    "metrics": {
-    "returnPct": 7.18,
-    "maxDrawdownPct": 6.11,
-    "sharpe": 3.46,
-    "profitFactor": 1.55,
-    "winRate": 51.5,
-    "trades": 33,
-    "avgR": 0.143,
-    "expectancy": 13.43,
-    "exposurePct": 66.3,
-    "bestTradePct": 3.408,
-    "worstTradePct": -1.77,
-    "finalEquity": 6698.58,
-    "curvePoints": 721,
-    "totalFees": 260.9311,
-    "barsInMarket": 478
+    "returnPct": -8.34,
+    "maxDrawdownPct": 9.17,
+    "sharpe": -9.55,
+    "profitFactor": 0.32,
+    "winRate": 41.2,
+    "trades": 17,
+    "avgR": -0.337,
+    "expectancy": -30.68,
+    "exposurePct": 54.3,
+    "bestTradePct": 1.132,
+    "worstTradePct": -1.607,
+    "finalEquity": 5728.44,
+    "curvePoints": 300,
+    "totalFees": 98.0162,
+    "barsInMarket": 163
    },
    "oos": {
     "returnPct": 11.66,
@@ -216,21 +216,21 @@
     "rr": 4
    },
    "metrics": {
-    "returnPct": 28.28,
-    "maxDrawdownPct": 4.58,
-    "sharpe": 1.76,
-    "profitFactor": 2.71,
-    "winRate": 48,
-    "trades": 25,
-    "avgR": 0.694,
-    "expectancy": 56.47,
-    "exposurePct": 27.7,
-    "bestTradePct": 7.169,
-    "worstTradePct": -1.904,
-    "finalEquity": 6414,
-    "curvePoints": 600,
-    "totalFees": 70.5525,
-    "barsInMarket": 166
+    "returnPct": 13.81,
+    "maxDrawdownPct": 6.14,
+    "sharpe": 1.64,
+    "profitFactor": 2.37,
+    "winRate": 43.8,
+    "trades": 16,
+    "avgR": 0.563,
+    "expectancy": 43.02,
+    "exposurePct": 36.3,
+    "bestTradePct": 6.354,
+    "worstTradePct": -1.747,
+    "finalEquity": 5690.32,
+    "curvePoints": 300,
+    "totalFees": 48.7304,
+    "barsInMarket": 109
    },
    "oos": {
     "returnPct": 18.14,
@@ -293,21 +293,21 @@
     "filter": true
    },
    "metrics": {
-    "returnPct": 17.24,
-    "maxDrawdownPct": 5.84,
-    "sharpe": 0.46,
-    "profitFactor": 1.88,
-    "winRate": 44,
-    "trades": 25,
-    "avgR": 0.451,
-    "expectancy": 34.46,
-    "exposurePct": 42.1,
-    "bestTradePct": 6.814,
-    "worstTradePct": -1.828,
-    "finalEquity": 5862.2,
-    "curvePoints": 420,
-    "totalFees": 19.5232,
-    "barsInMarket": 177
+    "returnPct": 3.63,
+    "maxDrawdownPct": 6.79,
+    "sharpe": 0.18,
+    "profitFactor": 1.33,
+    "winRate": 35.3,
+    "trades": 17,
+    "avgR": 0.156,
+    "expectancy": 10.64,
+    "exposurePct": 35.3,
+    "bestTradePct": 6.247,
+    "worstTradePct": -1.675,
+    "finalEquity": 5181.38,
+    "curvePoints": 300,
+    "totalFees": 13.4497,
+    "barsInMarket": 106
    },
    "oos": {
     "returnPct": 4.64,
@@ -742,7 +742,7 @@
   }
  ],
  "sentiment": {
-  "updatedAt": 1795084973755,
+  "updatedAt": 1795115540943,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 10,
@@ -767,20 +767,20 @@
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.16,
+    "score": -0.44,
     "bias": "דובי",
-    "technical": 0,
+    "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 63778.7
+    "price": 62734.6
    },
    "ETHUSDT": {
-    "score": -0.16,
+    "score": -0.44,
     "bias": "דובי",
-    "technical": 0,
+    "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 1804.36
+    "price": 1774.75
    },
    "NVDA": {
     "score": -0.36,
@@ -788,23 +788,23 @@
     "technical": -0.5,
     "news": 0,
     "drivers": [],
-    "price": 150.96
+    "price": 148.2
    },
    "SPY": {
+    "score": -0.36,
+    "bias": "דובי",
+    "technical": -0.5,
+    "news": 0,
+    "drivers": [],
+    "price": 718.75
+   },
+   "AAPL": {
     "score": -0.44,
     "bias": "דובי",
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 730.2
-   },
-   "AAPL": {
-    "score": 0.12,
-    "bias": "ניטרלי",
-    "technical": 0.7,
-    "news": 0,
-    "drivers": [],
-    "price": 352.45
+    "price": 348.73
    }
   },
   "headlines": [],
@@ -812,12 +812,27 @@
    {
     "name": "WASTED",
     "symbol": "WASTED",
-    "rank": 866
+    "rank": 764
+   },
+   {
+    "name": "Official Trump",
+    "symbol": "TRUMP",
+    "rank": 134
+   },
+   {
+    "name": "Lucia",
+    "symbol": "LUCIA",
+    "rank": 820
    },
    {
     "name": "Pearl",
     "symbol": "PEARL",
-    "rank": 73
+    "rank": 76
+   },
+   {
+    "name": "Sky",
+    "symbol": "SKY",
+    "rank": 69
    },
    {
     "name": "Bitcoin",
@@ -825,39 +840,24 @@
     "rank": 1
    },
    {
-    "name": "Pudgy Penguins",
-    "symbol": "PENGU",
-    "rank": 125
+    "name": "Hyperliquid",
+    "symbol": "HYPE",
+    "rank": 10
    },
    {
-    "name": "Solana",
-    "symbol": "SOL",
-    "rank": 7
+    "name": "USDS",
+    "symbol": "USDS",
+    "rank": 17
+   },
+   {
+    "name": "EVAA Protocol",
+    "symbol": "EVAA",
+    "rank": 537
    },
    {
     "name": "Terra Luna Classic",
     "symbol": "LUNC",
-    "rank": 139
-   },
-   {
-    "name": "Bittensor",
-    "symbol": "TAO",
-    "rank": 38
-   },
-   {
-    "name": "Venice Token",
-    "symbol": "VVV",
-    "rank": 65
-   },
-   {
-    "name": "Irys",
-    "symbol": "IRYS",
-    "rank": 421
-   },
-   {
-    "name": "Sui",
-    "symbol": "SUI",
-    "rank": 30
+    "rank": 138
    }
   ],
   "newsScore": 0

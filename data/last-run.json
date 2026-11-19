@@ -1,6 +1,33 @@
 {
- "at": "2026-11-19T10:42:53.816Z",
+ "at": "2026-11-19T19:12:20.947Z",
  "summary": [
+  {
+   "desk": "desk_5m",
+   "timeframe": "5m",
+   "ok": true,
+   "published": false,
+   "version": "v1.0",
+   "oos": 5.77,
+   "robustness": 33
+  },
+  {
+   "desk": "desk_15m",
+   "timeframe": "15m",
+   "ok": true,
+   "published": false,
+   "version": "v1.0",
+   "oos": 4.07,
+   "robustness": 61
+  },
+  {
+   "desk": "desk_1h",
+   "timeframe": "1h",
+   "ok": true,
+   "published": false,
+   "version": "v1.0",
+   "oos": 11.66,
+   "robustness": 78
+  },
   {
    "desk": "desk_1d",
    "timeframe": "1d",
@@ -8,7 +35,7 @@
    "published": false,
    "version": "v1.4",
    "oos": 18.14,
-   "robustness": 96
+   "robustness": 82
   },
   {
    "desk": "desk_1w",
@@ -17,47 +44,20 @@
    "published": false,
    "version": "v1.4",
    "oos": 4.64,
-   "robustness": 74
-  },
-  {
-   "desk": "desk_nvda",
-   "timeframe": "1h",
-   "ok": true,
-   "published": true,
-   "version": "v1.0",
-   "oos": 19.54,
-   "robustness": 84
-  },
-  {
-   "desk": "desk_spy",
-   "timeframe": "1d",
-   "ok": true,
-   "published": true,
-   "version": "v1.0",
-   "oos": 1.4,
-   "robustness": 61
-  },
-  {
-   "desk": "desk_aapl",
-   "timeframe": "1d",
-   "ok": true,
-   "published": true,
-   "version": "v1.0",
-   "oos": 6.28,
-   "robustness": 75
+   "robustness": 58
   }
  ],
  "stats": {
-  "cycles": 48,
-  "backtests": 5943,
+  "cycles": 53,
+  "backtests": 6564,
   "deployments": 20,
-  "scans": 42,
+  "scans": 45,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 1933,
+  "durationMs": 3592,
   "node": "v20.20.2"
  },
  "ai": {
