@@ -2,17 +2,20 @@
 // Integrates Square of 9, Hexagon (60°), Jenkins Square-Root Time & Eighths, Gannzilla Seasonal Wheel,
 // Multi-Asset Proof Scanner, and Gann vs. Fundamental Events Historical Proof.
 
-import { h, mount, num, pct, tag, notice, empty } from '../ui.js';
+import { h, mount, num, pct, tag, notice, empty, toast } from '../ui.js';
 import { getCandles, marketState, ASSET_CATALOG } from '../market.js';
-import { analyzeGannHistoryAndForecast } from '../gann.js';
+import { analyzeGannHistoryAndForecast, generateGannWorkingProposals } from '../gann.js';
+import { chatDetailed } from '../llm.js';
 
 let gannViewState = {
   symbol: 'BTCUSDT',
+  customSymbol: '',
   tf: '1d',
   manualPrice: '',
   manualDate: '',
   wheelMode: 'sq9', // 'sq9' | 'hex' | 'cosmos'
   calcTab: 'jenkins', // 'jenkins' | 'eighths' | 'sq9' | 'hex'
+  calendarTab: 'zodiac12', // 'zodiac12' | 'planetary' | 'squares' | 'seasonal'
   loading: false,
   error: null,
   candles: null,
@@ -20,7 +23,38 @@ let gannViewState = {
   key: null,
   multiScanLoading: false,
   multiScanResults: null,
+  aiLoading: false,
+  aiAdvice: null,
 };
+
+async function askAiForGannProposal(a, ui) {
+  if (gannViewState.aiLoading || !a) return;
+  gannViewState.aiLoading = true;
+  ui.rerender();
+  const prompt = [
+    `נתח את הנכס ${gannViewState.symbol} (${gannViewState.tf}) לפי נתוני Gannzilla בזמן אמת:`,
+    `- מחיר נוכחי: ${a.currentPrice}, עוגן: ${a.anchorPivot.price} (${a.anchorPivot.type}), טבעת Sq9 #${a.jenkins.ringNumber}`,
+    `- זווית 1x1: ${a.angle1x1?.abovePrice ? 'מעל 1x1 (שורי)' : 'מתחת ל-1x1 (דובי)'} (${a.angle1x1?.projectedNow})`,
+    `- רמות Sq9 קרובות: ${a.sq9Levels.slice(0, 4).map((l) => `${l.degree}°=${l.price}`).join(', ')}`,
+    `- חלון ציר עתידי קרוב: ${a.futurePivots[0]?.date || '—'} (${a.futurePivots[0]?.confluenceLabel || ''})`,
+    `- הוכחה מול אירועים פונדמנטליסטיים: ${a.fundamentalProof.matchedCount}/${a.fundamentalProof.totalInSpan} (${a.fundamentalProof.matchRatePct}%)`,
+    'תן הצעת עבודה תמציתית ומדויקת בעברית: הטיה, תרחיש כניסה, יעדי Sq9, חלון זמן קריטי וניהול סיכון.',
+  ].join('\n');
+  try {
+    const res = await chatDetailed({
+      system: 'אתה חוקר גאן בכיר המייעץ למשתמש על בסיס Gannzilla, Square of 9, הקסגון ומייקל ג׳נקינס. השב בעברית מקצועית וברורה.',
+      messages: [{ role: 'user', content: prompt }],
+      maxTokens: 700,
+    });
+    gannViewState.aiAdvice = res.text;
+  } catch (err) {
+    gannViewState.aiAdvice = null;
+    toast('AI בענן לא זמין כרגע — מוצגות הצעות העבודה האוטומטיות למטה.', 'info');
+  } finally {
+    gannViewState.aiLoading = false;
+    ui.rerender();
+  }
+}
 
 function assetKindFor(symbol) {
   if (/USDT$|USD$/i.test(symbol) && !symbol.includes('=')) return 'crypto';
@@ -328,7 +362,24 @@ export function renderGann(root, ui) {
   mount(root,
     h('div', { class: 'card', style: { marginTop: '12px', padding: '12px 14px' } },
       h('div', { class: 'row', style: { gap: '10px', flexWrap: 'wrap', alignItems: 'center' } },
-        h('span', { class: 'small muted', text: '🎯 מצב עוגן (Anchor):' }),
+        h('span', { class: 'small muted', text: '🎯 התאמה והזנת נכס/עוגן:' }),
+        h('input', {
+          class: 'input',
+          type: 'text',
+          placeholder: 'סימול מותאם (למשל AMD, META)',
+          style: { width: '175px' },
+          value: gannViewState.customSymbol,
+          onchange: (e) => { gannViewState.customSymbol = e.target.value.trim().toUpperCase(); },
+        }),
+        h('button', {
+          class: 'btn btn-sm',
+          onclick: () => {
+            if (!gannViewState.customSymbol) return;
+            gannViewState.symbol = gannViewState.customSymbol;
+            gannViewState.key = null;
+            loadGannData(ui);
+          },
+        }, 'טען נכס מותאם'),
         h('input', {
           class: 'input',
           type: 'number',
@@ -608,6 +659,100 @@ export function renderGann(root, ui) {
           )
           : empty('לא נמצאו פגיעות בטווח זה'),
       ),
+    ),
+
+    // Expansive Gannzilla Calendars (Zodiac 12, Planetary Harmonics, Master Squares 52/90/144, Seasonal)
+    h('div', { class: 'card', style: { marginTop: '14px' } },
+      h('div', { class: 'card-head' },
+        h('div', {},
+          h('h2', { text: '📅 לוחות השנה המלאים של Gannzilla וגאן (Calendars Suite)' }),
+          h('div', { class: 'card-sub', text: 'לוח 12 המזלות (30°), מחזורים פלנטריים (מרקורי, נוגה, מאדים, אורנוס 84.77y), ריבועי מאסטר (52 / 90 / 144) ותאריכים עונתיים' }),
+        ),
+        h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } },
+          [
+            ['zodiac12', '12 המזלות (30°)'],
+            ['planetary', 'מחזורים פלנטריים'],
+            ['squares', 'ריבועי 52 / 90 / 144'],
+            ['seasonal', '8 תאריכים עונתיים'],
+          ].map(([id, lbl]) =>
+            h('button', {
+              class: `btn btn-sm ${gannViewState.calendarTab === id ? 'btn-primary' : ''}`,
+              onclick: () => { gannViewState.calendarTab = id; ui.rerender(); },
+            }, lbl)
+          ),
+        ),
+      ),
+      gannViewState.calendarTab === 'zodiac12'
+        ? h('div', { class: 'table-wrap' },
+          h('table', {},
+            h('thead', {}, h('tr', {}, h('th', { text: 'מעלה' }), h('th', { text: 'מזל / קלטת שמש' }), h('th', { text: 'תאריך קרוב' }), h('th', { text: 'בעוד' }))),
+            h('tbody', {}, (a.calendars.upcomingZodiac || []).map((z) => h('tr', {},
+              h('td', { class: 'mono', text: `${z.deg}°` }),
+              h('td', { class: 'small', text: z.sign }),
+              h('td', { class: 'mono', text: z.date }),
+              h('td', { class: 'mono green', text: `+${z.daysAhead}d` }),
+            ))),
+          ),
+        )
+        : gannViewState.calendarTab === 'planetary'
+          ? h('div', { class: 'table-wrap' },
+            h('table', {},
+              h('thead', {}, h('tr', {}, h('th', { text: 'מחזור פלנטרי' }), h('th', { text: 'אורך מחזור' }), h('th', { text: 'תאריך יעד קרוב מהעוגן' }), h('th', { text: 'בעוד' }))),
+              h('tbody', {}, (a.calendars.planetaryCycles || []).map((p) => h('tr', {},
+                h('td', { class: 'small', text: p.name }),
+                h('td', { class: 'mono', text: `${p.days}d` }),
+                h('td', { class: 'mono gold', text: p.date }),
+                h('td', { class: 'mono', text: `+${p.daysAhead}d` }),
+              ))),
+            ),
+          )
+          : gannViewState.calendarTab === 'squares'
+            ? h('div', { class: 'table-wrap' },
+              h('table', {},
+                h('thead', {}, h('tr', {}, h('th', { text: 'ריבוע מאסטר' }), h('th', { text: 'ימים' }), h('th', { text: 'משמעות' }), h('th', { text: 'תאריך יעד' }))),
+                h('tbody', {}, (a.calendars.masterSquares || []).map((m) => h('tr', {},
+                  h('td', { class: 'small', text: m.group }),
+                  h('td', { class: 'mono', text: `${m.days}d` }),
+                  h('td', { class: 'tiny muted', text: m.meaning }),
+                  h('td', { class: 'mono green', text: `${m.date} (+${m.daysAhead}d)` }),
+                ))),
+              ),
+            )
+            : h('div', { class: 'table-wrap' },
+              h('table', {},
+                h('thead', {}, h('tr', {}, h('th', { text: 'מעלה' }), h('th', { text: 'אירוע עונתי' }), h('th', { text: 'תאריך' }), h('th', { text: 'בעוד' }))),
+                h('tbody', {}, (a.calendars.upcomingSeasonal || []).map((s) => h('tr', {},
+                  h('td', { class: 'mono', text: `${s.deg}°` }),
+                  h('td', { class: 'small', text: s.label }),
+                  h('td', { class: 'mono', text: s.date }),
+                  h('td', { class: 'mono gold', text: `+${s.daysAhead}d` }),
+                ))),
+              ),
+            ),
+    ),
+
+    // Smart AI Working Proposals Panel
+    h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(167, 139, 250, 0.45)' } },
+      h('div', { class: 'card-head' },
+        h('div', {},
+          h('h2', { text: `🤖 הצעות AI לעבודה ומחקר חכם (${gannViewState.symbol})` }),
+          h('div', { class: 'card-sub', text: 'סינתזה אוטומטית של Square of 9, הקסגון, זווית 1x1 ולוחות השנה של Gannzilla להמלצת פעולה' }),
+        ),
+        h('button', {
+          class: 'btn btn-sm btn-primary',
+          disabled: gannViewState.aiLoading,
+          onclick: () => askAiForGannProposal(a, ui),
+        }, gannViewState.aiLoading ? '⏳ מפיק ניתוח AI…' : '✨ הפק הצעת עבודה מעמיקה מ-AI'),
+      ),
+      h('div', { class: 'grid cols-3', style: { gap: '10px', marginBottom: gannViewState.aiAdvice ? '12px' : '0' } },
+        ...(a.proposals || generateGannWorkingProposals(a, gannViewState.symbol)).map((pr) => h('div', { class: 'card', style: { background: 'rgba(8, 14, 24, 0.85)' } },
+          h('h3', { text: pr.title }),
+          h('p', { class: 'small muted', text: pr.detail }),
+        )),
+      ),
+      gannViewState.aiAdvice
+        ? h('div', { class: 'notice ok', style: { whiteSpace: 'pre-wrap', lineHeight: '1.6' }, text: gannViewState.aiAdvice })
+        : null,
     ),
   );
 }

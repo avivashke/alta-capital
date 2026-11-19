@@ -224,8 +224,12 @@ export function buildJenkinsSuite(swingHigh, swingLow, anchorPrice, anchorTs) {
   };
 }
 
-// Gannzilla Seasonal / Astronomical Calendar Wheel (Equinoxes, Solstices & 45° Cross-Quarters)
-export function buildGannzillaCalendars(lastTs) {
+// Full Gannzilla Calendar Suite:
+//  1. 8 Seasonal Cardinal/Ordinal Dates (Equinoxes & Solstices)
+//  2. 12 Solar / Tropical Zodiac 30° Ingress Dates
+//  3. Planetary Orbital Harmonics (Mercury 88d, Venus 225d, Sun 365d, Mars 687d, Saturn/Uranus 84.77y harmonics)
+//  4. Gann Master Squares (Square of 52, Square of 90, Square of 144, Decade/Anniversary)
+export function buildGannzillaCalendars(lastTs, anchorTs = lastTs) {
   const year = new Date(lastTs).getUTCFullYear();
   const seasonalTemplates = [
     { mmdd: '03-21', deg: 0,   label: '0° · שוויון האביב (Vernal Equinox)' },
@@ -238,23 +242,105 @@ export function buildGannzillaCalendars(lastTs) {
     { mmdd: '02-04', deg: 315, label: '315° · אמצע חורף (Gann Ordinal)' },
   ];
 
+  const zodiac12 = [
+    { mmdd: '03-21', deg: 0,   sign: 'טלה (Aries 0°)' },
+    { mmdd: '04-20', deg: 30,  sign: 'שור (Taurus 30°)' },
+    { mmdd: '05-21', deg: 60,  sign: 'תאומים (Gemini 60°)' },
+    { mmdd: '06-21', deg: 90,  sign: 'סרטן (Cancer 90°)' },
+    { mmdd: '07-23', deg: 120, sign: 'אריה (Leo 120°)' },
+    { mmdd: '08-23', deg: 150, sign: 'בתולה (Virgo 150°)' },
+    { mmdd: '09-23', deg: 180, sign: 'מאזניים (Libra 180°)' },
+    { mmdd: '10-23', deg: 210, sign: 'עקרב (Scorpio 210°)' },
+    { mmdd: '11-22', deg: 240, sign: 'קשת (Sagittarius 240°)' },
+    { mmdd: '12-21', deg: 270, sign: 'גדי (Capricorn 270°)' },
+    { mmdd: '01-20', deg: 300, sign: 'דלי (Aquarius 300°)' },
+    { mmdd: '02-19', deg: 330, sign: 'דגים (Pisces 330°)' },
+  ];
+
   const upcomingSeasonal = [];
+  const upcomingZodiac = [];
   for (const y of [year, year + 1]) {
     for (const s of seasonalTemplates) {
       const ts = Date.parse(`${y}-${s.mmdd}T00:00:00Z`);
       if (ts > lastTs && ts <= lastTs + 365 * DAY_MS) {
-        upcomingSeasonal.push({
-          date: `${y}-${s.mmdd}`,
-          ts,
-          deg: s.deg,
-          label: s.label,
-          daysAhead: Math.round((ts - lastTs) / DAY_MS),
-        });
+        upcomingSeasonal.push({ date: `${y}-${s.mmdd}`, ts, deg: s.deg, label: s.label, daysAhead: Math.round((ts - lastTs) / DAY_MS) });
+      }
+    }
+    for (const z of zodiac12) {
+      const ts = Date.parse(`${y}-${z.mmdd}T00:00:00Z`);
+      if (ts > lastTs && ts <= lastTs + 365 * DAY_MS) {
+        upcomingZodiac.push({ date: `${y}-${z.mmdd}`, ts, deg: z.deg, sign: z.sign, daysAhead: Math.round((ts - lastTs) / DAY_MS) });
       }
     }
   }
   upcomingSeasonal.sort((a, b) => a.ts - b.ts);
-  return { seasonalTemplates, upcomingSeasonal };
+  upcomingZodiac.sort((a, b) => a.ts - b.ts);
+
+  // Planetary Orbital Harmonics from Anchor Pivot
+  const basePlanets = [
+    { name: 'מרקורי (חצי מחזור · 44d)', days: 44 },
+    { name: 'מרקורי (הקפה מלאה · 88d)', days: 88 },
+    { name: 'נוגה (חצי מחזור · 112d)', days: 112 },
+    { name: 'נוגה (הקפה מלאה · 225d)', days: 225 },
+    { name: 'שמש / כדו"א (365.24d)', days: 365 },
+    { name: 'מאדים (חצי מחזור · 343d)', days: 343 },
+    { name: 'מאדים (הקפה מלאה · 687d)', days: 687 },
+    { name: 'אורנוס 84.77y (הרמוניית 1/360 · 86d)', days: 86 },
+  ];
+  const planetaryCycles = basePlanets.map((p) => {
+    let target = anchorTs + p.days * DAY_MS;
+    while (target <= lastTs) target += p.days * DAY_MS;
+    return {
+      ...p,
+      date: new Date(target).toISOString().slice(0, 10),
+      daysAhead: Math.round((target - lastTs) / DAY_MS),
+    };
+  }).sort((a, b) => a.daysAhead - b.daysAhead);
+
+  // Gann Master Squares (Square of 52, 90, 144)
+  const masterSquares = [
+    { group: 'Square of 52', days: 52, meaning: '52 ימים / 52 שבועות (מחזור שנתי של גאן)' },
+    { group: 'Square of 90', days: 90, meaning: 'רבעון 90° · מפנה מבני' },
+    { group: 'Square of 144', days: 144, meaning: '144 ימים (12²) · מחזור מאסטר פיבונאצ׳י-גאן' },
+    { group: 'Square of 144', days: 288, meaning: '288 ימים (2 × 144) · מחזור בינוני-ארוך' },
+    { group: 'Square of 360', days: 360, meaning: '360° מעגל שלם (שנה סוחרת של גאן)' },
+  ].map((m) => {
+    let target = anchorTs + m.days * DAY_MS;
+    while (target <= lastTs) target += m.days * DAY_MS;
+    return {
+      ...m,
+      date: new Date(target).toISOString().slice(0, 10),
+      daysAhead: Math.round((target - lastTs) / DAY_MS),
+    };
+  }).sort((a, b) => a.daysAhead - b.daysAhead);
+
+  return { seasonalTemplates, upcomingSeasonal, zodiac12, upcomingZodiac, planetaryCycles, masterSquares };
+}
+
+export function generateGannWorkingProposals(analysis, symbol = '') {
+  const nearestUpSq9 = analysis.sq9Levels.find((l) => l.price > analysis.currentPrice);
+  const nearestDnSq9 = analysis.sq9Levels.find((l) => l.price < analysis.currentPrice);
+  const nearestHexUp = analysis.hexLevels.find((l) => l.price > analysis.currentPrice);
+  const nextPivot = analysis.futurePivots[0];
+  const nextPlanetary = analysis.calendars?.planetaryCycles?.[0];
+  const bullish1x1 = analysis.angle1x1?.abovePrice;
+
+  return [
+    {
+      title: bullish1x1 ? '1. הטיה מבנית: שורי מעל זווית 1x1 (45°)' : '1. הטיה מבנית: זהירות מתחת לזווית 1x1 (45°)',
+      detail: bullish1x1
+        ? `${symbol} נסחר מעל קו ה-1x1 (${analysis.angle1x1?.projectedNow}). לפי גאן, כל עוד המחיר מחזיק מעל ה-1x1 יש להעדיף עסקאות לונג לכיוון התנגדות Sq9 הבאה (${nearestUpSq9?.price ?? '—'}).`
+        : `${symbol} מתחת לקו ה-1x1 (${analysis.angle1x1?.projectedNow}). יש להמתין לפריצה חזרה מעל 1x1 או לבדוק תמיכה ב-${nearestDnSq9?.price ?? '—'} לפני כניסה.`,
+    },
+    {
+      title: `2. יעדי מחיר מאוחדים (Sq9 + הקסגון + שמיניות)`,
+      detail: `התנגדות קרובה: Sq9 ${nearestUpSq9?.degree ?? ''}° (${nearestUpSq9?.price ?? '—'}) · הקסגון ${nearestHexUp?.degree ?? ''}° (${nearestHexUp?.price ?? '—'}). תמיכה קרובה: ${nearestDnSq9?.price ?? '—'}.`,
+    },
+    {
+      title: `3. חלון זמן קרוב להכנה (${nextPivot?.date || nextPlanetary?.date || '—'})`,
+      detail: `התכנסות זמן קרובה: ${nextPivot ? `${nextPivot.date} (+${nextPivot.daysAhead}d · ${nextPivot.confluenceLabel})` : '—'} · מחזור פלנטרי קרוב: ${nextPlanetary ? `${nextPlanetary.name} ב-${nextPlanetary.date}` : '—'}.`,
+    },
+  ];
 }
 
 export function computeGannAngles(candles, anchorPivot) {
@@ -478,7 +564,7 @@ export function analyzeGannHistoryAndForecast(
   const jenkins = buildJenkinsSuite(swingHigh, swingLow, anchorPivot.price, anchorPivot.t);
 
   // 4. Gannzilla Calendars
-  const calendars = buildGannzillaCalendars(lastTs);
+  const calendars = buildGannzillaCalendars(lastTs, anchorPivot.t);
 
   // 5. Gann Angles
   const angles = computeGannAngles(candles, anchorPivot);
@@ -533,7 +619,7 @@ export function analyzeGannHistoryAndForecast(
       };
     });
 
-  return {
+  const out = {
     ok: true,
     candlesCount: candles.length,
     spanDays: Math.round((lastTs - candles[0].t) / DAY_MS),
@@ -556,4 +642,6 @@ export function analyzeGannHistoryAndForecast(
     futurePivots,
     upcomingMacro: upcomingMacro.slice(0, 6),
   };
+  out.proposals = generateGannWorkingProposals(out);
+  return out;
 }
