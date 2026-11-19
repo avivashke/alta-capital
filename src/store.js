@@ -150,6 +150,34 @@ export const store = {
       exists.model = exists.model || model;
       exists.key = exists.key || (st.cloudflareProxyKey || '');
     }
+    // Ensure built-in zero-key network AI compute node (Pollinations OpenAI-compatible) is in the pool
+    const hasNetAi = st.pool.entries.find((e) => e.provider === 'pollinations');
+    if (!hasNetAi) {
+      st.pool.entries.push({
+        id: 'net_ai_pollinations',
+        provider: 'pollinations',
+        label: 'Pollinations AI (רשת פתוחה · חינם)',
+        shape: 'openai',
+        baseUrl: 'https://text.pollinations.ai/openai',
+        accountId: '',
+        model: 'openai',
+        key: '',
+        enabled: true,
+        valid: true,
+        weight: 1,
+        addedAt: Date.now(),
+        lastUsedAt: null,
+        uses: 0,
+        day: new Date().toISOString().slice(0, 10),
+        dayCount: 0,
+        minuteStart: 0,
+        minuteCount: 0,
+        cooldownUntil: 0,
+        failStreak: 0,
+        lastError: '',
+      });
+      st.pool.updatedAt = Date.now();
+    }
   },
 
   ensureTeam() {

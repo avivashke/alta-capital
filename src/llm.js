@@ -82,7 +82,7 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
     };
   }
 
-  if (!entry.key && entry.provider !== 'ollama' && !isProxyChat) throw new LlmError('חסר מפתח API');
+  if (!entry.key && entry.provider !== 'ollama' && entry.provider !== 'pollinations' && !isProxyChat) throw new LlmError('חסר מפתח API');
   const chatUrl = /\/chat(\/completions)?$/i.test(base) ? base : (base + '/chat/completions');
   return {
     url: chatUrl,
@@ -257,6 +257,7 @@ export function poolIsEmpty() {
 
 export async function testEntry(entry) {
   const state = store.state;
+  const started = Date.now();
   try {
     const reply = await callEntry(entry, {
       system: 'You are a health check. Reply with exactly: OK',
@@ -264,10 +265,16 @@ export async function testEntry(entry) {
       maxTokens: 20,
       temperature: 0,
     });
+    const ms = Date.now() - started;
+    entry.lastCheckedAt = Date.now();
+    entry.lastLatencyMs = ms;
+    entry.lastOk = true;
     if (entry.id !== 'legacy' && entry.id !== 'webllm') markUsed(state, entry);
     store.save();
-    return { ok: true, reply: (reply || '(ריק)').slice(0, 60) };
+    return { ok: true, ms, reply: (reply || '(ריק)').slice(0, 60) };
   } catch (err) {
+    entry.lastCheckedAt = Date.now();
+    entry.lastOk = false;
     if (entry.id !== 'legacy' && entry.id !== 'webllm') markFailure(state, entry, { status: err.status || 0, message: err.message });
     store.save();
     return { ok: false, error: err.message };

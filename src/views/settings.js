@@ -3,7 +3,7 @@ import { store } from '../store.js';
 import { LLM_PROVIDERS, PLATFORMS, DISCLAIMER } from '../config.js';
 import { testConnection, testPoolEntry } from '../llm.js';
 import { PROVIDERS, PROVIDER_ORDER } from '../providers.js';
-import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, parseCloudflareKeys, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
+import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, parseCloudflareKeys, parseWorkerProxies, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
 import { h, notice, toast, openModal, downloadFile, timeAgo, tag, copyText } from '../ui.js';
 import { syncFromCloud } from '../remote.js';
 import { dbState, testDatabaseConnection, pushStateToDatabase, pullFromDatabase, SUPABASE_SQL_SCHEMA } from '../db.js';
@@ -106,6 +106,7 @@ export function renderSettings(root, ui) {
   );
 
   mount(root, dbCard(ui));
+  mount(root, setupGuideCard());
 
   const directApiCard = h('div', { class: 'card', style: { marginTop: '14px' } },
     h('div', { class: 'card-head' },
@@ -479,6 +480,35 @@ function proxyCard(ui) {
     h('option', { value: 'qwen/qwen3.6-27b' }),
   );
 
+  const bulkProxies = h('textarea', {
+    rows: '2',
+    dir: 'ltr',
+    placeholder: 'https://worker-1.workers.dev/v1,openai/gpt-oss-120b\nhttps://worker-2.workers.dev/chat,llama-3.3-70b-versatile,OPTIONAL_KEY',
+    style: { width: '100%', fontFamily: 'ui-monospace, monospace', fontSize: '12px' },
+  });
+
+  const addBulkProxies = () => {
+    const list = parseWorkerProxies(bulkProxies.value);
+    if (!list.length) { toast('הזן לפחות כתובת Worker אחת תקינה (https://...)', 'bad'); return; }
+    let added = 0;
+    for (const item of list) {
+      let hostLabel = 'Cloudflare Worker Proxy';
+      try { hostLabel = `CF Worker · ${new URL(item.url).hostname.split('.')[0]}`; } catch {}
+      const res = addPoolEntry(store.state, {
+        provider: 'gateway',
+        baseUrl: item.url,
+        model: item.model || 'openai/gpt-oss-120b',
+        key: item.key || '',
+        label: hostLabel,
+      });
+      if (!res.duplicate) added++;
+    }
+    store.save(true);
+    store.emit();
+    toast(`${added}/${list.length} פרוקסים נוספו לבריכת הבינה המלאכותית`, added ? 'ok' : 'bad');
+    ui.rerender();
+  };
+
   const addProxy = () => {
     const url = proxyUrl.value.trim();
     if (!url) { toast('יש להזין כתובת Worker (URL)', 'bad'); proxyUrl.focus(); return; }
@@ -546,13 +576,20 @@ function proxyCard(ui) {
         ),
       ),
       h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '12px' } },
-        h('button', { class: 'btn btn-sm btn-primary', onclick: addProxy }, 'שמור והפעל פרוקסי'),
+        h('button', { class: 'btn btn-sm btn-primary', onclick: addProxy }, 'שמור והוסף פרוקסי לבריכה'),
         h('button', { class: 'btn btn-sm', onclick: async () => {
           addProxy();
           try { const r = await testConnection(); toast('הפרוקסי ענה: ' + r, 'ok'); }
           catch (err) { toast('בדיקת חיבור נכשלה: ' + err.message, 'bad'); }
           ui.rerender();
         } }, 'שמור ובדוק חיבור'),
+      ),
+      h('div', { style: { marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' } },
+        field('הוספת כמה פרוקסים בבת אחת (שורה לכל Worker: URL,MODEL,KEY)', bulkProxies),
+        h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '8px' } },
+          h('button', { class: 'btn btn-sm', onclick: addBulkProxies }, '+ הוסף כמה פרוקסים לבריכה'),
+          h('span', { class: 'tiny muted', text: 'כל הפרוקסים שנוספים כאן מסתובבים אוטומטית עם מפתחות ה-API בבריכה.' }),
+        ),
       ),
     ),
 
@@ -666,22 +703,35 @@ function poolCard(ui) {
     const [label, color] = STATUS_LABEL[status] || [status, 'dry'];
     const lim = limitsFor(entry);
     const cooling = entry.cooldownUntil > now ? Math.ceil((entry.cooldownUntil - now) / 1000) : 0;
+    const isHealthy = status === 'ready' && entry.lastOk === true;
+    const isBroken = status === 'invalid' || status === 'disabled' || status === 'cooling' || entry.lastOk === false || !!entry.lastError;
+    const healthBadge = isHealthy
+      ? tag(`🟢 תקין${entry.lastLatencyMs ? ' · ' + entry.lastLatencyMs + 'ms' : ''}`, 'live')
+      : isBroken
+        ? tag(`🔴 לא תקין (${label})`, 'red')
+        : tag(`⚪ מוכן (טרם נבדק)`, 'opt');
+
     return h('div', { class: 'row', style: { gap: '10px', padding: '10px 0', borderTop: '1px solid rgba(255,255,255,0.06)', alignItems: 'flex-start' } },
       h('div', { class: 'grow' },
         h('div', { class: 'row wrap', style: { gap: '6px' } },
           h('b', { style: { fontSize: '13px' }, text: entry.label || def.label }),
           tag(entry.model || '—', 'dry'),
-          tag(label, color),
+          healthBadge,
         ),
         h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: [
-          entry.key ? '••••' + entry.key.slice(-4) : 'ללא מפתח',
+          entry.key ? '••••' + entry.key.slice(-4) : (def.noKey ? 'חיבור פתוח ללא מפתח' : 'ללא מפתח'),
           entry.accountId ? 'acct ' + entry.accountId.slice(0, 8) + '…' : null,
           `${entry.dayCount || 0}${lim.rpd ? '/' + lim.rpd : ''} בקשות היום`,
           cooling ? `קירור ${cooling}s` : null,
-          entry.lastError ? entry.lastError.slice(0, 90) : null,
+          entry.lastError ? 'שגיאה: ' + entry.lastError.slice(0, 90) : null,
         ].filter(Boolean).join(' · ') }),
       ),
-      h('div', { class: 'row', style: { gap: '4px' } },
+      h('div', { class: 'row wrap', style: { gap: '4px' } },
+        !isHealthy ? h('button', {
+          class: 'btn btn-sm',
+          style: { borderColor: 'rgba(224, 182, 74, 0.45)', color: '#f0d28a' },
+          onclick: () => showConnectionGuideModal(entry),
+        }, '📖 מדריך חיבור') : null,
         h('button', {
           class: 'btn btn-sm',
           onclick: async (e) => {
@@ -689,7 +739,7 @@ function poolCard(ui) {
             btn.disabled = true;
             btn.textContent = '…';
             const res = await testPoolEntry(entry.id);
-            toast(res.ok ? `${def.label} ענה: ${res.reply}` : `${def.label}: ${res.error}`, res.ok ? 'ok' : 'bad');
+            toast(res.ok ? `${def.label} ענה (${res.ms}ms): ${res.reply}` : `${def.label}: ${res.error}`, res.ok ? 'ok' : 'bad');
             ui.rerender();
           },
         }, 'בדוק'),
@@ -944,6 +994,55 @@ function dbCard(ui) {
       }, '👁 הצג SQL ל-Supabase'),
     ),
     dbState.lastError ? h('div', { class: 'small red', style: { marginTop: '8px' }, text: `שגיאה אחרונה: ${dbState.lastError}` }) : null,
+  );
+}
+
+function showConnectionGuideModal(entry) {
+  const def = PROVIDERS[entry.provider] || {};
+  const isGateway = entry.provider === 'gateway';
+  const isCf = entry.provider === 'cloudflare';
+  const body = h('div', { style: { lineHeight: '1.7' } },
+    entry.lastError ? notice('שגיאה אחרונה בחיבור: ' + entry.lastError, 'bad') : null,
+    h('h3', { style: { marginTop: '10px' }, text: `איך מחברים ומתקנים: ${entry.label || def.label || entry.provider}` }),
+    isGateway ? h('ol', { style: { paddingInlineStart: '20px' } },
+      h('li', {}, 'היכנס ל-Cloudflare Dashboard → Workers & Pages → בחר את ה-Worker שלך.'),
+      h('li', {}, 'ודא שיש ל-Worker משתנה סודי (Settings → Variables and Secrets) בשם GROQ_API_KEY או מפתח ספק תקף.'),
+      h('li', {}, 'ודא שכתובת ה-Worker מסתיימת ב-/v1 או /chat ומחזירה כותרות CORS פתוחות.'),
+      h('li', {}, 'אם ה-Worker מוגן בטוקן, הדבק את הטוקן בשדה המפתח ולחץ "בדוק".'),
+    ) : isCf ? h('ol', { style: { paddingInlineStart: '20px' } },
+      h('li', {}, 'ב-Cloudflare Dashboard → Workers & Pages → Overview העתק את ה-Account ID (32 תווים).'),
+      h('li', {}, 'לחץ על הפרופיל (למעלה מימין) → My Profile → API Tokens → Create Token → בחר תבנית Workers AI.'),
+      h('li', {}, 'הזן Account ID + Token בבריכת המודלים (או כ-CLOUDFLARE_ACCOUNT_ID ו-CLOUDFLARE_API_TOKEN ב-Netlify).'),
+    ) : h('ol', { style: { paddingInlineStart: '20px' } },
+      h('li', {}, `היכנס לדף המפתחות של ${def.label || entry.provider}: `, def.keyUrl ? h('a', { href: def.keyUrl, target: '_blank', rel: 'noopener', text: def.keyUrl }) : '—'),
+      h('li', {}, 'צור מפתח API חדש (API Keys → Create Key) והדבק אותו כאן בבריכת המודלים.'),
+      h('li', {}, `הגדר גם ב-Netlify → Site configuration → Environment variables את המשתנה: ${ENV_HINT[entry.provider] || 'API_KEY'}.`),
+      h('li', {}, 'אם הספק חוסם CORS בדפדפן, המערכת מנתבת אוטומטית דרך /api/llm ב-Netlify.'),
+    ),
+  );
+  openModal(`מדריך חיבור · ${entry.label || def.label || entry.provider}`, body);
+}
+
+function setupGuideCard() {
+  return h('details', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(88, 166, 255, 0.3)' } },
+    h('summary', { style: { cursor: 'pointer', padding: '4px 2px', fontWeight: '800', fontSize: '16px' } },
+      '📘 מדריך הקמה מלא (Netlify Environment Variables + Supabase + Cloudflare + AI Pool)',
+    ),
+    h('div', { style: { marginTop: '12px', lineHeight: '1.75' } },
+      notice('כדי שהמערכת תרוץ 24/7 ב-Netlify ותאסוף נתונים באופן רציף, הגדר את המשתנים הבאים ב-Netlify Dashboard → Site configuration → Environment variables:', 'blue'),
+      h('div', { class: 'grid cols-2', style: { gap: '12px', marginTop: '10px' } },
+        h('div', { class: 'card', style: { background: 'rgba(8, 13, 22, 0.85)' } },
+          h('h3', { text: '1. Database (Supabase PostgreSQL)' }),
+          h('div', { class: 'small muted', text: 'Supabase Dashboard → Project Settings → API Keys:' }),
+          h('pre', { class: 'code', style: { marginTop: '6px' }, text: 'SUPABASE_URL=https://lqiakdsdpdvdlobeeovz.supabase.co\nSUPABASE_ANON_KEY=eyJ... (המפתח הציבורי מ-API Keys)' }),
+        ),
+        h('div', { class: 'card', style: { background: 'rgba(8, 13, 22, 0.85)' } },
+          h('h3', { text: '2. Cloudflare Workers & Free AI Pool' }),
+          h('div', { class: 'small muted', text: 'Cloudflare Dashboard / Groq / Gemini / OpenRouter:' }),
+          h('pre', { class: 'code', style: { marginTop: '6px' }, text: 'LLM_GATEWAY_URL=https://alta-groq.avivashke95.workers.dev/v1\nCLOUDFLARE_ACCOUNT_ID=...\nCLOUDFLARE_API_TOKEN=...\nGROQ_API_KEY=gsk_...\nGEMINI_API_KEY=AIza...\nOPENROUTER_API_KEY=sk-or-...' }),
+        ),
+      ),
+    ),
   );
 }
 

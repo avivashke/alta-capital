@@ -4,12 +4,23 @@
 // the OpenAI chat-completions shape, so one request builder covers the lot.
 
 export const PROVIDER_ORDER = [
-  'groq', 'gemini', 'zai', 'openrouter', 'cloudflare', 'mistral',
+  'pollinations', 'groq', 'gemini', 'zai', 'openrouter', 'cloudflare', 'mistral',
   'nvidia', 'cohere', 'xai', 'deepseek', 'together', 'openai',
   'anthropic', 'gateway', 'ollama', 'webllm', 'custom',
 ];
 
 export const PROVIDERS = {
+  pollinations: {
+    label: 'Pollinations AI (רשת פתוחה · חינם ללא מפתח)',
+    shape: 'openai',
+    baseUrl: 'https://text.pollinations.ai/openai',
+    models: ['openai', 'mistral', 'llama'],
+    free: true,
+    noKey: true,
+    limits: { rpm: 15, rpd: 500 },
+    keyUrl: 'https://pollinations.ai',
+    note: 'כוח מחשוב AI חינמי מהרשת הפתוחה ללא צורך במפתח API. משמש כשכבת בסיס וגיבוי אוטומטי בבריכה.',
+  },
   groq: {
     label: 'Groq',
     shape: 'openai',
