@@ -103,11 +103,37 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
 }
 
 function extractText(shape, data) {
+  if (typeof data === 'string') return data.trim();
   if (shape === 'anthropic') return (data.content || []).map((c) => c.text || '').join('\n').trim();
   if (shape === 'gemini') return (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('\n').trim();
   if (typeof data?.reply === 'string') return data.reply.trim();
+  if (typeof data?.response === 'string') return data.response.trim();
+  if (typeof data?.text === 'string') return data.text.trim();
+  if (typeof data?.output === 'string') return data.output.trim();
   if (typeof data?.result?.response === 'string') return data.result.response.trim();
-  return (data.choices?.[0]?.message?.content || '').trim();
+  return (data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || '').trim();
+}
+
+function gatewayCandidateUrls(primaryUrl) {
+  const list = [primaryUrl];
+  try {
+    const u = new URL(primaryUrl);
+    const origin = u.origin;
+    for (const p of ['/v1/chat/completions', '/chat/completions', '/chat', '/']) {
+      const candidate = origin + p;
+      if (!list.includes(candidate)) list.push(candidate);
+    }
+  } catch { /* ignore */ }
+  return list;
+}
+
+async function parseResponsePayload(res, shape) {
+  const raw = await res.text();
+  try {
+    return extractText(shape || 'openai', JSON.parse(raw));
+  } catch {
+    return raw.trim();
+  }
 }
 
 async function callViaNetlifyProxy(url, init, shape) {
@@ -123,8 +149,7 @@ async function callViaNetlifyProxy(url, init, shape) {
     }),
   });
   if (!res.ok) throw await readError(res);
-  const data = await res.json();
-  return extractText(shape || 'openai', data);
+  return await parseResponsePayload(res, shape);
 }
 
 async function callEntry(entry, opts) {
@@ -138,25 +163,53 @@ async function callEntry(entry, opts) {
     return text;
   }
   const { url, init } = buildRequest(entry, opts);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    const res = await fetch(url, { ...init, signal: controller.signal });
-    if (!res.ok) throw await readError(res);
-    const data = await res.json();
-    return extractText(entry.shape || 'openai', data);
-  } catch (err) {
-    if (err?.name === 'AbortError') throw new LlmError('המודל/פרוקסי לא ענה בזמן (timeout)', 408);
-    if (err instanceof LlmError) throw err;
-    // Browser CORS or network error -> try forwarding via Netlify Function /api/llm
+  const urlsToTry = entry.provider === 'gateway' ? gatewayCandidateUrls(url) : [url];
+  let lastErr = null;
+
+  for (const targetUrl of urlsToTry) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
-      return await callViaNetlifyProxy(url, init, entry.shape || 'openai');
-    } catch {
-      throw new LlmError(err?.message || 'שגיאת רשת בחיבור למודל/פרוקסי', 0);
+      const res = await fetch(targetUrl, { ...init, signal: controller.signal });
+      if (!res.ok) {
+        const err = await readError(res);
+        // If a Cloudflare Worker doesn't mount /v1/chat/completions, try /chat/completions, /chat, or /
+        if (entry.provider === 'gateway' && (res.status === 404 || res.status === 405)) {
+          lastErr = err;
+          continue;
+        }
+        throw err;
+      }
+      const text = await parseResponsePayload(res, entry.shape || 'openai');
+      // Remember resolved working route on the gateway entry
+      if (entry.provider === 'gateway' && targetUrl !== url) {
+        entry.baseUrl = targetUrl.replace(/\/chat\/completions$/i, '');
+      }
+      return text;
+    } catch (err) {
+      if (err?.name === 'AbortError') throw new LlmError('המודל/פרוקסי לא ענה בזמן (timeout)', 408);
+      if (err instanceof LlmError) {
+        if (entry.provider === 'gateway' && (err.status === 404 || err.status === 405)) {
+          lastErr = err;
+          continue;
+        }
+        throw err;
+      }
+      // Browser CORS or network error -> try forwarding via Netlify Function /api/llm
+      try {
+        return await callViaNetlifyProxy(targetUrl, init, entry.shape || 'openai');
+      } catch (proxyErr) {
+        lastErr = proxyErr instanceof LlmError ? proxyErr : new LlmError(err?.message || 'שגיאת רשת בחיבור למודל/פרוקסי', 0);
+        if (entry.provider === 'gateway' && (lastErr.status === 404 || lastErr.status === 405)) {
+          continue;
+        }
+        throw lastErr;
+      }
+    } finally {
+      clearTimeout(timer);
     }
-  } finally {
-    clearTimeout(timer);
   }
+  throw lastErr || new LlmError('הפרוקסי לא החזיר תגובה תקינה', 0);
 }
 
 export function legacyEntry(state = store.state) {

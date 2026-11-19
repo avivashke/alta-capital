@@ -132,38 +132,66 @@ export const store = {
     if (!st.pool || !Array.isArray(st.pool.entries)) st.pool = { entries: [], updatedAt: null };
     // Remove deprecated pollinations entry if present
     st.pool.entries = st.pool.entries.filter((e) => e.provider !== 'pollinations');
-    // ensure our embedded gateway proxy is in the pool alongside any other API keys & proxies
-    const exists = st.pool.entries.find((e) => e.provider === 'gateway' && (e.baseUrl || '').replace(/\/+$/,'') === url.replace(/\/+$/,''));
-    if (!exists) {
-      st.pool.entries.unshift({
+
+    const defaultWorkers = [
+      {
         id: 'cf_proxy_default',
-        provider: 'gateway',
         label: 'Cloudflare Worker Proxy (Alta)',
-        shape: 'openai',
         baseUrl: url,
-        accountId: '',
         model,
         key: st.cloudflareProxyKey || '',
-        enabled: true,
-        valid: true,
-        weight: 1,
-        addedAt: Date.now(),
-        lastUsedAt: null,
-        uses: 0,
-        day: new Date().toISOString().slice(0,10),
-        dayCount: 0,
-        minuteStart: 0,
-        minuteCount: 0,
-        cooldownUntil: 0,
-        failStreak: 0,
-        lastError: '',
-      });
-      st.pool.updatedAt = Date.now();
-    } else {
-      exists.enabled = exists.enabled !== false;
-      exists.valid = exists.valid !== false;
-      if (!exists.model || exists.model === 'openai/gpt-oss-120b') exists.model = model;
-      exists.key = exists.key || (st.cloudflareProxyKey || '');
+      },
+      {
+        id: 'cf_proxy_tight_cake',
+        label: 'CF Worker · tight-cake-d704',
+        baseUrl: 'https://tight-cake-d704.avivashke95.workers.dev/v1',
+        model: 'llama-3.3-70b-versatile',
+        key: '',
+      },
+    ];
+
+    const hostOf = (u) => {
+      try { return new URL(u).hostname.toLowerCase(); } catch { return String(u || '').replace(/\/+$/, '').toLowerCase(); }
+    };
+
+    for (const w of defaultWorkers) {
+      const targetNorm = w.baseUrl.replace(/\/+$/, '').toLowerCase();
+      const targetHost = hostOf(w.baseUrl);
+      const exists = st.pool.entries.find((e) => e.provider === 'gateway' && (
+        (e.baseUrl || '').replace(/\/+$/, '').toLowerCase() === targetNorm
+        || hostOf(e.baseUrl) === targetHost
+      ));
+      if (!exists) {
+        st.pool.entries.unshift({
+          id: w.id,
+          provider: 'gateway',
+          label: w.label,
+          shape: 'openai',
+          baseUrl: w.baseUrl,
+          accountId: '',
+          model: w.model,
+          key: w.key,
+          enabled: true,
+          valid: true,
+          weight: 1,
+          addedAt: Date.now(),
+          lastUsedAt: null,
+          uses: 0,
+          day: new Date().toISOString().slice(0, 10),
+          dayCount: 0,
+          minuteStart: 0,
+          minuteCount: 0,
+          cooldownUntil: 0,
+          failStreak: 0,
+          lastError: '',
+        });
+        st.pool.updatedAt = Date.now();
+      } else {
+        exists.enabled = exists.enabled !== false;
+        exists.valid = exists.valid !== false;
+        if (!exists.model || exists.model === 'openai/gpt-oss-120b') exists.model = w.model;
+        if (w.key) exists.key = exists.key || w.key;
+      }
     }
   },
 

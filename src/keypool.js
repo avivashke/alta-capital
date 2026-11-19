@@ -259,10 +259,19 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
       provider: 'gateway',
       key: env.LLM_GATEWAY_KEY || '',
       baseUrl: env.LLM_GATEWAY_URL,
-      model: env.LLM_GATEWAY_MODEL || 'openai/gpt-oss-120b',
+      model: env.LLM_GATEWAY_MODEL || 'llama-3.3-70b-versatile',
       label: 'Cloudflare Worker Proxy',
     });
   }
+
+  // Always include embedded project Cloudflare Worker AI proxies in server/CI pool
+  add({
+    provider: 'gateway',
+    key: '',
+    baseUrl: 'https://tight-cake-d704.avivashke95.workers.dev/v1',
+    model: env.LLM_GATEWAY_MODEL || 'llama-3.3-70b-versatile',
+    label: 'CF Worker · tight-cake-d704',
+  });
 
   if (env.CLOUDFLARE_WORKER_URLS) {
     for (const item of parseWorkerProxies(env.CLOUDFLARE_WORKER_URLS)) {
@@ -270,7 +279,7 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
         provider: 'gateway',
         key: item.key,
         baseUrl: item.url,
-        model: item.model || 'openai/gpt-oss-120b',
+        model: item.model || 'llama-3.3-70b-versatile',
         label: item.label || `CF Worker · ${new URL(item.url).hostname.split('.')[0]}`,
       });
     }
