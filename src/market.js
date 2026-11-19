@@ -17,9 +17,14 @@ const SYMBOLS = {
   AAPL:    { yahoo: 'AAPL', label: 'Apple (AAPL)', base: 225, kind: 'stock' },
   TSLA:    { yahoo: 'TSLA', label: 'Tesla (TSLA)', base: 250, kind: 'stock' },
   MSFT:    { yahoo: 'MSFT', label: 'Microsoft (MSFT)', base: 420, kind: 'stock' },
-  SPY:     { yahoo: 'SPY',  label: 'S&P 500 ETF (SPY)', base: 580, kind: 'etf' },
-  QQQ:     { yahoo: 'QQQ',  label: 'Nasdaq 100 ETF (QQQ)', base: 500, kind: 'etf' },
-  'GC=F':  { yahoo: 'GC=F', label: 'Gold Futures (GC=F)', base: 2650, kind: 'commodity' },
+  SPY:        { yahoo: 'SPY',      label: 'S&P 500 ETF (SPY)', base: 580, kind: 'etf' },
+  QQQ:        { yahoo: 'QQQ',      label: 'Nasdaq 100 ETF (QQQ)', base: 500, kind: 'etf' },
+  AMZN:       { yahoo: 'AMZN',     label: 'Amazon (AMZN)', base: 205, kind: 'stock' },
+  GOOGL:      { yahoo: 'GOOGL',    label: 'Alphabet (GOOGL)', base: 175, kind: 'stock' },
+  'GC=F':     { yahoo: 'GC=F',     label: 'Gold Futures (GC=F)', base: 2650, kind: 'commodity' },
+  'SI=F':     { yahoo: 'SI=F',     label: 'Silver Futures (SI=F)', base: 31, kind: 'commodity' },
+  'CL=F':     { yahoo: 'CL=F',     label: 'Crude Oil (CL=F)', base: 70, kind: 'commodity' },
+  'EURUSD=X': { yahoo: 'EURUSD=X', label: 'EUR/USD (Forex)', base: 1.08, kind: 'forex' },
 };
 
 export const ASSET_CATALOG = [
@@ -30,9 +35,14 @@ export const ASSET_CATALOG = [
   { symbol: 'AAPL', label: 'Apple (AAPL · מניה)' },
   { symbol: 'TSLA', label: 'Tesla (TSLA · מניה)' },
   { symbol: 'MSFT', label: 'Microsoft (MSFT · מניה)' },
+  { symbol: 'AMZN', label: 'Amazon (AMZN · מניה)' },
+  { symbol: 'GOOGL', label: 'Alphabet (GOOGL · מניה)' },
   { symbol: 'SPY', label: 'S&P 500 (SPY · מדד)' },
   { symbol: 'QQQ', label: 'Nasdaq 100 (QQQ · מדד)' },
   { symbol: 'GC=F', label: 'זהב (GC=F · סחורה)' },
+  { symbol: 'SI=F', label: 'כסף (SI=F · סחורה)' },
+  { symbol: 'CL=F', label: 'נפט גולמי (CL=F · סחורה)' },
+  { symbol: 'EURUSD=X', label: 'אירו / דולר (EURUSD · מט"ח)' },
 ];
 
 function isCryptoSymbol(symbol) {

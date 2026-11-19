@@ -1,7 +1,7 @@
-// Dedicated Educational Gann Research & Forecasting Page (#/gann)
-// Combines Square of 9 Vibration Levels, Gann Angles (1x1..4x1), and Master Time & Calendar Cycles.
+// Dedicated Educational & Interactive Gannzilla / Michael Jenkins Forecasting Lab (#/gann)
+// Integrates Square of 9, Hexagon (60°), Jenkins Square-Root Time & Eighths, Gannzilla Seasonal Wheel,
+// Multi-Asset Proof Scanner, and Gann vs. Fundamental Events Historical Proof.
 
-import { store } from '../store.js';
 import { h, mount, num, pct, tag, notice, empty } from '../ui.js';
 import { getCandles, marketState, ASSET_CATALOG } from '../market.js';
 import { analyzeGannHistoryAndForecast } from '../gann.js';
@@ -9,15 +9,29 @@ import { analyzeGannHistoryAndForecast } from '../gann.js';
 let gannViewState = {
   symbol: 'BTCUSDT',
   tf: '1d',
+  manualPrice: '',
+  manualDate: '',
+  wheelMode: 'sq9', // 'sq9' | 'hex' | 'cosmos'
+  calcTab: 'jenkins', // 'jenkins' | 'eighths' | 'sq9' | 'hex'
   loading: false,
   error: null,
   candles: null,
   analysis: null,
   key: null,
+  multiScanLoading: false,
+  multiScanResults: null,
 };
 
+function assetKindFor(symbol) {
+  if (/USDT$|USD$/i.test(symbol) && !symbol.includes('=')) return 'crypto';
+  if (symbol === 'SPY' || symbol === 'QQQ') return 'etf';
+  if (symbol.includes('=F')) return 'commodity';
+  if (symbol.includes('=X')) return 'forex';
+  return 'stock';
+}
+
 async function loadGannData(ui) {
-  const key = `${gannViewState.symbol}|${gannViewState.tf}`;
+  const key = `${gannViewState.symbol}|${gannViewState.tf}|${gannViewState.manualPrice}|${gannViewState.manualDate}`;
   if (gannViewState.loading && gannViewState.key === key) return;
   gannViewState.key = key;
   gannViewState.loading = true;
@@ -26,7 +40,12 @@ async function loadGannData(ui) {
   try {
     const candles = await getCandles(gannViewState.symbol, gannViewState.tf, { limit: 700, force: false });
     const lookback = gannViewState.tf === '1w' ? 5 : 10;
-    const analysis = analyzeGannHistoryAndForecast(candles, { lookback });
+    const analysis = analyzeGannHistoryAndForecast(candles, {
+      lookback,
+      manualAnchorPrice: gannViewState.manualPrice ? Number(gannViewState.manualPrice) : null,
+      manualAnchorDate: gannViewState.manualDate || null,
+      assetKind: assetKindFor(gannViewState.symbol),
+    });
     if (!analysis.ok) throw new Error(analysis.error);
     gannViewState.candles = candles;
     gannViewState.analysis = analysis;
@@ -38,28 +57,63 @@ async function loadGannData(ui) {
   }
 }
 
+async function runMultiAssetGannScan(ui) {
+  if (gannViewState.multiScanLoading) return;
+  gannViewState.multiScanLoading = true;
+  ui.rerender();
+  const scanSymbols = ['BTCUSDT', 'ETHUSDT', 'NVDA', 'AAPL', 'SPY', 'GC=F', 'CL=F', 'EURUSD=X'];
+  const results = [];
+  for (const sym of scanSymbols) {
+    try {
+      const candles = await getCandles(sym, '1d', { limit: 600, force: false });
+      const a = analyzeGannHistoryAndForecast(candles, { lookback: 10, assetKind: assetKindFor(sym) });
+      if (a.ok) {
+        results.push({
+          symbol: sym,
+          label: ASSET_CATALOG.find((x) => x.symbol === sym)?.label || sym,
+          currentPrice: a.currentPrice,
+          hitRatePct: a.hitRatePct,
+          totalHits: a.totalHits,
+          totalTests: a.totalTests,
+          fundMatched: a.fundamentalProof.matchedCount,
+          fundTotal: a.fundamentalProof.totalInSpan,
+          fundRatePct: a.fundamentalProof.matchRatePct,
+          nextPivot: a.futurePivots[0]?.date || '—',
+        });
+      }
+    } catch { /* skip failed asset */ }
+  }
+  gannViewState.multiScanResults = results;
+  gannViewState.multiScanLoading = false;
+  ui.rerender();
+}
+
+function svgEl(tag, attrs, text) {
+  const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, String(v));
+  if (text != null) node.textContent = text;
+  return node;
+}
+
 function renderGannForecastSvg(candles, analysis) {
-  const show = Math.min(candles.length, 220);
+  const show = Math.min(candles.length, 240);
   const slice = candles.slice(-show);
   const offset = candles.length - show;
   const closes = slice.map((c) => c.c);
   const highs = slice.map((c) => c.h);
   const lows = slice.map((c) => c.l);
 
-  const nearbySq9 = analysis.sq9Levels
-    .filter((l) => Math.abs(l.distPct) <= 25)
-    .slice(0, 6);
-
+  const nearbySq9 = analysis.sq9Levels.filter((l) => Math.abs(l.distPct) <= 28).slice(0, 6);
   const maxV = Math.max(...highs, ...nearbySq9.map((l) => l.price));
   const minV = Math.min(...lows, ...nearbySq9.map((l) => l.price));
   const range = maxV - minV || 1;
 
-  const width = 920;
-  const height = 340;
-  const padL = 56;
-  const padR = 140; // space on right for future time projection zone!
-  const padT = 22;
-  const padB = 28;
+  const width = 940;
+  const height = 350;
+  const padL = 58;
+  const padR = 175;
+  const padT = 24;
+  const padB = 30;
   const chartW = width - padL - padR;
   const chartH = height - padT - padB;
 
@@ -74,76 +128,158 @@ function renderGannForecastSvg(candles, analysis) {
   svg.style.background = 'linear-gradient(180deg, #0b1220, #070c14)';
   svg.style.borderRadius = '12px';
 
-  const el = (tag, attrs, text) => {
-    const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
-    for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, String(v));
-    if (text != null) node.textContent = text;
-    return node;
-  };
-
   // Future Forecast Zone Background
-  svg.appendChild(el('rect', {
+  svg.appendChild(svgEl('rect', {
     x: padL + chartW, y: padT, width: padR - 8, height: chartH,
-    fill: 'rgba(167, 139, 250, 0.06)', stroke: 'rgba(167, 139, 250, 0.25)', 'stroke-dasharray': '4,4',
+    fill: 'rgba(167, 139, 250, 0.07)', stroke: 'rgba(167, 139, 250, 0.3)', 'stroke-dasharray': '4,4',
   }));
-  svg.appendChild(el('text', {
+  svg.appendChild(svgEl('text', {
     x: padL + chartW + 8, y: padT + 14, fill: '#c4b5fd', 'font-size': '10', 'font-weight': '700',
-  }, 'אזור חיזוי עתידי'));
+  }, 'אזור חיזוי עתידי (גאן + מאקרו)'));
 
-  // Grid lines
+  // Horizontal Grid lines
   for (let i = 0; i <= 4; i++) {
     const val = minV + (range * i) / 4;
     const y = yAt(val);
-    svg.appendChild(el('line', { x1: padL, x2: width - 8, y1: y, y2: y, stroke: '#162235', 'stroke-width': 1 }));
-    svg.appendChild(el('text', { x: 4, y: y + 4, fill: '#8fa3bf', 'font-size': '10' }, val >= 100 ? val.toFixed(0) : val.toFixed(2)));
+    svg.appendChild(svgEl('line', { x1: padL, x2: width - 8, y1: y, y2: y, stroke: '#162235', 'stroke-width': 1 }));
+    svg.appendChild(svgEl('text', { x: 4, y: y + 4, fill: '#8fa3bf', 'font-size': '10' }, val >= 100 ? val.toFixed(0) : val.toFixed(2)));
   }
 
-  // Square of 9 Cardinal & Ordinal Lines
+  // Square of 9 Levels
   for (const lvl of nearbySq9) {
     const y = yAt(lvl.price);
     const col = lvl.isCardinal ? 'rgba(41, 98, 255, 0.85)' : 'rgba(167, 139, 250, 0.5)';
-    svg.appendChild(el('line', {
+    svg.appendChild(svgEl('line', {
       x1: padL, x2: width - 8, y1: y, y2: y,
       stroke: col, 'stroke-width': lvl.isCardinal ? 1.4 : 1, 'stroke-dasharray': lvl.isCardinal ? '0' : '4,4',
     }));
-    svg.appendChild(el('text', {
+    svg.appendChild(svgEl('text', {
       x: padL + chartW + 8, y: y - 3, fill: lvl.isCardinal ? '#7dd3fc' : '#c4b5fd', 'font-size': '9.5',
     }, `${lvl.degree}° (${lvl.price >= 100 ? lvl.price.toFixed(0) : lvl.price.toFixed(2)})`));
   }
 
   // Price Polyline
   const pts = closes.map((c, i) => `${xAt(i).toFixed(1)},${yAt(c).toFixed(1)}`).join(' ');
-  svg.appendChild(el('polyline', { points: pts, fill: 'none', stroke: '#2ecc71', 'stroke-width': 2 }));
+  svg.appendChild(svgEl('polyline', { points: pts, fill: 'none', stroke: '#2ecc71', 'stroke-width': 2 }));
 
-  // Historical Pivots (dots)
+  // Proven Fundamental Events Stars on Chart
+  for (const fe of analysis.fundamentalProof.events) {
+    if (!fe.proven) continue;
+    const evTs = Date.parse(`${fe.date}T00:00:00Z`);
+    const idxInSlice = slice.findIndex((c) => Math.abs(c.t - evTs) <= 3 * 86_400_000);
+    if (idxInSlice < 0) continue;
+    const cx = xAt(idxInSlice);
+    const cy = yAt(slice[idxInSlice].c);
+    svg.appendChild(svgEl('line', { x1: cx, x2: cx, y1: padT, y2: padT + chartH, stroke: 'rgba(242, 204, 96, 0.35)', 'stroke-dasharray': '2,3' }));
+    svg.appendChild(svgEl('text', { x: cx - 5, y: cy - 8, fill: '#f2cc60', 'font-size': '13' }, '★'));
+  }
+
+  // Historical Pivots
   for (const p of analysis.pivots) {
     const rel = p.idx - offset;
     if (rel < 0 || rel >= show) continue;
-    svg.appendChild(el('circle', {
+    svg.appendChild(svgEl('circle', {
       cx: xAt(rel), cy: yAt(p.price), r: 4,
       fill: p.type === 'low' ? '#2ecc71' : '#f05b5b',
       stroke: '#070c14', 'stroke-width': 1.2,
     }));
   }
 
-  // Future Projected Time Lines inside the forecast zone
-  analysis.futurePivots.slice(0, 4).forEach((fp, idx) => {
-    const fx = padL + chartW + 16 + idx * 28;
-    svg.appendChild(el('line', {
-      x1: fx, x2: fx, y1: padT + 20, y2: padT + chartH,
-      stroke: fp.score >= 4 ? '#f2cc60' : 'rgba(167, 139, 250, 0.55)',
-      'stroke-width': fp.score >= 4 ? 1.8 : 1, 'stroke-dasharray': '3,3',
+  // Future Projected Time Lines
+  analysis.futurePivots.slice(0, 5).forEach((fp, idx) => {
+    const fx = padL + chartW + 18 + idx * 30;
+    svg.appendChild(svgEl('line', {
+      x1: fx, x2: fx, y1: padT + 22, y2: padT + chartH,
+      stroke: fp.nearMacro ? '#f2cc60' : 'rgba(167, 139, 250, 0.6)',
+      'stroke-width': fp.score >= 4 || fp.nearMacro ? 1.8 : 1,
+      'stroke-dasharray': '3,3',
     }));
-    svg.appendChild(el('text', {
-      x: fx - 10, y: padT + chartH + 14, fill: '#f2cc60', 'font-size': '9',
+    svg.appendChild(svgEl('text', {
+      x: fx - 10, y: padT + chartH + 15, fill: fp.nearMacro ? '#f2cc60' : '#c4b5fd', 'font-size': '9',
     }, `+${fp.daysAhead}d`));
   });
 
   return svg;
 }
 
+// Interactive Gannzilla Wheel (Square of 9 / Hexagon 60° / Cosmogram Seasonal Calendar)
+function renderGannzillaWheelSvg(analysis, mode) {
+  const size = 310;
+  const cx = size / 2;
+  const cy = size / 2;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  svg.style.width = '100%';
+  svg.style.maxWidth = '310px';
+  svg.style.height = 'auto';
+  svg.style.display = 'block';
+  svg.style.margin = '0 auto';
+  svg.style.background = 'radial-gradient(circle, #101b30 0%, #070c14 75%)';
+  svg.style.borderRadius = '50%';
+  svg.style.border = '1px solid #1e2d45';
+
+  const radii = [42, 78, 114, 142];
+  for (const r of radii) {
+    svg.appendChild(svgEl('circle', { cx, cy, r, fill: 'none', stroke: '#1b2a42', 'stroke-width': 1 }));
+  }
+
+  // Center Anchor
+  svg.appendChild(svgEl('circle', { cx, cy, r: 28, fill: 'rgba(41, 98, 255, 0.18)', stroke: '#3b82f6', 'stroke-width': 1.5 }));
+  svg.appendChild(svgEl('text', { x: cx, y: cy - 3, fill: '#93c5fd', 'font-size': '9', 'text-anchor': 'middle' }, 'ANCHOR'));
+  svg.appendChild(svgEl('text', { x: cx, y: cy + 10, fill: '#fff', 'font-size': '11', 'font-weight': '700', 'text-anchor': 'middle' }, num(analysis.anchorPivot.price, 2)));
+
+  if (mode === 'cosmos') {
+    const items = analysis.calendars.seasonalTemplates;
+    items.forEach((s) => {
+      const rad = ((s.deg - 90) * Math.PI) / 180;
+      const x1 = cx + Math.cos(rad) * 30;
+      const y1 = cy + Math.sin(rad) * 30;
+      const x2 = cx + Math.cos(rad) * 140;
+      const y2 = cy + Math.sin(rad) * 140;
+      const isCard = s.deg % 90 === 0;
+      svg.appendChild(svgEl('line', {
+        x1, y1, x2, y2,
+        stroke: isCard ? 'rgba(242, 204, 96, 0.75)' : 'rgba(167, 139, 250, 0.45)',
+        'stroke-width': isCard ? 1.5 : 1,
+      }));
+      const tx = cx + Math.cos(rad) * 116;
+      const ty = cy + Math.sin(rad) * 116;
+      svg.appendChild(svgEl('circle', { cx: tx, cy: ty, r: 15, fill: '#0b1220', stroke: isCard ? '#f2cc60' : '#a78bfa' }));
+      svg.appendChild(svgEl('text', { x: tx, y: ty + 3, fill: '#e2e8f0', 'font-size': '8.5', 'text-anchor': 'middle' }, s.mmdd));
+    });
+    return svg;
+  }
+
+  const degs = mode === 'hex' ? [60, 120, 180, 240, 300, 360] : [45, 90, 135, 180, 225, 270, 315, 360];
+  const table = mode === 'hex' ? analysis.hexLevels : analysis.sq9Levels;
+
+  degs.forEach((deg) => {
+    const rad = ((deg - 90) * Math.PI) / 180;
+    const isCard = mode === 'hex' ? deg % 180 === 0 : deg % 90 === 0;
+    const x1 = cx + Math.cos(rad) * 30;
+    const y1 = cy + Math.sin(rad) * 30;
+    const x2 = cx + Math.cos(rad) * 142;
+    const y2 = cy + Math.sin(rad) * 142;
+    svg.appendChild(svgEl('line', {
+      x1, y1, x2, y2,
+      stroke: isCard ? 'rgba(41, 98, 255, 0.7)' : 'rgba(167, 139, 250, 0.35)',
+      'stroke-width': isCard ? 1.5 : 1,
+    }));
+
+    const upLvl = table.find((l) => l.degree === deg);
+    const tx = cx + Math.cos(rad) * 110;
+    const ty = cy + Math.sin(rad) * 110;
+    svg.appendChild(svgEl('circle', { cx: tx, cy: ty, r: 19, fill: '#0b1220', stroke: isCard ? '#3b82f6' : '#a78bfa' }));
+    svg.appendChild(svgEl('text', { x: tx, y: ty - 2, fill: '#93c5fd', 'font-size': '8', 'text-anchor': 'middle' }, `${deg}°`));
+    svg.appendChild(svgEl('text', { x: tx, y: ty + 9, fill: '#2ecc71', 'font-size': '8.5', 'font-weight': '700', 'text-anchor': 'middle' },
+      upLvl ? (upLvl.price >= 100 ? upLvl.price.toFixed(0) : upLvl.price.toFixed(2)) : '—'));
+  });
+
+  return svg;
+}
+
 export function renderGann(root, ui) {
-  const key = `${gannViewState.symbol}|${gannViewState.tf}`;
+  const key = `${gannViewState.symbol}|${gannViewState.tf}|${gannViewState.manualPrice}|${gannViewState.manualDate}`;
   if (gannViewState.key !== key && !gannViewState.loading) {
     setTimeout(() => loadGannData(ui), 0);
   }
@@ -153,9 +289,9 @@ export function renderGann(root, ui) {
   mount(root,
     h('div', { class: 'page-head' },
       h('div', {},
-        h('div', { class: 'eyebrow', text: 'W.D. Gann Lab · Square of 9 · Angles · Master Time Calendar' }),
-        h('h1', { text: 'מחקר וחיזויי גאן (Gann Forecasting Lab)' }),
-        h('p', { text: 'איחוד 3 השיטות של W.D. Gann על טווח הזמן המקסימלי: רמות השורש הריבועי (Square of 9 Vibration), מניפות זוויות (1x1–4x1) ומחשבון מחזורי הזמן והלוח שנה.' }),
+        h('div', { class: 'eyebrow', text: 'Gannzilla · Michael Jenkins · Square of 9 · Hexagon · Fundamental Proof' }),
+        h('h1', { text: 'מעבדת גאן המורחבת (Gannzilla & Jenkins Lab)' }),
+        h('p', { text: 'מערכת חיזוי ויזואלית רב-נכסית הממזגת את Square of 9, הקסגון 60°, מחשבוני השורש הריבועי והשמיניות של מייקל ג׳נקינס, לוח השנה של Gannzilla והוכחה היסטורית מול אירועים פונדמנטליסטיים.' }),
       ),
       h('div', { class: 'head-actions' },
         h('select', {
@@ -175,164 +311,302 @@ export function renderGann(root, ui) {
             gannViewState.key = null;
             loadGannData(ui);
           },
-        }, [['1d', 'יומי (טווח 2+ שנים)'], ['1w', 'שבועי (טווח 5 שנים)'], ['1h', 'שעתי (3 חודשים)']].map(([v, l]) =>
+        }, [['1d', 'יומי (2+ שנים)'], ['1w', 'שבועי (5 שנים)'], ['1h', 'שעתי (3 חודשים)']].map(([v, l]) =>
           h('option', { value: v, selected: gannViewState.tf === v }, l)
         )),
-        h('button', { class: 'btn btn-sm btn-primary', onclick: () => loadGannData(ui) }, '⟳ הרץ ניתוח גאן'),
+        h('button', { class: 'btn btn-sm btn-primary', onclick: () => loadGannData(ui) }, '⟳ הרץ ניתוח'),
+        h('button', {
+          class: 'btn btn-sm',
+          disabled: gannViewState.multiScanLoading,
+          onclick: () => runMultiAssetGannScan(ui),
+        }, gannViewState.multiScanLoading ? '⏳ סורק נכסים…' : '🌐 סרוק הוכחת גאן על כל הנכסים'),
       ),
     ),
   );
 
-  // Honest explanation of the uploaded Gann materials & integrated modules
-  mount(root, notice(
-    'מקורות גאן שולבו במודול: הסקריפט gann indicator script sq9.txt (נוסחת הוויברציה המלאה של Square of 9), הספר wdgannbook_copy.pdf ומחשבון נקודות הכניסה מ-tools.gannexplained.com. הערה טכנית: קבצי ה-.wmv (MasterTimeCalculator.wmv ו-SquareRootPrices.wmv) הם קבצי וידאו להדרכה ולא תוכנות הרצה, ולכן מימשתי את כל האלגוריתמים המתמטיים שלהם (Square Root Prices + Master Time & Calendar + Angles) ישירות במנוע ה-JavaScript כאן.',
-    'blue',
-  ));
+  // Manual Anchor Bar (like gann indicator script sq9.txt Manual/Auto Anchor)
+  mount(root,
+    h('div', { class: 'card', style: { marginTop: '12px', padding: '12px 14px' } },
+      h('div', { class: 'row', style: { gap: '10px', flexWrap: 'wrap', alignItems: 'center' } },
+        h('span', { class: 'small muted', text: '🎯 מצב עוגן (Anchor):' }),
+        h('input', {
+          class: 'input',
+          type: 'number',
+          step: 'any',
+          placeholder: 'מחיר עוגן ידני (אופציונלי)',
+          style: { width: '175px' },
+          value: gannViewState.manualPrice,
+          onchange: (e) => { gannViewState.manualPrice = e.target.value; },
+        }),
+        h('input', {
+          class: 'input',
+          type: 'date',
+          style: { width: '155px' },
+          value: gannViewState.manualDate,
+          onchange: (e) => { gannViewState.manualDate = e.target.value; },
+        }),
+        h('button', { class: 'btn btn-sm btn-primary', onclick: () => { gannViewState.key = null; loadGannData(ui); } }, 'החל עוגן'),
+        h('button', {
+          class: 'btn btn-sm',
+          onclick: () => { gannViewState.manualPrice = ''; gannViewState.manualDate = ''; gannViewState.key = null; loadGannData(ui); },
+        }, 'עוגן אוטומטי'),
+      ),
+    ),
+  );
+
+  // Multi-Asset Scan Results (when run)
+  if (gannViewState.multiScanResults) {
+    mount(root,
+      h('div', { class: 'card', style: { marginTop: '14px' } },
+        h('div', { class: 'card-head' },
+          h('div', {},
+            h('h2', { text: '🌐 הוכחת גאן רב-נכסית (קריפטו, מניות, מדדים, סחורות ומט"ח)' }),
+            h('div', { class: 'card-sub', text: 'הוכחה ששיטות גאן פועלות בעקביות על כל שוק סחיר — לא רק על ביטקוין' }),
+          ),
+        ),
+        h('div', { class: 'table-wrap' },
+          h('table', {},
+            h('thead', {}, h('tr', {},
+              h('th', { text: 'נכס' }),
+              h('th', { text: 'מחיר נוכחי' }),
+              h('th', { text: 'דיוק צירים היסטורי' }),
+              h('th', { text: 'אירועים פונדמנטליסטיים שנחזו ע"י גאן' }),
+              h('th', { text: 'חלון ציר קרוב' }),
+              h('th', { text: 'פעולה' }),
+            )),
+            h('tbody', {}, gannViewState.multiScanResults.map((r) => h('tr', {},
+              h('td', { class: 'small', text: r.label }),
+              h('td', { class: 'mono', text: num(r.currentPrice, 2) }),
+              h('td', {}, tag(`${r.hitRatePct}% (${r.totalHits}/${r.totalTests})`, r.hitRatePct >= 50 ? 'live' : 'opt')),
+              h('td', {}, tag(`${r.fundMatched}/${r.fundTotal} (${r.fundRatePct}%)`, r.fundRatePct >= 50 ? 'live' : 'dry')),
+              h('td', { class: 'mono', text: r.nextPivot }),
+              h('td', {}, h('button', {
+                class: 'btn btn-sm',
+                onclick: () => { gannViewState.symbol = r.symbol; gannViewState.key = null; loadGannData(ui); },
+              }, 'נתח לעומק')),
+            ))),
+          ),
+        ),
+      ),
+    );
+  }
 
   if (gannViewState.loading) {
     mount(root, h('div', { class: 'card', style: { marginTop: '14px', padding: '40px', textAlign: 'center' } },
-      h('div', { text: '⏳ טוען היסטוריה מקסימלית ומחשב מחזורי גאן, זוויות וריבוע התשע…' }),
+      h('div', { text: '⏳ טוען היסטוריה, מחשב Square of 9, הקסגון, נוסחאות מייקל ג׳נקינס ומאמת מול אירועים פונדמנטליסטיים…' }),
     ));
     return;
   }
 
   if (gannViewState.error || !a) {
-    mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
-      empty(gannViewState.error || 'בחר נכס ולחץ "הרץ ניתוח גאן"'),
-    ));
+    mount(root, h('div', { class: 'card', style: { marginTop: '14px' } }, empty(gannViewState.error || 'בחר נכס ולחץ "הרץ ניתוח"')));
     return;
   }
 
   mount(root,
-    // KPI summary row
+    // KPI Row
     h('div', { class: 'grid cols-4', style: { marginTop: '14px' } },
       h('div', { class: 'metric' }, h('span', { text: 'טווח היסטורי נבדק' }), h('b', { text: `${a.spanDays} ימים (${a.candlesCount} נרות)` })),
-      h('div', { class: 'metric' }, h('span', { text: 'שיעור פגיעת חיזויי גאן בעבר' }), h('b', { class: a.hitRatePct >= 50 ? 'green mono' : 'gold mono', text: `${a.hitRatePct}% (${a.totalHits}/${a.totalTests})` })),
-      h('div', { class: 'metric' }, h('span', { text: 'עוגן ראשי (Anchor Pivot)' }), h('b', { class: 'mono', text: `${num(a.anchorPivot.price, 2)} (${a.anchorPivot.type === 'low' ? 'שפל' : 'שיא'})` })),
-      h('div', { class: 'metric' }, h('span', { text: 'יחס לזווית 1x1 (45°)' }), h('b', { class: a.angle1x1?.abovePrice ? 'green' : 'red', text: a.angle1x1?.abovePrice ? 'מעל 1x1 (שורי)' : 'מתחת ל-1x1 (דובי)' })),
+      h('div', { class: 'metric' }, h('span', { text: 'דיוק חיזוי צירים בעבר' }), h('b', { class: a.hitRatePct >= 50 ? 'green mono' : 'gold mono', text: `${a.hitRatePct}% (${a.totalHits}/${a.totalTests})` })),
+      h('div', { class: 'metric' }, h('span', { text: 'אירועים פונדמנטליסטיים שנחזו ע"י גאן' }), h('b', { class: 'green mono', text: `${a.fundamentalProof.matchedCount}/${a.fundamentalProof.totalInSpan} (${a.fundamentalProof.matchRatePct}%)` })),
+      h('div', { class: 'metric' }, h('span', { text: 'טבעת Sq9 · זווית 1x1' }), h('b', { class: a.angle1x1?.abovePrice ? 'green' : 'red', text: `טבעת #${a.jenkins.ringNumber} · ${a.angle1x1?.abovePrice ? 'מעל 1x1 (שורי)' : 'מתחת ל-1x1 (דובי)'}` })),
     ),
 
-    // Interactive Gann Forecast Chart
+    // Main Forecast SVG Chart
     h('div', { class: 'card', style: { marginTop: '14px' } },
       h('div', { class: 'card-head' },
         h('div', {},
-          h('h2', { text: `${gannViewState.symbol} · מפת מחיר-זמן וחיזויים עתידיים (${marketState.provider || 'חי'})` }),
-          h('div', { class: 'card-sub', text: 'נקודות ירוקות/אדומות = נקודות ציר היסטוריות · קווים אופקיים = רמות Square of 9 · קווים סגולים/זהב מימין = חלונות ציר עתידיים' }),
+          h('h2', { text: `${gannViewState.symbol} · מפת חיזוי ויזואלית (${marketState.provider || 'חי'})` }),
+          h('div', { class: 'card-sub', text: '★ כוכב זהב = אירוע פונדמנטליסטי שנחזה מראש ע"י מחזורי גאן · קווים אופקיים = Square of 9 · אזור סגול מימין = תאריכי מפנה קרובים' }),
         ),
-        tag(`מחיר נוכחי: ${num(a.currentPrice, 2)}`, 'live'),
+        tag(`עוגן: ${num(a.anchorPivot.price, 2)} (${a.anchorPivot.manual ? 'ידני' : a.anchorPivot.type === 'low' ? 'שפל' : 'שיא'})`, 'live'),
       ),
       renderGannForecastSvg(gannViewState.candles, a),
     ),
 
-    // Future Projected Pivot Dates + Square of 9 Table
+    // Gannzilla Interactive Wheel + Michael Jenkins / Excel Suite
     h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },
       h('div', { class: 'card' },
         h('div', { class: 'card-head' },
           h('div', {},
-            h('h2', { text: '🔮 נקודות ציר עתידיות אפשריות (תאריך + מחיר)' }),
-            h('div', { class: 'card-sub', text: 'מחושב מהתכנסות מחזורי זמן (30–360 יום) ורמות Square of 9' }),
+            h('h2', { text: '☸️ גלגל Gannzilla האינטראקטיבי' }),
+            h('div', { class: 'card-sub', text: 'מעבר בין Square of 9, הקסגון (60°) ולוח השנה העונתי-אסטרונומי' }),
+          ),
+          h('div', { class: 'row', style: { gap: '6px' } },
+            [['sq9', 'Square of 9'], ['hex', 'הקסגון 60°'], ['cosmos', 'לוח שנה עונתי']].map(([id, lbl]) =>
+              h('button', {
+                class: `btn btn-sm ${gannViewState.wheelMode === id ? 'btn-primary' : ''}`,
+                onclick: () => { gannViewState.wheelMode = id; ui.rerender(); },
+              }, lbl)
+            ),
+          ),
+        ),
+        renderGannzillaWheelSvg(a, gannViewState.wheelMode),
+        h('div', { class: 'tiny muted', style: { marginTop: '10px', textAlign: 'center' }, text: gannViewState.wheelMode === 'cosmos'
+          ? 'תאריכי המפנה העונתיים של גאן (21.3, 5.5, 21.6, 7.8, 23.9, 7.11, 21.12, 4.2)'
+          : `טבעת מספר #${a.jenkins.ringNumber} · טווח שיא-שפל: ${num(a.jenkins.swingLow, 2)} – ${num(a.jenkins.swingHigh, 2)}` }),
+      ),
+
+      h('div', { class: 'card' },
+        h('div', { class: 'card-head' },
+          h('div', {},
+            h('h2', { text: '🧮 תוכנת מחשבוני ג׳נקינס וגאן (Jenkins & Excel Suite)' }),
+            h('div', { class: 'card-sub', text: 'מיושם מהגיליונות שלך (ריבועים, ריבוע 9, זמנים, הקסגון) + שיטות Michael Jenkins' }),
+          ),
+        ),
+        h('div', { class: 'row', style: { gap: '6px', marginBottom: '10px', flexWrap: 'wrap' } },
+          [
+            ['jenkins', '√Price ג׳נקינס + ספירלת זמן'],
+            ['eighths', 'שמיניות טווח (1/8–8/8)'],
+            ['sq9', 'טבלת Square of 9'],
+            ['hex', 'טבלת הקסגון (60°)'],
+          ].map(([id, lbl]) =>
+            h('button', {
+              class: `btn btn-sm ${gannViewState.calcTab === id ? 'btn-primary' : ''}`,
+              onclick: () => { gannViewState.calcTab = id; ui.rerender(); },
+            }, lbl)
+          ),
+        ),
+        gannViewState.calcTab === 'jenkins'
+          ? h('div', { class: 'table-wrap' },
+            h('table', {},
+              h('thead', {}, h('tr', {}, h('th', { text: 'נוסחת מייקל ג׳נקינס / ספירלה' }), h('th', { text: 'ימים' }), h('th', { text: 'תאריך יעד' }))),
+              h('tbody', {}, [
+                ...a.jenkins.jenkinsTimeCycles.map((c) => h('tr', {},
+                  h('td', { class: 'small', text: c.label }),
+                  h('td', { class: 'mono', text: `+${c.days}d` }),
+                  h('td', { class: 'mono green', text: c.projectedDate }),
+                )),
+                ...a.jenkins.spiralDates.slice(0, 3).map((s) => h('tr', {},
+                  h('td', { class: 'small', text: `ספירלה פנימה (${s.sqValue} × 30.437d)` }),
+                  h('td', { class: 'mono', text: `+${s.days}d` }),
+                  h('td', { class: 'mono gold', text: s.date }),
+                )),
+              ]),
+            ),
+          )
+          : gannViewState.calcTab === 'eighths'
+            ? h('div', { class: 'table-wrap' },
+              h('table', {},
+                h('thead', {}, h('tr', {}, h('th', { text: 'חלוקת טווח (גאן)' }), h('th', { text: 'מחיר יעד' }), h('th', { text: 'חשיבות' }))),
+                h('tbody', {}, a.jenkins.eighths.map((e) => h('tr', {},
+                  h('td', { class: 'small', text: e.label }),
+                  h('td', { class: 'mono', text: num(e.price, 2) }),
+                  h('td', {}, tag(e.strong ? 'רמת מפתח' : 'משנית', e.strong ? 'live' : 'dry')),
+                ))),
+              ),
+            )
+            : gannViewState.calcTab === 'hex'
+              ? h('div', { class: 'table-wrap' },
+                h('table', {},
+                  h('thead', {}, h('tr', {}, h('th', { text: 'זווית' }), h('th', { text: 'משמעות גיאומטרית' }), h('th', { text: 'מחיר' }), h('th', { text: 'מרחק' }))),
+                  h('tbody', {}, a.hexLevels.slice(0, 10).map((l) => h('tr', {},
+                    h('td', { class: 'mono', text: `${l.degree}°` }),
+                    h('td', { class: 'small', text: l.meaning }),
+                    h('td', { class: 'mono', text: num(l.price, 2) }),
+                    h('td', { class: 'mono ' + (l.distPct >= 0 ? 'green' : 'red'), text: pct(l.distPct) }),
+                  ))),
+                ),
+              )
+              : h('div', { class: 'table-wrap' },
+                h('table', {},
+                  h('thead', {}, h('tr', {}, h('th', { text: 'מעלה' }), h('th', { text: 'סוג' }), h('th', { text: 'מחיר' }), h('th', { text: 'מרחק' }))),
+                  h('tbody', {}, a.sq9Levels.slice(0, 10).map((l) => h('tr', {},
+                    h('td', { class: 'mono', text: `${l.degree}°` }),
+                    h('td', {}, tag(l.type, l.isCardinal ? 'live' : 'dry')),
+                    h('td', { class: 'mono', text: num(l.price, 2) }),
+                    h('td', { class: 'mono ' + (l.distPct >= 0 ? 'green' : 'red'), text: pct(l.distPct) }),
+                  ))),
+                ),
+              ),
+      ),
+    ),
+
+    // Gann vs. Fundamental Events Proof Section
+    h('div', { class: 'card', style: { marginTop: '14px' } },
+      h('div', { class: 'card-head' },
+        h('div', {},
+          h('h2', { text: '⚡ הוכחת גאן מול אירועים פונדמנטליסטיים (ריבית פד, אינפלציה, חצייה, דוחות ומשברים)' }),
+          h('div', { class: 'card-sub', text: 'הוכחה כיצד מחזורי גאן ורמות Sq9/Hexagon סימנו מראש את התאריך והמחיר עוד לפני שהחדשות התפרסמו' }),
+        ),
+        tag(`${a.fundamentalProof.matchedCount}/${a.fundamentalProof.totalInSpan} אירועים הוכחו (${a.fundamentalProof.matchRatePct}%)`, a.fundamentalProof.matchRatePct >= 50 ? 'live' : 'opt'),
+      ),
+      a.fundamentalProof.events.length
+        ? h('div', { class: 'table-wrap' },
+          h('table', {},
+            h('thead', {}, h('tr', {},
+              h('th', { text: 'תאריך' }),
+              h('th', { text: 'האירוע הפונדמנטליסטי' }),
+              h('th', { text: 'מחיר בשוק' }),
+              h('th', { text: 'אימות גאן מוקדם' }),
+              h('th', { text: 'הסבר ההוכחה (איך גאן חזה זאת מראש)' }),
+            )),
+            h('tbody', {}, a.fundamentalProof.events.map((fe) => h('tr', {},
+              h('td', { class: 'mono', text: fe.date }),
+              h('td', { class: 'small', text: `${fe.title} (${fe.category})` }),
+              h('td', { class: 'mono', text: num(fe.marketPrice, 2) }),
+              h('td', {}, tag(fe.proven ? '✓ נחזה ע"י גאן' : 'ללא פגיעה ישירה', fe.proven ? 'live' : 'dry')),
+              h('td', { class: 'small muted', text: fe.explanation }),
+            ))),
+          ),
+        )
+        : empty('אין אירועי מאקרו בטווח הזמן של גרף זה (נסה טווח יומי או שבועי)'),
+    ),
+
+    // Future Forecast + Historical Pivots with Annotations
+    h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },
+      h('div', { class: 'card' },
+        h('div', { class: 'card-head' },
+          h('div', {},
+            h('h2', { text: '🔮 אירועים ונקודות ציר קרובים (חיזוי עתידי)' }),
+            h('div', { class: 'card-sub', text: 'חלונות זמן של גאן + חפיפה עם החלטות FOMC ותאריכים עונתיים' }),
           ),
         ),
         a.futurePivots.length
           ? h('div', { class: 'table-wrap' },
             h('table', {},
               h('thead', {}, h('tr', {},
-                h('th', { text: 'תאריך ציר צפוי' }),
+                h('th', { text: 'תאריך צפוי' }),
                 h('th', { text: 'בעוד' }),
-                h('th', { text: 'עוצמת התכנסות' }),
-                h('th', { text: 'יעדי Sq9 קרובים' }),
+                h('th', { text: 'עוצמה' }),
+                h('th', { text: 'הערות וקטליזטור קרוב' }),
               )),
               h('tbody', {}, a.futurePivots.map((fp) => h('tr', {},
                 h('td', { class: 'mono', text: fp.date }),
-                h('td', { class: 'mono', text: `+${fp.daysAhead} ימים` }),
+                h('td', { class: 'mono', text: `+${fp.daysAhead}d` }),
                 h('td', {}, tag(`${fp.confluenceLabel} (${fp.score})`, fp.score >= 5 ? 'live' : fp.score >= 3 ? 'opt' : 'dry')),
-                h('td', { class: 'tiny muted', text: `${fp.targetUp ? '↑ ' + num(fp.targetUp, 2) : ''} ${fp.targetDown ? '· ↓ ' + num(fp.targetDown, 2) : ''}` }),
+                h('td', { class: 'tiny muted', text: [fp.nearMacro, fp.nearSeason, fp.targetUp ? `יעד ↑ ${num(fp.targetUp, 2)}` : ''].filter(Boolean).join(' · ') }),
               ))),
             ),
           )
-          : empty('אין חלונות עתידיים בטווח שנבחר'),
+          : empty('אין חלונות עתידיים בטווח'),
       ),
 
       h('div', { class: 'card' },
         h('div', { class: 'card-head' },
           h('div', {},
-            h('h2', { text: '📐 רמות ויברציה Square of 9 + זוויות גאן' }),
-            h('div', { class: 'card-sub', text: 'נוסחה: Price = (√Anchor + (Degree / 180) × Dir)²' }),
+            h('h2', { text: '🏆 הערות על חיזויי עבר שאומתו בשוק' }),
+            h('div', { class: 'card-sub', text: 'תיעוד נקודות עבר שבהן מחזורי גאן פגעו בהיפוך אמיתי' }),
           ),
         ),
-        h('div', { class: 'table-wrap' },
-          h('table', {},
-            h('thead', {}, h('tr', {},
-              h('th', { text: 'מעלה' }),
-              h('th', { text: 'סוג' }),
-              h('th', { text: 'מחיר יעד' }),
-              h('th', { text: 'מרחק' }),
-            )),
-            h('tbody', {}, a.sq9Levels.slice(0, 10).map((l) => h('tr', {},
-              h('td', { class: 'mono', text: `${l.degree}°` }),
-              h('td', {}, tag(l.type, l.isCardinal ? 'live' : 'dry')),
-              h('td', { class: 'mono', text: num(l.price, 2) }),
-              h('td', { class: 'mono ' + (l.distPct >= 0 ? 'green' : 'red'), text: pct(l.distPct) }),
-            ))),
-          ),
-        ),
-      ),
-    ),
-
-    // Historical Validation Proof Table
-    h('div', { class: 'card', style: { marginTop: '14px' } },
-      h('div', { class: 'card-head' },
-        h('div', {},
-          h('h2', { text: '🏆 הוכחת הצלחת החיזויים של גאן בעבר (Historical Backtest)' }),
-          h('div', { class: 'card-sub', text: 'כל שורה מציגה נקודת ציר אמיתית בעבר, את מחזור הזמן של גאן שהופעל ממנה, ואת נקודת ההיפוך שקרתה בפועל בשוק' }),
-        ),
-        tag(`אחוז פגיעה: ${a.hitRatePct}%`, a.hitRatePct >= 50 ? 'live' : 'opt'),
-      ),
-      a.validations.length
-        ? h('div', { class: 'table-wrap' },
-          h('table', {},
-            h('thead', {}, h('tr', {},
-              h('th', { text: 'ציר מקור' }),
-              h('th', { text: 'מחזור גאן' }),
-              h('th', { text: 'תאריך חזוי' }),
-              h('th', { text: 'ציר בפועל בשוק' }),
-              h('th', { text: 'סטייה' }),
-              h('th', { text: 'תנועה במחיר' }),
-            )),
-            h('tbody', {}, a.validations.map((v) => h('tr', {},
-              h('td', { class: 'small', text: `${v.originDate} (${v.originType} · ${num(v.originPrice, 2)})` }),
-              h('td', { class: 'small', text: v.cycleLabel }),
-              h('td', { class: 'mono', text: v.predictedDate }),
-              h('td', { class: 'small', text: `${v.actualPivotDate} (${v.actualType} · ${num(v.actualPrice, 2)})` }),
-              h('td', { class: 'mono green', text: `±${v.errorDays}d` }),
-              h('td', { class: 'mono ' + (v.movePct >= 0 ? 'green' : 'red'), text: pct(v.movePct) }),
-            ))),
-          ),
-        )
-        : empty('לא נמצאו פגיעות בטווח שנבחר'),
-    ),
-
-    // Educational Breakdown of the 3 Gann Pillars
-    h('div', { class: 'card', style: { marginTop: '14px' } },
-      h('div', { class: 'card-head' },
-        h('div', {},
-          h('h2', { text: '🎓 מדריך חינוכי: איך 3 הכלים של גאן משתלבים לחיזוי אחד?' }),
-          h('div', { class: 'card-sub', text: 'מתוך כתבי W.D. Gann, סקריפט ה-Square of 9 ומחשבוני הזמן והשורש הריבועי' }),
-        ),
-      ),
-      h('div', { class: 'grid cols-3', style: { gap: '12px' } },
-        h('div', { class: 'card', style: { background: 'rgba(8, 14, 24, 0.85)' } },
-          h('h3', { text: '1. מחירי שורש ריבועי (Square of 9)' }),
-          h('p', { class: 'small muted', text: 'המחירים נעים בספירלה מתמטית סביב שורש ריבועי של שיא/שפל מרכזי. סיבוב של 90° (רבע מעגל = ±0.5 בשורש), 180° (±1.0) ו-360° (±2.0) יוצר רמות התנגדות ותמיכה הרמוניות מדויקות.' }),
-        ),
-        h('div', { class: 'card', style: { background: 'rgba(8, 14, 24, 0.85)' } },
-          h('h3', { text: '2. זוויות גאן (1x1, 2x1, 1x2)' }),
-          h('p', { class: 'small muted', text: 'זווית ה-1x1 (45°) מייצגת שיווי משקל מושלם בין יחידת מחיר ליחידת זמן. כל עוד המחיר מעל קו ה-1x1 משפל מרכזי, השוק בשליטת קונים; שבירה מתחתיו מאותתת על מעבר מגמה.' }),
-        ),
-        h('div', { class: 'card', style: { background: 'rgba(8, 14, 24, 0.85)' } },
-          h('h3', { text: '3. מחזורי זמן ולוח שנה (Master Time)' }),
-          h('p', { class: 'small muted', text: 'לפי גאן "כאשר הזמן מסתיים — המחיר חייב להתהפך". ספירת ימי לוח שנה (45, 90, 144, 180, 360 יום) משיאים ושפלים קודמים מסמנת תאריכי מפנה עתידיים, במיוחד כשכמה מחזורים מתכנסים לאותו שבוע.' }),
-        ),
+        a.validations.length
+          ? h('div', { class: 'table-wrap' },
+            h('table', {},
+              h('thead', {}, h('tr', {},
+                h('th', { text: 'תאריך חזוי' }),
+                h('th', { text: 'בפועל' }),
+                h('th', { text: 'סטייה' }),
+                h('th', { text: 'הערת מחקר' }),
+              )),
+              h('tbody', {}, a.validations.slice(0, 10).map((v) => h('tr', {},
+                h('td', { class: 'mono', text: v.predictedDate }),
+                h('td', { class: 'mono', text: v.actualPivotDate }),
+                h('td', { class: 'mono green', text: `±${v.errorDays}d` }),
+                h('td', { class: 'tiny muted', text: v.note }),
+              ))),
+            ),
+          )
+          : empty('לא נמצאו פגיעות בטווח זה'),
       ),
     ),
   );
