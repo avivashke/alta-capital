@@ -92,7 +92,7 @@ export const PROVIDERS = {
     label: 'NVIDIA NIM',
     shape: 'openai',
     baseUrl: 'https://integrate.api.nvidia.com/v1',
-    models: ['meta/llama-3.1-70b-instruct', 'z-ai/glm-4.6'],
+    models: ['nvidia/nemotron-3-ultra-550b-a55b', 'meta/llama-3.1-70b-instruct', 'z-ai/glm-4.6'],
     free: true,
     limits: { rpm: 40, rpd: 1000 },
     keyUrl: 'https://build.nvidia.com',
