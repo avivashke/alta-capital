@@ -245,13 +245,48 @@ export function evaluateCurveAgainstNostro(curve, trades, rules) {
   };
 }
 
+export function buildNostroBotsFromExistingDesks(desks = store.state.desks || []) {
+  return (desks || []).map((d) => {
+    const latestHist = d.history?.[0];
+    const strategyId = latestHist?.strategyId || d.strategyId || 'ema_trend';
+    const rawParams = latestHist?.params || d.params || defaultsFor(strategyId);
+    const clonedParams = JSON.parse(JSON.stringify(rawParams));
+    const safeRisk = d.kind === 'swing' ? 0.0045 : 0.0055;
+    return {
+      id: `nostro_clone_${d.id}`,
+      sourceDeskId: d.id,
+      sourceDeskLabel: d.label || d.short || d.id,
+      name: `Nostro Pro · ${d.short || d.symbol} (${d.symbol})`,
+      strategyId,
+      symbol: d.symbol || 'BTCUSDT',
+      tf: d.tf || '1h',
+      riskPerTrade: safeRisk,
+      params: clonedParams,
+      note: `בוט נוסטרו ייעודי ומופרד שנבנה מ-${d.label || d.id} ועבר הקשחת סיכון לנוסטרו (${(safeRisk * 100).toFixed(2)}% לעסקה).`,
+    };
+  });
+}
+
+function scoreNostroCandidate(evalRes, btMetrics, rules) {
+  if (evalRes.breached) return -1000 - (evalRes.maxTotalDdPct || 0);
+  let score = evalRes.totalReturnPct || 0;
+  if (evalRes.phase1Passed) score += 200;
+  if (evalRes.phase2Passed) score += 400;
+  const pf = Number(btMetrics?.profitFactor || 0);
+  score += Math.min(30, pf * 10);
+  // Reward staying comfortably below Daily (5%) and Total (10%) limits
+  score += Math.max(0, (rules.maxDailyLossPct - evalRes.maxDailyLossPct) * 6);
+  score += Math.max(0, (rules.maxTotalDdPct - evalRes.maxTotalDdPct) * 3);
+  return score;
+}
+
 export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { doOptimize = false, forceLive = true } = {}) {
   const s = store.state.settings;
   const candles = await getCandles(botTemplate.symbol, botTemplate.tf, { limit: 700, force: forceLive });
   const dataProvider = marketState.provider || 'Live';
   const isSynthetic = !!marketState.synthetic;
 
-  const cfg = {
+  const baseCfg = {
     capital: rules.accountSize,
     riskPerTrade: botTemplate.riskPerTrade,
     feeRate: s.feeRate ?? 0.0004,
@@ -265,20 +300,36 @@ export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { 
   };
 
   let params = botTemplate.params || defaultsFor(botTemplate.strategyId);
+  let chosenRisk = botTemplate.riskPerTrade;
+
   if (doOptimize) {
     const opt = await optimize({
       candles,
       strategyId: botTemplate.strategyId,
-      cfg,
+      cfg: baseCfg,
       seed: params,
       rounds: 24,
       climb: 10,
     });
-    if (opt?.best?.params) {
-      params = opt.best.params;
+    const candidateParams = opt?.best?.params ? [params, opt.best.params] : [params];
+    const riskTiers = [0.004, 0.0055, 0.007, botTemplate.riskPerTrade];
+    let bestScore = -Infinity;
+
+    for (const candP of candidateParams) {
+      for (const rTier of riskTiers) {
+        const trialBt = runBacktest(candles, botTemplate.strategyId, candP, { ...baseCfg, riskPerTrade: rTier });
+        const trialEval = evaluateCurveAgainstNostro(trialBt.curve || [], trialBt.trades || [], rules);
+        const sc = scoreNostroCandidate(trialEval, trialBt.metrics, rules);
+        if (sc > bestScore) {
+          bestScore = sc;
+          params = candP;
+          chosenRisk = rTier;
+        }
+      }
     }
   }
 
+  const cfg = { ...baseCfg, riskPerTrade: chosenRisk };
   const bt = runBacktest(candles, botTemplate.strategyId, params, cfg);
   const evalRes = evaluateCurveAgainstNostro(bt.curve || [], bt.trades || [], rules);
 
@@ -323,6 +374,7 @@ export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { 
 
   return {
     ...botTemplate,
+    riskPerTrade: chosenRisk,
     params,
     metrics: bt.metrics,
     dataProvider,
@@ -343,11 +395,13 @@ export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { 
 export async function runNostroFleetSimulation(customRules = {}, { doOptimize = false, forceLive = true } = {}) {
   const rules = { ...DEFAULT_NOSTRO_RULES, ...(store.state.nostro?.rules || {}), ...customRules };
   const existingBots = store.state.nostro?.bots || [];
+  const deskClones = buildNostroBotsFromExistingDesks(store.state.desks || []);
+  const allTemplates = [...NOSTRO_BOT_TEMPLATES, ...deskClones];
   const results = [];
 
-  for (const tpl of NOSTRO_BOT_TEMPLATES) {
+  for (const tpl of allTemplates) {
     const prev = existingBots.find((b) => b.id === tpl.id);
-    const botInput = prev?.params ? { ...tpl, params: prev.params } : tpl;
+    const botInput = prev?.params ? { ...tpl, params: prev.params, riskPerTrade: prev.riskPerTrade ?? tpl.riskPerTrade } : tpl;
     try {
       const res = await runNostroBot(botInput, rules, { doOptimize, forceLive });
       results.push(res);

@@ -1,8 +1,9 @@
 // Prop Firm / Nostro Challenge Autonomous Dashboard, Infographic & Excel Proof Reporter (#/nostro)
 
 import { store } from '../store.js';
-import { h, mount, money, pct, num, tag, chart, notice, empty, toast, timeAgo } from '../ui.js';
+import { h, mount, money, pct, num, tag, chart, notice, empty, toast, timeAgo, openModal, downloadFile } from '../ui.js';
 import { STRATEGIES, describeParams } from '../strategies.js';
+import { buildArtifact } from '../platforms.js';
 import {
   DEFAULT_NOSTRO_RULES,
   NOSTRO_BOT_TEMPLATES,
@@ -250,6 +251,8 @@ export function renderNostro(root, ui) {
           tag(bot.statusLabel, cls),
         ),
         h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '8px' } },
+          tag(bot.sourceDeskLabel ? `🧬 מופרד מבוט קיים: ${bot.sourceDeskLabel}` : '🏆 בוט נוסטרו ייעודי', 'opt'),
+          tag(`סיכון: ${((bot.riskPerTrade || 0.0055) * 100).toFixed(2)}%`, 'dry'),
           (bot.readyFirms || []).length
             ? bot.readyFirms.map((fn) => tag(`✓ מוכן ל-${fn}`, 'live'))
             : tag('טרם עמד בתנאי חברה', 'dry'),
@@ -286,6 +289,35 @@ export function renderNostro(root, ui) {
               }
             },
           }, '⚙ מטב בוט זה לנוסטרו'),
+          h('button', {
+            class: 'btn btn-sm',
+            onclick: () => {
+              const platform = store.state.settings.platform || 'freqtrade';
+              const art = buildArtifact({
+                id: bot.id,
+                label: bot.name,
+                short: bot.symbol,
+                symbol: bot.symbol,
+                tf: bot.tf,
+                version: 'nostro-v1',
+                params: bot.params,
+                strategyId: bot.strategyId,
+                metrics: bot.metrics || { returnPct: bot.totalReturnPct, profitFactor: 0, maxDrawdownPct: bot.maxTotalDdPct, trades: 0 },
+                oosMetrics: { returnPct: bot.totalReturnPct },
+              }, platform);
+              const pre = h('pre', { class: 'code', text: art.code });
+              openModal(`${bot.name} · ${art.filename}`,
+                h('div', {},
+                  h('div', { class: 'row between', style: { marginBottom: '8px' } },
+                    h('span', { class: 'small muted', text: `קוד בוט נוסטרו מופרד (${platform}) · סיכון ${((bot.riskPerTrade || 0.0055) * 100).toFixed(2)}%` }),
+                    h('button', { class: 'btn btn-sm btn-primary', onclick: () => downloadFile(art.filename, art.code, 'text/plain') }, 'הורד קובץ'),
+                  ),
+                  pre,
+                ),
+                { wide: true },
+              );
+            },
+          }, '</> ייצא קוד בוט נוסטרו מופרד'),
         ),
       );
     }),
