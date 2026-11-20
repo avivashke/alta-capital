@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-19T22:16:40.352Z",
+ "generatedAt": "2026-11-20T01:20:19.455Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -14,7 +14,7 @@
    "label": "תוך־יומי · 5 דקות",
    "timeframe": "5m",
    "symbol": "BTCUSDT",
-   "status": "live",
+   "status": "optimizing",
    "version": "v1.0",
    "strategyId": "ema_trend",
    "params": {
@@ -25,21 +25,21 @@
     "trendFilter": false
    },
    "metrics": {
-    "returnPct": 1.95,
-    "maxDrawdownPct": 2.44,
-    "sharpe": 11.32,
-    "profitFactor": 1.63,
-    "winRate": 52.6,
-    "trades": 19,
-    "avgR": 0.065,
-    "expectancy": 3.67,
-    "exposurePct": 94.4,
-    "bestTradePct": 1.114,
-    "worstTradePct": -0.867,
-    "finalEquity": 3823.06,
+    "returnPct": -1.59,
+    "maxDrawdownPct": 2.93,
+    "sharpe": -8.39,
+    "profitFactor": 0.71,
+    "winRate": 43.5,
+    "trades": 23,
+    "avgR": -0.048,
+    "expectancy": -2.73,
+    "exposurePct": 93.2,
+    "bestTradePct": 1.099,
+    "worstTradePct": -0.927,
+    "finalEquity": 3690.42,
     "curvePoints": 340,
-    "totalFees": 126.7382,
-    "barsInMarket": 321
+    "totalFees": 151.6949,
+    "barsInMarket": 317
    },
    "oos": {
     "returnPct": 2.41,
@@ -78,51 +78,56 @@
    "timeframe": "15m",
    "symbol": "ETHUSDT",
    "status": "dry-run",
-   "version": "v1.1",
+   "version": "v1.2",
    "strategyId": "rsi_reversion",
    "params": {
-    "period": 9,
-    "oversold": 21,
-    "overbought": 65,
-    "atrStop": 1.5,
-    "rr": 2
+    "period": 8,
+    "oversold": 25,
+    "overbought": 78,
+    "atrStop": 1.1,
+    "rr": 1.8
    },
    "metrics": {
-    "returnPct": 2.03,
-    "maxDrawdownPct": 2.35,
-    "sharpe": 5.3,
-    "profitFactor": 1.3,
-    "winRate": 57.9,
-    "trades": 19,
-    "avgR": 0.074,
-    "expectancy": 5.34,
-    "exposurePct": 21.5,
-    "bestTradePct": 1.977,
-    "worstTradePct": -1.061,
-    "finalEquity": 5101.54,
+    "returnPct": 3.61,
+    "maxDrawdownPct": 1.77,
+    "sharpe": 11.49,
+    "profitFactor": 1.98,
+    "winRate": 64.3,
+    "trades": 14,
+    "avgR": 0.171,
+    "expectancy": 12.88,
+    "exposurePct": 12.8,
+    "bestTradePct": 1.373,
+    "worstTradePct": -1.083,
+    "finalEquity": 5180.32,
     "curvePoints": 400,
-    "totalFees": 170.3122,
-    "barsInMarket": 86
+    "totalFees": 123.4381,
+    "barsInMarket": 51
    },
    "oos": {
-    "returnPct": 0.47,
-    "maxDrawdownPct": 2.35,
-    "sharpe": 2.98,
-    "profitFactor": 1.12,
-    "winRate": 55.6,
-    "trades": 9,
-    "avgR": 0.038,
-    "expectancy": 2.59,
-    "exposurePct": 33.3,
-    "bestTradePct": 1.946,
-    "worstTradePct": -1.044,
-    "finalEquity": 5023.3,
+    "returnPct": 1.57,
+    "maxDrawdownPct": 1.77,
+    "sharpe": 11.04,
+    "profitFactor": 1.63,
+    "winRate": 62.5,
+    "trades": 8,
+    "avgR": 0.132,
+    "expectancy": 9.81,
+    "exposurePct": 18,
+    "bestTradePct": 1.346,
+    "worstTradePct": -0.893,
+    "finalEquity": 5078.44,
     "curvePoints": 150,
-    "totalFees": 80.1027,
-    "barsInMarket": 50
+    "totalFees": 69.6234,
+    "barsInMarket": 27
    },
-   "bestReturn": 0.47,
+   "bestReturn": 1.57,
    "versions": [
+    {
+     "version": "v1.2",
+     "at": 1795137615492,
+     "oos": 1.57
+    },
     {
      "version": "v1.1",
      "at": 1795126594957,
@@ -161,21 +166,21 @@
     "trendFilter": true
    },
    "metrics": {
-    "returnPct": 16.19,
+    "returnPct": 16.09,
     "maxDrawdownPct": 3.16,
-    "sharpe": 10.76,
-    "profitFactor": 3.34,
-    "winRate": 60,
-    "trades": 20,
-    "avgR": 0.506,
-    "expectancy": 50.27,
-    "exposurePct": 94.1,
-    "bestTradePct": 2.598,
-    "worstTradePct": -1.919,
-    "finalEquity": 7261.79,
+    "sharpe": 10.6,
+    "profitFactor": 3.27,
+    "winRate": 63.2,
+    "trades": 19,
+    "avgR": 0.529,
+    "expectancy": 52.6,
+    "exposurePct": 94.4,
+    "bestTradePct": 2.607,
+    "worstTradePct": -1.925,
+    "finalEquity": 7255.57,
     "curvePoints": 340,
-    "totalFees": 213.0387,
-    "barsInMarket": 320
+    "totalFees": 202.3245,
+    "barsInMarket": 321
    },
    "oos": {
     "returnPct": 12.66,
@@ -457,52 +462,57 @@
    "timeframe": "1d",
    "symbol": "SPY",
    "status": "live",
-   "version": "v1.2",
+   "version": "v1.3",
    "strategyId": "supertrend_adx",
    "params": {
-    "period": 20,
-    "mult": 2.4,
+    "period": 18,
+    "mult": 2,
     "adxPeriod": 13,
-    "adxMin": 35,
-    "atrStop": 1.9,
-    "rr": 2.9
+    "adxMin": 32,
+    "atrStop": 1.8,
+    "rr": 2.1
    },
    "metrics": {
-    "returnPct": 6.78,
-    "maxDrawdownPct": 2.88,
-    "sharpe": 1.54,
-    "profitFactor": 2.95,
-    "winRate": 50,
-    "trades": 6,
-    "avgR": 0.752,
-    "expectancy": 33.88,
-    "exposurePct": 28.4,
-    "bestTradePct": 4.378,
-    "worstTradePct": -1.772,
-    "finalEquity": 3203.29,
-    "curvePoints": 391,
-    "totalFees": 22.2996,
+    "returnPct": 14.18,
+    "maxDrawdownPct": 1.77,
+    "sharpe": 2.69,
+    "profitFactor": 10.28,
+    "winRate": 75,
+    "trades": 8,
+    "avgR": 1.123,
+    "expectancy": 53.18,
+    "exposurePct": 28.5,
+    "bestTradePct": 3.332,
+    "worstTradePct": -1.382,
+    "finalEquity": 3425.45,
+    "curvePoints": 390,
+    "totalFees": 30.1074,
     "barsInMarket": 111
    },
    "oos": {
-    "returnPct": 3.59,
-    "maxDrawdownPct": 1.1,
-    "sharpe": 2.31,
+    "returnPct": 4.26,
+    "maxDrawdownPct": 1.08,
+    "sharpe": 2.69,
     "profitFactor": 99,
     "winRate": 100,
     "trades": 2,
-    "avgR": 1.185,
-    "expectancy": 53.81,
-    "exposurePct": 21.9,
-    "bestTradePct": 2.046,
-    "worstTradePct": 1.542,
-    "finalEquity": 3107.62,
-    "curvePoints": 151,
-    "totalFees": 7.5023,
+    "avgR": 1.407,
+    "expectancy": 63.85,
+    "exposurePct": 22,
+    "bestTradePct": 3.045,
+    "worstTradePct": 1.212,
+    "finalEquity": 3127.7,
+    "curvePoints": 150,
+    "totalFees": 7.9554,
     "barsInMarket": 33
    },
-   "bestReturn": 3.59,
+   "bestReturn": 4.26,
    "versions": [
+    {
+     "version": "v1.3",
+     "at": 1795137613597,
+     "oos": 4.26
+    },
     {
      "version": "v1.2",
      "at": 1795126593393,
@@ -526,7 +536,7 @@
    "timeframe": "1d",
    "symbol": "AAPL",
    "status": "live",
-   "version": "v1.1",
+   "version": "v1.2",
    "strategyId": "macd_swing",
    "params": {
     "fast": 7,
@@ -536,41 +546,46 @@
     "rr": 1.7
    },
    "metrics": {
-    "returnPct": 5.64,
+    "returnPct": 6.07,
     "maxDrawdownPct": 8,
-    "sharpe": 0.68,
-    "profitFactor": 1.3,
+    "sharpe": 0.72,
+    "profitFactor": 1.32,
     "winRate": 50,
     "trades": 34,
-    "avgR": 0.116,
-    "expectancy": 4.98,
-    "exposurePct": 52.8,
+    "avgR": 0.123,
+    "expectancy": 5.32,
+    "exposurePct": 52.6,
     "bestTradePct": 2.58,
     "worstTradePct": -1.688,
-    "finalEquity": 3169.34,
-    "curvePoints": 341,
-    "totalFees": 90.5819,
-    "barsInMarket": 180
+    "finalEquity": 3182.06,
+    "curvePoints": 340,
+    "totalFees": 90.5923,
+    "barsInMarket": 179
    },
    "oos": {
-    "returnPct": 10.32,
+    "returnPct": 10.76,
     "maxDrawdownPct": 2.27,
-    "sharpe": 2.7,
-    "profitFactor": 2.89,
+    "sharpe": 2.83,
+    "profitFactor": 2.96,
     "winRate": 64.3,
     "trades": 14,
-    "avgR": 0.478,
-    "expectancy": 22.11,
-    "exposurePct": 54.3,
+    "avgR": 0.495,
+    "expectancy": 22.97,
+    "exposurePct": 54,
     "bestTradePct": 2.694,
     "worstTradePct": -1.763,
-    "finalEquity": 3309.54,
-    "curvePoints": 151,
-    "totalFees": 38.5205,
-    "barsInMarket": 82
+    "finalEquity": 3322.83,
+    "curvePoints": 150,
+    "totalFees": 38.5314,
+    "barsInMarket": 81
    },
-   "bestReturn": 10.32,
+   "bestReturn": 10.76,
    "versions": [
+    {
+     "version": "v1.2",
+     "at": 1795137613794,
+     "oos": 10.76
+    },
     {
      "version": "v1.1",
      "at": 1795126464506,
@@ -585,6 +600,69 @@
   }
  ],
  "ideas": [
+  {
+   "title": "Anugrah007/Pairs-Trading-Strategy",
+   "source": "GitHub",
+   "url": "https://github.com/Anugrah007/Pairs-Trading-Strategy",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "Light1224/trading-strats-backtest",
+   "source": "GitHub",
+   "url": "https://github.com/Light1224/trading-strats-backtest",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "aadit-n/backtester",
+   "source": "GitHub",
+   "url": "https://github.com/aadit-n/backtester",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "fcucullu/optimization_algorithms",
+   "source": "GitHub",
+   "url": "https://github.com/fcucullu/optimization_algorithms",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "TheFractalyst/PineOptimizer",
+   "source": "GitHub",
+   "url": "https://github.com/TheFractalyst/PineOptimizer",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "wwsf/TradingBot-CI-AI-Pipeline",
+   "source": "GitHub",
+   "url": "https://github.com/wwsf/TradingBot-CI-AI-Pipeline",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "rishavsofer/Dynamic-Pair-Trading-Strategy-Optimization-Using-Bayesian-Methods",
+   "source": "GitHub",
+   "url": "https://github.com/rishavsofer/Dynamic-Pair-Trading-Strategy-Optimization-Using-Bayesian-Methods",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "SashRajj/Momentum-Based-Crypto-Trading",
+   "source": "GitHub",
+   "url": "https://github.com/SashRajj/Momentum-Based-Crypto-Trading",
+   "strategy": "ema_trend",
+   "tested": false
+  },
+  {
+   "title": "theanh97/Statistical-Arbitrage-Bayesian-Optimized-Kappa-Half-life-Pairs-Trading-Engine",
+   "source": "GitHub",
+   "url": "https://github.com/theanh97/Statistical-Arbitrage-Bayesian-Optimized-Kappa-Half-life-Pairs-Trading-Engine",
+   "strategy": "rsi_reversion",
+   "tested": false
+  },
   {
    "title": "RockRK2405/HyperBayesForest",
    "source": "GitHub",
@@ -731,80 +809,16 @@
    "url": "https://github.com/snehghetia/JMAStrategy",
    "strategy": "ema_trend",
    "tested": false
-  },
-  {
-   "title": "rajveer100704/quant-research-lab",
-   "source": "GitHub",
-   "url": "https://github.com/rajveer100704/quant-research-lab",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "white07S/ForexMeanReversion",
-   "source": "GitHub",
-   "url": "https://github.com/white07S/ForexMeanReversion",
-   "strategy": "rsi_reversion",
-   "tested": false
-  },
-  {
-   "title": "lerabyte/trading-model",
-   "source": "GitHub",
-   "url": "https://github.com/lerabyte/trading-model",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "skilled-chaindev/intelligent-trading-bot",
-   "source": "GitHub",
-   "url": "https://github.com/skilled-chaindev/intelligent-trading-bot",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "jettbrains/-L-",
-   "source": "GitHub",
-   "url": "https://github.com/jettbrains/-L-",
-   "strategy": "rsi_reversion",
-   "tested": false
-  },
-  {
-   "title": "asavinov/intelligent-trading-bot",
-   "source": "GitHub",
-   "url": "https://github.com/asavinov/intelligent-trading-bot",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "BrentInventions/IchimokuCloudAutoStrategy",
-   "source": "GitHub",
-   "url": "https://github.com/BrentInventions/IchimokuCloudAutoStrategy",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "yaxuanli105/ichimoku-",
-   "source": "GitHub",
-   "url": "https://github.com/yaxuanli105/ichimoku-",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "jason-ie/trading-strategy",
-   "source": "GitHub",
-   "url": "https://github.com/jason-ie/trading-strategy",
-   "strategy": "rsi_reversion",
-   "tested": false
   }
  ],
  "sentiment": {
-  "updatedAt": 1795126600336,
+  "updatedAt": 1795137619445,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
-   "value": 10,
+   "value": 12,
    "label": "Extreme Fear",
-   "at": 1795046400000,
+   "at": 1795132800000,
    "history": [
-    28,
     25,
     28,
     29,
@@ -817,28 +831,29 @@
     10,
     12,
     11,
-    10
+    10,
+    12
    ]
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.44,
+    "score": -0.43,
     "bias": "דובי",
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 61831.6
+    "price": 62484.1
    },
    "ETHUSDT": {
-    "score": -0.44,
+    "score": -0.43,
     "bias": "דובי",
     "technical": -0.7,
     "news": 0,
     "drivers": [],
-    "price": 1748.56
+    "price": 1765.23
    },
    "NVDA": {
-    "score": -0.36,
+    "score": -0.35,
     "bias": "דובי",
     "technical": -0.5,
     "news": 0,
@@ -846,7 +861,7 @@
     "price": 145.98
    },
    "SPY": {
-    "score": -0.36,
+    "score": -0.35,
     "bias": "דובי",
     "technical": -0.5,
     "news": 0,
@@ -854,8 +869,8 @@
     "price": 715.87
    },
    "AAPL": {
-    "score": -0.16,
-    "bias": "דובי",
+    "score": -0.15,
+    "bias": "ניטרלי",
     "technical": 0,
     "news": 0,
     "drivers": [],
@@ -865,39 +880,34 @@
   "headlines": [],
   "trending": [
    {
-    "name": "WASTED",
-    "symbol": "WASTED",
-    "rank": 806
-   },
-   {
-    "name": "Lucia",
-    "symbol": "LUCIA",
-    "rank": 876
-   },
-   {
     "name": "Bitcoin",
     "symbol": "BTC",
     "rank": 1
    },
    {
-    "name": "Official Trump",
-    "symbol": "TRUMP",
-    "rank": 135
+    "name": "NEAR Protocol",
+    "symbol": "NEAR",
+    "rank": 22
+   },
+   {
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "rank": 2
+   },
+   {
+    "name": "Anthropic PreStocks",
+    "symbol": "ANTHROPIC",
+    "rank": 440
    },
    {
     "name": "Pearl",
     "symbol": "PEARL",
-    "rank": 73
+    "rank": 76
    },
    {
-    "name": "Monad",
-    "symbol": "MON",
-    "rank": 178
-   },
-   {
-    "name": "Venice Token",
-    "symbol": "VVV",
-    "rank": 67
+    "name": "Backpack",
+    "symbol": "BP",
+    "rank": 151
    },
    {
     "name": "Pudgy Penguins",
@@ -905,14 +915,19 @@
     "rank": 128
    },
    {
-    "name": "Solana",
-    "symbol": "SOL",
-    "rank": 7
+    "name": "XRP",
+    "symbol": "XRP",
+    "rank": 6
    },
    {
-    "name": "Ethereum",
-    "symbol": "ETH",
-    "rank": 2
+    "name": "Maple Finance",
+    "symbol": "SYRUP",
+    "rank": 223
+   },
+   {
+    "name": "Venice Token",
+    "symbol": "VVV",
+    "rank": 67
    }
   ],
   "newsScore": 0

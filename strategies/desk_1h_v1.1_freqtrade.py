@@ -2,11 +2,11 @@
 # Alta Capital — auto-generated strategy artifact
 # Desk: תוך־יומי · נר שעה · BTCUSDT · 1h
 # Version: v1.1 · Strategy family: ema_trend
-# Backtest: return 16.19% · PF 3.34 · DD 3.16% · trades 20
-# OOS: 12.66% · Sharpe 10.76
+# Backtest: return 16.09% · PF 3.27 · DD 3.16% · trades 19
+# OOS: 12.66% · Sharpe 10.6
 # Params: {"fast":22,"slow":89,"atrStop":1.6,"rr":1.6,"trendFilter":true}
 # Target platform: Freqtrade
-# Generated: 2026-11-19T22:16:40.339Z
+# Generated: 2026-11-20T01:20:19.446Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:
