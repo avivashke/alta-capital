@@ -703,28 +703,34 @@ export async function launchWhatsAppLogin({ timeoutMs = 240_000 } = {}) {
     });
     context = launched.context;
     const page = context.pages()[0] || await context.newPage();
+    await page.bringToFront().catch(() => {});
     await page.goto('https://web.whatsapp.com', { waitUntil: 'domcontentloaded', timeout: 45_000 });
 
-    // אם כבר מחובר – אין צורך ב‑QR
-    if (await isWhatsAppReady(page)) {
-      return { ok: true, loggedIn: true, browser: launched.browserLabel, discoveredGroups: [], message: 'WhatsApp Web כבר מחובר.' };
+    const deadline = Date.now() + timeoutMs;
+    let qrLogged = false;
+    let ready = false;
+
+    while (Date.now() < deadline) {
+      if (page.isClosed()) {
+        return { ok: false, error: 'חלון WhatsApp Web נסגר לפני השלמת החיבור.' };
+      }
+      if (await isWhatsAppReady(page)) {
+        ready = true;
+        break;
+      }
+      if (!qrLogged && await isQrScreenVisible(page)) {
+        qrLogged = true;
+        console.log('🟢 קוד QR מופיע – אנא סרוק עם הטלפון שלך (WhatsApp -> מכשירים מקושרים -> קישור מכשיר)');
+      }
+      await sleep(1500);
     }
-    // המתן עד שמופיע קוד QR (או עד timeout)
-    try {
-      await page.waitForFunction(isQrScreenVisible, { timeout: timeoutMs });
-      console.log('🟢 קוד QR מופיע – אנא סרק עם הטלפון שלך');
-    } catch (e) {
-      return { ok: false, error: 'לא נמצא קוד QR בזמן שהוקצב. ודא חיבור אינטרנט וללא VPN.' };
-    }
-    // אחרי שה‑QR נסרק, המתן עד ש‑WhatsApp מוכן (חיבור מושלם)
-    try {
-      await page.waitForFunction(isWhatsAppReady, { timeout: timeoutMs });
-    } catch (e) {
-      return { ok: false, error: 'החיבור ל‑WhatsApp לא הושלם לאחר סריקת QR.' };
+
+    if (!ready) {
+      return { ok: false, error: 'תם הזמן להמתנה לסריקת QR ב-WhatsApp Web. נסה שוב וסרוק את הקוד מהטלפון.' };
     }
 
     // Wait briefly for chat titles to hydrate, then discover group names
-    await sleep(2500);
+    await sleep(3000);
     const groups = await listVisibleChats(page);
     saveWhatsAppConfig({
       loggedIn: true,
