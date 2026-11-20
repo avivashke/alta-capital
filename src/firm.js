@@ -14,6 +14,7 @@ import { analyze } from './ta.js';
 import { scanIfDue, refreshSentiment } from './research.js';
 import { refreshFundamentals } from './fundamentals.js';
 import { runAutonomousGannLibraryAuditIfDue } from './gann.js';
+import { runYonatanYouTubeScoutIfDue } from './youtube_scout.js';
 import { createBinanceClient } from './binance_testnet.js';
 import { createPaperPortfolio } from './paper_portfolio.js';
 import { recordVersionInDb, recordTradeInDb, recordCycleInDb, scheduleDatabasePush, pushStateToDatabase } from './db.js';
@@ -169,8 +170,8 @@ function downsample(values, maxPoints = 160) {
 }
 
 function pickStrategy(desk) {
-  const intraday = ['ema_trend', 'supertrend_adx', 'vol_breakout', 'breakout', 'momentum', 'rsi_reversion', 'mean_reversion_z', 'gann_swing_sq9'];
-  const swing = ['macd_swing', 'ema_trend', 'supertrend_adx', 'breakout', 'gann_swing_sq9', 'gann_time_cycle', 'vol_breakout'];
+  const intraday = ['ema_trend', 'supertrend_adx', 'structure_pullback', 'vol_breakout', 'breakout', 'momentum', 'rsi_reversion', 'mean_reversion_z', 'gann_swing_sq9'];
+  const swing = ['macd_swing', 'ema_trend', 'structure_pullback', 'supertrend_adx', 'breakout', 'gann_swing_sq9', 'gann_time_cycle', 'vol_breakout'];
   const pool = desk.kind === 'intraday' ? intraday : swing;
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -237,7 +238,7 @@ export async function runDeskCycle(desk, opts = {}) {
     if (aiPlan?.strategyId && !STRATEGIES[aiPlan.strategyId]) {
       store.log('warn', 'אמיר · ביקורת אמת', `${desk.label}: יורטה המלצת AI לאסטרטגיה לא קיימת (${aiPlan.strategyId}) — נחסמה הזיה`);
       desk.aiPlan = { ...aiPlan, consumed: true, rejectedByAuditor: 'unknown-strategy' };
-    } else if (aiPlan?.strategyId && STRATEGIES[aiPlan.strategyId] && aiPlan.strategyId !== desk.strategyId) {
+    } else if (!desk.lockedStrategy && aiPlan?.strategyId && STRATEGIES[aiPlan.strategyId] && aiPlan.strategyId !== desk.strategyId) {
       store.log('info', 'אוריה · CIO',
         `${desk.label}: עוברים למשפחה ${STRATEGIES[aiPlan.strategyId].label} לפי החלטת הסוכן החכם`);
       desk.strategyId = aiPlan.strategyId;
@@ -282,13 +283,13 @@ export async function runDeskCycle(desk, opts = {}) {
 
     state.stats.backtests = (state.stats.backtests || 0) + (result.backtests || 0);
 
-    // Continuous Market-Regime Challenger: if incumbent is misaligned, losing recently, or weak/vetoed,
-    // automatically pit top regime-recommended challenger families against it on the exact same real candles.
+    // Continuous Market-Regime Challenger: skipped for dedicated strategy bots (desk.lockedStrategy)
+    // so each dedicated YouTube bot proves profitability strictly on its own target strategy.
     let winner = result.best;
     const regimeMismatch = !(regime.recommendedFamilies || []).includes(desk.strategyId);
     const recentWeak = !winner?.recentMetrics || (winner.recentMetrics.returnPct ?? 0) < 0;
     const deskWeak = !desk.version || (winner?.evaluation?.oos?.returnPct ?? -999) < 1.5 || (desk.assessment?.robustness ?? 0) < 55 || !!desk.lastAudit?.vetoed;
-    if (regimeMismatch || recentWeak || deskWeak || opts.deep || !winner) {
+    if (!desk.lockedStrategy && (regimeMismatch || recentWeak || deskWeak || opts.deep || !winner)) {
       const regRecs = (regime.recommendedFamilies || []).filter((id) => STRATEGIES[id] && id !== desk.strategyId);
       const orthogonal = deskWeak
         ? [regRecs[0], 'rsi_reversion', 'mean_reversion_z', 'macd_swing', 'gann_swing_sq9', regRecs[1]]
@@ -912,6 +913,17 @@ export async function tick({ reason = 'auto' } = {}) {
     refreshTechnicals({ force: true }).catch((e) => console.warn('[ta]', e));
     refreshFundamentals().catch((e) => console.warn('[fundamentals]', e));
     runAutonomousGannLibraryAuditIfDue().catch((e) => console.warn('[gann-audit]', e));
+    runYonatanYouTubeScoutIfDue().then((res) => {
+      if (res?.ok && res.report?.blueprints?.length) {
+        const existingYtBots = (store.state.desks || []).filter((d) => d.source === 'youtube_scout');
+        if (existingYtBots.length < 3) {
+          const nextBp = res.report.blueprints.find((bp) => !(store.state.desks || []).some((d) => d.id === bp.deskId));
+          if (nextBp) {
+            spawnDedicatedStrategyBot(nextBp, { runNow: false }).catch(() => {});
+          }
+        }
+      }
+    }).catch((e) => console.warn('[youtube-scout]', e));
     scanIfDue().catch((e) => console.warn('[research]', e));
     refreshSentiment().catch((e) => console.warn('[sentiment]', e));
     store.save(true);
@@ -981,6 +993,87 @@ export function setDeskStatus(deskId, status) {
 export function startMarketFeed() {
   const symbols = [...new Set(store.state.desks.map((d) => d.symbol))];
   startQuotes(symbols);
+}
+
+/**
+ * Spawns (or retrieves) a DEDICATED bot desk for a YouTube Strategy Blueprint (e.g. Doug & Silvia Rumer,
+ * W.D. Gann Sq9, Michael Jenkins, TradingLab) locked to its target strategy so it iterates through
+ * real OHLCV Backtest -> Walk-Forward OOS -> Amir Truth Audit -> Dry-Run -> Live Paper Deployment.
+ */
+export async function spawnDedicatedStrategyBot(blueprint, { runNow = true, deep = true } = {}) {
+  if (!blueprint || !blueprint.deskId) throw new Error('בלופרינט אסטרטגיה לא תקין');
+  const state = store.state;
+  ensureDeskFields();
+
+  const stratId = STRATEGIES[blueprint.strategyId] ? blueprint.strategyId : 'structure_pullback';
+  const symbol = blueprint.symbol || 'BTCUSDT';
+  const tf = blueprint.tf || '1h';
+  const isCrypto = symbol.endsWith('USDT');
+
+  let desk = state.desks.find((d) => d.id === blueprint.deskId);
+  if (!desk) {
+    desk = {
+      id: blueprint.deskId,
+      label: blueprint.label || `בוט ייעודי · ${blueprint.creator || 'YouTube'} (${symbol} ${tf})`,
+      short: symbol,
+      tf,
+      kind: (tf === '1d' || tf === '1w') ? 'swing' : 'intraday',
+      symbol,
+      venue: isCrypto ? 'Binance / Kraken' : 'Yahoo Finance',
+      weight: 0.08,
+      horizon: (tf === '1d' || tf === '1w') ? 'סווינג' : 'תוך־יומי',
+      mandate: `בוט ייעודי ממחקר YouTube (${blueprint.creator || 'Creator'}): ${blueprint.techniqueHe || stratId}. רץ עד הוכחת רווחיות אחרי עמלות ומס ואימות אמיר.`,
+      strategyId: stratId,
+      lockedStrategy: true,
+      source: 'youtube_scout',
+      creator: blueprint.creator || '',
+      videoTitle: blueprint.videoTitle || '',
+      videoUrl: blueprint.videoUrl || '',
+      techniqueHe: blueprint.techniqueHe || '',
+      status: 'optimizing',
+      history: [],
+      equity: [],
+      liveTrades: [],
+      dryRunCycles: 0,
+      openTrade: null,
+      ideas: [],
+      createdAt: Date.now(),
+    };
+    state.desks.push(desk);
+    store.log('ok', 'יונתן · בוט ייעודי', `הוקם בוט ייעודי חדש: ${desk.label} (${STRATEGIES[stratId].label}) — מקור: ${blueprint.creator}`);
+  } else {
+    desk.strategyId = stratId;
+    desk.lockedStrategy = true;
+    desk.videoUrl = blueprint.videoUrl || desk.videoUrl;
+    desk.videoTitle = blueprint.videoTitle || desk.videoTitle;
+  }
+
+  store.save(true);
+  store.emit();
+
+  if (!runNow) {
+    scheduleDatabasePush(1000);
+    return { ok: true, desk, ran: false };
+  }
+
+  setAgent('yt_strategy_scout', {
+    status: 'busy',
+    task: `מריץ הוכחת רווחיות לבוט הייעודי · ${desk.label}`,
+    speech: `בוחן את אסטרטגיית ${blueprint.creator || 'YouTube'} בבוט ייעודי על נתוני אמת (${symbol} ${tf})!`,
+    progress: 50,
+  });
+  const res = await runDeskCycle(desk, { focus: true, deep });
+  await promoteDryRuns();
+  savePaperPortfolio();
+  setAgent('yt_strategy_scout', {
+    status: 'idle',
+    progress: 100,
+    task: `הבוט ${desk.label}: ${desk.status === 'live' ? 'אושר ויושם!' : desk.status === 'dry-run' ? 'עבר ל-Dry-Run מאומת!' : 'ממשיך אופטימיזציה'}`,
+  });
+  store.save(true);
+  store.emit();
+  scheduleDatabasePush(800);
+  return { ok: true, desk, ran: true, result: res };
 }
 
 export async function testIdea(ideaId, deskId) {

@@ -73,6 +73,7 @@ export function defaults() {
     fundamentals: { updatedAt: null, macro: null, assets: {} },
     xResearch: null,
     whatsappGann: null,
+    youtubeScout: null,
     advisor: { messages: [] },
     remote: null,
     stats: { cycles: 0, backtests: 0, deployments: 0, scans: 0, startedAt: Date.now() },

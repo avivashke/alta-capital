@@ -32,10 +32,11 @@ const MISSION_ZONES = {
     icon: '⌁',
     bounds: { x1: 6, y1: 14, x2: 43, y2: 44 },
     slots: [
-      { x: 14, y: 23 },
-      { x: 28, y: 22 },
-      { x: 40, y: 24 },
-      { x: 20, y: 40 },
+      { x: 12, y: 22 },
+      { x: 25, y: 21 },
+      { x: 39, y: 23 },
+      { x: 16, y: 39 },
+      { x: 32, y: 40 },
     ],
   },
   gann: {
@@ -188,10 +189,28 @@ const TASK_MISSIONS = [
       { speaker: 'b', text: 'מעולה רוני, שילבתי את הדוח הפונדמנטלי שלך בתמונת המאקרו של השולחנות!' },
     ],
   },
+  {
+    a: 'yt_strategy_scout', b: 'gann_square',
+    zone: 'gann',
+    taskTitle: 'שילוב טכניקות Sq9 ו-Michael Jenkins מסרטוני YouTube במעבדת גאן',
+    turns: [
+      { speaker: 'a', text: 'גלעד, סרקתי סרטוני W.D. Gann ו-Michael Jenkins חדשים ביוטיוב והבאתי שדרוגים ל-Sq9 ומחזורי זמן.' },
+      { speaker: 'b', text: 'מעולה יונתן! הוספתי אותם לספריית גאן ולמנוע הבוט הייעודי gann_swing_sq9.' },
+    ],
+  },
+  {
+    a: 'yt_strategy_scout', b: 'backtest',
+    zone: 'quant',
+    taskTitle: 'הקמת בוט ייעודי לאסטרטגיית Doug & Silvia ובדיקת רווחיות',
+    turns: [
+      { speaker: 'a', text: 'איתי, הפקתי בלופרינט מאסטרטגיית ה-Pullback של Doug & Silvia ביוטיוב — פותח בוט ייעודי לבדיקה!' },
+      { speaker: 'b', text: 'יונתן, מריץ עליו עכשיו Walk-Forward ומונטה קרלו — אם יוכיח רווחיות אחרי עמלות ומס יאושר ליישום!' },
+    ],
+  },
 ];
 
 function homeZoneFor(agentId = '') {
-  if (agentId === 'intel' || agentId === 'github_scout' || agentId === 'x_fundamental') return 'research';
+  if (agentId === 'intel' || agentId === 'github_scout' || agentId === 'x_fundamental' || agentId === 'yt_strategy_scout') return 'research';
   if (agentId.startsWith('gann')) return 'gann';
   if (['quant', 'backtest', 'optimizer', 'ta'].includes(agentId)) return 'quant';
   return 'ops';
@@ -205,7 +224,7 @@ function taskZoneFor(agent) {
     if (/אמת|ביקורת|אימות|הזיות|וטו|סיכון|dd|drawdown|ביצוע|dry-run|אורז|פיתוח|רובוט|מאשר|הון/.test(txt)) return 'ops';
     if (/walk-forward|בקטסט|וריאציות|פרמטרים|hill-climb|מונטה|מגמה|מומנטום/.test(txt)) return 'quant';
     if (/גאן|ריבוע התשע|זוויות|מחזורי זמן|תבניות/.test(txt)) return 'gann';
-    if (/github|חדשות|סורק|מודיעין|סנטימנט|ציוצים|פונדמנטלי|\bx\b/.test(txt)) return 'research';
+    if (/github|חדשות|סורק|מודיעין|סנטימנט|ציוצים|פונדמנטלי|יוטיוב|youtube|\bx\b/.test(txt)) return 'research';
   }
   return homeZoneFor(id);
 }

@@ -63,6 +63,7 @@ export const AGENT_ROSTER = [
   { id: 'github_scout', name: 'נדב', role: 'חוקר GitHub וחדשנות קוד', icon: '⌘', focus: 'סורק תדיר ריפואים ב-GitHub וברשת על גאן, אינדיקטורים, אסטרטגיות וייעול קוד כדי לשמור על המערכת עדכנית' },
   { id: 'auditor', name: 'אמיר', role: 'מבקר אמת ואימות נתונים', icon: '⚖', focus: 'סוכן ביקורתי המונע הזיות, מוודא עבודה אך ורק על נתוני אמת של השוק וחוסם קידום אסטרטגיות עם Overfitting, עמלות חסרות או מדדים לא ריאליים' },
   { id: 'x_fundamental', name: 'רוני', role: 'חוקר פונדמנטלי בדפדפן X', icon: '𝕏', focus: 'נכנס לדפדפן האמיתי במחשב עם משתמש ה-X הייעודי, סורק ציוצי אמת על מאקרו, דוחות, מניות וקריפטו ומפיק מודיעין פונדמנטלי מאומת עם קישורים ישירים למקור' },
+  { id: 'yt_strategy_scout', name: 'יונתן', role: 'חוקר יוטיוב · גאן ואסטרטגיות', icon: '▶', focus: 'סורק יוטיוב אחר סרטוני גאן לשיפור המודול ויוצרי אסטרטגיות מוכחות (כמו Doug & Silvia, TradingLab, Michael Jenkins), מפיק בלופרינטים ומקים בוטים ייעודיים עד הוכחת רווחיות ויישום' },
 ];
 
 export const STRATEGY_LABELS = {
@@ -71,6 +72,12 @@ export const STRATEGY_LABELS = {
   breakout: 'פריצת ערוץ (Donchian)',
   momentum: 'מומנטום (ROC)',
   macd_swing: 'MACD + פילטר מגמה',
+  structure_pullback: 'משיכה למבנה מגמה (Price Action · Pullback)',
+  gann_swing_sq9: 'גאן סווינג + Square of 9',
+  gann_time_cycle: 'מחזורי זמן גאן (Time Cycle)',
+  supertrend_adx: 'Supertrend + ADX',
+  mean_reversion_z: 'Mean Reversion (Z-Score)',
+  vol_breakout: 'פריצת תנודתיות (ATR/ER)',
 };
 
 export const LLM_PROVIDERS = {

@@ -468,6 +468,158 @@ async function fetchYouTubeResearch() {
   };
 }
 
+const YOUTUBE_STRATEGY_CHANNELS = [
+  { id: 'UC9rktCIORe44eBzRFR68_gQ', name: 'Silvia & Doug', track: 'creator', tag: 'Doug & Silvia Rumer' },
+  { id: 'UCUr9f3IUTTQKssZaAg4pgeA', name: 'Silvia Rumer', track: 'creator', tag: 'Doug & Silvia Rumer' },
+  { id: 'UCfc6BgQNeIofBan0aewiYQQ', name: 'Wd Gann Trader', track: 'gann', tag: 'W.D. Gann Sq9 & Angles' },
+  { id: 'UCllze4XDBfSqsimOf2Vcqrw', name: 'BACKTEST THE HYPE', track: 'creator', tag: 'Backtest Verification' },
+];
+
+const DEFAULT_YT_SCOUT_QUERIES = [
+  { q: 'W.D. Gann Square of 9 trading strategy', track: 'gann', tag: 'Gann Square of 9' },
+  { q: 'Michael Jenkins Gann square of 9 time cycles', track: 'gann', tag: 'Michael Jenkins Gann' },
+  { q: 'Gann Fan 1x1 angle swing chart trading', track: 'gann', tag: 'Gann Fan 1x1 & Swing' },
+  { q: 'Doug and Silvia Rumer trading strategy', track: 'creator', tag: 'Doug & Silvia Rumer' },
+  { q: 'TradingLab tested 100 times trading strategy', track: 'creator', tag: 'TradingLab 100x' },
+  { q: 'quant algorithmic trading strategy backtest profitable', track: 'creator', tag: 'Quant Backtests' },
+];
+
+function extractYouTubeSearchVideos(html, { track = 'creator', tag = '' } = {}, max = 6) {
+  const marker = 'var ytInitialData = ';
+  const idx = html.indexOf(marker);
+  if (idx < 0) return [];
+  const sub = html.slice(idx + marker.length);
+  const end = sub.indexOf(';</script>');
+  if (end < 0) return [];
+  let data;
+  try {
+    data = JSON.parse(sub.slice(0, end));
+  } catch {
+    return [];
+  }
+  const videos = [];
+  const seen = new Set();
+  const walk = (node) => {
+    if (!node || typeof node !== 'object' || videos.length >= max) return;
+    if (node.videoRenderer?.videoId) {
+      const v = node.videoRenderer;
+      const vid = v.videoId;
+      if (!seen.has(vid)) {
+        seen.add(vid);
+        const title = (v.title?.runs || []).map((r) => r.text).join('').trim();
+        const channel = v.ownerText?.runs?.[0]?.text || v.longBylineText?.runs?.[0]?.text || '';
+        const channelId = v.ownerText?.runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId || '';
+        const snippet = (v.detailedMetadataSnippets?.[0]?.snippetText?.runs || []).map((r) => r.text).join('').trim();
+        if (title) {
+          videos.push({
+            videoId: vid,
+            title,
+            channel,
+            channelId,
+            url: `https://www.youtube.com/watch?v=${vid}`,
+            views: v.viewCountText?.simpleText || v.shortViewCountText?.simpleText || '',
+            published: v.publishedTimeText?.simpleText || '',
+            duration: v.lengthText?.simpleText || '',
+            snippet: snippet.slice(0, 260),
+            track,
+            queryTag: tag,
+            source: 'YouTube Search',
+          });
+        }
+      }
+      return;
+    }
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+    } else {
+      for (const val of Object.values(node)) walk(val);
+    }
+  };
+  walk(data);
+  return videos;
+}
+
+async function fetchYouTubeStrategyScout(customQueryStr = '') {
+  const customList = String(customQueryStr || '')
+    .split(/[|,\n]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 2)
+    .slice(0, 6)
+    .map((q) => ({
+      q,
+      track: /gann|גאן|sq9|jenkins|cycle|square of 9/i.test(q) ? 'gann' : 'creator',
+      tag: q.slice(0, 32),
+    }));
+
+  const searchSpecs = [...DEFAULT_YT_SCOUT_QUERIES, ...customList];
+  const all = [];
+  const activeSources = new Set();
+
+  // 1. Official Atom feeds of tracked strategy & Gann creators (Silvia & Doug, Wd Gann Trader, BACKTEST THE HYPE)
+  await Promise.all(YOUTUBE_STRATEGY_CHANNELS.map(async (ch) => {
+    try {
+      const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.id}`;
+      const xml = await fetchTextTimeout(url, { Accept: 'application/atom+xml, text/xml' }, 7000);
+      const parsed = parseFeedItems(xml, `YouTube · ${ch.name}`, 5).map((v) => {
+        const vidMatch = String(v.link || '').match(/[?&]v=([A-Za-z0-9_-]{8,16})/);
+        return {
+          videoId: vidMatch?.[1] || '',
+          title: v.title,
+          channel: ch.name,
+          channelId: ch.id,
+          url: v.link,
+          views: '',
+          published: v.pubDate || '',
+          duration: '',
+          snippet: v.summary || '',
+          track: ch.track,
+          queryTag: ch.tag,
+          source: `YouTube Channel · ${ch.name}`,
+        };
+      });
+      if (parsed.length) {
+        activeSources.add(ch.name);
+        all.push(...parsed);
+      }
+    } catch { /* skip channel on timeout */ }
+  }));
+
+  // 2. Live YouTube Search across Gann mastery + strategy creator queries
+  await Promise.all(searchSpecs.map(async (spec) => {
+    try {
+      const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(spec.q)}`;
+      const html = await fetchTextTimeout(url, {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+      }, 8500);
+      const vids = extractYouTubeSearchVideos(html, spec, 5);
+      if (vids.length) {
+        activeSources.add(spec.tag);
+        all.push(...vids);
+      }
+    } catch { /* skip single query error */ }
+  }));
+
+  // Deduplicate by videoId or title
+  const seen = new Set();
+  const dedup = [];
+  for (const v of all) {
+    const k = v.videoId || v.title.toLowerCase().slice(0, 65);
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    dedup.push(v);
+  }
+
+  return {
+    ok: dedup.length > 0,
+    source: `YouTube Gann & Strategy Scout (${activeSources.size} מקורות)`,
+    activeSources: [...activeSources],
+    total: dedup.length,
+    videos: dedup.slice(0, 42),
+    fetchedAt: Date.now(),
+  };
+}
+
 async function fetchArxivQuantPapers() {
   const xml = await fetchTextTimeout('https://rss.arxiv.org/rss/q-fin', { Accept: 'application/rss+xml, text/xml' }, 8000);
   const items = parseFeedItems(xml, 'arXiv q-fin', 15);
@@ -529,6 +681,10 @@ export async function handleMarketRequest(query = {}) {
 
   if (query.action === 'youtube') {
     return await fetchYouTubeResearch();
+  }
+
+  if (query.action === 'youtube_scout') {
+    return await fetchYouTubeStrategyScout(query.queries || '');
   }
 
   if (query.action === 'arxiv') {

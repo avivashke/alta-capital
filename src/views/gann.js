@@ -24,6 +24,7 @@ import {
 import { chatDetailed } from '../llm.js';
 import { gannExplainButton, openGannMasterGuideModal, renderGannExecutiveForecastCard } from '../gann_guide.js';
 import { renderWhatsAppGannCard } from '../whatsapp_gann_ui.js';
+import { renderYonatanYouTubeScoutCard } from '../youtube_scout_ui.js';
 
 let gannViewState = {
   symbol: 'BTCUSDT',
@@ -1054,6 +1055,9 @@ export function renderGann(root, ui) {
     },
     onSelectAsset: (sym) => selectGannAsset(sym, ui),
   }));
+
+  // Yonatan YouTube Gann Research & Dedicated Gann Bot Strip
+  mount(root, renderYonatanYouTubeScoutCard(ui, { compact: true }));
 
   // Smart Auto-Fill Proposal Card with Educational Explanations for every Gann field
   mount(root, renderSmartAutoFillCard(a, cfg, ui));

@@ -5,6 +5,8 @@ import { h, pct, num, section, tag, notice, empty, toast, timeAgo, downloadFile,
 import { budgetSnapshot, scanGitHub, scanFearGreed, scanTrending, scanReddit, scanNews, scanYouTube, scanArxivQuant, scanHackerNews, refreshSentiment, saveContextToGitHub, buildContextDocument, scoreText, CURATED_GITHUB_INTEL, runNadavGitHubScout } from '../research.js';
 import { testIdea } from '../firm.js';
 import { testAllFeeds } from '../conncheck.js';
+import { runYonatanYouTubeScout } from '../youtube_scout.js';
+import { renderYonatanYouTubeScoutCard } from '../youtube_scout_ui.js';
 
 let connResults = null;
 import { strategyName } from './shared.js';
@@ -30,18 +32,22 @@ export function renderResearch(root, ui) {
   mount(root, 
     h('div', { class: 'page-head' },
       h('div', {},
-        h('div', { class: 'eyebrow', text: 'Research radar · RSS · Reddit · YouTube · arXiv · Hacker News' }),
+        h('div', { class: 'eyebrow', text: 'Research radar · YouTube Gann & Creators · RSS · Reddit · arXiv · Hacker News' }),
         h('h1', { text: 'מחקר וסריקה' }),
-        h('p', { text: 'הסוכנים שואבים אוטומטית מ-News RSS (9 פידים פיננסיים), Reddit, ערוצי YouTube (Bloomberg, CNBC, Coin Bureau, Benjamin Cowen, Patrick Boyle), מאמרי arXiv q-fin, Hacker News ו-GitHub.' }),
+        h('p', { text: 'הסוכנים שואבים אוטומטית מיוטיוב (יונתן: גאן, Doug & Silvia, TradingLab ובוטים ייעודיים), News RSS, Reddit, ערוצי YouTube פיננסיים, arXiv q-fin, Hacker News ו-GitHub.' }),
       ),
       h('div', { class: 'head-actions' },
-        h('button', { class: 'btn btn-primary btn-sm', onclick: () => act(() => runNadavGitHubScout(), 'נדב סרק ריפואים ב-GitHub לגאן וייעול המערכת') }, '⌘ סריקת נדב (GitHub גאן וייעול)'),
+        h('button', { class: 'btn btn-primary btn-sm', onclick: () => act(() => runYonatanYouTubeScout({ force: true }), 'יונתן סרק סרטוני יוטיוב (גאן + Doug & Silvia) והכין בלופרינטים לבוטים!') }, '▶ סריקת יונתן (יוטיוב גאן + אסטרטגיות)'),
+        h('button', { class: 'btn btn-sm', onclick: () => act(() => runNadavGitHubScout(), 'נדב סרק ריפואים ב-GitHub לגאן וייעול המערכת') }, '⌘ סריקת נדב (GitHub)'),
         h('button', { class: 'btn btn-sm', onclick: () => act(() => refreshSentiment(), 'כל 7 מקורות המחקר והחדשות נסרקו!') }, '⟳ סרוק את כל המקורות'),
       ),
     ),
   );
 
-  mount(root, h('div', { class: 'card' },
+  // Yonatan YouTube Gann & Strategy Creator Scout + Dedicated Bots Proof-of-Profitability Lab
+  mount(root, renderYonatanYouTubeScoutCard(ui, { compact: false }));
+
+  mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
     h('div', { class: 'card-head' },
       h('div', {}, h('h2', { text: 'מכסת שאילתות חינמיות ומקורות פעילים' }), h('div', { class: 'card-sub', text: 'הסוכנים שואבים אוטומטית בכל מחזור ומכבדים את מגבלות הקצב של כל מקור' })),
     ),
@@ -52,7 +58,7 @@ export function renderResearch(root, ui) {
         h('div', { class: 'tiny muted', text: b.used >= b.total ? `יתאפס ${timeAgo(b.resetAt + 3600000)}` : `נשארו ${b.total - b.used} · קריאות: ${b.calls || 0}` }),
       )),
     ),
-    notice('כל המקורות (News RSS, Reddit דרך פרוקסי שרת, YouTube Atom, arXiv q-fin, Hacker News, Fear & Greed, CoinGecko) חינמיים לגמרי ללא צורך במפתחות API ומופעלים אוטומטית בכל סבב מחקר.', 'blue'),
+    notice('כל המקורות (YouTube Gann & Creators, News RSS, Reddit דרך פרוקסי שרת, YouTube Atom, arXiv q-fin, Hacker News, Fear & Greed, CoinGecko) חינמיים לגמרי ללא צורך במפתחות API ומופעלים אוטומטית בכל סבב מחקר.', 'blue'),
   ));
 
   mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },

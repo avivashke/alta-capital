@@ -191,6 +191,23 @@ try {
 } catch (err) {
   console.warn('[runner] sentiment:', err.message);
 }
+try {
+  const { runYonatanYouTubeScoutIfDue } = await import('../src/youtube_scout.js');
+  const ytRes = await runYonatanYouTubeScoutIfDue();
+  if (ytRes?.ok && ytRes.report) {
+    console.log(`[runner] Yonatan YouTube Scout: ${ytRes.report.totalVideos} videos · ${ytRes.report.blueprints.length} blueprints · ${ytRes.report.gannUpgrades.length} Gann upgrades`);
+    const existingYt = (store.state.desks || []).filter((d) => d.source === 'youtube_scout');
+    if (existingYt.length < 3) {
+      const nextBp = ytRes.report.blueprints.find((bp) => !(store.state.desks || []).some((d) => d.id === bp.deskId));
+      if (nextBp) {
+        await firm.spawnDedicatedStrategyBot(nextBp, { runNow: false });
+        console.log(`[runner] Yonatan spawned dedicated bot: ${nextBp.label}`);
+      }
+    }
+  }
+} catch (err) {
+  console.warn('[runner] youtube scout:', err.message);
+}
 
 fs.mkdirSync(strategiesDir, { recursive: true });
 for (const desk of store.state.desks) {

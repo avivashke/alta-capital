@@ -336,6 +336,61 @@ export const STRATEGIES = {
       return out;
     },
   },
+
+  structure_pullback: {
+    label: 'משיכה למבנה מגמה (Price Action · Pullback)',
+    blurb: 'אסטרטגיית תנועת מחיר בסגנון Doug & Silvia / Price Action: מגמה ראשית מאומתת + משיכה (Pullback) לאזור ה-EMA/מבנה + נר אישור היפוך וסטופ ATR הדוק.',
+    warmup: 120,
+    space: {
+      fast: int(8, 21),
+      slow: int(34, 89),
+      pullbackBars: int(2, 6),
+      rsiMid: int(42, 56),
+      atrStop: flt(1.1, 2.8),
+      rr: flt(1.8, 4.0),
+    },
+    positions(candles, p) {
+      const closes = candles.map((c) => c.c);
+      const fast = ind.ema(closes, Math.round(p.fast));
+      const slow = ind.ema(closes, Math.round(p.slow));
+      const rsi = ind.rsi(closes, 14);
+      const pb = Math.max(2, Math.round(p.pullbackBars));
+      const out = new Array(closes.length).fill(0);
+      let st = 0;
+      for (let i = pb + 1; i < closes.length; i++) {
+        if (fast[i] == null || slow[i] == null || rsi[i] == null || slow[i - 1] == null) {
+          out[i] = st;
+          continue;
+        }
+        const c = candles[i];
+        const prev = candles[i - 1];
+        const upTrend = fast[i] > slow[i] && slow[i] >= slow[i - 1];
+        const dnTrend = fast[i] < slow[i] && slow[i] <= slow[i - 1];
+
+        // Check recent pullback touch into value zone (between fast & slow EMA)
+        let touchedUpZone = false;
+        let touchedDnZone = false;
+        for (let k = 1; k <= pb; k++) {
+          if (candles[i - k].l <= fast[i - k] * 1.003 && candles[i - k].c >= slow[i - k] * 0.992) touchedUpZone = true;
+          if (candles[i - k].h >= fast[i - k] * 0.997 && candles[i - k].c <= slow[i - k] * 1.008) touchedDnZone = true;
+        }
+
+        const bullTrigger = c.c > c.o && c.c > prev.h && c.c > fast[i] && rsi[i] >= Number(p.rsiMid);
+        const bearTrigger = c.c < c.o && c.c < prev.l && c.c < fast[i] && rsi[i] <= (100 - Number(p.rsiMid));
+
+        if (st === 0) {
+          if (upTrend && touchedUpZone && bullTrigger) st = 1;
+          else if (dnTrend && touchedDnZone && bearTrigger) st = -1;
+        } else if (st === 1 && (c.c < slow[i] || fast[i] < slow[i])) {
+          st = 0;
+        } else if (st === -1 && (c.c > slow[i] || fast[i] > slow[i])) {
+          st = 0;
+        }
+        out[i] = st;
+      }
+      return out;
+    },
+  },
 };
 
 export const STRATEGY_IDS = Object.keys(STRATEGIES);
