@@ -16,7 +16,8 @@ $Action = New-ScheduledTaskAction -Execute $NodeBin -Argument "`"$RepoDir\script
 $Trigger = New-ScheduledTaskTrigger -AtLogOn
 $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit (New-TimeSpan -Days 0)
 
-Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Settings $Settings -Description "Alta Capital Always-On Base Server + Cloud Sync" -Force | Out-Null
+$Principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive
+Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Settings $Settings -Principal $Principal -Description "Alta Capital Always-On Base Server + Cloud Sync" -Force | Out-Null
 Start-ScheduledTask -TaskName $TaskName
 
 Write-Host ""

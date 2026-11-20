@@ -18,16 +18,17 @@ foreach ($c in $conns) {
 $task = Get-ScheduledTask -TaskName "AltaCapitalBaseServer" -ErrorAction SilentlyContinue
 if ($task) {
   Stop-ScheduledTask -TaskName "AltaCapitalBaseServer" -ErrorAction SilentlyContinue
-  Start-Sleep -Seconds 2
-  Start-ScheduledTask -TaskName "AltaCapitalBaseServer"
-  Start-Sleep -Seconds 2
-  Write-Host "Restarted Windows Scheduled Task: AltaCapitalBaseServer" -ForegroundColor Green
-} else {
+  try {
+    $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive
+    Set-ScheduledTask -TaskName "AltaCapitalBaseServer" -Principal $principal -ErrorAction SilentlyContinue | Out-Null
+  } catch {}
   Start-Sleep -Seconds 1
-  Start-Process -FilePath "node" -ArgumentList "scripts/start-base-server.mjs" -WorkingDirectory $root -WindowStyle Minimized
-  Start-Sleep -Seconds 2
-  Write-Host "Started Alta Capital Base Server in background." -ForegroundColor Green
 }
+
+Start-Sleep -Seconds 1
+Start-Process -FilePath "node" -ArgumentList "scripts/start-base-server.mjs" -WorkingDirectory $root -WindowStyle Minimized
+Start-Sleep -Seconds 2
+Write-Host "Started Alta Capital Base Server in your interactive desktop session (Chrome popups enabled)." -ForegroundColor Green
 
 try {
   $health = Invoke-RestMethod -Uri "http://127.0.0.1:8181/api/health" -TimeoutSec 5

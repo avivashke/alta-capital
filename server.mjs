@@ -788,11 +788,18 @@ const server = http.createServer(async (req, res) => {
     waAgentJob.mode = 'login';
     waAgentJob.startedAt = Date.now();
     waAgentJob.lastError = null;
+    console.log('[WhatsApp Agent] Launching visible Chrome for WhatsApp Web QR login...');
     launchWhatsAppLogin().then((result) => {
       waAgentJob.lastResult = result;
       waAgentJob.lastError = result.ok ? null : (result.error || 'התחברות וואטסאפ לא הושלמה');
+      if (result.ok) {
+        console.log(`[WhatsApp Agent] Login succeeded (${result.discoveredGroups?.length || 0} chats detected).`);
+      } else {
+        console.error(`[WhatsApp Agent] Login failed: ${waAgentJob.lastError}`);
+      }
     }).catch((err) => {
       waAgentJob.lastError = err.message;
+      console.error(`[WhatsApp Agent] Login exception: ${err.message}`);
     }).finally(() => {
       waAgentJob.busy = false;
       waAgentJob.mode = null;
