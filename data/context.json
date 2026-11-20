@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-20T17:51:38.066Z",
+ "generatedAt": "2026-11-20T23:55:04.808Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -15,50 +15,55 @@
    "timeframe": "5m",
    "symbol": "BTCUSDT",
    "status": "dry-run",
-   "version": "v1.1",
-   "strategyId": "mean_reversion_z",
+   "version": "v1.2",
+   "strategyId": "breakout",
    "params": {
-    "period": 27,
-    "z": 1.3,
-    "atrStop": 2,
-    "rr": 2.1
+    "period": 19,
+    "atrStop": 1.6,
+    "rr": 2.7,
+    "filter": true
    },
    "metrics": {
-    "returnPct": 1.23,
-    "maxDrawdownPct": 3.19,
-    "sharpe": 7.24,
-    "profitFactor": 1.24,
-    "winRate": 71.9,
-    "trades": 32,
-    "avgR": 0.026,
-    "expectancy": 1.45,
-    "exposurePct": 60.3,
-    "bestTradePct": 0.93,
-    "worstTradePct": -0.965,
-    "finalEquity": 3796.29,
-    "curvePoints": 400,
-    "totalFees": 213.8378,
-    "barsInMarket": 241
+    "returnPct": 1.38,
+    "maxDrawdownPct": 4.94,
+    "sharpe": 6.07,
+    "profitFactor": 1.19,
+    "winRate": 40,
+    "trades": 30,
+    "avgR": 0.03,
+    "expectancy": 1.62,
+    "exposurePct": 57.1,
+    "bestTradePct": 2.257,
+    "worstTradePct": -0.707,
+    "finalEquity": 3801.88,
+    "curvePoints": 410,
+    "totalFees": 197.3265,
+    "barsInMarket": 234
    },
    "oos": {
-    "returnPct": 2.21,
-    "maxDrawdownPct": 1.19,
-    "sharpe": 32.17,
-    "profitFactor": 3.24,
-    "winRate": 83.3,
-    "trades": 12,
-    "avgR": 0.122,
-    "expectancy": 6.91,
-    "exposurePct": 52,
-    "bestTradePct": 0.939,
-    "worstTradePct": -0.854,
-    "finalEquity": 3832.93,
+    "returnPct": 4.36,
+    "maxDrawdownPct": 1.2,
+    "sharpe": 42.88,
+    "profitFactor": 4.58,
+    "winRate": 50,
+    "trades": 10,
+    "avgR": 0.282,
+    "expectancy": 16.01,
+    "exposurePct": 53.3,
+    "bestTradePct": 2.324,
+    "worstTradePct": -0.641,
+    "finalEquity": 3913.6,
     "curvePoints": 150,
-    "totalFees": 80.8349,
-    "barsInMarket": 78
+    "totalFees": 66.5848,
+    "barsInMarket": 80
    },
-   "bestReturn": 2.21,
+   "bestReturn": 4.36,
    "versions": [
+    {
+     "version": "v1.2",
+     "at": 1795218896859,
+     "oos": 4.36
+    },
     {
      "version": "v1.1",
      "at": 1795165479091,
@@ -403,7 +408,7 @@
    "timeframe": "1h",
    "symbol": "NVDA",
    "status": "live",
-   "version": "v1.3",
+   "version": "v1.4",
    "strategyId": "ema_trend",
    "params": {
     "fast": 23,
@@ -413,41 +418,46 @@
     "trendFilter": false
    },
    "metrics": {
-    "returnPct": 37.66,
+    "returnPct": 42.5,
     "maxDrawdownPct": 4.91,
-    "sharpe": 14.15,
-    "profitFactor": 3.16,
+    "sharpe": 15.55,
+    "profitFactor": 3.44,
     "winRate": 61.1,
     "trades": 36,
-    "avgR": 0.608,
-    "expectancy": 31.33,
-    "exposurePct": 87.9,
-    "bestTradePct": 6.906,
-    "worstTradePct": -2.132,
-    "finalEquity": 4129.8,
-    "curvePoints": 297,
-    "totalFees": 172.9424,
-    "barsInMarket": 261
+    "avgR": 0.673,
+    "expectancy": 35.37,
+    "exposurePct": 87.8,
+    "bestTradePct": 6.909,
+    "worstTradePct": -2.133,
+    "finalEquity": 4275.01,
+    "curvePoints": 296,
+    "totalFees": 172.8874,
+    "barsInMarket": 260
    },
    "oos": {
-    "returnPct": 29.25,
-    "maxDrawdownPct": 3.11,
-    "sharpe": 21.41,
-    "profitFactor": 5.51,
+    "returnPct": 33.74,
+    "maxDrawdownPct": 2.94,
+    "sharpe": 24.1,
+    "profitFactor": 6.26,
     "winRate": 76.5,
     "trades": 17,
-    "avgR": 1.029,
-    "expectancy": 51.53,
-    "exposurePct": 87.7,
+    "avgR": 1.166,
+    "expectancy": 59.45,
+    "exposurePct": 87.6,
     "bestTradePct": 6.484,
     "worstTradePct": -2.002,
-    "finalEquity": 3877.59,
-    "curvePoints": 138,
-    "totalFees": 67.5367,
-    "barsInMarket": 121
+    "finalEquity": 4012.23,
+    "curvePoints": 137,
+    "totalFees": 67.4194,
+    "barsInMarket": 120
    },
-   "bestReturn": 29.25,
+   "bestReturn": 33.74,
    "versions": [
+    {
+     "version": "v1.4",
+     "at": 1795218895188,
+     "oos": 33.74
+    },
     {
      "version": "v1.3",
      "at": 1795197089531,
@@ -487,21 +497,21 @@
     "rr": 2.4
    },
    "metrics": {
-    "returnPct": 13.37,
+    "returnPct": 14.21,
     "maxDrawdownPct": 1.63,
-    "sharpe": 2.64,
+    "sharpe": 2.76,
     "profitFactor": 99,
     "winRate": 100,
-    "trades": 6,
-    "avgR": 1.414,
-    "expectancy": 66.87,
-    "exposurePct": 27.6,
-    "bestTradePct": 3.703,
-    "worstTradePct": 0.058,
-    "finalEquity": 3401.19,
-    "curvePoints": 392,
-    "totalFees": 21.5161,
-    "barsInMarket": 108
+    "trades": 7,
+    "avgR": 1.282,
+    "expectancy": 60.91,
+    "exposurePct": 27.1,
+    "bestTradePct": 3.73,
+    "worstTradePct": 0.059,
+    "finalEquity": 3426.36,
+    "curvePoints": 391,
+    "totalFees": 25.1723,
+    "barsInMarket": 106
    },
    "oos": {
     "returnPct": 4.71,
@@ -555,51 +565,56 @@
    "timeframe": "1d",
    "symbol": "AAPL",
    "status": "live",
-   "version": "v1.3",
-   "strategyId": "macd_swing",
+   "version": "v1.4",
+   "strategyId": "rsi_reversion",
    "params": {
-    "fast": 8,
-    "slow": 22,
-    "signal": 10,
-    "atrStop": 1.2,
-    "rr": 1.9
+    "period": 10,
+    "oversold": 36,
+    "overbought": 84,
+    "atrStop": 1.3,
+    "rr": 1.6
    },
    "metrics": {
-    "returnPct": 6.03,
-    "maxDrawdownPct": 10.02,
-    "sharpe": 0.66,
-    "profitFactor": 1.29,
-    "winRate": 52.8,
-    "trades": 36,
-    "avgR": 0.118,
-    "expectancy": 5.02,
-    "exposurePct": 51.8,
-    "bestTradePct": 2.887,
-    "worstTradePct": -1.673,
-    "finalEquity": 3180.82,
-    "curvePoints": 342,
-    "totalFees": 109.7308,
-    "barsInMarket": 177
+    "returnPct": 10.86,
+    "maxDrawdownPct": 2.1,
+    "sharpe": 2,
+    "profitFactor": 7.36,
+    "winRate": 90.9,
+    "trades": 11,
+    "avgR": 0.632,
+    "expectancy": 29.62,
+    "exposurePct": 16.7,
+    "bestTradePct": 2.514,
+    "worstTradePct": -1.708,
+    "finalEquity": 3325.82,
+    "curvePoints": 401,
+    "totalFees": 28.8306,
+    "barsInMarket": 67
    },
    "oos": {
-    "returnPct": 12.37,
-    "maxDrawdownPct": 2.66,
-    "sharpe": 2.8,
-    "profitFactor": 4.57,
-    "winRate": 76.9,
-    "trades": 13,
-    "avgR": 0.609,
-    "expectancy": 28.54,
-    "exposurePct": 57,
-    "bestTradePct": 3.06,
-    "worstTradePct": -1.773,
-    "finalEquity": 3370.99,
+    "returnPct": 3.24,
+    "maxDrawdownPct": 1.37,
+    "sharpe": 1.97,
+    "profitFactor": 99,
+    "winRate": 100,
+    "trades": 3,
+    "avgR": 0.715,
+    "expectancy": 32.36,
+    "exposurePct": 16.6,
+    "bestTradePct": 2.341,
+    "worstTradePct": 0.067,
+    "finalEquity": 3097.08,
     "curvePoints": 151,
-    "totalFees": 41.0688,
-    "barsInMarket": 86
+    "totalFees": 6.3206,
+    "barsInMarket": 25
    },
-   "bestReturn": 12.37,
+   "bestReturn": 3.24,
    "versions": [
+    {
+     "version": "v1.4",
+     "at": 1795218895565,
+     "oos": 3.24
+    },
     {
      "version": "v1.3",
      "at": 1795165478031,
@@ -627,12 +642,139 @@
    "label": "בוט ייעודי · Doug & Silvia (BTCUSDT 1d)",
    "timeframe": "1d",
    "symbol": "BTCUSDT",
+   "status": "dry-run",
+   "version": "v1.0",
+   "strategyId": "structure_pullback",
+   "params": {
+    "fast": 14,
+    "slow": 45,
+    "pullbackBars": 4,
+    "rsiMid": 52,
+    "atrStop": 2.4,
+    "rr": 2.9
+   },
+   "metrics": {
+    "returnPct": 16.97,
+    "maxDrawdownPct": 3.23,
+    "sharpe": 2.11,
+    "profitFactor": 3.6,
+    "winRate": 55.6,
+    "trades": 18,
+    "avgR": 0.595,
+    "expectancy": 18.84,
+    "exposurePct": 81.1,
+    "bestTradePct": 4.784,
+    "worstTradePct": -1.574,
+    "finalEquity": 2339.45,
+    "curvePoints": 380,
+    "totalFees": 13.6675,
+    "barsInMarket": 308
+   },
+   "oos": {
+    "returnPct": 7.59,
+    "maxDrawdownPct": 3.35,
+    "sharpe": 2.18,
+    "profitFactor": 2.88,
+    "winRate": 55.6,
+    "trades": 9,
+    "avgR": 0.558,
+    "expectancy": 16.84,
+    "exposurePct": 77.3,
+    "bestTradePct": 4.4,
+    "worstTradePct": -1.532,
+    "finalEquity": 2151.81,
+    "curvePoints": 150,
+    "totalFees": 7.4454,
+    "barsInMarket": 116
+   },
+   "bestReturn": 7.59,
+   "versions": [
+    {
+     "version": "v1.0",
+     "at": 1795218896324,
+     "oos": 7.59
+    }
+   ]
+  },
+  {
+   "id": "yt_bot_poc_point_of_control_structure_pullba",
+   "label": "בוט ייעודי · Doug & Silvia (BTCUSDT 1h)",
+   "timeframe": "1h",
+   "symbol": "BTCUSDT",
    "status": "optimizing",
    "strategyId": "structure_pullback",
    "versions": []
   }
  ],
  "ideas": [
+  {
+   "title": "Matt Schoeneberger: The Rumers' Opening Range Reversal - Back Tested over 9 Years (Skept",
+   "source": "YouTube · יונתן",
+   "url": "https://www.youtube.com/watch?v=Mbhb7V8GQrw",
+   "tested": false
+  },
+  {
+   "title": "POC · Point of Control: His Channel Is Gone. We Tested His \"$10K a Month\" Strategy Anyway",
+   "source": "YouTube · יונתן",
+   "url": "https://www.youtube.com/watch?v=6xeh5R0pt08",
+   "tested": false
+  },
+  {
+   "title": "batramayank106/commodity-futures-quant-risk-engine",
+   "source": "GitHub",
+   "url": "https://github.com/batramayank106/commodity-futures-quant-risk-engine",
+   "strategy": "rsi_reversion",
+   "tested": false
+  },
+  {
+   "title": "ShubhamSingh0710/commodity-futures-quant-risk-engine",
+   "source": "GitHub",
+   "url": "https://github.com/ShubhamSingh0710/commodity-futures-quant-risk-engine",
+   "strategy": "rsi_reversion",
+   "tested": false
+  },
+  {
+   "title": "b2devv/backtest-overfitting-detector",
+   "source": "GitHub",
+   "url": "https://github.com/b2devv/backtest-overfitting-detector",
+   "strategy": "rsi_reversion",
+   "tested": false
+  },
+  {
+   "title": "arin-deshpande/quant-strat-backtester",
+   "source": "GitHub",
+   "url": "https://github.com/arin-deshpande/quant-strat-backtester",
+   "strategy": "rsi_reversion",
+   "tested": false
+  },
+  {
+   "title": "denesh05/Multi-Strategy-Trading-Engine",
+   "source": "GitHub",
+   "url": "https://github.com/denesh05/Multi-Strategy-Trading-Engine",
+   "strategy": "rsi_reversion",
+   "tested": false
+  },
+  {
+   "title": "walke715-del/Quantitative-Trading-Signal-Backtester",
+   "source": "GitHub",
+   "url": "https://github.com/walke715-del/Quantitative-Trading-Signal-Backtester",
+   "strategy": "rsi_reversion",
+   "tested": false
+  },
+  {
+   "title": "krishyaa06/prism-backtest",
+   "source": "GitHub",
+   "url": "https://github.com/krishyaa06/prism-backtest",
+   "strategy": "rsi_reversion",
+   "tested": false
+  },
+  {
+   "title": "galafis/quantitative-trading-engine",
+   "source": "GitHub",
+   "url": "https://github.com/galafis/quantitative-trading-engine",
+   "strategy": "rsi_reversion",
+   "tested": false
+  },
   {
    "title": "Michael Jenkins: Michael S Jenkins Explains Gann's Time and Price Squared",
    "source": "YouTube · יונתן",
@@ -767,80 +909,10 @@
    "url": "https://arxiv.org/abs/2611.25762",
    "strategy": null,
    "tested": false
-  },
-  {
-   "title": "[arXiv] Auto-Alpha: A Framework for Autonomous Factor Research",
-   "source": "arXiv q-fin",
-   "url": "https://arxiv.org/abs/2611.25732",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "[arXiv] Quantum Calibration of Local-Volatility Surfaces from Sparse Option Quotes",
-   "source": "arXiv q-fin",
-   "url": "https://arxiv.org/abs/2611.25344",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "[arXiv] A joint framework for SPX, VIX and VXX",
-   "source": "arXiv q-fin",
-   "url": "https://arxiv.org/abs/2611.25047",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "Anugrah007/Pairs-Trading-Strategy",
-   "source": "GitHub",
-   "url": "https://github.com/Anugrah007/Pairs-Trading-Strategy",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "Light1224/trading-strats-backtest",
-   "source": "GitHub",
-   "url": "https://github.com/Light1224/trading-strats-backtest",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "aadit-n/backtester",
-   "source": "GitHub",
-   "url": "https://github.com/aadit-n/backtester",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "fcucullu/optimization_algorithms",
-   "source": "GitHub",
-   "url": "https://github.com/fcucullu/optimization_algorithms",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "TheFractalyst/PineOptimizer",
-   "source": "GitHub",
-   "url": "https://github.com/TheFractalyst/PineOptimizer",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "wwsf/TradingBot-CI-AI-Pipeline",
-   "source": "GitHub",
-   "url": "https://github.com/wwsf/TradingBot-CI-AI-Pipeline",
-   "strategy": null,
-   "tested": false
-  },
-  {
-   "title": "rishavsofer/Dynamic-Pair-Trading-Strategy-Optimization-Using-Bayesian-Methods",
-   "source": "GitHub",
-   "url": "https://github.com/rishavsofer/Dynamic-Pair-Trading-Strategy-Optimization-Using-Bayesian-Methods",
-   "strategy": null,
-   "tested": false
   }
  ],
  "sentiment": {
-  "updatedAt": 1795197097146,
+  "updatedAt": 1795218903812,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 12,
@@ -865,59 +937,558 @@
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.6,
+    "score": -0.74,
     "bias": "דובי",
     "technical": -0.5,
-    "news": -0.48,
+    "news": -0.97,
     "drivers": [
      "Bitcoin falls below $60K for first time since July amid broader market selloff",
-     "Bitcoin price drops to $60K as Anthropic drops to $87 in tech sell-off",
-     "Bitcoin Breaks Below $60K as Crypto Fear Index Hits Worst Level Since February"
+     "Bitcoin plunges below $59,000 as rush to cash puts new bear market lows back in play",
+     "Bitcoin price drops to $60K as Anthropic drops to $87 in tech sell-off"
     ],
-    "price": 59067
+    "price": 58893.5
    },
    "ETHUSDT": {
-    "score": -0.48,
+    "score": -0.18,
     "bias": "דובי",
     "technical": -0.5,
-    "news": -0.11,
-    "drivers": [],
-    "price": 1630.14
+    "news": 0.25,
+    "drivers": [
+     "Fairmint plans tokenized stock venue on Canton, Ethereum under SEC experiment",
+     "📺 Could Washington come for the AI labs? Strategists weigh the oversight risk",
+     "📺 Closing Bell panel weighs whether the selloff is a buying opportunity"
+    ],
+    "price": 1621.8
    },
    "NVDA": {
-    "score": -0.47,
-    "bias": "דובי",
-    "technical": -0.5,
-    "news": -0.05,
-    "drivers": [
-     "Nvidia Is Headed for Its 7th Straight Daily Decline. History Says This Happens Next",
-     "US Commerce approved sales of more than 879,000 AI chips to Chinese companies",
-     "California Attorney General subpoenas Nvidia over chips"
-    ],
-    "price": 135.52
-   },
-   "SPY": {
-    "score": -0.49,
-    "bias": "דובי",
-    "technical": -0.5,
-    "news": -0.13,
-    "drivers": [
-     "Why year-end portfolio rebalancing is a risky bet that bonds will beat stocks in 2027",
-     "Warsh wants Fed officials to talk less. Instead, they’re talking more",
-     "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances"
-    ],
-    "price": 700.13
-   },
-   "AAPL": {
     "score": -0.48,
     "bias": "דובי",
     "technical": -0.5,
-    "news": -0.11,
+    "news": -0.08,
+    "drivers": [
+     "Nvidia&#x2019;s stock clinches a stretch of weekly losses not seen since 2008",
+     "Nvidia Shares Sink to 52-Week Low After Report SEC Is Probing Accounting",
+     "NVDA Stock Clocks Worst Week In 18 Years As SEC Reportedly Probes Its Accounting Practices"
+    ],
+    "price": 125.53
+   },
+   "SPY": {
+    "score": -0.54,
+    "bias": "דובי",
+    "technical": -0.5,
+    "news": -0.28,
+    "drivers": [
+     "Dow, S&P 500 enter correction as Nasdaq suffers worst week since 2020",
+     "Chip stocks see $2.3 trillion weekly wipeout as panic grips the AI trade",
+     "These stocks were crushed the most this week as the tech wreck accelerated"
+    ],
+    "price": 689.81
+   },
+   "AAPL": {
+    "score": -0.5,
+    "bias": "דובי",
+    "technical": -0.5,
+    "news": -0.16,
     "drivers": [],
-    "price": 345.51
+    "price": 342.56
    }
   },
   "headlines": [
+   {
+    "title": "Dow, S&P 500 enter correction as Nasdaq suffers worst week since 2020",
+    "url": "https://www.marketwatch.com/story/dow-s-p-500-enter-correction-as-nasdaq-suffers-worst-week-since-2020-bd74dadf?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "All 11 S&P 500 sectors finished more than 1% lower this week for the first time since April 2025.",
+    "at": 1795214760000,
+    "score": 0
+   },
+   {
+    "title": "Chip stocks see $2.3 trillion weekly wipeout as panic grips the AI trade",
+    "url": "https://www.marketwatch.com/story/chip-stocks-see-2-3-trillion-weekly-wipeout-as-panic-grips-the-ai-trade-371f2f03?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "A major semiconductor index just posted its worst weekly performance in 25 years.",
+    "at": 1795214640000,
+    "score": 0
+   },
+   {
+    "title": "These stocks were crushed the most this week as the tech wreck accelerated",
+    "url": "https://www.marketwatch.com/story/these-stocks-were-crushed-the-most-this-week-as-the-tech-wreck-accelerated-8d6f7323?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "94% of stocks in the S&P 500 declined for the week, 11 of them by at least 20%. But for now, analysts still think you can make a lot of money if you buy them.",
+    "at": 1795214640000,
+    "score": 1
+   },
+   {
+    "title": "Nvidia&#x2019;s stock clinches a stretch of weekly losses not seen since 2008",
+    "url": "https://www.marketwatch.com/story/nvidias-stock-heads-for-a-stretch-of-weekly-losses-unseen-since-2008-91aba9a6?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "One fund manager says the continued uncertainty makes Nvidia vulnerable to more selling, even as the stock has erased $1.16 trillion in market value in the past seven trading sessions.",
+    "at": 1795211880000,
+    "score": -1
+   },
+   {
+    "title": "Federal Reserve announces College Fed Challenge winners",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120b.htm",
+    "source": "Federal Reserve",
+    "channelKind": "news",
+    "body": "Federal Reserve announces College Fed Challenge winners",
+    "at": 1795209300000,
+    "score": 0
+   },
+   {
+    "title": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120a.htm",
+    "source": "Federal Reserve",
+    "channelKind": "news",
+    "body": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
+    "at": 1795186800000,
+    "score": -1
+   },
+   {
+    "title": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/enforcement20261119a.htm",
+    "source": "Federal Reserve",
+    "channelKind": "news",
+    "body": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
+    "at": 1795104000000,
+    "score": -1
+   },
+   {
+    "title": "Prediction markets outlook for stocks in 2026 dims amid AI sell-off",
+    "url": "https://www.cnbc.com/2026/11/20/sp-500-8000-kalshi-odds-ai-selloff.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Odds that the S&P 500 will cross 8,000, which were once north of 70%, are extremely low on platform Kalshi.",
+    "at": 1795204743000,
+    "score": -1
+   },
+   {
+    "title": "Warsh wants Fed officials to talk less. Instead, they’re talking more",
+    "url": "https://www.cnbc.com/2026/11/20/warsh-fed-forward-guidance-rate-hikes.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Fed officials have been rushing to the microphones lately while the Fed chairman stays on the sidelines.",
+    "at": 1795209048000,
+    "score": 0
+   },
+   {
+    "title": "The bull market has a new problem. The 'smart money' is selling",
+    "url": "https://www.cnbc.com/2026/11/20/equity-issuance-bull-market-problem.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Companies are shifting from share buybacks to stock issuance, adding new supply. Anthropic’s $81 billion IPO puts that demand to the test.",
+    "at": 1795184129000,
+    "score": 1.414213562373095
+   },
+   {
+    "title": "U.S.-China trade, Taiwan and tech tensions remain unresolved as Trump returns from Asia",
+    "url": "https://www.cnbc.com/2026/11/20/apec-summit-trump-xi-china-trade-taiwan.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Analysts note few concrete outcomes from the high-profile trilateral and other meetings for APEC in Shenzhen this week.",
+    "at": 1795181390000,
+    "score": 0
+   },
+   {
+    "title": "Claude Claims Historic Math Breakthrough One Day After Anthropic IPO",
+    "url": "https://decrypt.co/383747/claude-historic-math-breakthrough-anthropic-ipo",
+    "source": "Decrypt",
+    "channelKind": "news",
+    "body": "Levent Alpöge claims Claude helped prove a 167-year-old math conjecture, but independent checks remain pending, and the release just after Anthropic’s IPO has prompted questions about its unusual publication timing.",
+    "at": 1795210562000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia Shares Sink to 52-Week Low After Report SEC Is Probing Accounting",
+    "url": "https://decrypt.co/383744/nvidia-shares-sink-52-week-low-sec-probing-accounting",
+    "source": "Decrypt",
+    "channelKind": "news",
+    "body": "Nvidia shares fell about 13% to a 52-week low after reports that SEC enforcement staff are examining potential accounting issues, adding to pressure on the chipmaker after Jensen Huang’s resignation.",
+    "at": 1795207014000,
+    "score": 0
+   },
+   {
+    "title": "SBF’s 'The Altruists' Plot Twist: FTX’s Anthropic Shares Would Be Worth $43 Billion",
+    "url": "https://decrypt.co/383739/sbf-altruists-ftx-anthropic-shares-worth-43-billion",
+    "source": "Decrypt",
+    "channelKind": "news",
+    "body": "Anthropic’s IPO made FTX’s liquidated AI bet a $43 billion what-if, just as Netflix premiered its Sam Bankman-Fried drama.",
+    "at": 1795203363000,
+    "score": -1
+   },
+   {
+    "title": "Exxon greenlights $4B Angola oilfield development with new discovery, ANPG says",
+    "url": "https://seekingalpha.com/news/4675382-exxon-greenlights-4b-angola-oilfield-development-with-new-discovery-anpg-says?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795216596000,
+    "score": 0
+   },
+   {
+    "title": "Gold, silver end worst week in eight months but some analysts see signs of a bottom",
+    "url": "https://seekingalpha.com/news/4675365-gold-silver-end-worst-week-in-eight-months-but-some-analysts-see-signs-of-bottom?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795215024000,
+    "score": 0
+   },
+   {
+    "title": "Orange County Bancorp raises dividend by 27.85 to $0.23",
+    "url": "https://seekingalpha.com/news/4675380-orange-county-bancorp-raises-dividend-by-2785-to-023?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795214425000,
+    "score": -1
+   },
+   {
+    "title": "Wrapped Monero token crashes 99.8% amid suspected $13.5M exploit",
+    "url": "https://cointelegraph.com/news/wrapped-monero-token-crashes-998-amid-suspected-135m-exploit?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "Bitquery traced $13.5 million in suspicious sales of the wrapped Monero token, as its operator blamed a security breach and promised to reimburse affected traders.",
+    "at": 1795203447000,
+    "score": -1.414213562373095
+   },
+   {
+    "title": "Sky Protocol sees $2 billion in stablecoin withdrawals, disputes illicit fund claims",
+    "url": "https://cointelegraph.com/news/sky-protocol-sees-2b-in-stablecoin-withdrawals-disputes-illicit-fund-claims?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "Sky says its USDS stablecoin held its $1 value despite more than $2 billion in withdrawals, as it disputes a report linking the protocol to illicit activity.",
+    "at": 1795199830000,
+    "score": 0
+   },
+   {
+    "title": "Bitcoin falls below $60K for first time since July amid broader market selloff",
+    "url": "https://cointelegraph.com/markets/bitcoin-falls-below-60k-for-first-time-since-july-amid-broader-market-selloff?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "Bitcoin fell nearly 6% as US stocks declined, with the Nasdaq dropping more than 2% and Anthropic shares losing almost 10%.",
+    "at": 1795193751000,
+    "score": -1.414213562373095
+   },
+   {
+    "title": "US Senate advances prediction market restrictions with DEATH BETS Act",
+    "url": "https://cointelegraph.com/news/us-senate-advances-prediction-market-restrictions-with-death-bets-act?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "The Senate-approved bill would ban prediction market contracts tied to war, assassination and death amid concerns over potential insider trading on military events.",
+    "at": 1795190122000,
+    "score": -1
+   },
+   {
+    "title": "Kalshi races to get ahead of New York order that could shut down exchange",
+    "url": "https://www.coindesk.com/policy/2026/11/20/kalshi-races-to-get-ahead-of-new-york-order-that-could-shut-down-exchange",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "The U.S. prediction market firm asked a New York court to give the company a chance to argue against a pending restraining order stemming from a new court loss.",
+    "at": 1795215074000,
+    "score": 0
+   },
+   {
+    "title": "Fairmint plans tokenized stock venue on Canton, Ethereum under SEC experiment",
+    "url": "https://www.coindesk.com/business/2026/11/20/fairmint-plans-tokenized-stock-venue-on-canton-ethereum-under-sec-experiment",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "The firm is the latest to join in building blockchain-based stock markets under the agency’s five-year \"innovation exemption\" for tokenized trading.",
+    "at": 1795212331000,
+    "score": 0
+   },
+   {
+    "title": "Bitcoin plunges below $59,000 as rush to cash puts new bear market lows back in play",
+    "url": "https://www.coindesk.com/markets/2026/11/20/bitcoin-plunges-below-usd59-000-as-rush-to-cash-puts-new-bear-market-lows-back-in-play",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "Bitcoin is closing in on its $57,700 summer low as Delphi Digital strategist warns the Fed could make matters worse and STS Digital sees cash as the place to hide.",
+    "at": 1795198432000,
+    "score": -1
+   },
+   {
+    "title": "Former Point72 head of proprietary research says AI could turn data into a new asset class for Wall Street",
+    "url": "https://www.coindesk.com/markets/2026/11/20/former-point72-head-of-proprietary-research-says-ai-could-turn-data-into-a-new-asset-class-for-wall-street",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "A former Point72 executive says AI could reshape Wall Street's data market, turning once-exclusive information into a source of revenue and financing.",
+    "at": 1795186470000,
+    "score": 0
+   },
+   {
+    "title": "NVDA Stock Clocks Worst Week In 18 Years As SEC Reportedly Probes Its Accounting Practices",
+    "url": "https://stocktwits.com/news-articles/markets/equity/nvda-stock-clocks-worst-week-in-18-years-as-sec-reportedly-probes-its-accounting-practices/cNbSDIWR91Q?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "SEC is scrutinizing Nvidia’s accounting practices, Reuters reported, citing two people familiar with the matter.",
+    "at": 1795217892000,
+    "score": -1
+   },
+   {
+    "title": "At AI Summit, Industry Titans Wave Off Market Woes—and Defend Jensen Huang",
+    "url": "https://finance.yahoo.com/m/b4ceaf2c-2be0-3edd-98d2-13d5b3cc7cca/at-ai-summit%2C-industry-titans.html?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "Execs and investors at the TomorrowX conference in Austin, Texas, are as bullish as ever about AI’s ability to improve lives. The rest of America isn’t so sure.",
+    "at": 1795217280000,
+    "score": 1
+   },
+   {
+    "title": "Data Center AI Chips Could Change the Winners: Broadcom and Marvell",
+    "url": "https://247wallst.com/investing/2026/11/20/data-center-ai-chips-could-change-the-winners-broadcom-and-marvell/?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "While investors fixate on Nvidia's share price, hyperscalers are quietly buying different chips for different jobs. Counting accelerators misses the real money, and a memory-stack model shows why the chip tally can mislead.",
+    "at": 1795217154000,
+    "score": 0
+   },
+   {
+    "title": "Officials approved the sale of 580k Nvidia chips to Chinese companies",
+    "url": "https://www.washingtonpost.com/technology/2026/11/20/officials-approved-sale-580000-nvidia-chips-chinese-companies/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 6 · Comments: 2",
+    "at": 1795217409000,
+    "score": 0
+   },
+   {
+    "title": "Ask HN: Should Uber Ratings Decay over Time?",
+    "url": "https://news.ycombinator.com/item?id=50583294",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 3 · Comments: 0",
+    "at": 1795213972000,
+    "score": 0
+   },
+   {
+    "title": "Ask HN: Do you feel developers are more \"grumpy\" these days?",
+    "url": "https://news.ycombinator.com/item?id=50582890",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 4 · Comments: 5",
+    "at": 1795212011000,
+    "score": 0
+   },
+   {
+    "title": "The Nvidia Board Removed Jensen on False Pretenses",
+    "url": "https://www.effort.news/nvidia",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 7 · Comments: 2",
+    "at": 1795211132000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: Trichroma, a Platformer of Light",
+    "url": "https://trichroma.namirsab.dev/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 3 · Comments: 0",
+    "at": 1795210685000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: Build a trading bot in 10 seconds",
+    "url": "https://board.blink.cash/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 2",
+    "at": 1795210047000,
+    "score": 0
+   },
+   {
+    "title": "Who Should Make Medical-Necessity Decisions: AI, Insurers, or Physicians?",
+    "url": "https://medcitynews.com/2026/11/who-should-make-medical-necessity-decisions-ai-insurers-or-treating-physicians/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795207667000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia accounting under SEC investigation, sources say",
+    "url": "https://finance.yahoo.com/markets/article/nvidia-stock-extends-25-trillion-rout-as-sec-probe-reportedly-investigates-its-accounting-194945274.html",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 194 · Comments: 91",
+    "at": 1795206161000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: A browser game about trying to join a meeting",
+    "url": "https://a.drien.com/games/ceci-nest-pas-du-travail/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 3 · Comments: 1",
+    "at": 1795204786000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia's accounting is a focus of US SEC investigation",
+    "url": "https://www.reuters.com/world/us-secs-nvidia-probe-is-examining-potential-accounting-issues-sources-say-2026-11-20/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 15 · Comments: 1",
+    "at": 1795202889000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia's share slide knocks it below Alphabet in valuation",
+    "url": "https://www.reuters.com/business/retail-consumer/nvidias-share-slide-knocks-it-below-alphabet-valuation-2026-11-20/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 3 · Comments: 0",
+    "at": 1795199855000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: Hey, Calling for Devs",
+    "url": "https://news.ycombinator.com/item?id=50576909",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 1",
+    "at": 1795190955000,
+    "score": 0
+   },
+   {
+    "title": "Hay,Calling for Devs and HN",
+    "url": "https://news.ycombinator.com/item?id=50576782",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795190570000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: Nunya – A \"digital privacy screen\" that makes text illegible from afar",
+    "url": "https://usenunya.com/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795189872000,
+    "score": 0
+   },
+   {
+    "title": "Ask HN: How does one build an LLM router with a labelled set of 100 tasks?",
+    "url": "https://news.ycombinator.com/item?id=50575992",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 3 · Comments: 0",
+    "at": 1795188201000,
+    "score": 0
+   },
+   {
+    "title": "📺 Stocks Plunge After Anthropic IPO, Trump Returns from Asia",
+    "url": "https://www.youtube.com/watch?v=BFiDTr97in4",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Bloomberg Money takes the pulse of your financial life, powered by the reporting of our global newsroom. Today's guests: Managing Partner & Head of CVC Marathon Bruce Richards and BlackRock Chief Investment & Portfolio Strategist Gargi Chaudhrui. YouTube Chapt",
+    "at": 1795217654000,
+    "score": -1
+   },
+   {
+    "title": "📺 Sol Trujillo Says Latino Economic Growth Is an Undervalued Investment Opportunity",
+    "url": "https://www.youtube.com/watch?v=uPUVs41q4eo",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Sol Trujillo & Andy Sieg discuss Citi’s partnership with Trujillo to invest in and expand financial access for the Latino population in the United States. They said the opportunity is attractive but has been overlooked because investors have not segmented the ",
+    "at": 1795217495000,
+    "score": 1
+   },
+   {
+    "title": "📺 Rediker: AI Selloff Is a ‘Healthy’ Correction",
+    "url": "https://www.youtube.com/watch?v=7fbq429Zdbg",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Doug Rediker, managing partner at International Capital Strategy, says the market correction is helping “rationalize and normalize” the AI thesis after a period of heavy investment and rising financing risk, calling the pullback both necessary and healthy. He ",
+    "at": 1795217463000,
+    "score": -1
+   },
+   {
+    "title": "📺 Curnutt: Selloff May Be ‘Cleansing,’ But Risks Remain",
+    "url": "https://www.youtube.com/watch?v=Xx6jz7bo9FM",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Dean Curnutt, founder and CEO of Macro Risk Advisors, says the market selloff could prove “cleansing” by resetting valuations and making room for fresh capital, but warns that the growing overlap between the AI trade and the broader economy could leave markets",
+    "at": 1795217221000,
+    "score": -1
+   },
+   {
+    "title": "📺 President Trump would love to see Nvidia give Jensen Huang a second chance.",
+    "url": "https://www.youtube.com/shorts/qK2Z_0go_Ek",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "“That’s a very important company to us … we have to protect our brilliant people. Jensen is one of them,” Trump said to the press on Friday.",
+    "at": 1795216778000,
+    "score": 0
+   },
+   {
+    "title": "📺 Chip Sales Are at Records. So Why Are Chip Stocks Crashing? | Deirdre Bosa Live",
+    "url": "https://www.youtube.com/watch?v=KUBNgANiicU",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "Tech stocks got crushed as the AI trade unraveled, with the Nasdaq down more than 5% and now negative for the year. Chip sales are at record levels, so why are chip stocks falling so hard? Deirdre Bosa makes the case that power is shifting from the companies t",
+    "at": 1795212311000,
+    "score": 0
+   },
+   {
+    "title": "📺 Market Close: Ugly Wall Street Fall, Major Averages in Correction, Anthropic Drops • 11/20/26",
+    "url": "https://www.youtube.com/watch?v=PUZSFuGDkEo",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "CNBC Business News Update with Jessica Ettinger - Markets & Business News With Expert Analysis From Top Business Names. Visit CNBC.com For More. For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC ",
+    "at": 1795212278000,
+    "score": -1
+   },
+   {
+    "title": "📺 Could Washington come for the AI labs? Strategists weigh the oversight risk",
+    "url": "https://www.youtube.com/watch?v=E46DqGYi3PA",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "Anthropic's first Friday as a public company opened with the bill coming due. The stock slid toward its IPO price a day after its debut, the market sold off with it, and the Market Hang panel spent the hour on whether this is 2000, 2018, or 2022. Eric Wallerst",
+    "at": 1795210207000,
+    "score": 0
+   },
+   {
+    "title": "📺 Closing Bell panel weighs whether the selloff is a buying opportunity",
+    "url": "https://www.youtube.com/watch?v=nDiqt15QiVQ",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "Cameron Dawson, NewEdge Wealth CIO, and Kevin Gordon, Schwab Center for Financial Research, join 'Closing Bell' with reaction the the day's selloff.",
+    "at": 1795209773000,
+    "score": 0
+   },
+   {
+    "title": "📺 Alphabet outperforms Mag 7 peers amid tech sell-off",
+    "url": "https://www.youtube.com/shorts/jeweqVGk3M8",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "CNBC’s MacKenzie Sigalos reports on why Alphabet is holding up better than its Mag 7 peers amid a sharp tech sell-off.",
+    "at": 1795208420000,
+    "score": 0
+   },
+   {
+    "title": "📺 'We Have To Know Why': Philanthropist Priscilla Chan’s Bold Bet On Rare Disease",
+    "url": "https://www.youtube.com/watch?v=ar9X778_Kjw",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "In just a decade, rare disease groups have gone from not understanding certain genetic mutations to bringing gene therapies into clinical trials. Priscilla Chan joins Becky Quick to discuss rare disease research, personalized medicine and how AI could help adv",
+    "at": 1795208349000,
+    "score": 0
+   },
+   {
+    "title": "📺 California AG Targets Nvidia: What You Need To Know Now",
+    "url": "https://www.youtube.com/watch?v=ZfhlwokYmv8",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "California's attorney general, Rob Bonta, subpoenaed Nvidia over whether its chips or confidential information reached China. The same day, House Foreign Affairs chairman Brian Mast published the export licence records: Alibaba cleared for 75,000 chips, Tencen",
+    "at": 1795206616000,
+    "score": 1
+   },
    {
     "title": "Why year-end portfolio rebalancing is a risky bet that bonds will beat stocks in 2027",
     "url": "https://www.marketwatch.com/story/why-year-end-portfolio-rebalancing-is-a-risky-bet-that-bonds-will-beat-stocks-in-2027-1b438892?mod=mw_rss_topstories",
@@ -955,33 +1526,6 @@
     "score": -1
    },
    {
-    "title": "Warsh wants Fed officials to talk less. Instead, they’re talking more",
-    "url": "https://www.cnbc.com/2026/11/20/warsh-fed-forward-guidance-rate-hikes.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Fed officials have been rushing to the microphones lately while the Fed chairman stays on the sidelines.",
-    "at": 1795188054000,
-    "score": 0
-   },
-   {
-    "title": "The bull market has a new problem. The 'smart money' is selling",
-    "url": "https://www.cnbc.com/2026/11/20/equity-issuance-bull-market-problem.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Companies are shifting from share buybacks to stock issuance, adding new supply. Anthropic’s $81 billion IPO puts that demand to the test.",
-    "at": 1795184129000,
-    "score": 1.414213562373095
-   },
-   {
-    "title": "U.S.-China trade, Taiwan and tech tensions remain unresolved as Trump returns from Asia",
-    "url": "https://www.cnbc.com/2026/11/20/apec-summit-trump-xi-china-trade-taiwan.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Analysts note few concrete outcomes from the high-profile trilateral and other meetings for APEC in Shenzhen this week.",
-    "at": 1795181390000,
-    "score": 0
-   },
-   {
     "title": "Trump praises ‘great relationship’ with Putin after meeting, as Ukraine war takes center stage",
     "url": "https://www.cnbc.com/2026/11/19/trump-xi-putin-china-apec-.html",
     "source": "CNBC Finance",
@@ -991,24 +1535,6 @@
     "score": 0
    },
    {
-    "title": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
-    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120a.htm",
-    "source": "Federal Reserve",
-    "channelKind": "news",
-    "body": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
-    "at": 1795186800000,
-    "score": -1
-   },
-   {
-    "title": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
-    "url": "https://www.federalreserve.gov/newsevents/pressreleases/enforcement20261119a.htm",
-    "source": "Federal Reserve",
-    "channelKind": "news",
-    "body": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
-    "at": 1795104000000,
-    "score": -1
-   },
-   {
     "title": "Minutes of the Federal Open Market Committee, October 27-28, 2026",
     "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261118a.htm",
     "source": "Federal Reserve",
@@ -1016,24 +1542,6 @@
     "body": "Minutes of the Federal Open Market Committee, October 27-28, 2026",
     "at": 1795028400000,
     "score": 0
-   },
-   {
-    "title": "Bitcoin falls below $60K for first time since July amid broader market selloff",
-    "url": "https://cointelegraph.com/markets/bitcoin-falls-below-60k-for-first-time-since-july-amid-broader-market-selloff?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "Bitcoin fell nearly 6% as US stocks declined, with the Nasdaq dropping more than 2% and Anthropic shares losing almost 10%.",
-    "at": 1795193751000,
-    "score": -1.414213562373095
-   },
-   {
-    "title": "US Senate advances prediction market restrictions with DEATH BETS Act",
-    "url": "https://cointelegraph.com/news/us-senate-advances-prediction-market-restrictions-with-death-bets-act?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "The Senate-approved bill would ban prediction market contracts tied to war, assassination and death amid concerns over potential insider trading on military events.",
-    "at": 1795190122000,
-    "score": -1
    },
    {
     "title": "Bitcoin price drops to $60K as Anthropic drops to $87 in tech sell-off",
@@ -1144,15 +1652,6 @@
     "score": 0
    },
    {
-    "title": "Former Point72 head of proprietary research says AI could turn data into a new asset class for Wall Street",
-    "url": "https://www.coindesk.com/markets/2026/11/20/former-point72-head-of-proprietary-research-says-ai-could-turn-data-into-a-new-asset-class-for-wall-street",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "A former Point72 executive says AI could reshape Wall Street's data market, turning once-exclusive information into a source of revenue and financing.",
-    "at": 1795186470000,
-    "score": 0
-   },
-   {
     "title": "Hong Kong moves to extend crypto licensing rules to brokers, advisers and custodians",
     "url": "https://www.coindesk.com/policy/2026/11/20/hong-kong-moves-to-extend-crypto-licensing-rules-to-brokers-advisers-and-custodians",
     "source": "CoinDesk",
@@ -1207,33 +1706,6 @@
     "score": 0
    },
    {
-    "title": "Show HN: Hey, Calling for Devs",
-    "url": "https://news.ycombinator.com/item?id=50576909",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 1",
-    "at": 1795190955000,
-    "score": 0
-   },
-   {
-    "title": "Hay,Calling for Devs and HN",
-    "url": "https://news.ycombinator.com/item?id=50576782",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795190570000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: Nunya – A \"digital privacy screen\" that makes text illegible from afar",
-    "url": "https://usenunya.com/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795189872000,
-    "score": 0
-   },
-   {
     "title": "Show HN: Online curling game/SIM with Three.js",
     "url": "https://www.cloudcurling.com",
     "source": "Hacker News",
@@ -1241,429 +1713,38 @@
     "body": "HN Points: 1 · Comments: 2",
     "at": 1795188556000,
     "score": 0
-   },
-   {
-    "title": "Ask HN: How does one build an LLM router with a labelled set of 100 tasks?",
-    "url": "https://news.ycombinator.com/item?id=50575992",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795188201000,
-    "score": 0
-   },
-   {
-    "title": "US Commerce approved sales of more than 879,000 AI chips to Chinese companies",
-    "url": "https://www.cnbc.com/2026/11/19/nvidia-amd-china-chip-sales-congress.html",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795184045000,
-    "score": 0
-   },
-   {
-    "title": "California Attorney General subpoenas Nvidia over chips",
-    "url": "https://www.bostonherald.com/2026/11/20/california-attorney-general-nvidia-subpoena/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795184010000,
-    "score": 0
-   },
-   {
-    "title": "Sex, Lies, and Export Controls",
-    "url": "https://www.publicnotice.co/p/trump-huang-export-controls-nvidia",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795183253000,
-    "score": 0
-   },
-   {
-    "title": "Nvidia adds possible hack to list of bad things under investigation",
-    "url": "https://www.theregister.com/security/2026/11/19/nvidia-adds-possible-hack-to-list-of-very-bad-things-under-investigation/5311153",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 4 · Comments: 0",
-    "at": 1795182526000,
-    "score": -1
-   },
-   {
-    "title": "Threats, Insults, Settlements: How Jensen Huang Made Humiliation Routine",
-    "url": "https://www.nytimes.com/2026/11/20/technology/jensen-huang-nvidia-culture.html",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 21 · Comments: 8",
-    "at": 1795178963000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: NostrPulse – Bitcoin HTTP 402 (L402 and Cashu) MCP Server for AI Agents",
-    "url": "https://github.com/PHONGUIT22/nostrpulse-full",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795168887000,
-    "score": 0
-   },
-   {
-    "title": "📺 Rep. John Moolenaar: Sale of AI chips to Chinese companies 'completely unacceptable'",
-    "url": "https://www.youtube.com/shorts/KacrX0Ndcss",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "House China Select Committee Chairman Rep. John Moolenaar (R-Mich.) joined “Squawk Box” to discuss newly released Congressional documents showing the Commerce Department approved the sale of U.S. chips to China.",
-    "at": 1795196716000,
-    "score": 0
-   },
-   {
-    "title": "📺 Market Midday: Stocks Sell Off, Nasdaq Turns Negative for 2026, Ant Falls • 11/20/26",
-    "url": "https://www.youtube.com/watch?v=b9m_sgVjwzw",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "CNBC Business News Update with Jessica Ettinger - Markets & Business News With Expert Analysis From Top Business Names. Visit CNBC.com For More. For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC ",
-    "at": 1795196285000,
-    "score": 0
-   },
-   {
-    "title": "📺 White House replaces cyber director Sean Cairncross amid widespread tech outages",
-    "url": "https://www.youtube.com/shorts/27MG4A2_usM",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "White House National Cyber Director Sean Cairncross is leaving his post, and Pentagon CIO Kirsten Davies is set to serve as acting director. The change follows a week of major U.S. technology outages affecting aviation, Microsoft services and government system",
-    "at": 1795195822000,
-    "score": 0
-   },
-   {
-    "title": "📺 The Rundown: Anthropic’s $107 billion Wall Street debut",
-    "url": "https://www.youtube.com/shorts/5-tOtfTqG4c",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Ed Ludlow has The Rundown on Anthropic’s historic market debut — the biggest IPO ever and the first frontier AI lab to go public. The company raised more than $107 billion as investors bet on its rapid growth and ability to turn its AI technology into a massiv",
-    "at": 1795194500000,
-    "score": 0
-   },
-   {
-    "title": "📺 US Trade Rep. Greer: US chip export curbs are about closing loopholes",
-    "url": "https://www.youtube.com/shorts/IbtAmSVDeDI",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "US Trade Representative Jamieson Greer says the latest restrictions on advanced chips are aimed at closing loopholes in existing export controls, not imposing a new ban on China. Greer says Chinese companies remain eager to access advanced US chips, even as pa",
-    "at": 1795193837000,
-    "score": -1
-   },
-   {
-    "title": "📺 Bloomberg Surveillance 11/20/2026",
-    "url": "https://www.youtube.com/watch?v=oGI2L1qj4sQ",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Jonathan Ferro, Lisa Abramowicz and Annmarie Hordern speak daily with leaders and decision makers from Wall Street to Washington and beyond. No other program better positions investors and executives for the trading day than \"Bloomberg Surveillance.\" Chapters:",
-    "at": 1795191340000,
-    "score": 0
-   },
-   {
-    "title": "📺 Why the tech selloff has to keep going | Sozzi Unleashed",
-    "url": "https://www.youtube.com/watch?v=ZFD_F2kDdqo",
-    "source": "YouTube · Yahoo Finance",
-    "channelKind": "youtube",
-    "body": "Anthropic had a good first day as a public company. The rest of tech did not: the Nasdaq fell more than 2%, and Nvidia and AMD were both hit. Brian Sozzi names three things that have to change before the selling stops, and the first is that it keeps going for ",
-    "at": 1795191161000,
-    "score": -1
-   },
-   {
-    "title": "📺 LIVE: President Trump holds a news conference at the White House after Asia trip — 11/20/2026",
-    "url": "https://www.youtube.com/watch?v=xKDzMYHi-uw",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "President Donald Trump on Friday holds a news conference from the White House after returning from the APEC summit. The highlight of this week’s APEC summit in Shenzhen was a trilateral meeting Thursday between Trump, Chinese President Xi Jinping and Russian P",
-    "at": 1795190820000,
-    "score": 0
-   },
-   {
-    "title": "📺 Bitcoin Drops Below $60k",
-    "url": "https://www.youtube.com/watch?v=6EpZVnKKrOE",
-    "source": "YouTube · Benjamin Cowen",
-    "channelKind": "youtube",
-    "body": "Come to the 1st ITC Conference: https://www.benjamincowen.com/conference Into The Cryptoverse Premium SALE: https://intothecryptoverse.com For inquiries and to subscribe to the monthly newsletter (free): https://www.benjamincowen.com/ Into The Cryptoverse News",
-    "at": 1795190634000,
-    "score": -1
-   },
-   {
-    "title": "📺 USTR Greer on Chip Curbs, Rare Earths, US-China Trade",
-    "url": "https://www.youtube.com/watch?v=wR6CzdqN4M0",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "US Trade Representative Jamieson Greer discusses US chip controls, talks between President Donald Trump and Chinese President Xi Jinping on rare earths, and the potential for an extension of the US-China trade agreement. He speaks with Annmarie Hordern on “Blo",
-    "at": 1795186077000,
-    "score": 0
-   },
-   {
-    "title": "📺 A record quarter and a record IPO, and the market fell anyway | The 8:30",
-    "url": "https://www.youtube.com/watch?v=Sl8HaNqG5PU",
-    "source": "YouTube · Yahoo Finance",
-    "channelKind": "youtube",
-    "body": "The S&P 500 fell for a sixth straight day and the Dow headed for its worst week since April 2025, two days after Nvidia beat and raised and one day after the largest IPO on record. Jake Conley makes the case that nothing is left to reignite the AI trade. Also:",
-    "at": 1795185104000,
-    "score": 1.414213562373095
-   },
-   {
-    "title": "📺 Get Your Crypto Off Exchanges (Top 5 Wallets for 2027)",
-    "url": "https://www.youtube.com/watch?v=w-JLU6Bictg",
-    "source": "YouTube · Coin Bureau",
-    "channelKind": "youtube",
-    "body": "🔒Ledger 👉 https://go.coinbureau.com/cb-ledger 👻Phantom 👉 https://go.coinbureau.com/cb-phantom ~~~~~ ♣️ Join the Coin Bureau Club 👉 https://go.coinbureau.com/cbc-cb-des 🛒 Get The Hottest Crypto Deals 👉 https://www.coinbureau.com/deals/ Crypto Exchanges: ",
-    "at": 1795183202000,
-    "score": 0
-   },
-   {
-    "title": "Relax and Buy the Dip - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE9HY0thaHRwbExQWjl0SGJpcG1tcmM2YUxKUThEbE1xX2pqUGZGbXhfQ2dFWlVUQWF2YVBLVkkzbFE4QkEzRjJmeExyMV90RUE1dFhENmUwR084TnJhVkNWOGg3N3dXMUowYVF3MWlDLUZyOWx1UkJWbHA2UQ?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Relax and Buy the Dip &nbsp;&nbsp; Reddit",
-    "at": 1795024517000,
-    "score": 1
-   },
-   {
-    "title": "Fed’s Waller says central bank may need to ‘shock people’ with half-point rate hike - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxQYWNCa3liRGRZRHVjbkpfS1lUSFU4Q1NSeXVuMjVUbnVMWC1FVDd0TmdFY1Q5dzE2Zk5Hanl3VXZFaGRqdHJvUF9UdkxsSGFuYmYtSExPLTlZdGRNMjBiRUdzaThvX1BxYkZDcDd2aFk2YXNYbG5XOFlPbFZoVmNEODhCZFhEZmpkd1JJVkpKSmhlNmZYcE1UVGg0dnNpdw?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Fed’s Waller says central bank may need to ‘shock people’ with half-point rate hike &nbsp;&nbsp; Reddit",
-    "at": 1795008623000,
-    "score": -1.414213562373095
-   },
-   {
-    "title": "Jensen Huang breaks his silence on X. Released Statement that he'd be honored to return as CEO. - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxOYTlsQzdiR3Jja2JnMmJaWGpmN21obTJjQURmOGtyMkYtYmM1WXhwNlpyMkhsVW5jY21DQllsMVpFcjN3dWZ4MExKc1pqZVJmejVPYm1zMmFNOXpxVmxnMWFCUUVQUHVJZ3g1cTNuc29GMUZkQ3Y3dzJiTUJ3cFJnY3pkdTlQVDNXSkFiZkg5MXdUSUFMYVUyc05vcw?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Jensen Huang breaks his silence on X. Released Statement that he'd be honored to return as CEO. &nbsp;&nbsp; Reddit",
-    "at": 1794932943000,
-    "score": 0
-   },
-   {
-    "title": "NVIDIA Announces Financial Results for Third Quarter Fiscal 2027 - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOWWRDUmZUZDBRdEFtM2hwNWU0Q0NaTVFoUTVMZWdGVkNxeTg1QzdZYi1uNW9seFNDWGtISnNmd05jSTFMajNQSUphQlNnR0tkTnBRQVlpRmJNWlYtVmd5NFM0VmRhZkJ4UnRNQWxLQTcxMmthc2FQamFISVF6UjdUSk1ELV8xaDVuZzJnYlZZWDN5ekk0ZDgwcUl3?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "NVIDIA Announces Financial Results for Third Quarter Fiscal 2027 &nbsp;&nbsp; Reddit",
-    "at": 1794950657000,
-    "score": 0
-   },
-   {
-    "title": "The sell-off across the market happened at ~11:45a EST, why? - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxOeGhwQkF0MUZtS3BFZWlJcE1DMk5KTzBBal9COWFvNE1DUE90MWxRbnNaU2x2c0w3U1JMamVXdXVINF9tQ3dPXzY2RmJIajloWlJTSU53WFJFdTRhemMxbkRPSlVHMUp3dVVNSXpOMXlpU1VhU1doeExmbktLZDVqVWJ5T1Q1UmloTGxvcWljYV9HaUFvd3hwZ0U4NHFWZw?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "The sell-off across the market happened at ~11:45a EST, why? &nbsp;&nbsp; Reddit",
-    "at": 1795139172000,
-    "score": -1
-   },
-   {
-    "title": "I’m literally all tech.. - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE1EQmQyejkwejdCQlk2eS1aWFZvSXJ3QVh0aF90Nmd4Q3lnV19Yb1VzUUZWd3c5WDVVWXFkaXIzVnVSaGU0aWY1enRIWUF3OXlRN1NRbW80bFZ1Z1JmY1JTc2Q2WG5Vd3R6ajZJRjhLb3lLcjI2YTFOb0M4OA?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "I’m literally all tech.. &nbsp;&nbsp; Reddit",
-    "at": 1794838371000,
-    "score": 1
-   },
-   {
-    "title": "Berkshire's only new stock last quarter: Bending Spoons, owner of AOL, Evernote and Vimeo - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxQTXRUNTJoSFQ0TWRtUW4tMnFUUW9BalU3UlZSeUFFeGJjd2RiQTdnbXBCd0UzWFBWQnM0YUR4ZGJ3OGNPMUJBREtSb2oteUFzdm4xQU1ZcV9qT2FQbnh1eXhOZmxJcmh6c3FpeWZpUDlYYjg5NFYtLUIxanNsT0I4YmdPU2ZkV1dJQy14cm96WllhRkptTWNfWUw2MnFtaXA2?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Berkshire's only new stock last quarter: Bending Spoons, owner of AOL, Evernote and Vimeo &nbsp;&nbsp; Reddit",
-    "at": 1794917686000,
-    "score": 0
-   },
-   {
-    "title": "Micron earned $74.33 a share last fiscal year. The nine years before added up to $39.64 - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxPcVhVTHd2dU1JWkN3YUZiNW90bTgxQjdNVFM0MlJWaEJuejlqMldhSDZHdWh6WDNBR3NxSERCSi01MGRqNHJ5cm9QengwYWF6a1UwY0g2WTBuOE5BWHI1VU5waVpVeTkzRC1OeEVVZE5ram5mNFlkMDBzYzI1eXcxZTJXaXBYcDVyQll1c3h3eV9aT3BDN3Uyek9hQ0hFUQ?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Micron earned $74.33 a share last fiscal year. The nine years before added up to $39.64 &nbsp;&nbsp; Reddit",
-    "at": 1794839863000,
-    "score": 0
-   },
-   {
-    "title": "I'm not seeing the value in Anthropic right now as a long term investment, and here's why. - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxORGV4b1RnS29Dd0F2MXpLLVh2TzZkTlZMVWRfVlRYSk5NX2luc3Z0RGR6RWFLb3dWVlRhQ0V6YTlJRzdiNTRWS0c5djBoUXpDbHJyMGhFNTczV1I3TkthMzZWa3RkVUVVS1RvYTZPb0tiRExIV2hDTTdDYmUxLTR5WEVRc1dIRUtaeWFRclFpS2hZYW8tdkJqaEdoTXJ1djFD?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "I'm not seeing the value in Anthropic right now as a long term investment, and here's why. &nbsp;&nbsp; Reddit",
-    "at": 1795118254000,
-    "score": 0
-   },
-   {
-    "title": "Instead Of Lowering GPU Prices, Former NVIDIA CEO Financed AI Startups To Absorb Excess Silicon, Shattering The Shortage Perception - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPSV9IYVZZRl90UWpqZlhGdkp6dWc5akhzSDJsSVlqOUhfU0RtcnpfZnducXZHU3RkV0NiOVZSTWhIN2w1Q3R6MnZOMjFrcnBwMXZycVJQNzVlTDJraW1rSi1hY3hoZkh3WUpCdUZTSEsyWGtOOVg3RExWeks5Znp3MWlpbUUtVTBsVWN6Z2xpVWJuellrbXR2VmRJZk1hRVU?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Instead Of Lowering GPU Prices, Former NVIDIA CEO Financed AI Startups To Absorb Excess Silicon, Shattering The Shortage Perception &nbsp;&nbsp; Reddit",
-    "at": 1794658688000,
-    "score": 0
-   },
-   {
-    "title": "Whales Accumulate Below $75,000: The Silent Hand-Off Draining Bitcoin Exchanges. - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQWVhsdFBFOFpKc3BHSXJPcjBUZHFONmVVN0M0M0ZreVdfc0RNV19pQU1feVF0UUh4UnpNUU9hYUZqZ3NPMlJIUUVKN1NDRTI5QlFMT2xOUzg4WnlxV3ZNMnFCYVV3VVVlUzhsejFCV0taOGJWMTdnaExHUjloTUdaVmw2a2FQd3o5MkpNbTBPQXZRX1RXWUYwSU1RZDV2S05CVTNMbFNQS3ZYQQ?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Whales Accumulate Below $75,000: The Silent Hand-Off Draining Bitcoin Exchanges. &nbsp;&nbsp; Reddit",
-    "at": 1794940938000,
-    "score": 1
-   },
-   {
-    "title": "Eric Trump loses $600M in risky Bitcoin bet as value of Trump-backed company plummets - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxOVWRRTC1sU2NjZmNzczktRHYxUnJzUWEtLXBsSTQxa3JzdVhNMlpFaXVmRjRHbzJlR0dnZXZOZ0VhVHQzNDJyZXpMczNvZTFCWkxyWEVJWjJYOHZuNU5zRXV5NGd4dXJQdUh1SDZCUENDNThRQzNSamtybGktRmNYVzVhQUhMQlJ1UmU1N0pWcGVhNUtwdE1pczhBb1FmcDhXVl9Kc2Zn?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Eric Trump loses $600M in risky Bitcoin bet as value of Trump-backed company plummets &nbsp;&nbsp; Reddit",
-    "at": 1794695751000,
-    "score": 0
-   },
-   {
-    "title": "r/stocks - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMiR0FVX3lxTE9LNU8wV3dvWkdUTEMtaTlDS1d1UGZRQzNYY1owZnFHRGhqVkFVc3k5UUIwelU1R09BTExTU1VRQ0hVbWFMRFRR?oc=5",
-    "source": "r/stocks",
-    "channelKind": "reddit",
-    "body": "r/stocks &nbsp;&nbsp; Reddit",
-    "at": 1395718375000,
-    "score": 0
-   },
-   {
-    "title": "I think we're in a stock market crash of historical significance at this point. - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPTGhlTUoxcGVRV0R6NDR2RjBsTVYtcDFOT1VQdkJRaGVkbGRGTWxkTWRZR2tyM2J3R2tTaHdTblliMXNoQUQzTFg5Wk55M2xpX3JhUE5RNU5nUXIxUjl4X2ZtYkVNanFzQVV0OFFPQmFFYTh4RmlkNEVSNW1DeGkySFRRalNjMzNnaE1scGhObW45WkNEWEE4?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "I think we're in a stock market crash of historical significance at this point. &nbsp;&nbsp; Reddit",
-    "at": 1795160350000,
-    "score": -1
-   },
-   {
-    "title": "I would be wary of another big sell off in AI stocks over the next month and here’s why - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxOd040YXRoQzV5X01YR01zem5NalVOZFVQTzBEWkFUdi15QzBxbkR2b29aalRHUi1ROGJqaEtLX093VU1nY0hTMUFhZ2kwcUtmbFY5eEljU1lWcVBKeTNMYWlOSXFEMFBVWFl2MUlweXlCWFpNOHh2NUU0b0xoWVk0eTdZX0Q1dUV5MzJIdEtXRk9SYkd1aHVPbElOOA?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "I would be wary of another big sell off in AI stocks over the next month and here’s why &nbsp;&nbsp; Reddit",
-    "at": 1794598935000,
-    "score": 0
-   },
-   {
-    "title": "r/Stocks Daily Discussion Wednesday - Nov 18, 2026 - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxQUy13NDlrNUVXVVJMMEIxbDhVMXRQMDYxNlcxb0ZoZE9NQ1JOQnpqd2ZpanFQN2tRZzAzMmU4ZWhTTkNIZDdUOFYxR3RWOEZCOHhseDZqY2JDT04zOURaUmFNdURIaU94b0tzVC14N3I5ck9XN0V4NXVKaVJ1Q24zSFNHblBCNjV3cThuU042VHhsSzFEZWhlbUtRa00?oc=5",
-    "source": "r/Stocks",
-    "channelKind": "reddit",
-    "body": "r/Stocks Daily Discussion Wednesday - Nov 18, 2026 &nbsp;&nbsp; Reddit",
-    "at": 1794988992000,
-    "score": 0
-   },
-   {
-    "title": "Ask HN: Why aren't there more games where you use your body as a controller?",
-    "url": "https://news.ycombinator.com/item?id=50571637",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 1",
-    "at": 1795162418000,
-    "score": 0
-   },
-   {
-    "title": "Ask HN: Do you use computer-use heavily?",
-    "url": "https://news.ycombinator.com/item?id=50570982",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795156972000,
-    "score": 0
-   },
-   {
-    "title": "No spy. No temptress. The Nvidia love affair is called RICO",
-    "url": "https://www.gregpalast.com/the-so-called-affair-between-the-nvidia-chief-and-the-chinese-spy/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 8 · Comments: 1",
-    "at": 1795156414000,
-    "score": 0
-   },
-   {
-    "title": "RPEG: Training Reasoning Language Models Scalably and Cost-Effectively",
-    "url": "https://arxiv.org/abs/2611.09207",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795152911000,
-    "score": 0
-   },
-   {
-    "title": "Autonomous Trail Racing",
-    "url": "https://pages.rai-inst.com/autonomous-trail-racing/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795151101000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: Zeus – Claude Code for AI voice agents",
-    "url": "https://thunderphone.com/blog/introducing-zeus",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795135912000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: erXos – a microkernel OS in Erlang based on Genera/Plan 9/QNX ideas",
-    "url": "https://stass.github.io/erXos/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 7 · Comments: 3",
-    "at": 1795131574000,
-    "score": 0
-   },
-   {
-    "title": "Commerce approved sales of more than 879,000 AI chips to Chinese companies",
-    "url": "https://www.cnbc.com/2026/11/19/nvidia-amd-china-chip-sales-congress.html",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 3",
-    "at": 1795128776000,
-    "score": 0
-   },
-   {
-    "title": "Jensen Huang's – and Nvidia's – legal exposure balloons",
-    "url": "https://www.cnbc.com/2026/11/19/nvidia-jensen-huang-legal.html",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795110664000,
-    "score": 0
    }
   ],
   "trending": [
    {
-    "name": "WASTED",
-    "symbol": "WASTED",
-    "rank": 769
-   },
-   {
-    "name": "Official Trump",
-    "symbol": "TRUMP",
-    "rank": 138
-   },
-   {
-    "name": "Chunkee The Manatee",
-    "symbol": "CHUNKEE",
-    "rank": 943
-   },
-   {
-    "name": "Lucia",
-    "symbol": "LUCIA",
-    "rank": 850
-   },
-   {
     "name": "Bitcoin",
     "symbol": "BTC",
     "rank": 1
+   },
+   {
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "rank": 2
+   },
+   {
+    "name": "Backpack",
+    "symbol": "BP",
+    "rank": 150
+   },
+   {
+    "name": "Pearl",
+    "symbol": "PEARL",
+    "rank": 79
+   },
+   {
+    "name": "Lighter",
+    "symbol": "LIT",
+    "rank": 89
+   },
+   {
+    "name": "Pudgy Penguins",
+    "symbol": "PENGU",
+    "rank": 127
    },
    {
     "name": "Hyperliquid",
@@ -1671,27 +1752,22 @@
     "rank": 10
    },
    {
+    "name": "XRP",
+    "symbol": "XRP",
+    "rank": 6
+   },
+   {
     "name": "Zcash",
     "symbol": "ZEC",
     "rank": 11
    },
    {
-    "name": "Pearl",
-    "symbol": "PEARL",
-    "rank": 76
-   },
-   {
-    "name": "Solana",
-    "symbol": "SOL",
-    "rank": 7
-   },
-   {
-    "name": "Ethereum",
-    "symbol": "ETH",
-    "rank": 2
+    "name": "Sui",
+    "symbol": "SUI",
+    "rank": 32
    }
   ],
-  "newsScore": -0.11,
+  "newsScore": -0.16,
   "arxivPapers": [
    {
     "title": "A joint framework for SPX, VIX and VXX",
@@ -1814,103 +1890,151 @@
     "strategy": null
    }
   ],
-  "arxivUpdatedAt": 1795197095498,
+  "arxivUpdatedAt": 1795218902260,
   "youtubeVideos": [
    {
-    "title": "Rep. John Moolenaar: Sale of AI chips to Chinese companies 'completely unacceptable'",
-    "url": "https://www.youtube.com/shorts/KacrX0Ndcss",
-    "videoId": "KacrX0Ndcss",
-    "thumbnail": "https://i4.ytimg.com/vi/KacrX0Ndcss/hqdefault.jpg",
-    "channel": "CNBC Television",
-    "category": "חדשות שוק ומניות",
-    "summary": "House China Select Committee Chairman Rep. John Moolenaar (R-Mich.) joined “Squawk Box” to discuss newly released Congressional documents showing the Commerce Department approved the sale of U.S. chips to China.",
-    "pubDate": "2026-11-20T17:45:16+00:00",
-    "at": 1795196716000,
+    "title": "Stocks Plunge After Anthropic IPO, Trump Returns from Asia",
+    "url": "https://www.youtube.com/watch?v=BFiDTr97in4",
+    "videoId": "BFiDTr97in4",
+    "thumbnail": "https://i3.ytimg.com/vi/BFiDTr97in4/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "Bloomberg Money takes the pulse of your financial life, powered by the reporting of our global newsroom. Today's guests: Managing Partner & Head of CVC Marathon Bruce Richards and BlackRock Chief Investment & Portfolio Strategist Gargi Chaudhrui. YouTube Chapt",
+    "pubDate": "2026-11-20T23:34:14+00:00",
+    "at": 1795217654000,
+    "score": -1
+   },
+   {
+    "title": "Sol Trujillo Says Latino Economic Growth Is an Undervalued Investment Opportunity",
+    "url": "https://www.youtube.com/watch?v=uPUVs41q4eo",
+    "videoId": "uPUVs41q4eo",
+    "thumbnail": "https://i2.ytimg.com/vi/uPUVs41q4eo/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "Sol Trujillo & Andy Sieg discuss Citi’s partnership with Trujillo to invest in and expand financial access for the Latino population in the United States. They said the opportunity is attractive but has been overlooked because investors have not segmented the ",
+    "pubDate": "2026-11-20T23:31:35+00:00",
+    "at": 1795217495000,
+    "score": 1
+   },
+   {
+    "title": "Rediker: AI Selloff Is a ‘Healthy’ Correction",
+    "url": "https://www.youtube.com/watch?v=7fbq429Zdbg",
+    "videoId": "7fbq429Zdbg",
+    "thumbnail": "https://i4.ytimg.com/vi/7fbq429Zdbg/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "Doug Rediker, managing partner at International Capital Strategy, says the market correction is helping “rationalize and normalize” the AI thesis after a period of heavy investment and rising financing risk, calling the pullback both necessary and healthy. He ",
+    "pubDate": "2026-11-20T23:31:03+00:00",
+    "at": 1795217463000,
+    "score": -1
+   },
+   {
+    "title": "Curnutt: Selloff May Be ‘Cleansing,’ But Risks Remain",
+    "url": "https://www.youtube.com/watch?v=Xx6jz7bo9FM",
+    "videoId": "Xx6jz7bo9FM",
+    "thumbnail": "https://i1.ytimg.com/vi/Xx6jz7bo9FM/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "Dean Curnutt, founder and CEO of Macro Risk Advisors, says the market selloff could prove “cleansing” by resetting valuations and making room for fresh capital, but warns that the growing overlap between the AI trade and the broader economy could leave markets",
+    "pubDate": "2026-11-20T23:27:01+00:00",
+    "at": 1795217221000,
+    "score": -1
+   },
+   {
+    "title": "President Trump would love to see Nvidia give Jensen Huang a second chance.",
+    "url": "https://www.youtube.com/shorts/qK2Z_0go_Ek",
+    "videoId": "qK2Z_0go_Ek",
+    "thumbnail": "https://i2.ytimg.com/vi/qK2Z_0go_Ek/hqdefault.jpg",
+    "channel": "Yahoo Finance",
+    "category": "דוחות, פד ומניות",
+    "summary": "“That’s a very important company to us … we have to protect our brilliant people. Jensen is one of them,” Trump said to the press on Friday.",
+    "pubDate": "2026-11-20T23:19:38+00:00",
+    "at": 1795216778000,
     "score": 0
    },
    {
-    "title": "Market Midday: Stocks Sell Off, Nasdaq Turns Negative for 2026, Ant Falls • 11/20/26",
-    "url": "https://www.youtube.com/watch?v=b9m_sgVjwzw",
-    "videoId": "b9m_sgVjwzw",
-    "thumbnail": "https://i3.ytimg.com/vi/b9m_sgVjwzw/hqdefault.jpg",
+    "title": "Chip Sales Are at Records. So Why Are Chip Stocks Crashing? | Deirdre Bosa Live",
+    "url": "https://www.youtube.com/watch?v=KUBNgANiicU",
+    "videoId": "KUBNgANiicU",
+    "thumbnail": "https://i4.ytimg.com/vi/KUBNgANiicU/hqdefault.jpg",
+    "channel": "Yahoo Finance",
+    "category": "דוחות, פד ומניות",
+    "summary": "Tech stocks got crushed as the AI trade unraveled, with the Nasdaq down more than 5% and now negative for the year. Chip sales are at record levels, so why are chip stocks falling so hard? Deirdre Bosa makes the case that power is shifting from the companies t",
+    "pubDate": "2026-11-20T22:05:11+00:00",
+    "at": 1795212311000,
+    "score": 0
+   },
+   {
+    "title": "Market Close: Ugly Wall Street Fall, Major Averages in Correction, Anthropic Drops • 11/20/26",
+    "url": "https://www.youtube.com/watch?v=PUZSFuGDkEo",
+    "videoId": "PUZSFuGDkEo",
+    "thumbnail": "https://i1.ytimg.com/vi/PUZSFuGDkEo/hqdefault.jpg",
     "channel": "CNBC Television",
     "category": "חדשות שוק ומניות",
     "summary": "CNBC Business News Update with Jessica Ettinger - Markets & Business News With Expert Analysis From Top Business Names. Visit CNBC.com For More. For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC ",
-    "pubDate": "2026-11-20T17:38:05+00:00",
-    "at": 1795196285000,
-    "score": 0
-   },
-   {
-    "title": "White House replaces cyber director Sean Cairncross amid widespread tech outages",
-    "url": "https://www.youtube.com/shorts/27MG4A2_usM",
-    "videoId": "27MG4A2_usM",
-    "thumbnail": "https://i3.ytimg.com/vi/27MG4A2_usM/hqdefault.jpg",
-    "channel": "CNBC Television",
-    "category": "חדשות שוק ומניות",
-    "summary": "White House National Cyber Director Sean Cairncross is leaving his post, and Pentagon CIO Kirsten Davies is set to serve as acting director. The change follows a week of major U.S. technology outages affecting aviation, Microsoft services and government system",
-    "pubDate": "2026-11-20T17:30:22+00:00",
-    "at": 1795195822000,
-    "score": 0
-   },
-   {
-    "title": "The Rundown: Anthropic’s $107 billion Wall Street debut",
-    "url": "https://www.youtube.com/shorts/5-tOtfTqG4c",
-    "videoId": "5-tOtfTqG4c",
-    "thumbnail": "https://i2.ytimg.com/vi/5-tOtfTqG4c/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "Ed Ludlow has The Rundown on Anthropic’s historic market debut — the biggest IPO ever and the first frontier AI lab to go public. The company raised more than $107 billion as investors bet on its rapid growth and ability to turn its AI technology into a massiv",
-    "pubDate": "2026-11-20T17:08:20+00:00",
-    "at": 1795194500000,
-    "score": 0
-   },
-   {
-    "title": "US Trade Rep. Greer: US chip export curbs are about closing loopholes",
-    "url": "https://www.youtube.com/shorts/IbtAmSVDeDI",
-    "videoId": "IbtAmSVDeDI",
-    "thumbnail": "https://i2.ytimg.com/vi/IbtAmSVDeDI/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "US Trade Representative Jamieson Greer says the latest restrictions on advanced chips are aimed at closing loopholes in existing export controls, not imposing a new ban on China. Greer says Chinese companies remain eager to access advanced US chips, even as pa",
-    "pubDate": "2026-11-20T16:57:17+00:00",
-    "at": 1795193837000,
+    "pubDate": "2026-11-20T22:04:38+00:00",
+    "at": 1795212278000,
     "score": -1
    },
    {
-    "title": "Bloomberg Surveillance 11/20/2026",
-    "url": "https://www.youtube.com/watch?v=oGI2L1qj4sQ",
-    "videoId": "oGI2L1qj4sQ",
-    "thumbnail": "https://i4.ytimg.com/vi/oGI2L1qj4sQ/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "Jonathan Ferro, Lisa Abramowicz and Annmarie Hordern speak daily with leaders and decision makers from Wall Street to Washington and beyond. No other program better positions investors and executives for the trading day than \"Bloomberg Surveillance.\" Chapters:",
-    "pubDate": "2026-11-20T16:15:40+00:00",
-    "at": 1795191340000,
-    "score": 0
-   },
-   {
-    "title": "Why the tech selloff has to keep going | Sozzi Unleashed",
-    "url": "https://www.youtube.com/watch?v=ZFD_F2kDdqo",
-    "videoId": "ZFD_F2kDdqo",
-    "thumbnail": "https://i3.ytimg.com/vi/ZFD_F2kDdqo/hqdefault.jpg",
+    "title": "Could Washington come for the AI labs? Strategists weigh the oversight risk",
+    "url": "https://www.youtube.com/watch?v=E46DqGYi3PA",
+    "videoId": "E46DqGYi3PA",
+    "thumbnail": "https://i2.ytimg.com/vi/E46DqGYi3PA/hqdefault.jpg",
     "channel": "Yahoo Finance",
     "category": "דוחות, פד ומניות",
-    "summary": "Anthropic had a good first day as a public company. The rest of tech did not: the Nasdaq fell more than 2%, and Nvidia and AMD were both hit. Brian Sozzi names three things that have to change before the selling stops, and the first is that it keeps going for ",
-    "pubDate": "2026-11-20T16:12:41+00:00",
-    "at": 1795191161000,
-    "score": -1
+    "summary": "Anthropic's first Friday as a public company opened with the bill coming due. The stock slid toward its IPO price a day after its debut, the market sold off with it, and the Market Hang panel spent the hour on whether this is 2000, 2018, or 2022. Eric Wallerst",
+    "pubDate": "2026-11-20T21:30:07+00:00",
+    "at": 1795210207000,
+    "score": 0
    },
    {
-    "title": "LIVE: President Trump holds a news conference at the White House after Asia trip — 11/20/2026",
-    "url": "https://www.youtube.com/watch?v=xKDzMYHi-uw",
-    "videoId": "xKDzMYHi-uw",
-    "thumbnail": "https://i1.ytimg.com/vi/xKDzMYHi-uw/hqdefault.jpg",
+    "title": "Closing Bell panel weighs whether the selloff is a buying opportunity",
+    "url": "https://www.youtube.com/watch?v=nDiqt15QiVQ",
+    "videoId": "nDiqt15QiVQ",
+    "thumbnail": "https://i3.ytimg.com/vi/nDiqt15QiVQ/hqdefault.jpg",
     "channel": "CNBC Television",
     "category": "חדשות שוק ומניות",
-    "summary": "President Donald Trump on Friday holds a news conference from the White House after returning from the APEC summit. The highlight of this week’s APEC summit in Shenzhen was a trilateral meeting Thursday between Trump, Chinese President Xi Jinping and Russian P",
-    "pubDate": "2026-11-20T16:07:00+00:00",
-    "at": 1795190820000,
+    "summary": "Cameron Dawson, NewEdge Wealth CIO, and Kevin Gordon, Schwab Center for Financial Research, join 'Closing Bell' with reaction the the day's selloff.",
+    "pubDate": "2026-11-20T21:22:53+00:00",
+    "at": 1795209773000,
     "score": 0
+   },
+   {
+    "title": "Alphabet outperforms Mag 7 peers amid tech sell-off",
+    "url": "https://www.youtube.com/shorts/jeweqVGk3M8",
+    "videoId": "jeweqVGk3M8",
+    "thumbnail": "https://i3.ytimg.com/vi/jeweqVGk3M8/hqdefault.jpg",
+    "channel": "CNBC Television",
+    "category": "חדשות שוק ומניות",
+    "summary": "CNBC’s MacKenzie Sigalos reports on why Alphabet is holding up better than its Mag 7 peers amid a sharp tech sell-off.",
+    "pubDate": "2026-11-20T21:00:20+00:00",
+    "at": 1795208420000,
+    "score": 0
+   },
+   {
+    "title": "'We Have To Know Why': Philanthropist Priscilla Chan’s Bold Bet On Rare Disease",
+    "url": "https://www.youtube.com/watch?v=ar9X778_Kjw",
+    "videoId": "ar9X778_Kjw",
+    "thumbnail": "https://i2.ytimg.com/vi/ar9X778_Kjw/hqdefault.jpg",
+    "channel": "CNBC Television",
+    "category": "חדשות שוק ומניות",
+    "summary": "In just a decade, rare disease groups have gone from not understanding certain genetic mutations to bringing gene therapies into clinical trials. Priscilla Chan joins Becky Quick to discuss rare disease research, personalized medicine and how AI could help adv",
+    "pubDate": "2026-11-20T20:59:09+00:00",
+    "at": 1795208349000,
+    "score": 0
+   },
+   {
+    "title": "California AG Targets Nvidia: What You Need To Know Now",
+    "url": "https://www.youtube.com/watch?v=ZfhlwokYmv8",
+    "videoId": "ZfhlwokYmv8",
+    "thumbnail": "https://i3.ytimg.com/vi/ZfhlwokYmv8/hqdefault.jpg",
+    "channel": "Yahoo Finance",
+    "category": "דוחות, פד ומניות",
+    "summary": "California's attorney general, Rob Bonta, subpoenaed Nvidia over whether its chips or confidential information reached China. The same day, House Foreign Affairs chairman Brian Mast published the export licence records: Alibaba cleared for 75,000 chips, Tencen",
+    "pubDate": "2026-11-20T20:30:16+00:00",
+    "at": 1795206616000,
+    "score": 1
    },
    {
     "title": "Bitcoin Drops Below $60k",
@@ -1925,30 +2049,6 @@
     "score": -1
    },
    {
-    "title": "USTR Greer on Chip Curbs, Rare Earths, US-China Trade",
-    "url": "https://www.youtube.com/watch?v=wR6CzdqN4M0",
-    "videoId": "wR6CzdqN4M0",
-    "thumbnail": "https://i4.ytimg.com/vi/wR6CzdqN4M0/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "US Trade Representative Jamieson Greer discusses US chip controls, talks between President Donald Trump and Chinese President Xi Jinping on rare earths, and the potential for an extension of the US-China trade agreement. He speaks with Annmarie Hordern on “Blo",
-    "pubDate": "2026-11-20T14:47:57+00:00",
-    "at": 1795186077000,
-    "score": 0
-   },
-   {
-    "title": "A record quarter and a record IPO, and the market fell anyway | The 8:30",
-    "url": "https://www.youtube.com/watch?v=Sl8HaNqG5PU",
-    "videoId": "Sl8HaNqG5PU",
-    "thumbnail": "https://i4.ytimg.com/vi/Sl8HaNqG5PU/hqdefault.jpg",
-    "channel": "Yahoo Finance",
-    "category": "דוחות, פד ומניות",
-    "summary": "The S&P 500 fell for a sixth straight day and the Dow headed for its worst week since April 2025, two days after Nvidia beat and raised and one day after the largest IPO on record. Jake Conley makes the case that nothing is left to reignite the AI trade. Also:",
-    "pubDate": "2026-11-20T14:31:44+00:00",
-    "at": 1795185104000,
-    "score": 1.414213562373095
-   },
-   {
     "title": "Get Your Crypto Off Exchanges (Top 5 Wallets for 2027)",
     "url": "https://www.youtube.com/watch?v=w-JLU6Bictg",
     "videoId": "w-JLU6Bictg",
@@ -1959,18 +2059,6 @@
     "pubDate": "2026-11-20T14:00:02+00:00",
     "at": 1795183202000,
     "score": 0
-   },
-   {
-    "title": "Is the AI Boom Bigger Than the Railroads? An Early Anthropic Investor Weighs In",
-    "url": "https://www.youtube.com/watch?v=mFU9ub8B_h8",
-    "videoId": "mFU9ub8B_h8",
-    "thumbnail": "https://i2.ytimg.com/vi/mFU9ub8B_h8/hqdefault.jpg",
-    "channel": "Yahoo Finance",
-    "category": "דוחות, פד ומניות",
-    "summary": "Bessemer Venture Partners was an early investor in Anthropic, and Byron Deeter joins Deirdre Bosa from the Nasdaq after the largest IPO on record. He argues the AI build-out is bigger than the railroad boom and that next year's data center spending will top th",
-    "pubDate": "2026-11-20T03:00:37+00:00",
-    "at": 1795143637000,
-    "score": 1
    },
    {
     "title": "How Hackers Stole $6.3 BILLION Across 192 Cryptocurrencies!",
@@ -2006,18 +2094,6 @@
     "summary": "♣️ Join the Coin Bureau Club 👉 https://go.coinbureau.com/cbc-cb-des 🛒 Get The Hottest Crypto Deals 👉 https://www.coinbureau.com/deals/ Crypto Exchanges: 📊TOOBIT: Deposit, Trade & Win Up to 60,000 USDT👉 https://go.coinbureau.com/toobit 📈BINANCE: https://g",
     "pubDate": "2026-11-19T14:00:13+00:00",
     "at": 1795096813000,
-    "score": 0
-   },
-   {
-    "title": "Market Hang (12:30–1:30 p.m. ET)",
-    "url": "https://www.youtube.com/watch?v=vktqIFvhXMI",
-    "videoId": "vktqIFvhXMI",
-    "thumbnail": "https://i3.ytimg.com/vi/vktqIFvhXMI/hqdefault.jpg",
-    "channel": "Yahoo Finance",
-    "category": "דוחות, פד ומניות",
-    "summary": "A rotating group of guests come together for an unscripted midday conversation, reacting to the trading day in real time and discussing the earnings, deals and developments that move markets. == AlphaSpace by Yahoo Finance: A Professional-Grade Investment Plat",
-    "pubDate": "2026-11-19T12:35:20+00:00",
-    "at": 1795091720000,
     "score": 0
    },
    {
@@ -2057,7 +2133,7 @@
     "score": 0
    }
   ],
-  "youtubeUpdatedAt": 1795197095559
+  "youtubeUpdatedAt": 1795218902250
  },
  "lessons": [
   "יוטיוב גאן (Wd Gann Trader): דיוק רמות תמיכה/התנגדות Sq9 (45°/90°/180°) עם שבירת סווינג וסטופ מובנה — \"Gann Cosmogram Nifty analysis using Jupiter-Jupiter Opposition\"",

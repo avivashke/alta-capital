@@ -2,11 +2,11 @@
 # Alta Capital — auto-generated strategy artifact
 # Desk: מדדים · S&P 500 (יומי) · SPY · 1d
 # Version: v1.4 · Strategy family: supertrend_adx
-# Backtest: return 13.37% · PF 99 · DD 1.63% · trades 6
-# OOS: 4.71% · Sharpe 2.64
+# Backtest: return 14.21% · PF 99 · DD 1.63% · trades 7
+# OOS: 4.71% · Sharpe 2.76
 # Params: {"period":14,"mult":2,"adxPeriod":16,"adxMin":32,"atrStop":1.8,"rr":2.4}
 # Target platform: Freqtrade
-# Generated: 2026-11-20T17:51:38.056Z
+# Generated: 2026-11-20T23:55:04.796Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:
