@@ -154,9 +154,29 @@ export const RESEARCH_SOURCES = {
     note: 'מטבעות במגמת חיפוש — פרוקסי לעניין ציבורי.',
   },
   news: {
-    label: 'News / RSS מותאם', url: '',
+    label: 'חדשות RSS (Yahoo · CNBC · CoinDesk · Fed)', url: '/api/market?action=news&symbol=ALL',
     limit: 30, windowMs: 3_600_000,
-    note: 'נקודת קצה שלך (NewsAPI, Finnhub, RSS-to-JSON) שמחזירה כותרות ב-JSON.',
+    note: 'סריקה אוטומטית חינמית מ-9 פידים פיננסיים (Yahoo Finance, CNBC, MarketWatch, Fed, CoinDesk, Cointelegraph, Decrypt, SeekingAlpha, Google News).',
+  },
+  reddit: {
+    label: 'Reddit (r/algotrading · Crypto · Stocks)', url: '/api/market?action=reddit',
+    limit: 20, windowMs: 3_600_000,
+    note: 'שאיבת פוסטים חמים מ-r/algotrading, r/CryptoCurrency, r/stocks ו-r/investing דרך פרוקסי השרת ללא חסימת CORS.',
+  },
+  youtube: {
+    label: 'YouTube (Bloomberg · CNBC · Coin Bureau · Cowen)', url: '/api/market?action=youtube',
+    limit: 20, windowMs: 3_600_000,
+    note: 'ערוצי YouTube רשמיים (Atom RSS) למחקר מאקרו, דוחות, קוונט וקריפטו: Bloomberg, CNBC, Yahoo Finance, Coin Bureau, Benjamin Cowen, Patrick Boyle.',
+  },
+  arxiv: {
+    label: 'arXiv Quant Finance (q-fin)', url: '/api/market?action=arxiv',
+    limit: 15, windowMs: 3_600_000,
+    note: 'מאמרי מחקר אקדמיים יומיים במימון כמותי (אלגוטריידינג, ניהול תיקים וסיכונים) להזנת רעיונות אסטרטגיה לצוות.',
+  },
+  hackernews: {
+    label: 'Hacker News (Tech · Quant · AI)', url: '/api/market?action=hackernews',
+    limit: 20, windowMs: 3_600_000,
+    note: 'דיוני הנדסת מסחר, AI, NVIDIA וקריפטו בזמן אמת דרך Algolia HN API.',
   },
 };
 

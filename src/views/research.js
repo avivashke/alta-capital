@@ -2,7 +2,7 @@ import { mount } from '../ui.js';
 import { store } from '../store.js';
 import { RESEARCH_SOURCES } from '../config.js';
 import { h, pct, num, section, tag, notice, empty, toast, timeAgo, downloadFile, openModal } from '../ui.js';
-import { budgetSnapshot, scanGitHub, scanFearGreed, scanTrending, scanReddit, scanNews, refreshSentiment, saveContextToGitHub, buildContextDocument, scoreText, CURATED_GITHUB_INTEL, runNadavGitHubScout } from '../research.js';
+import { budgetSnapshot, scanGitHub, scanFearGreed, scanTrending, scanReddit, scanNews, scanYouTube, scanArxivQuant, scanHackerNews, refreshSentiment, saveContextToGitHub, buildContextDocument, scoreText, CURATED_GITHUB_INTEL, runNadavGitHubScout } from '../research.js';
 import { testIdea } from '../firm.js';
 import { testAllFeeds } from '../conncheck.js';
 
@@ -30,29 +30,29 @@ export function renderResearch(root, ui) {
   mount(root, 
     h('div', { class: 'page-head' },
       h('div', {},
-        h('div', { class: 'eyebrow', text: 'Research radar' }),
+        h('div', { class: 'eyebrow', text: 'Research radar · RSS · Reddit · YouTube · arXiv · Hacker News' }),
         h('h1', { text: 'מחקר וסריקה' }),
-        h('p', { text: 'הסוכנים סורקים מקורות חינמיים וציבוריים, שומרים מכסת שאילתות כדי לא לשרוף מפתחות, ומזרימים רעיונות לבדיקה על השולחנות.' }),
+        h('p', { text: 'הסוכנים שואבים אוטומטית מ-News RSS (9 פידים פיננסיים), Reddit, ערוצי YouTube (Bloomberg, CNBC, Coin Bureau, Benjamin Cowen, Patrick Boyle), מאמרי arXiv q-fin, Hacker News ו-GitHub.' }),
       ),
       h('div', { class: 'head-actions' },
         h('button', { class: 'btn btn-primary btn-sm', onclick: () => act(() => runNadavGitHubScout(), 'נדב סרק ריפואים ב-GitHub לגאן וייעול המערכת') }, '⌘ סריקת נדב (GitHub גאן וייעול)'),
-        h('button', { class: 'btn btn-sm', onclick: () => act(() => refreshSentiment(), 'כל המקורות נסרקו') }, '⟳ סרוק הכל'),
+        h('button', { class: 'btn btn-sm', onclick: () => act(() => refreshSentiment(), 'כל 7 מקורות המחקר והחדשות נסרקו!') }, '⟳ סרוק את כל המקורות'),
       ),
     ),
   );
 
   mount(root, h('div', { class: 'card' },
     h('div', { class: 'card-head' },
-      h('div', {}, h('h2', { text: 'מכסת שאילתות חינמיות' }), h('div', { class: 'card-sub', text: 'הסוכנים מכבדים את המגבלות של כל ספק' })),
+      h('div', {}, h('h2', { text: 'מכסת שאילתות חינמיות ומקורות פעילים' }), h('div', { class: 'card-sub', text: 'הסוכנים שואבים אוטומטית בכל מחזור ומכבדים את מגבלות הקצב של כל מקור' })),
     ),
     h('div', { class: 'grid cols-4' },
       budgets.map((b) => h('div', { class: 'metric' },
         h('span', { text: b.label }),
         h('b', { class: b.used >= b.total ? 'red' : 'green', text: `${b.used}/${b.total}` }),
-        h('div', { class: 'tiny muted', text: b.used >= b.total ? `יתאפס ${timeAgo(b.resetAt + 3600000)}` : `נשארו ${b.total - b.used}` }),
+        h('div', { class: 'tiny muted', text: b.used >= b.total ? `יתאפס ${timeAgo(b.resetAt + 3600000)}` : `נשארו ${b.total - b.used} · קריאות: ${b.calls || 0}` }),
       )),
     ),
-    notice('GitHub ללא טוקן: 10 בקשות/דקה. מומלץ להוסיף טוקן קריאה בהגדרות כדי להעלות את המכסה. Fear & Greed ו-CoinGecko חינמיים ללא מפתח.', 'blue'),
+    notice('כל המקורות (News RSS, Reddit דרך פרוקסי שרת, YouTube Atom, arXiv q-fin, Hacker News, Fear & Greed, CoinGecko) חינמיים לגמרי ללא צורך במפתחות API ומופעלים אוטומטית בכל סבב מחקר.', 'blue'),
   ));
 
   mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
@@ -77,7 +77,7 @@ export function renderResearch(root, ui) {
 
   mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
     h('div', { class: 'card-head' },
-      h('div', {}, h('h2', { text: 'בדיקת חיבורים חיים' }), h('div', { class: 'card-sub', text: 'נרות היסטוריים · מחיר זמן אמת · WebSocket · סנטימנט · מחקר' })),
+      h('div', {}, h('h2', { text: 'בדיקת חיבורים חיים' }), h('div', { class: 'card-sub', text: 'נרות היסטוריים · מחיר זמן אמת · News RSS · Reddit · YouTube · arXiv · Hacker News' })),
       h('button', {
         class: 'btn btn-sm',
         onclick: async (e) => {
@@ -101,7 +101,7 @@ export function renderResearch(root, ui) {
           h('td', { class: 'num', text: r.ms + 'ms' }),
         ))),
       ))
-      : h('div', { class: 'small muted', text: 'לחץ כדי לפנות בפועל לכל מקור מהדפדפן הזה. מקור שנכשל מסומן באדום, והמערכת ממשיכה עם החלופות ונתוני ההדגמה.' }),
+      : h('div', { class: 'small muted', text: 'לחץ כדי לבדוק בפועל את כל מקורות השוק, החדשות, Reddit, YouTube ו-arXiv.' }),
   ));
 
   mount(root, h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },
@@ -115,20 +115,84 @@ export function renderResearch(root, ui) {
           h('button', { class: 'btn btn-sm btn-ghost', onclick: () => { queryInput.value = q; act(() => scanGitHub(q), 'נסרק'); } }, q)),
       ),
     ),
-    section('סנטימנט וחדשות', 'מדדים וכותרות בזמן אמת',
+    section('חדשות RSS, Reddit, YouTube ו-arXiv', 'סריקה מיידית לפי מקור (רצים גם אוטומטית בכל סבב)',
       h('div', { class: 'row wrap', style: { gap: '6px' } },
+        h('button', { class: 'btn btn-sm btn-primary', onclick: () => act(() => scanNews(), 'חדשות RSS נשאבו בהצלחה') }, '📰 News RSS'),
+        h('button', { class: 'btn btn-sm btn-primary', onclick: () => act(() => scanReddit(), 'פוסטים מ-Reddit נשאבו בהצלחה') }, '🤖 Reddit'),
+        h('button', { class: 'btn btn-sm btn-primary', onclick: () => act(() => scanYouTube(), 'סרטוני YouTube נשאבו בהצלחה') }, '📺 YouTube'),
+        h('button', { class: 'btn btn-sm', onclick: () => act(() => scanArxivQuant(), 'מאמרי arXiv q-fin נאספו') }, '📚 arXiv q-fin'),
+        h('button', { class: 'btn btn-sm', onclick: () => act(() => scanHackerNews(), 'דיוני Hacker News נאספו') }, '🟠 Hacker News'),
         h('button', { class: 'btn btn-sm', onclick: () => act(() => scanFearGreed(), 'מדד פחד/חמדנות עודכן') }, 'Fear & Greed'),
-        h('button', { class: 'btn btn-sm', onclick: () => act(() => scanTrending(), 'מגמות CoinGecko עודכנו') }, 'CoinGecko Trending'),
-        h('button', { class: 'btn btn-sm', onclick: () => act(() => scanReddit(), 'כותרות Reddit נאספו') }, 'Reddit'),
-        h('button', { class: 'btn btn-sm', onclick: () => act(() => scanNews(), 'כותרות החדשות נטענו') }, 'חדשות (endpoint)'),
+        h('button', { class: 'btn btn-sm', onclick: () => act(() => scanTrending(), 'מגמות CoinGecko עודכנו') }, 'CoinGecko'),
       ),
       h('div', { class: 'small muted', style: { marginTop: '10px' } },
         `עודכן: ${state.sentiment.updatedAt ? timeAgo(state.sentiment.updatedAt) : 'טרם'} · ` +
-        `מדד: ${state.sentiment.fearGreed ? state.sentiment.fearGreed.value : '—'} · ` +
-        `כותרות: ${state.sentiment.headlines?.length || 0}`,
+        `כותרות: ${state.sentiment.headlines?.length || 0} · ` +
+        `סרטוני YouTube: ${state.sentiment.youtubeVideos?.length || 0} · ` +
+        `מאמרי arXiv: ${state.sentiment.arxivPapers?.length || 0}`,
       ),
-      h('button', { class: 'btn btn-sm btn-ghost', style: { marginTop: '8px' }, onclick: () => ui.go('sentiment') }, 'לניתוח הסנטימנט →'),
+      h('button', { class: 'btn btn-sm btn-ghost', style: { marginTop: '8px' }, onclick: () => ui.go('sentiment') }, 'לפיד החדשות והסנטימנט המלא →'),
     ),
+  ));
+
+  // YouTube Research & Market News Videos Card
+  const ytVideos = state.sentiment.youtubeVideos || [];
+  mount(root, h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(239, 68, 68, 0.35)' } },
+    h('div', { class: 'card-head' },
+      h('div', {},
+        h('h2', { text: '📺 YouTube · מחקר, מאקרו וחדשות שוק בזמן אמת' }),
+        h('div', { class: 'card-sub', text: 'CNBC · Bloomberg · Yahoo Finance · Coin Bureau · Benjamin Cowen · Patrick Boyle (פיד Atom רשמי חינמי)' }),
+      ),
+      h('div', { class: 'row', style: { gap: '6px' } },
+        tag(ytVideos.length ? `${ytVideos.length} סרטונים` : 'טרם נסרק', ytVideos.length ? 'live' : 'opt'),
+        h('button', { class: 'btn btn-sm', onclick: () => act(() => scanYouTube(), 'ערוצי YouTube עודכנו') }, '⟳ רענן YouTube'),
+      ),
+    ),
+    ytVideos.length
+      ? h('div', { class: 'grid cols-3', style: { gap: '10px' } },
+        ytVideos.slice(0, 9).map((v) => h('a', {
+          href: v.url,
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          class: 'card',
+          style: { padding: '8px', textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(10, 16, 28, 0.9)' },
+        },
+          v.thumbnail
+            ? h('img', { src: v.thumbnail, alt: v.title, loading: 'lazy', style: { width: '100%', height: '112px', objectFit: 'cover', borderRadius: '6px' } })
+            : null,
+          h('div', { class: 'row between', style: { gap: '4px' } },
+            tag(v.channel, 'opt'),
+            h('span', { class: 'tiny muted', text: v.at ? timeAgo(v.at) : '' }),
+          ),
+          h('div', { class: 'small', style: { color: '#f1f5f9', fontWeight: '600', lineHeight: '1.35' }, text: v.title }),
+          h('div', { class: 'tiny muted', text: v.category }),
+        )),
+      )
+      : empty('לחץ על "📺 YouTube" או "⟳ סרוק את כל המקורות" למשיכת סרטוני חדשות ומחקר חיים.'),
+  ));
+
+  // arXiv Quant Papers Card
+  const arxivPapers = state.sentiment.arxivPapers || [];
+  mount(root, h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(167, 139, 250, 0.35)' } },
+    h('div', { class: 'card-head' },
+      h('div', {},
+        h('h2', { text: '📚 arXiv Quantitative Finance (q-fin) — מחקר אקדמי עדכני' }),
+        h('div', { class: 'card-sub', text: 'מאמרים חדשים באלגוטריידינג, ניהול סיכונים ומימון כמותי המוזנים ישירות לרשימת הרעיונות של הצוות' }),
+      ),
+      h('button', { class: 'btn btn-sm', onclick: () => act(() => scanArxivQuant(), 'מאמרי arXiv q-fin עודכנו') }, '⟳ רענן arXiv'),
+    ),
+    arxivPapers.length
+      ? h('div', { class: 'table-wrap' }, h('table', {},
+        h('thead', {}, h('tr', {}, h('th', { text: 'כותרת המחקר' }), h('th', { text: 'אסטרטגיה קשורה' }))),
+        h('tbody', {}, arxivPapers.slice(0, 8).map((p) => h('tr', {},
+          h('td', {},
+            h('a', { href: p.url, target: '_blank', rel: 'noopener noreferrer', style: { color: '#c4b5fd', fontWeight: '600' }, text: p.title }),
+            h('div', { class: 'tiny muted', text: (p.summary || '').slice(0, 140) }),
+          ),
+          h('td', { class: 'tiny' }, p.strategy ? tag(strategyName(p.strategy), 'live') : tag('Quant Research', 'opt')),
+        ))),
+      ))
+      : empty('לחץ על "📚 arXiv q-fin" למשיכת מאמרי מחקר קוונט חדשים.'),
   ));
 
   mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
@@ -174,7 +238,7 @@ export function renderResearch(root, ui) {
           ),
         ))),
       ))
-      : empty('עוד לא נאספו רעיונות — התחל בסריקת GitHub'),
+      : empty('עוד לא נאספו רעיונות — התחל בסריקת GitHub, Reddit או arXiv'),
   ));
 
   mount(root, h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },
@@ -201,7 +265,7 @@ export function renderResearch(root, ui) {
       ),
       notice('הקונטקסט כולל פרמטרים, מדדים, רעיונות וסטטיסטיקות — לא מפתחות API.', 'blue'),
     ),
-    section('מקורות מוגדרים', 'מה נסרק ומה המגבלות',
+    section('מקורות מוגדרים', 'כל מקורות המידע הפעילים במערכת',
       h('ul', { class: 'list-clean' },
         Object.entries(RESEARCH_SOURCES).map(([k, src]) => h('li', {},
           h('span', { class: 'bul', text: '•' }),
@@ -210,13 +274,6 @@ export function renderResearch(root, ui) {
             h('div', { class: 'tiny muted', text: src.note }),
           ),
         )),
-        h('li', {},
-          h('span', { class: 'bul', text: '•' }),
-          h('div', { class: 'grow' },
-            h('div', { style: { fontWeight: 600 }, text: 'Reddit r/CryptoCurrency, r/algotrading' }),
-            h('div', { class: 'tiny muted', text: 'כותרות חמות לסנטימנט. עלול להיחסם לפי CORS; אם נכשל — המערכת ממשיכה עם המקורות האחרים.' }),
-          ),
-        ),
       ),
     ),
   ));

@@ -126,12 +126,37 @@ export function renderSentiment(root, ui) {
       : empty('לחץ על "📊 רענן זרם פונדמנטליסטי" כדי למשוך נתוני דוחות SEC EDGAR, CoinGecko ומאקרו.'),
   ));
 
+  const allHeadlines = sent.headlines || [];
+  const activeFilter = ui._sentSourceFilter || 'all';
+  const matchFilter = (item) => {
+    if (activeFilter === 'all') return true;
+    const src = `${item.channelKind || ''} ${item.source || ''}`.toLowerCase();
+    if (activeFilter === 'news') return item.channelKind === 'news' || /yahoo|cnbc|marketwatch|fed|coindesk|cointelegraph|decrypt|seekingalpha|google news/.test(src);
+    if (activeFilter === 'reddit') return item.channelKind === 'reddit' || src.includes('r/') || src.includes('reddit');
+    if (activeFilter === 'youtube') return item.channelKind === 'youtube' || src.includes('youtube');
+    if (activeFilter === 'hackernews') return item.channelKind === 'hackernews' || src.includes('hacker news');
+    return true;
+  };
+  const filteredHeadlines = allHeadlines.filter(matchFilter);
+
   mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
-    h('div', { class: 'card-head' },
-      h('div', {}, h('h2', { text: 'כותרות אחרונות' }), h('div', { class: 'card-sub', text: 'ציון מחושב מהמילים שבכותרת ובתיאור' })),
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {}, h('h2', { text: 'כותרות אחרונות (News RSS · Reddit · YouTube · Hacker News)' }), h('div', { class: 'card-sub', text: `${filteredHeadlines.length} מתוך ${allHeadlines.length} כותרות פעילות · ציון מחושב מהמילים שבכותרת ובתיאור` })),
+      h('div', { class: 'row wrap', style: { gap: '5px' } },
+        [
+          ['all', 'הכל'],
+          ['news', '📰 News RSS'],
+          ['reddit', '🤖 Reddit'],
+          ['youtube', '📺 YouTube'],
+          ['hackernews', '🟠 HN'],
+        ].map(([k, lbl]) => h('button', {
+          class: `btn btn-sm ${activeFilter === k ? 'btn-primary' : ''}`,
+          onclick: () => { ui._sentSourceFilter = k; ui.rerender(); },
+        }, lbl)),
+      ),
     ),
-    (sent.headlines || []).length
-      ? h('div', { class: 'feed' }, sent.headlines.slice(0, 20).map((item) => {
+    filteredHeadlines.length
+      ? h('div', { class: 'feed' }, filteredHeadlines.slice(0, 35).map((item) => {
         const score = item.score ?? scoreText(item.title);
         return h('div', { class: 'feed-item ' + (score > 0.15 ? 'ok' : score < -0.15 ? 'bad' : '') },
           h('span', { class: 'dot' }),
@@ -144,7 +169,7 @@ export function renderSentiment(root, ui) {
           h('span', { class: 'mono tiny ' + (score > 0 ? 'green' : score < 0 ? 'red' : 'muted'), text: (score > 0 ? '+' : '') + score.toFixed(2) }),
         );
       }))
-      : empty('אין כותרות — חבר endpoint חדשות בהגדרות או הרץ סריקת Reddit'),
+      : empty('אין כותרות בסינון זה — לחץ על "⟳ רענן סנטימנט" כדי לשאוב מ-News RSS, Reddit, YouTube ו-Hacker News'),
     notice('הסנטימנט משמש כשכבה מגנה: הוא יכול להקטין חשיפה או לעכב כניסה, אבל הקידום והגרסאות נקבעים לפי בקטסט ו-OOS בלבד.', 'blue'),
   ));
 }

@@ -232,39 +232,285 @@ async function fetchStooqDaily(symbol, limit = 500) {
   };
 }
 
-function parseRssItems(xml, sourceName, max = 4) {
+function decodeXmlEntities(s) {
+  return String(s || '')
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseFeedItems(xml, sourceName, max = 6) {
   const items = [];
-  const itemRe = /<item>([\s\S]*?)<\/item>/gi;
+  if (!xml) return items;
+
+  // 1. RSS 2.0 <item> blocks
+  const itemRe = /<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi;
   let m;
   while ((m = itemRe.exec(xml)) !== null && items.length < max) {
     const block = m[1];
-    const title = (block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>|<title>([\s\S]*?)<\/title>/i)?.[1] || block.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || '').trim();
-    const link = (block.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || '').trim();
-    const pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || '').trim();
-    if (title) items.push({ title, link, pubDate, source: sourceName });
+    const title = decodeXmlEntities(block.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '');
+    const link = decodeXmlEntities(block.match(/<link[^>]*>([\s\S]*?)<\/link>/i)?.[1] || '');
+    const pubDate = decodeXmlEntities(block.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] || block.match(/<dc:date[^>]*>([\s\S]*?)<\/dc:date>/i)?.[1] || '');
+    const summary = decodeXmlEntities(block.match(/<description[^>]*>([\s\S]*?)<\/description>/i)?.[1] || '').slice(0, 260);
+    if (title) items.push({ title, link, pubDate, summary, source: sourceName });
+  }
+  if (items.length) return items;
+
+  // 2. Atom <entry> blocks (YouTube, Reddit .rss, arXiv)
+  const entryRe = /<entry(?:\s[^>]*)?>([\s\S]*?)<\/entry>/gi;
+  while ((m = entryRe.exec(xml)) !== null && items.length < max) {
+    const block = m[1];
+    const title = decodeXmlEntities(block.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '');
+    const linkAttr = block.match(/<link[^>]+href=["']([^"']+)["'][^>]*>/i)?.[1] || '';
+    const linkTag = block.match(/<link[^>]*>([\s\S]*?)<\/link>/i)?.[1] || '';
+    const link = decodeXmlEntities(linkAttr || linkTag);
+    const pubDate = decodeXmlEntities(
+      block.match(/<published[^>]*>([\s\S]*?)<\/published>/i)?.[1]
+      || block.match(/<updated[^>]*>([\s\S]*?)<\/updated>/i)?.[1]
+      || '',
+    );
+    const summary = decodeXmlEntities(
+      block.match(/<media:description[^>]*>([\s\S]*?)<\/media:description>/i)?.[1]
+      || block.match(/<summary[^>]*>([\s\S]*?)<\/summary>/i)?.[1]
+      || block.match(/<content[^>]*>([\s\S]*?)<\/content>/i)?.[1]
+      || '',
+    ).slice(0, 260);
+    const videoId = (block.match(/<yt:videoId>([^<]+)<\/yt:videoId>/i)?.[1] || '').trim() || null;
+    const thumbnail = (block.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i)?.[1] || '').trim()
+      || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null);
+    const author = decodeXmlEntities(block.match(/<author>[\s\S]*?<name>([\s\S]*?)<\/name>[\s\S]*?<\/author>/i)?.[1] || '') || sourceName;
+    if (title) {
+      items.push({ title, link, pubDate, summary, author, videoId, thumbnail, source: sourceName });
+    }
   }
   return items;
 }
 
+async function fetchTextTimeout(url, headers = {}, timeoutMs = 8000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AltaCapitalResearch/2.1)', ...headers },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchAssetNews(symbol) {
-  const cleanSym = symbol.replace(/USDT$/i, '-USD');
+  const isAll = !symbol || symbol.toUpperCase() === 'ALL';
+  const cleanSym = isAll ? 'NVDA,AAPL,SPY,BTC-USD,ETH-USD' : symbol.replace(/USDT$/i, '-USD');
   const feeds = [
-    { name: 'Yahoo Finance', url: `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(cleanSym)}&region=US&lang=en-US` },
-    { name: 'CNBC Earnings/Finance', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
-    { name: 'MarketWatch', url: 'https://feeds.marketwatch.com/marketwatch/topstories' },
-    { name: 'Federal Reserve', url: 'https://www.federalreserve.gov/feeds/press_all.xml' },
-    { name: 'Google News', url: `https://news.google.com/rss/search?q=${encodeURIComponent(symbol.replace('USDT', '') + ' market finance')}&hl=en-US&gl=US&ceid=US:en` },
+    { name: 'Yahoo Finance', url: `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(cleanSym)}&region=US&lang=en-US`, max: 4 },
+    { name: 'CNBC Finance', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html', max: 4 },
+    { name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories', max: 4 },
+    { name: 'Federal Reserve', url: 'https://www.federalreserve.gov/feeds/press_all.xml', max: 3 },
+    { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', max: 4 },
+    { name: 'Cointelegraph', url: 'https://cointelegraph.com/rss', max: 4 },
+    { name: 'Decrypt', url: 'https://decrypt.co/feed', max: 3 },
+    { name: 'SeekingAlpha', url: 'https://seekingalpha.com/market_currents.xml', max: 3 },
+    {
+      name: 'Google News',
+      url: `https://news.google.com/rss/search?q=${encodeURIComponent((isAll ? 'stock market bitcoin federal reserve' : symbol.replace('USDT', '') + ' market finance'))}&hl=en-US&gl=US&ceid=US:en`,
+      max: 4,
+    },
   ];
   const all = [];
+  const activeSources = [];
   await Promise.all(feeds.map(async (f) => {
     try {
-      const res = await fetch(f.url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-      if (!res.ok) return;
-      const xml = await res.text();
-      all.push(...parseRssItems(xml, f.name, 3));
+      const xml = await fetchTextTimeout(f.url, { Accept: 'application/rss+xml, application/xml, text/xml' }, 7500);
+      const parsed = parseFeedItems(xml, f.name, f.max || 3);
+      if (parsed.length) {
+        activeSources.push(f.name);
+        all.push(...parsed);
+      }
     } catch { /* skip single feed */ }
   }));
-  return { ok: all.length > 0, symbol, source: 'Yahoo + CNBC + MarketWatch + Fed RSS', items: all.slice(0, 14) };
+  const seen = new Set();
+  const dedup = all.filter((it) => {
+    const k = (it.title || '').toLowerCase().slice(0, 70);
+    if (!k || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  return {
+    ok: dedup.length > 0,
+    symbol: isAll ? 'ALL' : symbol,
+    source: activeSources.join(' + ') || 'News RSS',
+    sourcesCount: activeSources.length,
+    items: dedup.slice(0, isAll ? 28 : 16),
+  };
+}
+
+async function fetchRedditFeed(subsParam) {
+  const subs = String(subsParam || 'algotrading,CryptoCurrency,stocks,investing')
+    .split(',')
+    .map((s) => s.replace(/^r\//i, '').trim())
+    .filter((s) => /^[A-Za-z0-9_]{2,30}$/.test(s))
+    .slice(0, 6);
+
+  const items = [];
+  const usedMethod = new Set();
+  const ua = 'node:alta-capital-research:v2.1 (by /u/altacapital_quant)';
+
+  // 1. Try direct Reddit RSS & JSON first (works natively on home/residential IPs like Base Server)
+  await Promise.all(subs.map(async (sub) => {
+    try {
+      const xml = await fetchTextTimeout(`https://www.reddit.com/r/${sub}/.rss?limit=8`, { 'User-Agent': ua }, 6500);
+      const parsed = parseFeedItems(xml, `r/${sub}`, 6);
+      if (parsed.length) {
+        usedMethod.add('Reddit RSS');
+        items.push(...parsed);
+        return;
+      }
+    } catch { /* try JSON fallback */ }
+    try {
+      const raw = await fetchTextTimeout(`https://www.reddit.com/r/${sub}/hot.json?limit=8`, { 'User-Agent': ua, Accept: 'application/json' }, 6500);
+      const json = JSON.parse(raw);
+      for (const child of json?.data?.children || []) {
+        const d = child?.data;
+        if (!d?.title || d.stickied) continue;
+        usedMethod.add('Reddit JSON');
+        items.push({
+          title: d.title,
+          link: `https://www.reddit.com${d.permalink}`,
+          pubDate: d.created_utc ? new Date(d.created_utc * 1000).toISOString() : '',
+          summary: String(d.selftext || '').slice(0, 240),
+          source: `r/${sub}`,
+          score: d.score || 0,
+          comments: d.num_comments || 0,
+        });
+      }
+    } catch { /* will fall back to Google News Reddit index below */ }
+  }));
+
+  // 2. Fallback for datacenter/cloud IPs where Reddit returns 403/429: indexed Reddit posts via Google News RSS
+  if (items.length < 4) {
+    try {
+      const q = subs.map((s) => `site:reddit.com/r/${s}`).join(' OR ');
+      const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-US&gl=US&ceid=US:en`;
+      const xml = await fetchTextTimeout(url, { Accept: 'application/rss+xml, text/xml' }, 7500);
+      const parsed = parseFeedItems(xml, 'Reddit', 16).map((it) => {
+        const subMatch = `${it.title} ${it.link}`.match(/r\/([A-Za-z0-9_]+)/i);
+        return {
+          ...it,
+          source: subMatch ? `r/${subMatch[1]}` : 'Reddit (Indexed)',
+        };
+      });
+      if (parsed.length) {
+        usedMethod.add('Reddit Index RSS');
+        items.push(...parsed);
+      }
+    } catch { /* ignore */ }
+  }
+
+  const seen = new Set();
+  const dedup = items.filter((it) => {
+    const k = (it.title || '').toLowerCase().slice(0, 70);
+    if (!k || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+
+  return {
+    ok: dedup.length > 0,
+    source: [...usedMethod].join(' + ') || 'Reddit',
+    subreddits: subs,
+    items: dedup.slice(0, 24),
+  };
+}
+
+const YOUTUBE_FINANCE_CHANNELS = [
+  { id: 'UCrp_UI8XtuYfpiqluWLD7Lw', name: 'CNBC Television', category: 'חדשות שוק ומניות' },
+  { id: 'UCIALMKvObZNtJ6AmdCLP7Lg', name: 'Bloomberg Television', category: 'מאקרו ושווקים גלובליים' },
+  { id: 'UCEAZeUIeJs0IjQiqTCdVSIg', name: 'Yahoo Finance', category: 'דוחות, פד ומניות' },
+  { id: 'UCqK_GSMbpiV8spgD3ZGloSw', name: 'Coin Bureau', category: 'מחקר קריפטו פונדמנטלי' },
+  { id: 'UCRvqjQPSeaWn-uEx-w0XOIg', name: 'Benjamin Cowen', category: 'מחזורי שוק וקוונט קריפטו' },
+  { id: 'UCASM0cgfkJxQ1ICmRilfHLw', name: 'Patrick Boyle', category: 'קוונט, קרנות גידור ומאקרו' },
+];
+
+async function fetchYouTubeResearch() {
+  const all = [];
+  const activeChannels = [];
+  await Promise.all(YOUTUBE_FINANCE_CHANNELS.map(async (ch) => {
+    try {
+      const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.id}`;
+      const xml = await fetchTextTimeout(url, { Accept: 'application/atom+xml, text/xml' }, 7500);
+      const parsed = parseFeedItems(xml, `YouTube · ${ch.name}`, 4).map((v) => ({
+        ...v,
+        channel: ch.name,
+        channelId: ch.id,
+        category: ch.category,
+      }));
+      if (parsed.length) {
+        activeChannels.push(ch.name);
+        all.push(...parsed);
+      }
+    } catch { /* skip single channel */ }
+  }));
+  all.sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
+  return {
+    ok: all.length > 0,
+    source: `YouTube Official Feeds (${activeChannels.length} ערוצים)`,
+    channels: activeChannels,
+    items: all.slice(0, 20),
+  };
+}
+
+async function fetchArxivQuantPapers() {
+  const xml = await fetchTextTimeout('https://rss.arxiv.org/rss/q-fin', { Accept: 'application/rss+xml, text/xml' }, 8000);
+  const items = parseFeedItems(xml, 'arXiv q-fin', 15);
+  return {
+    ok: items.length > 0,
+    source: 'arXiv Quantitative Finance (q-fin RSS)',
+    items,
+  };
+}
+
+async function fetchHackerNewsFinance() {
+  const queries = ['trading', 'bitcoin', 'nvidia'];
+  const all = [];
+  await Promise.all(queries.map(async (q) => {
+    try {
+      const raw = await fetchTextTimeout(`https://hn.algolia.com/api/v1/search_by_date?query=${encodeURIComponent(q)}&tags=story&hitsPerPage=6`, { Accept: 'application/json' }, 7000);
+      const json = JSON.parse(raw);
+      for (const hit of json?.hits || []) {
+        if (!hit?.title) continue;
+        all.push({
+          title: hit.title,
+          link: hit.url || `https://news.ycombinator.com/item?id=${hit.objectID}`,
+          pubDate: hit.created_at || '',
+          summary: `HN Points: ${hit.points || 0} · Comments: ${hit.num_comments || 0}`,
+          points: hit.points || 0,
+          comments: hit.num_comments || 0,
+          source: 'Hacker News',
+        });
+      }
+    } catch { /* skip query */ }
+  }));
+  const seen = new Set();
+  const dedup = all.filter((it) => {
+    const k = it.title.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
+  return {
+    ok: dedup.length > 0,
+    source: 'Hacker News (Algolia API)',
+    items: dedup.slice(0, 15),
+  };
 }
 
 export async function handleMarketRequest(query = {}) {
@@ -273,8 +519,24 @@ export async function handleMarketRequest(query = {}) {
   }
 
   if (query.action === 'news') {
-    const sym = String(query.symbol || 'NVDA').trim();
+    const sym = String(query.symbol || 'ALL').trim();
     return await fetchAssetNews(sym);
+  }
+
+  if (query.action === 'reddit') {
+    return await fetchRedditFeed(query.subs || '');
+  }
+
+  if (query.action === 'youtube') {
+    return await fetchYouTubeResearch();
+  }
+
+  if (query.action === 'arxiv') {
+    return await fetchArxivQuantPapers();
+  }
+
+  if (query.action === 'hackernews') {
+    return await fetchHackerNewsFinance();
   }
 
   if (query.action === 'fundamentals') {

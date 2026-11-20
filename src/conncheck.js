@@ -42,6 +42,31 @@ export const CONTEXT_FEEDS = [
     url: 'https://api.github.com/rate_limit',
     valid: (j) => !!j?.rate,
   },
+  {
+    id: 'news-rss', label: 'News RSS (Yahoo · CNBC · CoinDesk · Fed)', kind: 'חדשות',
+    url: '/api/market?action=news&symbol=ALL',
+    valid: (j) => !!(j?.ok && Array.isArray(j.items) && j.items.length > 0),
+  },
+  {
+    id: 'reddit', label: 'Reddit (r/algotrading · Crypto · Stocks)', kind: 'סנטימנט',
+    url: '/api/market?action=reddit',
+    valid: (j) => !!(j?.ok && Array.isArray(j.items) && j.items.length > 0),
+  },
+  {
+    id: 'youtube', label: 'YouTube (Bloomberg · CNBC · Coin Bureau)', kind: 'וידאו ומחקר',
+    url: '/api/market?action=youtube',
+    valid: (j) => !!(j?.ok && Array.isArray(j.items) && j.items.length > 0),
+  },
+  {
+    id: 'arxiv', label: 'arXiv Quant Finance (q-fin)', kind: 'מחקר אקדמי',
+    url: '/api/market?action=arxiv',
+    valid: (j) => !!(j?.ok && Array.isArray(j.items) && j.items.length > 0),
+  },
+  {
+    id: 'hackernews', label: 'Hacker News Finance / AI', kind: 'מחקר וחדשות',
+    url: '/api/market?action=hackernews',
+    valid: (j) => !!(j?.ok && Array.isArray(j.items) && j.items.length > 0),
+  },
 ];
 
 async function timedFetch(feed) {

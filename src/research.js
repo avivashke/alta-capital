@@ -5,24 +5,30 @@ import { store, uid } from './store.js';
 import { getCandles } from './market.js';
 import { rsi, sma } from './indicators.js';
 
-const EXTRA_SOURCES = {
-  reddit: { label: 'Reddit (JSON ציבורי)', limit: 10, windowMs: 3_600_000, note: 'פוסטים חמים מ־r/CryptoCurrency ו־r/algotrading. Reddit חוסם בקשות דפדפן (CORS) ולכן הסריקה ידנית ועלולה להיכשל.' },
-};
+const EXTRA_SOURCES = {};
 
 const POSITIVE = [
   'surge', 'rally', 'bullish', 'gain', 'record', 'approval', 'inflow', 'buy', 'adoption', 'breakout',
   'upgrade', 'profit', 'soar', 'jump', 'optimistic', 'accumulate', 'strong', 'partnership', 'launch',
+  'beat', 'raises guidance', 'rate cut', 'cooling inflation', 'outperform', 'buyback',
   'עלייה', 'זינוק', 'פריצה', 'חיובי', 'אופטימי', 'ביקוש', 'אישור', 'שיא', 'צמיחה',
 ];
 const NEGATIVE = [
   'crash', 'plunge', 'bearish', 'sell-off', 'selloff', 'hack', 'outflow', 'ban', 'lawsuit', 'liquidation',
   'fear', 'downgrade', 'loss', 'drop', 'dump', 'recession', 'warning', 'fraud', 'bankrupt', 'exploit',
+  'miss', 'cuts guidance', 'rate hike', 'tariff', 'hot inflation', 'layoff', 'probe',
   'ירידה', 'קריסה', 'חשש', 'שלילי', 'האק', 'חקירה', 'אזהרה', 'פלישה', 'הפסד', 'מכירה',
 ];
 
 const ASSET_WORDS = {
   BTCUSDT: ['btc', 'bitcoin', 'ביטקוין', 'ביטקויין'],
   ETHUSDT: ['eth', 'ethereum', 'אתריום', 'אתרי'],
+  SOLUSDT: ['sol', 'solana', 'סולנה'],
+  NVDA: ['nvda', 'nvidia', 'blackwell', 'cuda', 'ai chip'],
+  AAPL: ['aapl', 'apple', 'iphone', 'macbook'],
+  SPY: ['spy', 's&p 500', 's&p500', 'wall street', 'stocks', 'fed', 'fomc', 'cpi'],
+  TSLA: ['tsla', 'tesla'],
+  MSFT: ['msft', 'microsoft', 'azure'],
 };
 
 function budget(key) {
@@ -174,53 +180,258 @@ export async function scanTrending({ quiet = false } = {}) {
   return coins.length;
 }
 
-// --- Reddit ---------------------------------------------------------------
+// --- Unified Market/Research Proxy Helper (Browser + Node 24/7 Runner) ----
+
+async function callMarketProxy(params = {}) {
+  // In Node (runner/run.mjs or Base Server cron), call handleMarketRequest directly in-process
+  if (typeof window === 'undefined') {
+    const mod = await import('../netlify/functions/market.mjs');
+    return await mod.handleMarketRequest(params);
+  }
+  const qs = new URLSearchParams(params).toString();
+  const candidates = [`/api/market?${qs}`];
+  const baseUrl = (store.state?.settings?.db?.baseServerUrl || '').trim().replace(/\/+$/, '');
+  if (baseUrl) candidates.push(`${baseUrl}/api/market?${qs}`);
+  let lastErr = null;
+  for (const url of candidates) {
+    try {
+      const json = await fetchJson(url, {}, 12000);
+      if (json && json.ok !== false) return json;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('פרוקסי השוק לא זמין');
+}
+
+function mergeHeadlines(incoming = [], maxKeep = 80) {
+  const existing = store.state.sentiment.headlines || [];
+  const seen = new Set();
+  const out = [];
+  for (const h of [...incoming, ...existing]) {
+    const title = String(h?.title || '').trim();
+    if (!title) continue;
+    const key = title.toLowerCase().slice(0, 72);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      ...h,
+      title,
+      at: h.at || (h.pubDate ? Date.parse(h.pubDate) || Date.now() : Date.now()),
+      score: h.score ?? scoreText(`${title} ${h.body || ''}`),
+    });
+    if (out.length >= maxKeep) break;
+  }
+  store.state.sentiment.headlines = out;
+  return out;
+}
+
+// --- Reddit (via server proxy: direct RSS/JSON + indexed fallback, zero CORS) ---
 
 export async function scanReddit({ quiet = false } = {}) {
   if (!canUse('reddit')) throw new Error('מכסת Reddit נוצלה');
   noteUse('reddit');
-  const subs = ['CryptoCurrency', 'algotrading'];
-  const headlines = [];
-  for (const sub of subs) {
-    try {
-      const json = await fetchJson(`https://www.reddit.com/r/${sub}/hot.json?limit=12`);
-      for (const child of json.data?.children || []) {
-        const d = child.data;
-        if (d?.title) headlines.push({ title: d.title, url: `https://reddit.com${d.permalink}`, source: `r/${sub}`, at: Date.now() });
-      }
-    } catch (err) {
-      store.log('warn', 'עומר · מודיעין', `Reddit r/${sub}: ${err.message}`);
+  const data = await callMarketProxy({ action: 'reddit', subs: 'algotrading,CryptoCurrency,stocks,investing' });
+  const raw = Array.isArray(data?.items) ? data.items : [];
+  const headlines = raw.map((it) => ({
+    title: it.title,
+    url: it.link || '',
+    source: it.source || 'Reddit',
+    channelKind: 'reddit',
+    body: it.summary || '',
+    at: it.pubDate ? Date.parse(it.pubDate) || Date.now() : Date.now(),
+  })).filter((h) => h.title);
+
+  if (!headlines.length) throw new Error('Reddit לא החזיר פוסטים כרגע');
+  mergeHeadlines(headlines);
+
+  // Also feed algotrading discussions into the team's Research Ideas
+  let ideasAdded = 0;
+  for (const h of headlines) {
+    if (/algotrading|quant|strategy|backtest|gann|indicator/i.test(`${h.source} ${h.title}`)) {
+      const strat = guessStrategy(h.title);
+      if (addIdea({
+        title: h.title.slice(0, 120),
+        url: h.url || 'https://www.reddit.com/r/algotrading/',
+        desc: (h.body || `פוסט קהילתי מ-${h.source}`).slice(0, 200),
+        source: h.source || 'Reddit',
+        strategy: strat,
+        timeframe: guessTimeframe(h.title),
+        suggestedStrategy: strat || 'ema_trend',
+        tags: ['Reddit', h.source],
+      })) ideasAdded++;
     }
   }
-  if (!headlines.length) throw new Error('Reddit לא החזיר כותרות (חסימת CORS/קצב)');
-  store.state.sentiment.headlines = [...headlines, ...(store.state.sentiment.headlines || [])].slice(0, 40);
-  store.log('ok', 'עומר · מודיעין', `נאספו ${headlines.length} כותרות מרשתות חברתיות`);
+
+  store.log('ok', 'עומר · מודיעין', `Reddit (${data.source || 'Proxy'}): נאספו ${headlines.length} פוסטים${ideasAdded ? ` + ${ideasAdded} רעיונות אסטרטגיה` : ''}`);
   store.save();
   if (!quiet) store.emit();
   return headlines.length;
 }
 
-// --- custom news endpoint -------------------------------------------------
+// --- Multi-Source Financial & Crypto News RSS (+ optional custom endpoint) ---
 
 export async function scanNews({ quiet = false } = {}) {
-  const { endpoint, apiKey } = store.state.settings.news;
-  if (!endpoint) throw new Error('לא הוגדרה נקודת קצה לחדשות בהגדרות');
   if (!canUse('news')) throw new Error('מכסת החדשות נוצלה');
   noteUse('news');
-  const sep = endpoint.includes('?') ? '&' : '?';
-  const url = apiKey ? `${endpoint}${sep}apiKey=${encodeURIComponent(apiKey)}` : endpoint;
-  const json = await fetchJson(url);
-  const raw = json.articles || json.items || json.data || json.news || [];
-  const headlines = raw.slice(0, 20).map((a) => ({
-    title: a.title || a.headline || String(a),
-    url: a.url || a.link || '',
-    source: a.source?.name || a.source || 'חדשות',
-    at: Date.now(),
-    body: a.description || a.summary || '',
-  })).filter((h) => h.title);
-  if (!headlines.length) throw new Error('הפורמט לא זוהה (צריך articles/items/data עם title)');
-  store.state.sentiment.headlines = [...headlines, ...(store.state.sentiment.headlines || [])].slice(0, 40);
-  store.log('ok', 'עומר · מודיעין', `נקראו ${headlines.length} כותרות חדשות`);
+  const headlines = [];
+  const sourcesUsed = [];
+
+  // 1. Always pull from built-in zero-key multi-source RSS aggregator (Yahoo, CNBC, MarketWatch, Fed, CoinDesk, Cointelegraph, Decrypt, SeekingAlpha, Google News)
+  try {
+    const rssData = await callMarketProxy({ action: 'news', symbol: 'ALL' });
+    const items = Array.isArray(rssData?.items) ? rssData.items : [];
+    for (const a of items) {
+      if (!a?.title) continue;
+      headlines.push({
+        title: a.title,
+        url: a.link || a.url || '',
+        source: a.source || 'News RSS',
+        channelKind: 'news',
+        body: a.summary || '',
+        at: a.pubDate ? Date.parse(a.pubDate) || Date.now() : Date.now(),
+      });
+    }
+    if (items.length) sourcesUsed.push(rssData.source || 'News RSS');
+  } catch (err) {
+    store.log('warn', 'עומר · חדשות RSS', `שגיאה בפיד RSS מובנה: ${err.message}`);
+  }
+
+  // 2. Also pull from user's custom News endpoint if configured in Settings
+  const { endpoint, apiKey } = store.state.settings.news || {};
+  if (endpoint) {
+    try {
+      const sep = endpoint.includes('?') ? '&' : '?';
+      const url = apiKey ? `${endpoint}${sep}apiKey=${encodeURIComponent(apiKey)}` : endpoint;
+      const json = await fetchJson(url);
+      const raw = json.articles || json.items || json.data || json.news || [];
+      for (const a of raw.slice(0, 15)) {
+        const title = a.title || a.headline || '';
+        if (!title) continue;
+        headlines.push({
+          title,
+          url: a.url || a.link || '',
+          source: a.source?.name || a.source || 'חדשות מותאם',
+          channelKind: 'news',
+          at: Date.now(),
+          body: a.description || a.summary || '',
+        });
+      }
+      if (raw.length) sourcesUsed.push('Custom Endpoint');
+    } catch { /* keep built-in RSS headlines */ }
+  }
+
+  if (!headlines.length) throw new Error('לא התקבלו כותרות מפיד החדשות RSS');
+  mergeHeadlines(headlines);
+  store.log('ok', 'עומר · חדשות RSS', `נקראו ${headlines.length} כותרות חדשות בזמן אמת (${sourcesUsed.join(' + ')})`);
+  store.save();
+  if (!quiet) store.emit();
+  return headlines.length;
+}
+
+// --- YouTube Finance, Macro, Quant & Crypto Official Channels --------------
+
+export async function scanYouTube({ quiet = false } = {}) {
+  if (!canUse('youtube')) throw new Error('מכסת YouTube נוצלה');
+  noteUse('youtube');
+  const data = await callMarketProxy({ action: 'youtube' });
+  const items = Array.isArray(data?.items) ? data.items : [];
+  if (!items.length) throw new Error('לא התקבלו סרטונים מערוצי YouTube');
+
+  const videos = items.map((v) => ({
+    title: v.title,
+    url: v.link || (v.videoId ? `https://www.youtube.com/watch?v=${v.videoId}` : ''),
+    videoId: v.videoId || null,
+    thumbnail: v.thumbnail || null,
+    channel: v.channel || v.author || 'YouTube',
+    category: v.category || 'שוק ומחקר',
+    summary: v.summary || '',
+    pubDate: v.pubDate || '',
+    at: v.pubDate ? Date.parse(v.pubDate) || Date.now() : Date.now(),
+    score: scoreText(`${v.title} ${v.summary || ''}`),
+  }));
+
+  store.state.sentiment.youtubeVideos = videos.slice(0, 20);
+  store.state.sentiment.youtubeUpdatedAt = Date.now();
+
+  // Feed top videos into headlines for asset sentiment scoring as well
+  mergeHeadlines(videos.slice(0, 12).map((v) => ({
+    title: `📺 ${v.title}`,
+    url: v.url,
+    source: `YouTube · ${v.channel}`,
+    channelKind: 'youtube',
+    body: v.summary,
+    at: v.at,
+    score: v.score,
+  })));
+
+  store.log('ok', 'עומר · YouTube מחקר', `נאספו ${videos.length} סרטוני חדשות ומחקר מ-${(data.channels || []).length} ערוצי YouTube (${(data.channels || []).slice(0, 3).join(', ')})`);
+  store.save();
+  if (!quiet) store.emit();
+  return videos.length;
+}
+
+// --- arXiv Quantitative Finance (q-fin) Research Papers --------------------
+
+export async function scanArxivQuant({ quiet = false } = {}) {
+  if (!canUse('arxiv')) throw new Error('מכסת arXiv נוצלה');
+  noteUse('arxiv');
+  const data = await callMarketProxy({ action: 'arxiv' });
+  const items = Array.isArray(data?.items) ? data.items : [];
+  if (!items.length) throw new Error('לא התקבלו מאמרים מ-arXiv q-fin');
+
+  const papers = items.map((p) => ({
+    title: p.title,
+    url: p.link || '',
+    summary: p.summary || '',
+    pubDate: p.pubDate || '',
+    at: p.pubDate ? Date.parse(p.pubDate) || Date.now() : Date.now(),
+    strategy: guessStrategy(`${p.title} ${p.summary || ''}`),
+  }));
+
+  store.state.sentiment.arxivPapers = papers.slice(0, 15);
+  store.state.sentiment.arxivUpdatedAt = Date.now();
+
+  let addedIdeas = 0;
+  for (const p of papers.slice(0, 8)) {
+    const ok = addIdea({
+      title: `[arXiv] ${p.title.slice(0, 110)}`,
+      url: p.url,
+      desc: (p.summary || 'מאמר מחקר אקדמי ב-arXiv Quantitative Finance').slice(0, 200),
+      source: 'arXiv q-fin',
+      strategy: p.strategy,
+      timeframe: guessTimeframe(`${p.title} ${p.summary}`),
+      suggestedStrategy: p.strategy || 'ema_trend',
+      tags: ['arXiv', 'Quant Paper'],
+    });
+    if (ok) addedIdeas++;
+  }
+
+  store.log('ok', 'נועה · מחקר arXiv', `נאספו ${papers.length} מאמרי קוונט מ-arXiv q-fin (${addedIdeas} נוספו לרעיונות)`);
+  store.save();
+  if (!quiet) store.emit();
+  return papers.length;
+}
+
+// --- Hacker News (Quant, AI, Crypto & Macro Tech Discussions) --------------
+
+export async function scanHackerNews({ quiet = false } = {}) {
+  if (!canUse('hackernews')) throw new Error('מכסת Hacker News נוצלה');
+  noteUse('hackernews');
+  const data = await callMarketProxy({ action: 'hackernews' });
+  const items = Array.isArray(data?.items) ? data.items : [];
+  if (!items.length) throw new Error('לא התקבלו כותרות מ-Hacker News');
+
+  const headlines = items.map((it) => ({
+    title: it.title,
+    url: it.link || '',
+    source: 'Hacker News',
+    channelKind: 'hackernews',
+    body: it.summary || '',
+    at: it.pubDate ? Date.parse(it.pubDate) || Date.now() : Date.now(),
+  }));
+  mergeHeadlines(headlines);
+  store.log('ok', 'עומר · Hacker News', `נאספו ${headlines.length} דיוני AI, מסחר וקריפטו מ-Hacker News`);
   store.save();
   if (!quiet) store.emit();
   return headlines.length;
@@ -240,15 +451,18 @@ export function scoreText(text) {
 }
 
 export async function refreshSentiment() {
-  const results = [];
-  for (const fn of [scanFearGreed, scanTrending, scanNews]) {
-    try {
-      await fn({ quiet: true });
-      results.push(true);
-    } catch (err) {
-      results.push(false);
-    }
-  }
+  const scanners = [
+    scanFearGreed,
+    scanTrending,
+    scanNews,
+    scanReddit,
+    scanYouTube,
+    scanArxivQuant,
+    scanHackerNews,
+  ];
+  const settled = await Promise.allSettled(scanners.map((fn) => fn({ quiet: true })));
+  const results = settled.map((r) => r.status === 'fulfilled');
+
   const state = store.state;
   const headlines = state.sentiment.headlines || [];
   const scored = headlines.map((h) => ({ ...h, score: scoreText(`${h.title} ${h.body || ''}`) }));

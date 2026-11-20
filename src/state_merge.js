@@ -378,7 +378,11 @@ export function mergeFirmStates(base, incoming, { forceReset = false, bumpRevisi
   if (xRes) shell.xResearch = xRes;
   const scout = pickFresherRicher(base.githubScout, incoming.githubScout, (g) => (g.repos?.length || 0));
   if (scout) shell.githubScout = scout;
-  const sent = pickFresherRicher(base.sentiment, incoming.sentiment, (s) => (s.headlines?.length || 0));
+  const sent = pickFresherRicher(
+    base.sentiment,
+    incoming.sentiment,
+    (s) => (s.headlines?.length || 0) + (s.youtubeVideos?.length || 0) * 2 + (s.arxivPapers?.length || 0) * 2,
+  );
   if (sent) shell.sentiment = sent;
   const audit = pickFresherRicher(base.truthAudit, incoming.truthAudit, (a) => (a.checkedAt || 0));
   if (audit) shell.truthAudit = audit;
