@@ -8,6 +8,7 @@
     "start": "node server.mjs",
     "dev": "node server.mjs",
     "base-server": "node scripts/start-base-server.mjs",
+    "base-server:restart:win": "powershell -ExecutionPolicy Bypass -File scripts/restart-base-server-windows.ps1",
     "setup:local-ai": "bash scripts/install-local-ai-unix.sh",
     "setup:local-ai:win": "powershell -ExecutionPolicy Bypass -File scripts/install-local-ai-windows.ps1",
     "setup:x-agent": "bash scripts/install-x-agent-unix.sh",

@@ -4,6 +4,7 @@
 
 [functions]
   node_bundler = "esbuild"
+  included_files = ["data/state.json"]
 
 # Run the autonomous optimization & paper-trading engine every 15 minutes 24/7 on Netlify
 [functions."firm-cron"]

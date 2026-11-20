@@ -157,7 +157,11 @@ try {
   console.warn('[runner] paper portfolio save:', err.message);
 }
 try {
-  const { autoEnrollPassedNostroBots, tickNostroTradingRoom } = await import('../src/nostro.js');
+  const { runNostroFleetSimulation, autoEnrollPassedNostroBots, tickNostroTradingRoom } = await import('../src/nostro.js');
+  const nostroAgeMs = Date.now() - (store.state.nostro?.updatedAt || 0);
+  if (!(store.state.nostro?.bots?.length) || nostroAgeMs > 6 * 3600_000) {
+    await runNostroFleetSimulation({}, { doOptimize: false, forceLive: true });
+  }
   autoEnrollPassedNostroBots(store.state);
   const nRes = await tickNostroTradingRoom({ state: store.state });
   if (nRes?.accounts) console.log(`[runner] Nostro trading room: ${nRes.updated}/${nRes.accounts} accounts ticked (${nRes.tradesMoved || 0} trade moves)`);

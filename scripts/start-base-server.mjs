@@ -58,6 +58,22 @@ function startChild() {
   });
 }
 
+async function isBaseServerAlreadyRunning() {
+  const port = Number(process.env.PORT || 8181);
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 1800);
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/health`, { signal: ctrl.signal });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.ok && data?.mode === 'base-server' ? data : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 function shutdown(sig) {
   stopping = true;
   log(`Supervisor stopping (${sig})...`);
@@ -67,5 +83,12 @@ function shutdown(sig) {
 
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+const existing = await isBaseServerAlreadyRunning();
+if (existing) {
+  log(`Alta Capital Base Server is ALREADY running on http://localhost:${existing.port} (uptime ${existing.uptimeSec}s).`);
+  log('Tip: After git pull on Windows, run "npm run base-server:restart:win" to restart the background service cleanly.');
+  process.exit(0);
+}
 
 startChild();

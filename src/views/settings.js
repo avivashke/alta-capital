@@ -5,7 +5,7 @@ import { testConnection, testPoolEntry } from '../llm.js';
 import { PROVIDERS, PROVIDER_ORDER } from '../providers.js';
 import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, parseCloudflareKeys, parseWorkerProxies, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
 import { h, notice, toast, openModal, downloadFile, timeAgo, tag, copyText, commandBlock } from '../ui.js';
-import { syncFromCloud, syncBidirectional } from '../remote.js';
+import { syncFromCloud, syncBidirectional, buildMagicSyncUrl } from '../remote.js';
 import { dbState, testDatabaseConnection, pushStateToDatabase, pullFromDatabase, checkBaseServerHealth, SUPABASE_SQL_SCHEMA } from '../db.js';
 import * as webllm from '../webllm.js';
 import { discoverLocalAiModels, syncLocalModelsToPool, RECOMMENDED_LOCAL_MODELS } from '../local_ai.js';
@@ -1185,6 +1185,15 @@ function dbCard(ui) {
           }
         },
       }, '⟳ סנכרן דו-כיוונית עכשיו'),
+      h('button', {
+        class: 'btn btn-sm',
+        style: { borderColor: 'rgba(56, 189, 248, 0.5)', color: '#7dd3fc' },
+        onclick: () => {
+          saveDb();
+          const link = buildMagicSyncUrl(store.state);
+          copyText(link, 'קישור סנכרון חוצה-מכשירים הועתק! פתח אותו בטלפון או במחשב אחר כדי לקבל מיד את אותם הנתונים.');
+        },
+      }, '🔗 העתק קישור סנכרון לטלפון / מחשב אחר'),
       h('button', {
         class: 'btn btn-sm',
         onclick: async (e) => {

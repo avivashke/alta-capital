@@ -9,16 +9,91 @@ import { pullFromDatabase, pushStateToDatabase, onCanonicalStateFromServer, dbSt
 import { mergeFirmStates, remoteHasMoreOrNewerData, isStateFreshEmpty } from './state_merge.js';
 
 const REMOTE_URL = './data/state.json';
+const GITHUB_RAW_STATE_URL = 'https://raw.githubusercontent.com/avivashke/alta-capital/main/data/state.json';
 
-async function fetchStaticStateJson() {
+async function fetchJsonState(url, timeoutMs = 6000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(`${REMOTE_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    const res = await fetch(`${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`, { cache: 'no-store', signal: ctrl.signal });
     if (!res.ok) return null;
     const json = await res.json();
     if (!json || !Array.isArray(json.desks) || !json.updatedAt) return null;
     return { ...json, source: json.source || 'github-actions' };
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchStaticStateJson() {
+  const [localStatic, ghRaw] = await Promise.all([
+    fetchJsonState(REMOTE_URL, 5000),
+    fetchJsonState(GITHUB_RAW_STATE_URL, 6500),
+  ]);
+  if (localStatic && ghRaw) {
+    const merged = mergeFirmStates(localStatic, ghRaw);
+    merged.source = 'ענן 24/7 (GitHub Actions)';
+    return merged;
+  }
+  const picked = ghRaw || localStatic;
+  if (picked) picked.source = 'ענן 24/7 (GitHub Actions)';
+  return picked;
+}
+
+/**
+ * Generate a private one-click Magic Sync Link using URL hash (#sync=...).
+ * Hash fragments are never sent to web servers — opening the link on a phone or
+ * another PC imports the shared Supabase / Cloud API / Base Server connection
+ * and immediately pulls the exact same live portfolio, Nostro room, and history.
+ */
+export function buildMagicSyncUrl(state = store.state) {
+  const db = state?.settings?.db || {};
+  const payload = {
+    v: 1,
+    supabaseUrl: db.supabaseUrl || '',
+    supabaseKey: db.supabaseKey || '',
+    cloudApiUrl: db.cloudApiUrl || '',
+    baseServerUrl: db.baseServerUrl || '',
+    workerDbUrl: db.workerDbUrl || '',
+    workerDbKey: db.workerDbKey || '',
+  };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const baseHref = typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname}`
+    : 'https://avivashke.github.io/alta-capital/';
+  return `${baseHref}#sync=${encodeURIComponent(encoded)}`;
+}
+
+export function applyMagicSyncFromHash(state = store.state) {
+  if (typeof window === 'undefined') return { applied: false };
+  const hash = window.location.hash || '';
+  const m = hash.match(/[#&?]sync=([^&]+)/);
+  if (!m) return { applied: false };
+  try {
+    const raw = decodeURIComponent(escape(atob(decodeURIComponent(m[1]))));
+    const cfg = JSON.parse(raw);
+    if (!cfg || typeof cfg !== 'object') return { applied: false };
+    state.settings = state.settings || {};
+    state.settings.db = {
+      ...(state.settings.db || {}),
+      enabled: true,
+      mode: 'auto',
+      ...(cfg.supabaseUrl ? { supabaseUrl: String(cfg.supabaseUrl).trim() } : {}),
+      ...(cfg.supabaseKey ? { supabaseKey: String(cfg.supabaseKey).trim() } : {}),
+      ...(cfg.cloudApiUrl ? { cloudApiUrl: String(cfg.cloudApiUrl).trim() } : {}),
+      ...(cfg.baseServerUrl ? { baseServerUrl: String(cfg.baseServerUrl).trim() } : {}),
+      ...(cfg.workerDbUrl ? { workerDbUrl: String(cfg.workerDbUrl).trim() } : {}),
+      ...(cfg.workerDbKey ? { workerDbKey: String(cfg.workerDbKey).trim() } : {}),
+    };
+    store.save(true);
+    // Clean hash immediately so credentials don't linger in browser history
+    history.replaceState(null, '', '#/overview');
+    return { applied: true, hasSupabase: !!cfg.supabaseKey, hasCloudApi: !!cfg.cloudApiUrl };
+  } catch (err) {
+    console.warn('[sync-link] failed parsing #sync hash:', err.message);
+    return { applied: false };
   }
 }
 
@@ -41,7 +116,7 @@ export async function fetchRemoteState() {
     console.warn('[remote] db pull failed:', err.message);
   }
 
-  // 2. Also check static ./data/state.json (GitHub Actions 24/7 artifact) and merge if richer
+  // 2. Also check static ./data/state.json & live GitHub raw state.json and merge if richer
   const staticState = await fetchStaticStateJson();
   if (dbStateResult && staticState) {
     const merged = mergeFirmStates(staticState, dbStateResult);
@@ -90,6 +165,9 @@ export function mergeRemote(state, remote) {
   }
   if (merged.fundamentals && typeof merged.fundamentals === 'object') {
     state.fundamentals = merged.fundamentals;
+  }
+  if (merged.xResearch && typeof merged.xResearch === 'object') {
+    state.xResearch = merged.xResearch;
   }
   if (merged.githubScout && typeof merged.githubScout === 'object') {
     state.githubScout = merged.githubScout;

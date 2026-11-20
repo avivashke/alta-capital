@@ -5,7 +5,7 @@ import { NAV } from './config.js';
 import { ensureDeskFields, startMarketFeed, tick, catchUp, rehydratePaperPortfolio } from './firm.js';
 import { marketState, onQuotes, quotes } from './market.js';
 import { openingMessage } from './advisor.js';
-import { syncFromCloud } from './remote.js';
+import { syncFromCloud, applyMagicSyncFromHash } from './remote.js';
 import { dbState, pushStateToDatabase, checkBaseServerHealth } from './db.js';
 import { discoverLocalAiModels, syncLocalModelsToPool } from './local_ai.js';
 import { mountPageChat } from './page_chat.js';
@@ -273,6 +273,7 @@ function scheduleBackgroundRender() {
 
 function boot() {
   store.load();
+  const magicSync = applyMagicSyncFromHash(store.state);
   ensureDeskFields();
   ui.selectedDesk = store.state.desks[0]?.id || null;
   if (!store.state.advisor.messages.length) {
@@ -283,11 +284,22 @@ function boot() {
 
   buildNav();
   render({ force: true });
+  if (magicSync.applied) {
+    toast('🔗 קישור הסנכרון הוחל! המכשיר הזה מחובר כעת למסד הנתונים המשותף ומסתנכרן…', 'ok');
+  }
   mountPageChat(ui);
   startMarketFeed();
   onQuotes(updateTopbar);
   store.subscribe(scheduleBackgroundRender);
-  window.addEventListener('hashchange', () => render({ force: true, resetScroll: true }));
+  window.addEventListener('hashchange', () => {
+    const ms = applyMagicSyncFromHash(store.state);
+    if (ms.applied) {
+      toast('🔗 קישור הסנכרון הוחל! טוען נתונים משותפים מהענן…', 'ok');
+      syncFromCloud({ force: true }).then(() => render({ force: true })).catch(() => {});
+      return;
+    }
+    render({ force: true, resetScroll: true });
+  });
 
   // Track user interactions so background ticks never interrupt scrolling, clicking, or typing
   window.addEventListener('pointerdown', () => { isPointerDown = true; }, { passive: true });

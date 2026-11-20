@@ -153,6 +153,21 @@ function makeCounts(db, state) {
   };
 }
 
+const GITHUB_RAW_STATE_URL = 'https://raw.githubusercontent.com/avivashke/alta-capital/main/data/state.json';
+
+async function fetchGitHubCloudSeed() {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch(`${GITHUB_RAW_STATE_URL}?t=${Date.now()}`, { signal: ctrl.signal, cache: 'no-store' });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (json && Array.isArray(json.desks) && json.updatedAt) return json;
+  } catch { /* ignore */ }
+  return null;
+}
+
 export async function handleDbRequest(method, bodyObj = {}) {
   const isBaseServer = process.env.ALTA_BASE_SERVER === '1';
   const db = readDbFile();
@@ -208,9 +223,19 @@ export async function handleDbRequest(method, bodyObj = {}) {
       writeDbFile(db);
     }
 
+    // Always reconcile with live GitHub Actions 24/7 state on cold starts or if Supabase is not configured yet
+    if (!supabaseConnected || !canonical) {
+      const ghSeed = await fetchGitHubCloudSeed();
+      if (ghSeed) {
+        canonical = canonical ? mergeFirmStates(ghSeed, canonical) : ghSeed;
+        db.state = canonical;
+        writeDbFile(db);
+      }
+    }
+
     const provider = supabaseConnected
       ? (isBaseServer ? 'Base Server + Supabase PostgreSQL' : 'Supabase PostgreSQL (Netlify Env)')
-      : (isBaseServer ? 'Base Server Local DB' : 'Netlify Database');
+      : (isBaseServer ? 'Base Server + GitHub Cloud 24/7' : 'Netlify + GitHub Cloud 24/7');
 
     return {
       ok: true,
