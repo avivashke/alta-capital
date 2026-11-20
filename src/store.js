@@ -72,6 +72,7 @@ export function defaults() {
     sentiment: { updatedAt: null, source: null, fearGreed: null, assets: {}, headlines: [] },
     fundamentals: { updatedAt: null, macro: null, assets: {} },
     xResearch: null,
+    whatsappGann: null,
     advisor: { messages: [] },
     remote: null,
     stats: { cycles: 0, backtests: 0, deployments: 0, scans: 0, startedAt: Date.now() },

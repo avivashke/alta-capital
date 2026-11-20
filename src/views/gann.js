@@ -23,6 +23,7 @@ import {
 } from '../gann.js';
 import { chatDetailed } from '../llm.js';
 import { gannExplainButton, openGannMasterGuideModal, renderGannExecutiveForecastCard } from '../gann_guide.js';
+import { renderWhatsAppGannCard } from '../whatsapp_gann_ui.js';
 
 let gannViewState = {
   symbol: 'BTCUSDT',
@@ -1040,8 +1041,19 @@ export function renderGann(root, ui) {
 
   const cfg = getGannzillaConfig();
 
-  // Unified All-Data Executive Forecast Summary (Gann 1x1 + Swing 50% + Sq9 + Time Windows + Fundamentals + Sentiment + Roni X)
+  // Unified All-Data Executive Forecast Summary (Gann 1x1 + Swing 50% + Sq9 + Time Windows + Fundamentals + Sentiment + Roni X + WhatsApp)
   mount(root, renderGannExecutiveForecastCard(a, cfg, gannViewState.symbol, store.state));
+
+  // WhatsApp Group Live Intelligence Card (Single Whitelisted Group -> Gann + Signals + Macro + Source/Context Modal)
+  mount(root, renderWhatsAppGannCard(a, cfg, gannViewState.symbol, ui, {
+    onApplyAnchor: ({ price, date, sourceLabel }) => {
+      if (price != null && Number(price) > 0) gannViewState.manualPrice = String(price);
+      if (date) gannViewState.manualDate = String(date);
+      toast(`📐 הוחל עוגן מקבוצת הוואטסאפ (${sourceLabel || 'קבוצה'})${price ? ` · מחיר ${price}` : ''}${date ? ` · תאריך ${date}` : ''}`, 'ok');
+      loadGannAsset(ui, true);
+    },
+    onSelectAsset: (sym) => selectGannAsset(sym, ui),
+  }));
 
   // Smart Auto-Fill Proposal Card with Educational Explanations for every Gann field
   mount(root, renderSmartAutoFillCard(a, cfg, ui));

@@ -10,5 +10,8 @@ data/backups/
 data/x-browser-profile/
 data/x-agent-config.json
 data/x_research.json
+data/whatsapp-browser-profile/
+data/whatsapp-agent-config.json
+data/whatsapp_gann.json
 *.tmp
 *.log

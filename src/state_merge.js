@@ -376,6 +376,8 @@ export function mergeFirmStates(base, incoming, { forceReset = false, bumpRevisi
   if (fund) shell.fundamentals = fund;
   const xRes = pickFresherRicher(base.xResearch, incoming.xResearch, (x) => (x.scannedAt || 0) / 1e9 + (x.posts?.length || 0));
   if (xRes) shell.xResearch = xRes;
+  const waGann = pickFresherRicher(base.whatsappGann, incoming.whatsappGann, (w) => (w.scannedAt || 0) / 1e9 + (w.insights?.length || 0));
+  if (waGann) shell.whatsappGann = waGann;
   const scout = pickFresherRicher(base.githubScout, incoming.githubScout, (g) => (g.repos?.length || 0));
   if (scout) shell.githubScout = scout;
   const sent = pickFresherRicher(
@@ -439,6 +441,9 @@ export function remoteHasMoreOrNewerData(local, remote) {
   const localDeploy = Number(local.stats?.deployments) || 0;
   const remoteDeploy = Number(remote.stats?.deployments) || 0;
   if (remoteDeploy > localDeploy) return true;
+
+  if ((remote.whatsappGann?.scannedAt || 0) > (local.whatsappGann?.scannedAt || 0)) return true;
+  if ((remote.xResearch?.scannedAt || 0) > (local.xResearch?.scannedAt || 0)) return true;
 
   if (!local.paperPortfolio && remote.paperPortfolio) return true;
   if (portfolioActivityScore(remote.paperPortfolio) > portfolioActivityScore(local.paperPortfolio)) return true;

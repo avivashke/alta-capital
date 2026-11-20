@@ -249,7 +249,7 @@ export const GANN_GUIDE_TOPICS = {
     title: 'תמצות תחזית משוקללת לפי כל הנתונים',
     short: 'איך המערכת משלבת גאן, מניפת 1x1, Sq9, חלונות זמן, פונדמנטל, סנטימנט ו-X לתחזית אחת שקופה.',
     whatItIs:
-      'כרטיס זה מרכז במקום אחד את כל שכבות המחקר האמיתיות של Alta Capital על הנכס שבחרת: מניפת גאן (1x1), סווינג וכלל 50%, רמות Square of 9 ואוקטבות מוזיקליות, חלונות זמן עתידיים, דוחות פונדמנטל ומאקרו (SEC/VIX/תשואות), סנטימנט מ-News RSS/Reddit/YouTube ודוח X של רוני (אם נסרק).',
+      'כרטיס זה מרכז במקום אחד את כל שכבות המחקר האמיתיות של Alta Capital על הנכס שבחרת: מניפת גאן (1x1), סווינג וכלל 50%, רמות Square of 9 ואוקטבות מוזיקליות, חלונות זמן עתידיים, דוחות פונדמנטל ומאקרו (SEC/VIX/תשואות), סנטימנט מ-News RSS/Reddit/YouTube, דוח X של רוני (אם נסרק) וקבוצת הוואטסאפ המחוברת שלך.',
     legend: [
       '🟢 הטיה שורית (62–100): רוב האינדיקטורים הגיאומטריים והפונדמנטליים מצביעים על עדיפות לתרחיש עליות.',
       '🟡 נייטרלי / המתנה (39–61): כוחות מעורבים — עדיף להמתין לפריצת ההתנגדות או שבירת התמיכה לפני פעולה.',
@@ -261,6 +261,25 @@ export const GANN_GUIDE_TOPICS = {
     liveReadout: (a, symbol) => [
       `נכס: ${symbol} · מחיר: ${num(a.currentPrice, 2)} · ציון התכנסות גאן: ${a.confluence?.score ?? 0}/100`,
       `חלון זמן קרוב: ${a.futurePivots?.[0]?.date || '—'} (בעוד ${a.futurePivots?.[0]?.daysAhead ?? '—'} ימים)`,
+    ],
+  },
+  whatsapp_gann: {
+    icon: '💬',
+    title: 'מודיעין קבוצת וואטסאפ משולב בגאן (WhatsApp Web)',
+    short: 'שילוב חי ומבוקר (קריאה בלבד) של קבוצת וואטסאפ אחת ספציפית שלך לתוך חישובי הגאן והתחזית.',
+    whatItIs:
+      'המערכת מתחברת ל-WhatsApp Web בדפדפן Chrome המקומי שלך (בסריקת QR חד-פעמית, בדיוק כמו סוכן X של רוני), קוראת אך ורק את הקבוצה האחת שהגדרת — ללא שליחת הודעות — ומחלצת ממנה אוטומטית: ניתוחי גאן (תאריכי היפוך, מעלות Sq9, זוויות, עוגנים), איתותי מסחר (כניסות, יעדים, תמיכות, סטופים) וחדשות/מאקרו.',
+    legend: [
+      '📐 גאן: הודעות הכוללות מעלות Sq9, תאריכי ציר/היפוך, מניפת 1x1, מחזורים או מחירי עוגן.',
+      '🎯 איתות/רמות: הודעות הכוללות מחירי כניסה, יעד (TP), תמיכה, התנגדות או סטופ (SL).',
+      '📰 מאקרו/חדשות: הודעות על ריבית, Fed, CPI, דוחות או סנטימנט שוק כללי.',
+      '💬 כפתור "הודעת מקור + קונטקסט": פותח את ההודעה המקורית עם שם הכותב, שעה מדויקת ו-3 הודעות לפני ו-3 אחרי — מסונכרן גם לטלפון ולענן.',
+    ],
+    howToUse:
+      '1) לחץ "📱 חבר WhatsApp Web (QR)" וסרוק מהטלפון פעם אחת. 2) בחר את שם הקבוצה הספציפית ולחץ "שמור קבוצה". 3) לחץ "🔍 סרוק קבוצה ושלב בגאן". הרמות, התאריכים וההטיה יוזרמו אוטומטית לכרטיס התחזית המשוקללת ותוכל להחיל מחיר/תאריך עוגן מהקבוצה בלחיצה אחת.',
+    liveReadout: (a, symbol) => [
+      `הנכס הפעיל במעבדת גאן כרגע: ${symbol} (מחיר: ${num(a.currentPrice, 2)})`,
+      'רמות ותאריכים שיוזכרו בקבוצה על נכס זה ישוקללו אוטומטית בתחזית העליונה ויושוו ל-Sq9 ולמניפת 1x1.',
     ],
   },
 };
@@ -358,6 +377,22 @@ export function buildGannExecutiveForecast(a, symbol, state = {}) {
     pushPillar(`מחקר X · רוני (${xAsset.symbol})`, xAsset.score, 1.2, `${xAsset.score}/100 · ${xAsset.bias} (${xAsset.mentions} ציוצים)`);
   }
 
+  // 7. WhatsApp Group Live Intelligence (Gann + Signals + Macro)
+  const waReport = state?.whatsappGann || null;
+  const waExact = waReport?.assetSignals?.[symbol] || null;
+  const waAsset = waExact || waReport?.assetSignals?.MACRO || null;
+  if (waAsset?.score != null) {
+    const waLabel = waExact
+      ? `💬 וואטסאפ (${waReport.groupName || symbol})`
+      : `💬 וואטסאפ מאקרו (${waReport.groupName || 'קבוצה'})`;
+    pushPillar(
+      waLabel,
+      waAsset.score,
+      waExact ? 1.6 : 0.85,
+      `${waAsset.score}/100 · ${waAsset.bias} (${waAsset.mentions} הודעות${waExact && waExact.levels?.length ? ` · ${waExact.levels.length} רמות` : ''})`,
+    );
+  }
+
   const combinedScore = weightTotal > 0 ? Math.round(weightedSum / weightTotal) : 50;
   const direction = combinedScore >= 62 ? 'bullish' : combinedScore <= 38 ? 'bearish' : 'neutral';
   const directionLabel = direction === 'bullish'
@@ -366,14 +401,18 @@ export function buildGannExecutiveForecast(a, symbol, state = {}) {
       ? '🔴 תחזית דובית (נטייה לירידות / זהירות)'
       : '🟡 תחזית נייטרלית (המתנה להכרעה)';
 
-  // Extract concrete Upward Targets & Downward Supports from Sq9 + Fan + Musical Octaves
+  // Extract concrete Upward Targets & Downward Supports from Sq9 + Fan + Musical Octaves + WhatsApp Group
   const sq9 = Array.isArray(a?.sq9Levels) ? a.sq9Levels : [];
   const mus = a?.priceChartingTool?.musicalJust || null;
+  const waLevels = Array.isArray(waExact?.levels) ? waExact.levels : [];
 
   const upCandidates = [
     ...sq9.filter((l) => l.price > cur * 1.004).map((l) => ({ price: l.price, src: `Sq9 ${l.degree}°` })),
     ...(a?.gannFan?.activeResistance?.price > cur * 1.004 ? [{ price: a.gannFan.activeResistance.price, src: `מניפה ${a.gannFan.activeResistance.id}` }] : []),
     ...(mus?.nearestResistance?.price > cur * 1.004 ? [{ price: mus.nearestResistance.price, src: `אוקטבה ${mus.nearestResistance.frac}` }] : []),
+    ...waLevels
+      .filter((l) => l.price > cur * 1.004 && l.price < cur * 2.2 && ['target', 'resistance', 'anchor'].includes(l.role))
+      .map((l) => ({ price: l.price, src: `💬 וואטסאפ · ${l.author || 'קבוצה'}` })),
   ].sort((x, y) => x.price - y.price);
 
   const downCandidates = [
@@ -381,6 +420,9 @@ export function buildGannExecutiveForecast(a, symbol, state = {}) {
     ...(a?.gannFan?.activeSupport?.price < cur * 0.996 ? [{ price: a.gannFan.activeSupport.price, src: `מניפה ${a.gannFan.activeSupport.id}` }] : []),
     ...(mus?.nearestSupport?.price < cur * 0.996 ? [{ price: mus.nearestSupport.price, src: `אוקטבה ${mus.nearestSupport.frac}` }] : []),
     ...(a?.swingChart?.midpoint50 && a.swingChart.midpoint50 < cur * 0.996 ? [{ price: a.swingChart.midpoint50, src: 'אמצע 50% סווינג' }] : []),
+    ...waLevels
+      .filter((l) => l.price < cur * 0.996 && l.price > cur * 0.4 && ['support', 'stop', 'entry', 'anchor'].includes(l.role))
+      .map((l) => ({ price: l.price, src: `💬 וואטסאפ · ${l.author || 'קבוצה'}` })),
   ].sort((x, y) => y.price - x.price);
 
   const target1 = upCandidates[0] || null;
@@ -388,17 +430,20 @@ export function buildGannExecutiveForecast(a, symbol, state = {}) {
   const support1 = downCandidates[0] || null;
   const support2 = downCandidates.find((x) => !support1 || x.price < support1.price * 0.985) || downCandidates[1] || null;
 
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const waUpcomingDate = (waExact?.dates || []).find((d) => d.dateIso >= todayIso) || waExact?.dates?.[0] || null;
+
   const nextPivot = a?.futurePivots?.[0] || null;
   const nextPivotText = nextPivot
-    ? `${nextPivot.date} (בעוד ${nextPivot.daysAhead} ימים · עוצמה ${nextPivot.score}${nextPivot.nearMacro ? ` · ${nextPivot.nearMacro}` : ''}${nextPivot.nearSeason ? ` · ${nextPivot.nearSeason}` : ''})`
-    : 'אין חלון זמן קרוב';
+    ? `${nextPivot.date} (בעוד ${nextPivot.daysAhead} ימים · עוצמה ${nextPivot.score}${nextPivot.nearMacro ? ` · ${nextPivot.nearMacro}` : ''}${nextPivot.nearSeason ? ` · ${nextPivot.nearSeason}` : ''})${waUpcomingDate ? ` · 💬 תאריך מהוואטסאפ: ${waUpcomingDate.dateIso} (${waUpcomingDate.author})` : ''}`
+    : (waUpcomingDate ? `💬 תאריך מהוואטסאפ: ${waUpcomingDate.dateIso} (${waUpcomingDate.author})` : 'אין חלון זמן קרוב');
 
   // Primary & Alternative scenario narratives in plain Hebrew
   const primaryScenario = direction === 'bullish'
-    ? `שקלול ${pillars.length} שכבות הנתונים נותן יתרון שורי (${combinedScore}/100) ל-${symbol}. כל עוד המחיר מחזיק מעל אזור התמיכה ${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : fmtSmart(cur * 0.96)}, היעד הקרוב הוא ${target1 ? `${fmtSmart(target1.price)} (${target1.src})` : 'שיא הסווינג'}${target2 ? ` והיעד המורחב ${fmtSmart(target2.price)} (${target2.src})` : ''}. חלון הזמן הקרוב לבחינת המשכיות או שיא מקומי: ${nextPivot?.date || '—'}.`
+    ? `שקלול ${pillars.length} שכבות הנתונים נותן יתרון שורי (${combinedScore}/100) ל-${symbol}. כל עוד המחיר מחזיק מעל אזור התמיכה ${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : fmtSmart(cur * 0.96)}, היעד הקרוב הוא ${target1 ? `${fmtSmart(target1.price)} (${target1.src})` : 'שיא הסווינג'}${target2 ? ` והיעד המורחב ${fmtSmart(target2.price)} (${target2.src})` : ''}. חלון הזמן הקרוב לבחינת המשכיות או שיא מקומי: ${nextPivot?.date || '—'}${waUpcomingDate ? ` (ובוואטסאפ סומן גם ${waUpcomingDate.dateIso})` : ''}.`
     : direction === 'bearish'
-      ? `שקלול ${pillars.length} שכבות הנתונים מציג לחץ דובי/תיקון (${combinedScore}/100) ב-${symbol}. כל עוד המחיר נותר מתחת להתנגדות ${target1 ? `${fmtSmart(target1.price)} (${target1.src})` : fmtSmart(cur * 1.04)}, צפויה בחינה של התמיכה ${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : 'שפל הסווינג'}${support2 ? ` ולאחריה ${fmtSmart(support2.price)} (${support2.src})` : ''}. חלון תזמון אפשרי להיפוך/תחתית: ${nextPivot?.date || '—'}.`
-      : `הנתונים על ${symbol} מאוזנים/מעורבים כרגע (${combinedScore}/100) — השוק באזור הכרעה בין תמיכה ב-${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : '—'} לבין התנגדות ב-${target1 ? `${fmtSmart(target1.price)} (${target1.src})` : '—'}. מומלץ להמתין לפריצה מובהקת מעל ההתנגדות (ללונג) או שבירה מתחת לתמיכה, במיוחד סביב חלון הזמן ${nextPivot?.date || '—'}.`;
+      ? `שקלול ${pillars.length} שכבות הנתונים מציג לחץ דובי/תיקון (${combinedScore}/100) ב-${symbol}. כל עוד המחיר נותר מתחת להתנגדות ${target1 ? `${fmtSmart(target1.price)} (${target1.src})` : fmtSmart(cur * 1.04)}, צפויה בחינה של התמיכה ${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : 'שפל הסווינג'}${support2 ? ` ולאחריה ${fmtSmart(support2.price)} (${support2.src})` : ''}. חלון תזמון אפשרי להיפוך/תחתית: ${nextPivot?.date || '—'}${waUpcomingDate ? ` (ובוואטסאפ סומן גם ${waUpcomingDate.dateIso})` : ''}.`
+      : `הנתונים על ${symbol} מאוזנים/מעורבים כרגע (${combinedScore}/100) — השוק באזור הכרעה בין תמיכה ב-${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : '—'} לבין התנגדות ב-${target1 ? `${fmtSmart(target1.price)} (${target1.src})` : '—'}. מומלץ להמתין לפריצה מובהקת מעל ההתנגדות (ללונג) או שבירה מתחת לתמיכה, במיוחד סביב חלון הזמן ${nextPivot?.date || '—'}${waUpcomingDate ? ` / ${waUpcomingDate.dateIso}` : ''}.`;
 
   const invalidationText = direction === 'bullish'
     ? `ביטול התרחיש השורי (Invalidation): סגירה ברורה מתחת ל-${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : fmtSmart(cur * 0.95)} תבטל את יתרון הקונים ותפתח ירידה ל-${support2 ? fmtSmart(support2.price) : 'אזור התמיכה הבא'}.`
@@ -418,6 +463,7 @@ export function buildGannExecutiveForecast(a, symbol, state = {}) {
     support1,
     support2,
     nextPivot,
+    waUpcomingDate,
     nextPivotText,
     primaryScenario,
     invalidationText,
@@ -485,7 +531,7 @@ export function renderGannExecutiveForecastCard(a, cfg, symbol, state) {
     h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
       h('div', {},
         h('h2', { text: `🧭 תמצות תחזית משוקללת לפי כל הנתונים · ${fc.symbol}` }),
-        h('div', { class: 'card-sub', text: `שקלול בזמן אמת של ${fc.pillars.length} שכבות אמת: מניפת גאן 1x1, סווינג 50%, התכנסות Sq9, חלונות זמן, פונדמנטל/מאקרו, סנטימנט ו-X` }),
+        h('div', { class: 'card-sub', text: `שקלול בזמן אמת של ${fc.pillars.length} שכבות אמת: מניפת גאן 1x1, סווינג 50%, התכנסות Sq9, חלונות זמן, פונדמנטל/מאקרו, סנטימנט, X ווואטסאפ` }),
       ),
       h('div', { class: 'row wrap', style: { gap: '6px' } },
         gannExplainButton('forecast_summary', a, cfg, symbol),

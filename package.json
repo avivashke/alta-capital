@@ -16,6 +16,9 @@
     "setup:x-agent:win": "powershell -ExecutionPolicy Bypass -File scripts/install-x-agent-windows.ps1",
     "x-agent:login": "node scripts/x-browser-agent.mjs --login",
     "x-agent:scan": "node scripts/x-browser-agent.mjs --scan",
+    "wa-agent:status": "node scripts/whatsapp-browser-agent.mjs --status",
+    "wa-agent:login": "node scripts/whatsapp-browser-agent.mjs --login",
+    "wa-agent:scan": "node scripts/whatsapp-browser-agent.mjs --scan",
     "firm": "node runner/run.mjs --cycles=5",
     "firm:deep": "node runner/run.mjs --cycles=5 --deep"
   },

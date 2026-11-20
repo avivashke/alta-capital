@@ -59,8 +59,25 @@ const {
   readLatestXResearch,
   sanitizeXResearchForSync,
 } = await import('./scripts/x-browser-agent.mjs');
+const {
+  getWhatsAppAgentStatus,
+  loadWhatsAppConfig,
+  saveWhatsAppConfig,
+  launchWhatsAppLogin,
+  runWhatsAppGroupScan,
+  readLatestWhatsAppReport,
+  sanitizeWhatsAppReportForSync,
+} = await import('./scripts/whatsapp-browser-agent.mjs');
 
 const xAgentJob = {
+  busy: false,
+  mode: null, // 'login' | 'scan' | null
+  startedAt: null,
+  lastResult: null,
+  lastError: null,
+};
+
+const waAgentJob = {
   busy: false,
   mode: null, // 'login' | 'scan' | null
   startedAt: null,
@@ -99,6 +116,30 @@ function persistXResearchToBaseDb(report) {
     writeDbFile(db);
   } catch (err) {
     console.warn('[Base Server] Failed persisting X research to DB:', err.message);
+  }
+}
+
+function persistWhatsAppReportToBaseDb(report) {
+  const clean = sanitizeWhatsAppReportForSync(report);
+  if (!clean) return;
+  try {
+    const db = readDbFile();
+    if (!db.state || typeof db.state !== 'object') db.state = {};
+    db.state.whatsappGann = clean;
+    db.state.events = db.state.events || [];
+    db.state.events.unshift({
+      id: `ev_wa_${Date.now()}`,
+      at: Date.now(),
+      kind: 'ok',
+      who: 'וואטסאפ · גאן',
+      text: `סריקת קבוצת "${clean.groupName}" הושלמה (${clean.relevantInsightsCount} תובנות מתוך ${clean.totalMessagesRead} הודעות · ${clean.overallBias})`,
+    });
+    if (db.state.events.length > 240) db.state.events.length = 240;
+    db.state.stateRevision = (Number(db.state.stateRevision) || 0) + 1;
+    db.state.updatedAt = new Date().toISOString();
+    writeDbFile(db);
+  } catch (err) {
+    console.warn('[Base Server] Failed persisting WhatsApp Gann report to DB:', err.message);
   }
 }
 
@@ -683,6 +724,133 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pathname === '/api/whatsapp-agent/status') {
+    try {
+      const st = await getWhatsAppAgentStatus();
+      res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ...st,
+        job: {
+          busy: waAgentJob.busy,
+          mode: waAgentJob.mode,
+          startedAt: waAgentJob.startedAt,
+          lastError: waAgentJob.lastError,
+        },
+      }));
+    } catch (err) {
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/whatsapp-agent/config') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Method not allowed' }));
+      return;
+    }
+    if (!isAuthorized(req)) {
+      res.writeHead(401, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Unauthorized' }));
+      return;
+    }
+    try {
+      const raw = await readBody(req);
+      const patch = raw ? JSON.parse(raw) : {};
+      const next = saveWhatsAppConfig(patch);
+      res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, config: next }));
+    } catch (err) {
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/whatsapp-agent/login') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Method not allowed' }));
+      return;
+    }
+    if (!isAuthorized(req)) {
+      res.writeHead(401, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Unauthorized' }));
+      return;
+    }
+    if (waAgentJob.busy) {
+      res.writeHead(409, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: `סוכן וואטסאפ כבר פעיל כרגע (${waAgentJob.mode})` }));
+      return;
+    }
+    waAgentJob.busy = true;
+    waAgentJob.mode = 'login';
+    waAgentJob.startedAt = Date.now();
+    waAgentJob.lastError = null;
+    launchWhatsAppLogin().then((result) => {
+      waAgentJob.lastResult = result;
+      waAgentJob.lastError = result.ok ? null : (result.error || 'התחברות וואטסאפ לא הושלמה');
+    }).catch((err) => {
+      waAgentJob.lastError = err.message;
+    }).finally(() => {
+      waAgentJob.busy = false;
+      waAgentJob.mode = null;
+      waAgentJob.startedAt = null;
+    });
+    res.writeHead(202, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      ok: true,
+      started: true,
+      message: 'חלון Chrome גלוי נפתח ל-WhatsApp Web במחשב שלך — סרוק את קוד ה-QR מהטלפון (מכשירים מקושרים). לאחר הטעינה החלון ייסגר והחיבור יישמר.',
+    }));
+    return;
+  }
+
+  if (pathname === '/api/whatsapp-agent/scan') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Method not allowed' }));
+      return;
+    }
+    if (!isAuthorized(req)) {
+      res.writeHead(401, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Unauthorized' }));
+      return;
+    }
+    if (waAgentJob.busy) {
+      res.writeHead(409, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: `סוכן וואטסאפ כבר עסוק במשימה (${waAgentJob.mode})` }));
+      return;
+    }
+    waAgentJob.busy = true;
+    waAgentJob.mode = 'scan';
+    waAgentJob.startedAt = Date.now();
+    waAgentJob.lastError = null;
+    try {
+      const raw = await readBody(req);
+      const opts = raw ? JSON.parse(raw) : {};
+      const out = await runWhatsAppGroupScan(opts);
+      waAgentJob.lastResult = out;
+      waAgentJob.lastError = out.ok ? null : (out.error || 'סריקת וואטסאפ נכשלה');
+      if (out.ok && out.report) {
+        persistWhatsAppReportToBaseDb(out.report);
+        syncBaseServerWithCloud().catch(() => {});
+      }
+      res.writeHead(out.ok ? 200 : 400, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(out));
+    } catch (err) {
+      waAgentJob.lastError = err.message;
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
+    } finally {
+      waAgentJob.busy = false;
+      waAgentJob.mode = null;
+      waAgentJob.startedAt = null;
+    }
+    return;
+  }
+
   if (pathname === '/api/firm-cron' || pathname === '/.netlify/functions/firm-cron') {
     try {
       const raw = req.method === 'POST' ? await readBody(req) : '';
@@ -780,11 +948,43 @@ const xAgentTimer = setInterval(async () => {
   }
 }, 60_000);
 
+const waAgentTimer = setInterval(async () => {
+  if (waAgentJob.busy) return;
+  try {
+    const cfg = loadWhatsAppConfig();
+    const intervalMin = Number(cfg.autoScanMinutes) || 0;
+    if (intervalMin <= 0 || !cfg.loggedIn || !cfg.groupName) return;
+    const latest = readLatestWhatsAppReport();
+    const lastAt = latest?.scannedAt || 0;
+    if (Date.now() - lastAt < intervalMin * 60_000) return;
+    waAgentJob.busy = true;
+    waAgentJob.mode = 'scan';
+    waAgentJob.startedAt = Date.now();
+    console.log(`[Base Server] Running scheduled WhatsApp group scan ("${cfg.groupName}")...`);
+    const out = await runWhatsAppGroupScan();
+    if (out.ok && out.report) {
+      persistWhatsAppReportToBaseDb(out.report);
+      await syncBaseServerWithCloud().catch(() => {});
+    } else {
+      waAgentJob.lastError = out.error || 'Scheduled WhatsApp scan skipped';
+    }
+  } catch (err) {
+    waAgentJob.lastError = err.message;
+  } finally {
+    if (waAgentJob.mode === 'scan') {
+      waAgentJob.busy = false;
+      waAgentJob.mode = null;
+      waAgentJob.startedAt = null;
+    }
+  }
+}, 60_000);
+
 function shutdown(sig) {
   console.log(`[Base Server] Received ${sig}, shutting down cleanly...`);
   clearInterval(syncTimer);
   if (cronTimer) clearInterval(cronTimer);
   clearInterval(xAgentTimer);
+  clearInterval(waAgentTimer);
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 3000);
 }
