@@ -208,7 +208,9 @@ function computeGannSmartSuggestions(candles, a, symbol, tf) {
   if (!candles?.length || !a?.anchorPivot) return null;
   const cur = Number(a.currentPrice) || candles[candles.length - 1].c;
   const pivotPrice = Number(a.anchorPivot.price) || cur;
-  const pivotDate = a.anchorPivot.date || new Date(candles[Math.max(0, candles.length - 60)].t).toISOString().slice(0, 10);
+  const pivotDate = a.anchorPivot.date
+    || (a.anchorPivot.t ? new Date(a.anchorPivot.t).toISOString().slice(0, 10) : null)
+    || new Date(candles[Math.max(0, candles.length - 60)].t).toISOString().slice(0, 10);
   const pivotTypeHe = a.anchorPivot.type === 'low' ? 'שפל מרכזי (Swing Low)' : 'שיא מרכזי (Swing High)';
   const fanDir = a.anchorPivot.type === 'low' ? 'up' : 'down';
   const fanUnit = Number(a.gannFan?.autoUnit || a.gannFan?.unitPerBar) || +(cur * 0.006).toFixed(4);
