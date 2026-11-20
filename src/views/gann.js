@@ -22,7 +22,7 @@ import {
   computePriceCircleAngles,
 } from '../gann.js';
 import { chatDetailed } from '../llm.js';
-import { gannExplainButton, openGannMasterGuideModal } from '../gann_guide.js';
+import { gannExplainButton, openGannMasterGuideModal, renderGannExecutiveForecastCard } from '../gann_guide.js';
 
 let gannViewState = {
   symbol: 'BTCUSDT',
@@ -1039,6 +1039,9 @@ export function renderGann(root, ui) {
   }
 
   const cfg = getGannzillaConfig();
+
+  // Unified All-Data Executive Forecast Summary (Gann 1x1 + Swing 50% + Sq9 + Time Windows + Fundamentals + Sentiment + Roni X)
+  mount(root, renderGannExecutiveForecastCard(a, cfg, gannViewState.symbol, store.state));
 
   // Smart Auto-Fill Proposal Card with Educational Explanations for every Gann field
   mount(root, renderSmartAutoFillCard(a, cfg, ui));

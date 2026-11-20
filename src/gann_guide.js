@@ -244,7 +244,320 @@ export const GANN_GUIDE_TOPICS = {
       `טיפ: הקלד "${symbol}" בתיבת החיפוש כדי לסנן אירועים היסטוריים ספציפית לנכס הזה.`,
     ],
   },
+  forecast_summary: {
+    icon: '🧭',
+    title: 'תמצות תחזית משוקללת לפי כל הנתונים',
+    short: 'איך המערכת משלבת גאן, מניפת 1x1, Sq9, חלונות זמן, פונדמנטל, סנטימנט ו-X לתחזית אחת שקופה.',
+    whatItIs:
+      'כרטיס זה מרכז במקום אחד את כל שכבות המחקר האמיתיות של Alta Capital על הנכס שבחרת: מניפת גאן (1x1), סווינג וכלל 50%, רמות Square of 9 ואוקטבות מוזיקליות, חלונות זמן עתידיים, דוחות פונדמנטל ומאקרו (SEC/VIX/תשואות), סנטימנט מ-News RSS/Reddit/YouTube ודוח X של רוני (אם נסרק).',
+    legend: [
+      '🟢 הטיה שורית (62–100): רוב האינדיקטורים הגיאומטריים והפונדמנטליים מצביעים על עדיפות לתרחיש עליות.',
+      '🟡 נייטרלי / המתנה (39–61): כוחות מעורבים — עדיף להמתין לפריצת ההתנגדות או שבירת התמיכה לפני פעולה.',
+      '🔴 הטיה דובית / זהירות (0–38): המחיר מתחת לאיזון 1x1 או בסביבת סיכון מוגבר — עדיפות להגנה או שורט טקטי.',
+      '🛡️ קו ביטול (Invalidation): רמת המחיר שבה התרחיש המרכזי מתבטל — חשוב תמיד לדעת מראש איפה טעינו.',
+    ],
+    howToUse:
+      'התחל כל ניתוח בקריאת הכרטיס הזה: בדוק את ההטיה הכוללת, סמן את 2 יעדי העלייה, את רמת הביטול (Invalidation) ואת תאריך חלון הזמן הקרוב. לאחר מכן תוכל ללחוץ על כפתור ה-AI המקומי לסיכום מילולי קצר.',
+    liveReadout: (a, symbol) => [
+      `נכס: ${symbol} · מחיר: ${num(a.currentPrice, 2)} · ציון התכנסות גאן: ${a.confluence?.score ?? 0}/100`,
+      `חלון זמן קרוב: ${a.futurePivots?.[0]?.date || '—'} (בעוד ${a.futurePivots?.[0]?.daysAhead ?? '—'} ימים)`,
+    ],
+  },
 };
+
+function fmtSmart(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return '—';
+  if (Math.abs(n) < 5) return n.toFixed(4);
+  if (Math.abs(n) < 50) return n.toFixed(3);
+  return n.toFixed(2);
+}
+
+/**
+ * Fuse ALL real data layers (Gann 1x1 Fan, Swing/50%, Sq9 Levels, Musical Octaves,
+ * Master Time Windows, Historical Proof, Fundamentals/Macro, Multi-Source Sentiment,
+ * and Roni X Research) into a single transparent weighted forecast summary.
+ */
+export function buildGannExecutiveForecast(a, symbol, state = {}) {
+  const cur = Number(a?.currentPrice) || 0;
+  const pillars = [];
+  let weightedSum = 0;
+  let weightTotal = 0;
+
+  const pushPillar = (label, score0to100, weight, detail, tone) => {
+    const sc = Math.max(0, Math.min(100, Math.round(score0to100)));
+    pillars.push({ label, score: sc, weight, detail, tone: tone || (sc >= 60 ? 'live' : sc <= 40 ? 'red' : 'opt') });
+    weightedSum += sc * weight;
+    weightTotal += weight;
+  };
+
+  // 1. Gann 1x1 Balance Angle
+  if (a?.angle1x1) {
+    const above = !!a.angle1x1.abovePrice;
+    pushPillar(
+      'מניפת גאן 1x1',
+      above ? 76 : 26,
+      2.2,
+      above ? `מעל קו 1x1 (${fmtSmart(a.angle1x1.projectedNow)})` : `מתחת לקו 1x1 (${fmtSmart(a.angle1x1.projectedNow)})`,
+    );
+  }
+
+  // 2. Gann Swing + 50% Midpoint Rule
+  if (a?.swingChart) {
+    const tr = a.swingChart.trend;
+    const aboveMid = a.swingChart.midpoint50 != null && cur > a.swingChart.midpoint50;
+    const sc = tr === 'bullish' ? (aboveMid ? 82 : 64) : tr === 'bearish' ? (aboveMid ? 42 : 22) : (aboveMid ? 56 : 44);
+    pushPillar(
+      'סווינג + חוק 50%',
+      sc,
+      2.0,
+      `${tr === 'bullish' ? 'מגמה עולה' : tr === 'bearish' ? 'מגמה יורדת' : 'דשדוש'} · 50% ב-${fmtSmart(a.swingChart.midpoint50)}`,
+    );
+  }
+
+  // 3. Gann 6-Rule Confluence Score
+  if (a?.confluence?.score != null) {
+    pushPillar(
+      'התכנסות 6 כללי גאן',
+      a.confluence.score,
+      1.8,
+      `${a.confluence.score}/100 · ${a.confluence.verdict || ''}`,
+    );
+  }
+
+  // 4. Fundamentals + Macro Regime (if loaded in state)
+  const fundAsset = state?.fundamentals?.assets?.[symbol] || null;
+  const macro = state?.fundamentals?.macro || null;
+  if (fundAsset?.score != null) {
+    pushPillar(
+      'פונדמנטל (SEC/CoinGecko)',
+      fundAsset.score,
+      1.5,
+      `${fundAsset.score}/100 · ${fundAsset.bias || ''}`,
+    );
+  } else if (macro?.ok) {
+    const vix = macro.vix ?? 18;
+    const tnx = macro.us10yYield ?? 4.2;
+    const mSc = vix > 26 || tnx > 4.8 ? 32 : vix < 17 && tnx < 4.4 ? 72 : 52;
+    pushPillar('מאקרו (VIX / 10Y)', mSc, 1.0, `VIX ${vix} · 10Y ${tnx}%`);
+  }
+
+  // 5. Multi-Source Sentiment (News RSS + Reddit + YouTube + HN + Fear & Greed)
+  const sentAsset = state?.sentiment?.assets?.[symbol] || null;
+  const fg = state?.sentiment?.fearGreed || null;
+  if (sentAsset && Number.isFinite(Number(sentAsset.score))) {
+    const sSc = Math.round(50 + Number(sentAsset.score) * 42);
+    pushPillar('סנטימנט וחדשות (RSS/Reddit/YT)', sSc, 1.2, `${sentAsset.bias || ''} (${sentAsset.score > 0 ? '+' : ''}${sentAsset.score})`);
+  } else if (fg?.value != null) {
+    pushPillar('מדד פחד/חמדנות', Number(fg.value), 0.8, `${fg.value}/100 (${fg.label || ''})`);
+  }
+
+  // 6. Roni X Browser Fundamental Research (if scanned)
+  const xAsset = state?.xResearch?.assetSignals?.[symbol] || state?.xResearch?.assetSignals?.MACRO || null;
+  if (xAsset?.score != null) {
+    pushPillar(`מחקר X · רוני (${xAsset.symbol})`, xAsset.score, 1.2, `${xAsset.score}/100 · ${xAsset.bias} (${xAsset.mentions} ציוצים)`);
+  }
+
+  const combinedScore = weightTotal > 0 ? Math.round(weightedSum / weightTotal) : 50;
+  const direction = combinedScore >= 62 ? 'bullish' : combinedScore <= 38 ? 'bearish' : 'neutral';
+  const directionLabel = direction === 'bullish'
+    ? '🟢 תחזית שורית (נטייה לעליות)'
+    : direction === 'bearish'
+      ? '🔴 תחזית דובית (נטייה לירידות / זהירות)'
+      : '🟡 תחזית נייטרלית (המתנה להכרעה)';
+
+  // Extract concrete Upward Targets & Downward Supports from Sq9 + Fan + Musical Octaves
+  const sq9 = Array.isArray(a?.sq9Levels) ? a.sq9Levels : [];
+  const mus = a?.priceChartingTool?.musicalJust || null;
+
+  const upCandidates = [
+    ...sq9.filter((l) => l.price > cur * 1.004).map((l) => ({ price: l.price, src: `Sq9 ${l.degree}°` })),
+    ...(a?.gannFan?.activeResistance?.price > cur * 1.004 ? [{ price: a.gannFan.activeResistance.price, src: `מניפה ${a.gannFan.activeResistance.id}` }] : []),
+    ...(mus?.nearestResistance?.price > cur * 1.004 ? [{ price: mus.nearestResistance.price, src: `אוקטבה ${mus.nearestResistance.frac}` }] : []),
+  ].sort((x, y) => x.price - y.price);
+
+  const downCandidates = [
+    ...sq9.filter((l) => l.price < cur * 0.996).map((l) => ({ price: l.price, src: `Sq9 ${l.degree}°` })),
+    ...(a?.gannFan?.activeSupport?.price < cur * 0.996 ? [{ price: a.gannFan.activeSupport.price, src: `מניפה ${a.gannFan.activeSupport.id}` }] : []),
+    ...(mus?.nearestSupport?.price < cur * 0.996 ? [{ price: mus.nearestSupport.price, src: `אוקטבה ${mus.nearestSupport.frac}` }] : []),
+    ...(a?.swingChart?.midpoint50 && a.swingChart.midpoint50 < cur * 0.996 ? [{ price: a.swingChart.midpoint50, src: 'אמצע 50% סווינג' }] : []),
+  ].sort((x, y) => y.price - x.price);
+
+  const target1 = upCandidates[0] || null;
+  const target2 = upCandidates.find((x) => !target1 || x.price > target1.price * 1.015) || upCandidates[1] || null;
+  const support1 = downCandidates[0] || null;
+  const support2 = downCandidates.find((x) => !support1 || x.price < support1.price * 0.985) || downCandidates[1] || null;
+
+  const nextPivot = a?.futurePivots?.[0] || null;
+  const nextPivotText = nextPivot
+    ? `${nextPivot.date} (בעוד ${nextPivot.daysAhead} ימים · עוצמה ${nextPivot.score}${nextPivot.nearMacro ? ` · ${nextPivot.nearMacro}` : ''}${nextPivot.nearSeason ? ` · ${nextPivot.nearSeason}` : ''})`
+    : 'אין חלון זמן קרוב';
+
+  // Primary & Alternative scenario narratives in plain Hebrew
+  const primaryScenario = direction === 'bullish'
+    ? `שקלול ${pillars.length} שכבות הנתונים נותן יתרון שורי (${combinedScore}/100) ל-${symbol}. כל עוד המחיר מחזיק מעל אזור התמיכה ${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : fmtSmart(cur * 0.96)}, היעד הקרוב הוא ${target1 ? `${fmtSmart(target1.price)} (${target1.src})` : 'שיא הסווינג'}${target2 ? ` והיעד המורחב ${fmtSmart(target2.price)} (${target2.src})` : ''}. חלון הזמן הקרוב לבחינת המשכיות או שיא מקומי: ${nextPivot?.date || '—'}.`
+    : direction === 'bearish'
+      ? `שקלול ${pillars.length} שכבות הנתונים מציג לחץ דובי/תיקון (${combinedScore}/100) ב-${symbol}. כל עוד המחיר נותר מתחת להתנגדות ${target1 ? `${fmtSmart(target1.price)} (${target1.src})` : fmtSmart(cur * 1.04)}, צפויה בחינה של התמיכה ${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : 'שפל הסווינג'}${support2 ? ` ולאחריה ${fmtSmart(support2.price)} (${support2.src})` : ''}. חלון תזמון אפשרי להיפוך/תחתית: ${nextPivot?.date || '—'}.`
+      : `הנתונים על ${symbol} מאוזנים/מעורבים כרגע (${combinedScore}/100) — השוק באזור הכרעה בין תמיכה ב-${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : '—'} לבין התנגדות ב-${target1 ? `${fmtSmart(target1.price)} (${target1.src})` : '—'}. מומלץ להמתין לפריצה מובהקת מעל ההתנגדות (ללונג) או שבירה מתחת לתמיכה, במיוחד סביב חלון הזמן ${nextPivot?.date || '—'}.`;
+
+  const invalidationText = direction === 'bullish'
+    ? `ביטול התרחיש השורי (Invalidation): סגירה ברורה מתחת ל-${support1 ? `${fmtSmart(support1.price)} (${support1.src})` : fmtSmart(cur * 0.95)} תבטל את יתרון הקונים ותפתח ירידה ל-${support2 ? fmtSmart(support2.price) : 'אזור התמיכה הבא'}.`
+    : direction === 'bearish'
+      ? `ביטול התרחיש הדובי (Invalidation): פריצה וסגירה מעל ${target1 ? `${fmtSmart(target1.price)} (${target1.src})` : fmtSmart(cur * 1.05)} תבטל את הלחץ הדובי ותעביר את המומנטום ליעד ${target2 ? fmtSmart(target2.price) : 'העליון'}.`
+      : `נקודות ההכרעה: פריצה מעל ${target1 ? fmtSmart(target1.price) : '—'} מאשרת כיוון עולה; שבירה מתחת ל-${support1 ? fmtSmart(support1.price) : '—'} מאשרת כיוון יורד.`;
+
+  return {
+    symbol,
+    currentPrice: cur,
+    combinedScore,
+    direction,
+    directionLabel,
+    pillars,
+    target1,
+    target2,
+    support1,
+    support2,
+    nextPivot,
+    nextPivotText,
+    primaryScenario,
+    invalidationText,
+    historicalAccuracyPct: a?.hitRatePct ?? 0,
+    fundamentalProofPct: a?.fundamentalProof?.matchRatePct ?? 0,
+  };
+}
+
+export function renderGannExecutiveForecastCard(a, cfg, symbol, state) {
+  const fc = buildGannExecutiveForecast(a, symbol, state);
+  const borderCol = fc.direction === 'bullish'
+    ? 'rgba(46, 204, 113, 0.55)'
+    : fc.direction === 'bearish'
+      ? 'rgba(240, 91, 91, 0.55)'
+      : 'rgba(245, 158, 11, 0.5)';
+  const scoreCol = fc.direction === 'bullish' ? '#4ade80' : fc.direction === 'bearish' ? '#f87171' : '#fbbf24';
+
+  const aiBriefBox = h('div', { style: { display: 'none', marginTop: '10px' } });
+  const aiBriefBtn = h('button', {
+    class: 'btn btn-sm btn-primary',
+    onclick: async () => {
+      aiBriefBtn.disabled = true;
+      aiBriefBtn.textContent = '⏳ מסנתז תחזית AI מכל הנתונים…';
+      try {
+        const res = await chatDetailed({
+          system: 'אתה אנליסט שוק בכיר ב-Alta Capital. כתוב תמצות תחזית חד, ברור ונטול הזיות בעברית (5 שורות קצרות) המבוסס אך ורק על הנתונים האמיתיים שסופקו. אל תמציא שום מספר.',
+          messages: [{
+            role: 'user',
+            content: [
+              `תמצת תחזית ברורה למתחיל ולסוחר עבור ${fc.symbol} במחיר ${fmtSmart(fc.currentPrice)}:`,
+              `ציון משוקלל מכל השכבות: ${fc.combinedScore}/100 (${fc.directionLabel})`,
+              `שכבות הנתונים:\n${fc.pillars.map((p) => `- ${p.label}: ${p.score}/100 (${p.detail})`).join('\n')}`,
+              `יעדי עלייה: ${fc.target1 ? `${fmtSmart(fc.target1.price)} (${fc.target1.src})` : '—'}${fc.target2 ? `, ${fmtSmart(fc.target2.price)} (${fc.target2.src})` : ''}`,
+              `תמיכות: ${fc.support1 ? `${fmtSmart(fc.support1.price)} (${fc.support1.src})` : '—'}${fc.support2 ? `, ${fmtSmart(fc.support2.price)} (${fc.support2.src})` : ''}`,
+              `חלון זמן קרוב: ${fc.nextPivotText}`,
+              `דיוק גאן היסטורי על הנכס: ${fc.historicalAccuracyPct}% · הוכחה פונדמנטלית: ${fc.fundamentalProofPct}%`,
+            ].join('\n'),
+          }],
+          maxTokens: 480,
+        });
+        aiBriefBox.style.display = 'block';
+        aiBriefBox.className = 'notice ok';
+        aiBriefBox.style.whiteSpace = 'pre-wrap';
+        aiBriefBox.style.lineHeight = '1.6';
+        aiBriefBox.textContent = `🤖 תמצות תחזית AI (${res.model || 'Local/Cloud AI'}):\n\n${res.text}`;
+        aiBriefBtn.textContent = '✓ תמצות AI מוכן';
+      } catch (err) {
+        aiBriefBox.style.display = 'block';
+        aiBriefBox.className = 'notice bad';
+        aiBriefBox.textContent = `שגיאה בקריאה ל-AI: ${err.message}`;
+        aiBriefBtn.disabled = false;
+        aiBriefBtn.textContent = '🤖 נסה שוב תמצות AI';
+      }
+    },
+  }, '🤖 הרחב תמצות תחזית עם AI');
+
+  return h('div', {
+    class: 'card',
+    style: {
+      marginTop: '14px',
+      borderColor: borderCol,
+      background: 'linear-gradient(180deg, rgba(13, 24, 41, 0.97), rgba(8, 13, 24, 0.97))',
+    },
+  },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: `🧭 תמצות תחזית משוקללת לפי כל הנתונים · ${fc.symbol}` }),
+        h('div', { class: 'card-sub', text: `שקלול בזמן אמת של ${fc.pillars.length} שכבות אמת: מניפת גאן 1x1, סווינג 50%, התכנסות Sq9, חלונות זמן, פונדמנטל/מאקרו, סנטימנט ו-X` }),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px' } },
+        gannExplainButton('forecast_summary', a, cfg, symbol),
+        aiBriefBtn,
+        tag(`${fc.directionLabel} · ${fc.combinedScore}/100`, fc.direction === 'bullish' ? 'live' : fc.direction === 'bearish' ? 'red' : 'opt'),
+      ),
+    ),
+
+    // Visual Weighted Bias Meter (0..100, explicit LTR so 0=red left and 100=green right match needle)
+    h('div', { dir: 'ltr', style: { marginBottom: '12px' } },
+      h('div', { class: 'row between', style: { fontSize: '11.5px', marginBottom: '4px' } },
+        h('span', { class: 'red', text: 'דובי (0)' }),
+        h('span', { class: 'mono', style: { color: scoreCol, fontWeight: '700' }, text: `ציון תחזית משוקלל: ${fc.combinedScore}/100` }),
+        h('span', { class: 'green', text: 'שורי (100)' }),
+      ),
+      h('div', { style: { position: 'relative', height: '9px', borderRadius: '999px', background: 'linear-gradient(90deg, rgba(240,91,91,0.55) 0%, rgba(245,158,11,0.45) 50%, rgba(46,204,113,0.6) 100%)' } },
+        h('div', {
+          style: {
+            position: 'absolute',
+            top: '-3px',
+            left: `calc(${Math.max(2, Math.min(98, fc.combinedScore))}% - 7px)`,
+            width: '14px',
+            height: '15px',
+            borderRadius: '4px',
+            background: '#ffffff',
+            border: `2px solid ${scoreCol}`,
+            boxShadow: '0 0 8px rgba(0,0,0,0.6)',
+          },
+        }),
+      ),
+    ),
+
+    // 4 Concrete Forecast Key-Level Cards
+    h('div', { class: 'grid cols-4', style: { gap: '8px', marginBottom: '12px' } },
+      h('div', { class: 'metric' },
+        h('span', { text: 'מחיר חי · דיוק גאן היסטורי' }),
+        h('b', { class: 'mono', text: `${fmtSmart(fc.currentPrice)} · ${fc.historicalAccuracyPct}%` }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: '🎯 יעדי עלייה קרובים' }),
+        h('b', { class: 'green mono small', text: fc.target1 ? `${fmtSmart(fc.target1.price)}${fc.target2 ? ` / ${fmtSmart(fc.target2.price)}` : ''}` : '—' }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: '🛡️ תמיכות וקו ביטול' }),
+        h('b', { class: 'red mono small', text: fc.support1 ? `${fmtSmart(fc.support1.price)}${fc.support2 ? ` / ${fmtSmart(fc.support2.price)}` : ''}` : '—' }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: '📅 חלון תזמון קרוב' }),
+        h('b', { class: 'gold mono small', text: fc.nextPivot ? `${fc.nextPivot.date} (+${fc.nextPivot.daysAhead}d)` : '—' }),
+      ),
+    ),
+
+    // Contributing Data Pillars Strip
+    h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '10px' } },
+      ...fc.pillars.map((p) => tag(`${p.label}: ${p.score}/100 (${p.detail})`, p.tone)),
+    ),
+
+    // Plain-Hebrew Primary Scenario + Invalidation Box
+    h('div', { class: 'grid cols-2', style: { gap: '10px' } },
+      h('div', { class: 'card', style: { background: 'rgba(9, 17, 30, 0.9)', padding: '10px 12px', borderColor: borderCol } },
+        h('div', { style: { fontWeight: '700', fontSize: '13px', color: scoreCol, marginBottom: '4px' }, text: '📌 תמצית התחזית המרכזית' }),
+        h('div', { class: 'small', style: { lineHeight: '1.55', color: '#e2e8f0' }, text: fc.primaryScenario }),
+      ),
+      h('div', { class: 'card', style: { background: 'rgba(9, 17, 30, 0.9)', padding: '10px 12px', borderColor: 'rgba(148, 163, 184, 0.3)' } },
+        h('div', { style: { fontWeight: '700', fontSize: '13px', color: '#fbbf24', marginBottom: '4px' }, text: '⚠️ תרחיש נגדי ונקודת ביטול (Invalidation)' }),
+        h('div', { class: 'small', style: { lineHeight: '1.55', color: '#cbd5e1' }, text: fc.invalidationText }),
+        h('div', { class: 'tiny muted', style: { marginTop: '6px' }, text: 'תמצות מחקרי משוקלל מנתוני אמת בלבד — אינו ייעוץ השקעות; יש לאמת בתנועת מחיר ולהציב סטופ-לוס.' }),
+      ),
+    ),
+    aiBriefBox,
+  );
+}
 
 export function openGannExplainModal(topicId, a, cfg, symbol) {
   const topic = GANN_GUIDE_TOPICS[topicId];
