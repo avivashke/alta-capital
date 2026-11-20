@@ -22,6 +22,7 @@ import {
   computePriceCircleAngles,
 } from '../gann.js';
 import { chatDetailed } from '../llm.js';
+import { gannExplainButton, openGannMasterGuideModal } from '../gann_guide.js';
 
 let gannViewState = {
   symbol: 'BTCUSDT',
@@ -219,6 +220,14 @@ function computeGannSmartSuggestions(candles, a, symbol, tf) {
   const sq9Scale = autoScaleForPrice(cur);
   const tfLabel = tf === '1w' ? 'שבועי' : tf === '1h' ? 'שעתי' : 'יומי';
 
+  const circleSizes = cur < 10
+    ? '0.5, 1, 3.6, 12'
+    : cur < 500
+      ? '12, 36, 90, 144, 360'
+      : cur < 5000
+        ? '90, 144, 360, 720, 1440'
+        : '360, 1440, 3600, 14400';
+
   return {
     symbol,
     manualPrice: +fmtPriceSmart(pivotPrice),
@@ -229,7 +238,7 @@ function computeGannSmartSuggestions(candles, a, symbol, tf) {
     increment: inc,
     scale: sq9Scale,
     msjCustomPrice: +fmtPriceSmart(cur),
-    customCircleInput: +fmtPriceSmart(pivotPrice),
+    customCircleInput: circleSizes,
     rows: [
       {
         id: 'anchor',
@@ -290,12 +299,12 @@ function computeGannSmartSuggestions(candles, a, symbol, tf) {
       {
         id: 'priceCircles',
         field: 'מעגלי מחיר (rluu Price Circles)',
-        valueText: fmtPriceSmart(pivotPrice),
-        why: `הזנת מחיר העוגן (${fmtPriceSmart(pivotPrice)}) במודול מעגלי המחיר מחשבת את קשתות הזמן-מחיר ב-180° ו-360° שבהן גלי התנועה של ${symbol} נוטים להגיע למיצוי או שינוי כיוון.`,
+        valueText: circleSizes,
+        why: `גדלי מעגל הרמוניים המותאמים לטווח המחיר של ${symbol} (${fmtPriceSmart(cur)}). חלוקת המחיר בגדלי מעגל אלו חושפת מתי המחיר מתקרב לזווית 90°/180°/360° (סגירת מחזור).`,
         apply: (ui) => {
-          gannViewState.customCircleInput = String(+fmtPriceSmart(pivotPrice));
+          gannViewState.customCircleInput = circleSizes;
           ui.rerender();
-          toast(`מעגלי המחיר עודכנו למחיר ${fmtPriceSmart(pivotPrice)}`, 'ok');
+          toast(`מעגלי המחיר עודכנו ל-${circleSizes}`, 'ok');
         },
       },
     ],
@@ -900,6 +909,11 @@ export function renderGann(root, ui) {
           disabled: gannViewState.multiScanLoading,
           onclick: () => runMultiAssetGannScan(ui),
         }, gannViewState.multiScanLoading ? '⏳ סורק נכסים…' : '🌐 סרוק הוכחת גאן על כל הנכסים'),
+        h('button', {
+          class: 'btn btn-sm',
+          style: { borderColor: 'rgba(125, 211, 252, 0.45)', color: '#7dd3fc' },
+          onclick: () => openGannMasterGuideModal(a, getGannzillaConfig(), gannViewState.symbol),
+        }, '📖 מדריך הסבר לכל הגלגלים והאינפוגרפיקה'),
       ),
     ),
   );
@@ -1088,7 +1102,10 @@ export function renderGann(root, ui) {
           h('h2', { text: `${gannViewState.symbol} · מפת חיזוי ומניפת גאן (${marketState.provider || 'חי'})` }),
           h('div', { class: 'card-sub', text: 'מניפת גאן 9 זוויות (8x1–1x8) · תיבת גאן · סווינג גאן · רמות Sq9 · ★ אירועים פונדמנטליסטיים שאומתו' }),
         ),
-        tag(`עוגן: ${num(a.anchorPivot.price, 2)} (${a.anchorPivot.manual ? 'ידני' : a.anchorPivot.type === 'low' ? 'שפל' : 'שיא'})`, 'live'),
+        h('div', { class: 'row wrap', style: { gap: '6px' } },
+          gannExplainButton('fan_chart', a, cfg, gannViewState.symbol),
+          tag(`עוגן: ${num(a.anchorPivot.price, 2)} (${a.anchorPivot.manual ? 'ידני' : a.anchorPivot.type === 'low' ? 'שפל' : 'שיא'})`, 'live'),
+        ),
       ),
       h('div', { class: 'row wrap', style: { gap: '8px', marginBottom: '10px', alignItems: 'center' } },
         h('button', {
@@ -1145,6 +1162,7 @@ export function renderGann(root, ui) {
             h('div', { class: 'card-sub', text: cfg.iniFileName ? `נטען קובץ תצורה: ${cfg.iniFileName} · מסונכרן בין מכשירים` : 'תואם Gannzilla Pro v8.3 (Sq9 / Sq4 / Sq144 / הקסגון / משולש / גלגל 24 / קוסמוגרם + ייבוא .ini)' }),
           ),
           h('div', { class: 'row wrap', style: { gap: '6px' } },
+            gannExplainButton('gannzilla_wheel', a, cfg, gannViewState.symbol),
             h('button', { class: 'btn btn-sm btn-primary', onclick: () => iniInput.click() }, '⬆ ייבוא Gannzilla.ini'),
             h('button', {
               class: 'btn btn-sm btn-ghost',
@@ -1245,6 +1263,7 @@ export function renderGann(root, ui) {
             h('h2', { text: '🧮 מנוע MSJ_GannSQ9, מניפת גאן ומחשבוני ג׳נקינס' }),
             h('div', { class: 'card-sub', text: 'מניפת 9 הזוויות · מטריצת Square of 9 האינטראקטיבית של MSJ_GannSQ9 · מעלות 45°–720° · זמני שורש ריבועי ושמיניות' }),
           ),
+          gannExplainButton('msj_calc', a, cfg, gannViewState.symbol),
         ),
         h('div', { class: 'row', style: { gap: '6px', marginBottom: '10px', flexWrap: 'wrap' } },
           [
@@ -1396,7 +1415,10 @@ export function renderGann(root, ui) {
             h('h2', { text: '📐 צ׳ק-ליסט כללי המסחר של W.D. Gann (Gann Explained)' }),
             h('div', { class: 'card-sub', text: 'בדיקה אוטומטית של 6 חוקי הליבה של גאן: זווית 1x1, כלל 50%, מד סווינג, Sq9, חלון זמן וגיבוי היסטורי' }),
           ),
-          tag(`${a.confluence?.score ?? 0}/100 · ${a.confluence?.verdict || ''}`, (a.confluence?.score || 0) >= 65 ? 'live' : 'opt'),
+          h('div', { class: 'row wrap', style: { gap: '6px' } },
+            gannExplainButton('gann_rules', a, cfg, gannViewState.symbol),
+            tag(`${a.confluence?.score ?? 0}/100 · ${a.confluence?.verdict || ''}`, (a.confluence?.score || 0) >= 65 ? 'live' : 'opt'),
+          ),
         ),
         h('div', { class: 'table-wrap' },
           h('table', {},
@@ -1416,7 +1438,10 @@ export function renderGann(root, ui) {
             h('h2', { text: '🔭 סווינג גאן + היבטים פלנטריים פעילים (Cosmogram)' }),
             h('div', { class: 'card-sub', text: 'מבנה הסווינג הפעיל לפי כללי גאן + זוויות גיאומטריות פעילות בין כוכבי הלכת היום' }),
           ),
-          tag(a.swingChart?.trend === 'bullish' ? 'מגמת סווינג עולה' : a.swingChart?.trend === 'bearish' ? 'מגמת סווינג יורדת' : 'דשדוש', a.swingChart?.trend === 'bullish' ? 'live' : 'red'),
+          h('div', { class: 'row wrap', style: { gap: '6px' } },
+            gannExplainButton('swing_cosmos', a, cfg, gannViewState.symbol),
+            tag(a.swingChart?.trend === 'bullish' ? 'מגמת סווינג עולה' : a.swingChart?.trend === 'bearish' ? 'מגמת סווינג יורדת' : 'דשדוש', a.swingChart?.trend === 'bullish' ? 'live' : 'red'),
+          ),
         ),
         h('div', { class: 'notice', style: { marginBottom: '10px', fontSize: '12px' }, text: a.swingChart?.rule3BarSignal || '—' }),
         h('div', { class: 'grid cols-3', style: { gap: '8px', marginBottom: '10px' } },
@@ -1472,6 +1497,7 @@ export function renderGann(root, ui) {
             h('div', { class: 'card-sub', text: 'מיישם את printPriceTimeInfoDatetimes.py: תאריך התחלה/סיום ו-Julian Day, שיא/שפל טווח, נקודות Price-Time ממוינות כרונולוגית, אורך שמש (☉) וייצוא/ייבוא CSV' }),
           ),
           h('div', { class: 'row wrap', style: { gap: '6px' } },
+            gannExplainButton('ephemeris', a, cfg, gannViewState.symbol),
             h('button', {
               class: 'btn btn-sm btn-primary',
               onclick: () => copyText(pt.csvCompact),
@@ -1535,7 +1561,10 @@ export function renderGann(root, ui) {
           h('h2', { text: '⚡ הוכחת גאן מול אירועים פונדמנטליסטיים (ריבית פד, אינפלציה, חצייה, דוחות ומשברים)' }),
           h('div', { class: 'card-sub', text: 'הוכחה כיצד מחזורי גאן ורמות Sq9/Hexagon סימנו מראש את התאריך והמחיר עוד לפני שהחדשות התפרסמו' }),
         ),
-        tag(`${a.fundamentalProof.matchedCount}/${a.fundamentalProof.totalInSpan} אירועים הוכחו (${a.fundamentalProof.matchRatePct}%)`, a.fundamentalProof.matchRatePct >= 50 ? 'live' : 'opt'),
+        h('div', { class: 'row wrap', style: { gap: '6px' } },
+          gannExplainButton('fundamental_proof', a, cfg, gannViewState.symbol),
+          tag(`${a.fundamentalProof.matchedCount}/${a.fundamentalProof.totalInSpan} אירועים הוכחו (${a.fundamentalProof.matchRatePct}%)`, a.fundamentalProof.matchRatePct >= 50 ? 'live' : 'opt'),
+        ),
       ),
       a.fundamentalProof.events.length
         ? h('div', { class: 'table-wrap' },
@@ -1575,6 +1604,7 @@ export function renderGann(root, ui) {
             h('h2', { text: '🔮 אירועים ונקודות ציר קרובים (חיזוי עתידי)' }),
             h('div', { class: 'card-sub', text: 'חלונות זמן של גאן + חפיפה עם החלטות FOMC ותאריכים עונתיים' }),
           ),
+          gannExplainButton('future_pivots', a, cfg, gannViewState.symbol),
         ),
         a.futurePivots.length
           ? h('div', { class: 'table-wrap' },
@@ -1602,6 +1632,7 @@ export function renderGann(root, ui) {
             h('h2', { text: '🏆 הערות על חיזויי עבר שאומתו בשוק' }),
             h('div', { class: 'card-sub', text: 'תיעוד נקודות עבר שבהן מחזורי גאן פגעו בהיפוך אמיתי' }),
           ),
+          gannExplainButton('future_pivots', a, cfg, gannViewState.symbol),
         ),
         a.validations.length
           ? h('div', { class: 'table-wrap' },
@@ -1632,6 +1663,7 @@ export function renderGann(root, ui) {
           h('div', { class: 'card-sub', text: 'לוח 12 המזלות (30°), מחזורים פלנטריים (מרקורי, נוגה, מאדים, אורנוס 84.77y), ריבועי מאסטר (52 / 90 / 144) ותאריכים עונתיים' }),
         ),
         h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } },
+          gannExplainButton('calendars', a, cfg, gannViewState.symbol),
           [
             ['zodiac12', '12 המזלות (30°)'],
             ['planetary', 'מחזורים פלנטריים'],
@@ -1704,11 +1736,14 @@ export function renderGann(root, ui) {
           h('h2', { text: `🤖 הצעות AI לעבודה ומחקר חכם (${gannViewState.symbol})` }),
           h('div', { class: 'card-sub', text: 'סינתזה אוטומטית של Square of 9, הקסגון, זווית 1x1 ולוחות השנה של Gannzilla להמלצת פעולה' }),
         ),
-        h('button', {
-          class: 'btn btn-sm btn-primary',
-          disabled: gannViewState.aiLoading,
-          onclick: () => askAiForGannProposal(a, ui),
-        }, gannViewState.aiLoading ? '⏳ מפיק ניתוח AI…' : '✨ הפק הצעת עבודה מעמיקה מ-AI'),
+        h('div', { class: 'row wrap', style: { gap: '6px' } },
+          gannExplainButton('ai_proposals', a, cfg, gannViewState.symbol),
+          h('button', {
+            class: 'btn btn-sm btn-primary',
+            disabled: gannViewState.aiLoading,
+            onclick: () => askAiForGannProposal(a, ui),
+          }, gannViewState.aiLoading ? '⏳ מפיק ניתוח AI…' : '✨ הפק הצעת עבודה מעמיקה מ-AI'),
+        ),
       ),
       h('div', { class: 'grid cols-3', style: { gap: '10px', marginBottom: gannViewState.aiAdvice ? '12px' : '0' } },
         ...(a.proposals || generateGannWorkingProposals(a, gannViewState.symbol)).map((pr) => h('div', { class: 'card', style: { background: 'rgba(8, 14, 24, 0.85)' } },
@@ -1740,21 +1775,24 @@ export function renderGann(root, ui) {
           h('h2', { text: '📚 ספריית האירועים ושינויי המגמה של גאן (מחקר עצמאי + חיפוש חכם)' }),
           h('div', { class: 'card-sub', text: `משלבת אירועים פונדמנטליסטיים שנחזו ע"י גאן, שינויי מגמה רגילים ממחקר אוטונומי ותחזיות היסטוריות מתועדות מהרשת · ${lib.updatedAt ? 'עודכן ' + timeAgo(lib.updatedAt) : 'מאתחל סריקה…'}` }),
         ),
-        h('button', {
-          class: 'btn btn-sm btn-primary',
-          disabled: gannViewState.libLoading,
-          onclick: async () => {
-            gannViewState.libLoading = true;
-            ui.rerender();
-            try {
-              await runAutonomousGannLibraryAudit();
-              toast('הבדיקה העצמאית הושלמה וספריית האירועים עודכנה!', 'ok');
-            } finally {
-              gannViewState.libLoading = false;
+        h('div', { class: 'row wrap', style: { gap: '6px' } },
+          gannExplainButton('library', a, cfg, gannViewState.symbol),
+          h('button', {
+            class: 'btn btn-sm btn-primary',
+            disabled: gannViewState.libLoading,
+            onclick: async () => {
+              gannViewState.libLoading = true;
               ui.rerender();
-            }
-          },
-        }, gannViewState.libLoading ? '⏳ סורק היסטוריה…' : '🔬 הרץ בדיקה עצמאית אוטומטית'),
+              try {
+                await runAutonomousGannLibraryAudit();
+                toast('הבדיקה העצמאית הושלמה וספריית האירועים עודכנה!', 'ok');
+              } finally {
+                gannViewState.libLoading = false;
+                ui.rerender();
+              }
+            },
+          }, gannViewState.libLoading ? '⏳ סורק היסטוריה…' : '🔬 הרץ בדיקה עצמאית אוטומטית'),
+        ),
       ),
       h('div', { class: 'row wrap', style: { gap: '8px', marginBottom: '12px', alignItems: 'center' } },
         h('input', {
@@ -1825,6 +1863,7 @@ function renderPriceChartingToolPanel(a, ui) {
         h('div', { class: 'card-sub', text: 'שילוב אלגוריתמי rluu-pricechartingtool-f05e608: המרת מחיר לזוויות על מעגלים (12–360), מרווחים מוזיקליים (Just Intonation & Pythagorean) ושכפול מחזורי עבר (Lookback Multiple)' }),
       ),
       h('div', { class: 'row wrap', style: { gap: '6px' } },
+        gannExplainButton('rluu_suite', a, getGannzillaConfig(), gannViewState.symbol),
         [
           ['circles', '⭕ מעגלי מחיר (Circles)'],
           ['musical', '🎵 אוקטבות מוזיקליות (Ratios)'],
