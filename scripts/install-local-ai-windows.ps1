@@ -1,4 +1,4 @@
-# Alta Capital — One-Click Free Local AI Models Installer for Windows (Ollama GPU/CPU)
+# Alta Capital - One-Click Free Local AI Models Installer for Windows (Ollama GPU/CPU)
 # Uses your local PC's GPU/CPU compute to add unlimited free AI models directly to Alta Capital's AI pool.
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File .\scripts\install-local-ai-windows.ps1
@@ -6,7 +6,7 @@
 $ErrorActionPreference = "Stop"
 
 Write-Host "==============================================================" -ForegroundColor Cyan
-Write-Host "  Alta Capital — Local Machine Free AI Models Setup (Ollama)" -ForegroundColor Cyan
+Write-Host "  Alta Capital - Local Machine Free AI Models Setup (Ollama)" -ForegroundColor Cyan
 Write-Host "==============================================================" -ForegroundColor Cyan
 
 # 1. Detect total RAM (GB)
@@ -37,7 +37,11 @@ if (-not $ollamaCmd) {
   $ollamaCmd = Get-Command ollama -ErrorAction SilentlyContinue
   if (-not $ollamaCmd) {
     $fallbackBin = Join-Path $env:LOCALAPPDATA "Programs\Ollama\ollama.exe"
-    if (Test-Path $fallbackBin) { $ollamaExe = $fallbackBin } else { throw "Ollama installed — please reopen PowerShell and re-run this script." }
+    if (Test-Path $fallbackBin) {
+      $ollamaExe = $fallbackBin
+    } else {
+      throw "Ollama installed - please reopen PowerShell and re-run this script."
+    }
   } else {
     $ollamaExe = $ollamaCmd.Source
   }
