@@ -157,6 +157,14 @@ try {
   console.warn('[runner] paper portfolio save:', err.message);
 }
 try {
+  const { autoEnrollPassedNostroBots, tickNostroTradingRoom } = await import('../src/nostro.js');
+  autoEnrollPassedNostroBots(store.state);
+  const nRes = await tickNostroTradingRoom({ state: store.state });
+  if (nRes?.accounts) console.log(`[runner] Nostro trading room: ${nRes.updated}/${nRes.accounts} accounts ticked (${nRes.tradesMoved || 0} trade moves)`);
+} catch (err) {
+  console.warn('[runner] nostro room:', err.message);
+}
+try {
   const { auditSystemTruth } = await import('../src/auditor.js');
   const { marketState } = await import('../src/market.js');
   store.state.truthAudit = auditSystemTruth(store.state, marketState);

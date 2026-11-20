@@ -906,6 +906,7 @@ export async function tick({ reason = 'auto' } = {}) {
     await tickLive();
     await promoteDryRuns();
     savePaperPortfolio();
+    import('./nostro.js').then(({ tickNostroTradingRoom }) => tickNostroTradingRoom()).catch((e) => console.warn('[nostro-room]', e));
     state.truthAudit = auditSystemTruth(state, marketState);
     // עבודה רציפה: מחקר, ניתוח טכני, פונדמנטליסטי, סנטימנט ואופטימיזציה בכל מחזור
     refreshTechnicals({ force: true }).catch((e) => console.warn('[ta]', e));

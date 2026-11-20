@@ -11,12 +11,269 @@ import {
   runNostroBot,
   runNostroFleetSimulation,
   buildNostroExcelXml,
+  ensureNostroTradingRoom,
+  enrollBotInNostroRoom,
+  autoEnrollPassedNostroBots,
+  computeNostroAccountHealth,
+  tickNostroTradingRoom,
+  closeNostroAccountPosition,
+  resetNostroAccount,
+  removeNostroAccount,
 } from '../nostro.js';
 
 let runningFleet = false;
+let tickingRoom = false;
 let showInfographic = false;
 let showDetailedReport = true;
 let autoTimer = null;
+
+function gaugeBar(label, rightText, pctVal, color) {
+  const clamped = Math.max(0, Math.min(100, Number(pctVal) || 0));
+  return h('div', { style: { marginBottom: '7px' } },
+    h('div', { class: 'row between', style: { fontSize: '11.5px', marginBottom: '3px', gap: '8px' } },
+      h('span', { class: 'muted', text: label }),
+      h('span', { class: 'mono', style: { color, fontWeight: '700' }, text: rightText }),
+    ),
+    h('div', { style: { height: '7px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' } },
+      h('div', { style: { width: `${clamped}%`, height: '100%', background: color, borderRadius: '999px', transition: 'width .25s ease' } }),
+    ),
+  );
+}
+
+function renderNostroTradingRoomSection(nostro, rules, ui) {
+  const room = ensureNostroTradingRoom(store.state);
+  const accounts = room.accounts || [];
+  const passedBots = (nostro.bots || []).filter((b) => (b.readyFirms || []).length > 0 && !b.isSynthetic);
+
+  const syncRoomNow = async () => {
+    if (tickingRoom) return;
+    tickingRoom = true;
+    ui.rerender();
+    try {
+      const res = await tickNostroTradingRoom({ force: true });
+      toast(`חדר הנוסטרו עודכן על נתוני אמת (${res.updated}/${res.accounts} תיקים · ${res.tradesMoved || 0} תנועות עסקה)`, 'ok');
+    } catch (err) {
+      toast('שגיאה בעדכון חדר הנוסטרו: ' + err.message, 'bad');
+    } finally {
+      tickingRoom = false;
+      ui.rerender();
+    }
+  };
+
+  // Compute aggregate KPIs across all accounts in the live Nostro room
+  const enriched = accounts.map((acct) => ({ acct, health: computeNostroAccountHealth(acct) }));
+  const totalCap = enriched.reduce((s, x) => s + (Number(x.acct.initialBalance) || 0), 0);
+  const totalEq = enriched.reduce((s, x) => s + (Number(x.acct.equity) || 0), 0);
+  const totalNetPnl = +(totalEq - totalCap).toFixed(2);
+  const totalNetPct = totalCap > 0 ? +((totalNetPnl / totalCap) * 100).toFixed(2) : 0;
+  const atRiskCount = enriched.filter((x) => x.health.healthLevel === 'critical' || x.health.healthLevel === 'warning').length;
+  const burnedCount = enriched.filter((x) => x.health.healthLevel === 'burned').length;
+  const fundedCount = enriched.filter((x) => x.acct.phase === 'funded').length;
+  const totalPayout = enriched.reduce((s, x) => s + (x.health.estimatedPayoutUsd || 0), 0);
+
+  return h('div', {
+    class: 'card',
+    style: {
+      marginTop: '16px',
+      borderColor: burnedCount > 0 ? 'rgba(240, 91, 91, 0.55)' : atRiskCount > 0 ? 'rgba(245, 158, 11, 0.5)' : 'rgba(46, 204, 113, 0.5)',
+      background: 'linear-gradient(180deg, rgba(14, 24, 38, 0.96), rgba(9, 14, 24, 0.96))',
+    },
+  },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '10px' } },
+      h('div', {},
+        h('h2', { text: '🏛️ חדר מסחר דמה של נוסטרו אמיתי (Live Prop-Firm Trading Room)' }),
+        h('div', { class: 'card-sub', text: 'בוטים שעברו מבחנים עוברים לכאן וסוחרים בזמן אמת על נתוני שוק אמיתיים תחת חוקי נוסטרו קשיחים: הפסד יומי (חצות UTC), Drawdown נגרר/קבוע, ימי מסחר, עקביות, התראת שריפת תיק ומעבר לשלבים ו-Funded.' }),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px' } },
+        h('button', {
+          class: `btn btn-sm ${room.autoEnroll !== false ? 'btn-primary' : ''}`,
+          onclick: () => {
+            room.autoEnroll = room.autoEnroll === false;
+            store.save();
+            ui.rerender();
+          },
+        }, room.autoEnroll !== false ? '● העברה אוטומטית פעילה' : '○ העברה אוטומטית כבויה'),
+        passedBots.length
+          ? h('button', {
+              class: 'btn btn-sm',
+              onclick: async () => {
+                const res = autoEnrollPassedNostroBots(store.state);
+                store.save(true);
+                toast(res.added > 0 ? `הועברו ${res.added} בוטים חדשים לחדר המסחר!` : 'כל הבוטים העוברים כבר פעילים בחדר המסחר', 'ok');
+                await syncRoomNow();
+              },
+            }, `🚀 העבר עוברים לחדר (${passedBots.length})`)
+          : null,
+        h('button', {
+          class: 'btn btn-sm btn-primary',
+          disabled: tickingRoom || !accounts.length,
+          onclick: syncRoomNow,
+        }, tickingRoom ? '⏳ מעדכן עסקאות…' : '⚡ סנכרן ועדכן על נתוני אמת'),
+      ),
+    ),
+
+    // Aggregate Room Summary Strip
+    h('div', { class: 'grid cols-4', style: { gap: '8px', marginBottom: '12px' } },
+      h('div', { class: 'metric' }, h('span', { text: 'תיקי נוסטרו פעילים / Funded' }), h('b', { class: 'mono', text: `${accounts.length - burnedCount}/${accounts.length} (${fundedCount} Funded)` })),
+      h('div', { class: 'metric' }, h('span', { text: 'הון כולל ורווח/הפסד חי' }), h('b', { class: (totalNetPnl >= 0 ? 'green ' : 'red ') + 'mono', text: `${money(totalNetPnl)} (${pct(totalNetPct)})` })),
+      h('div', { class: 'metric' }, h('span', { text: 'חיווי סיכון / שריפה' }), h('b', { class: (burnedCount ? 'red ' : atRiskCount ? 'gold ' : 'green ') + 'mono', text: burnedCount ? `🔥 ${burnedCount} נשרפו · ⚠ ${atRiskCount}` : atRiskCount ? `⚠ ${atRiskCount} באזהרה` : '🟢 כל התיקים בטוחים' })),
+      h('div', { class: 'metric' }, h('span', { text: 'רווח למשיכה (Funded) · עדכון' }), h('b', { class: 'green mono', text: `${money(totalPayout)} · ${room.lastTickAt ? timeAgo(room.lastTickAt) : 'טרם סונכרן'}` })),
+    ),
+
+    !accounts.length
+      ? notice('אין עדיין בוטים בחדר המסחר הדמה של הנוסטרו. ברגע שבוט עובר מבחן (או בלחיצה על "🚀 העבר לחדר מסחר נוסטרו" על בוט שעבר), הוא נפתח כאן כתיק נוסטרו חי עם כל התנאים.', 'blue')
+      : h('div', { class: 'grid cols-2', style: { gap: '12px' } },
+        ...enriched.map(({ acct, health }) => {
+          const borderCol = health.healthLevel === 'burned'
+            ? 'rgba(240, 91, 91, 0.7)'
+            : health.healthLevel === 'critical'
+              ? 'rgba(240, 91, 91, 0.6)'
+              : health.healthLevel === 'warning'
+                ? 'rgba(245, 158, 11, 0.55)'
+                : acct.phase === 'funded'
+                  ? 'rgba(46, 204, 113, 0.6)'
+                  : 'rgba(88, 166, 255, 0.35)';
+          const healthTagCls = health.healthLevel === 'burned' || health.healthLevel === 'critical'
+            ? 'red'
+            : health.healthLevel === 'warning'
+              ? 'opt'
+              : 'live';
+          const dailyCol = health.dailyLossUsedPct >= 75 ? '#f05b5b' : health.dailyLossUsedPct >= 45 ? '#f59e0b' : '#2ecc71';
+          const ddCol = health.totalDdUsedPct >= 75 ? '#f05b5b' : health.totalDdUsedPct >= 45 ? '#f59e0b' : '#2ecc71';
+          const eqSeries = (acct.equityHistory || []).map((pt) => pt.v);
+
+          return h('div', {
+            class: 'card',
+            style: { background: 'rgba(8, 13, 22, 0.92)', borderColor: borderCol, padding: '12px 14px' },
+          },
+            // Header
+            h('div', { class: 'row between wrap', style: { gap: '6px', marginBottom: '6px' } },
+              h('div', {},
+                h('strong', { style: { fontSize: '15px', color: '#f8fafc' }, text: `${acct.botName}` }),
+                h('div', { class: 'tiny muted', text: `${acct.firmName} (${acct.program}) · ${acct.symbol} ${acct.tf} · ${STRATEGIES[acct.strategyId]?.label || acct.strategyId} · מקור: ${acct.dataProvider || 'Live'}` }),
+              ),
+              h('div', { class: 'row wrap', style: { gap: '4px' } },
+                tag(health.phaseLabel, acct.phase === 'funded' ? 'live' : acct.phase === 'blown' ? 'red' : 'opt'),
+                tag(health.healthLabel, healthTagCls),
+              ),
+            ),
+
+            // Burn proximity / status banner
+            h('div', {
+              class: 'notice ' + (health.healthLevel === 'burned' || health.healthLevel === 'critical' ? 'bad' : health.healthLevel === 'warning' ? '' : 'ok'),
+              style: { padding: '7px 10px', marginBottom: '10px', fontSize: '12px' },
+              text: `${health.burnAlert}${health.dailyLocked ? ' · 🛡️ נעילת מסחר יומית פעילה עד חצות UTC' : ''}`,
+            }),
+
+            // 3 Prop-Firm Cockpit Gauges
+            acct.phase !== 'blown'
+              ? gaugeBar(
+                  acct.phase === 'funded' ? `💰 רווח Funded (${acct.rules.profitSplitPct}% חלוקה)` : `🎯 התקדמות ליעד ${health.phaseLabel}`,
+                  acct.phase === 'funded'
+                    ? `${money(health.estimatedPayoutUsd)} למשיכה${health.nextPayoutInDays != null ? ` · תשלום בעוד ${health.nextPayoutInDays} ימים` : ''}`
+                    : `${money(Math.max(0, health.totalPnlUsd))} / ${money(health.targetUsd)} (${health.targetProgressPct}%)`,
+                  acct.phase === 'funded' ? (health.totalPnlUsd > 0 ? 100 : 0) : health.targetProgressPct,
+                  '#38bdf8',
+                )
+              : null,
+            gaugeBar(
+              `🛡️ מגבלת הפסד יומי (${acct.rules.maxDailyLossPct}% · חצות UTC)`,
+              `נוצל ${health.dailyLossUsedPct}% · מרווח נותר: ${money(health.dailyLossBufferUsd)} (${health.dailyLossBufferPct}%)`,
+              health.dailyLossUsedPct,
+              dailyCol,
+            ),
+            gaugeBar(
+              `🔥 מרחק משריפת תיק (${acct.rules.maxTotalDdPct}% ${acct.rules.trailingDd ? 'Trailing נגרר' : 'Static קבוע'})`,
+              `נוצל ${health.totalDdUsedPct}% · נותר עד שריפה: ${money(health.totalDdBufferUsd)} (${health.totalDdBufferPct}%)`,
+              health.totalDdUsedPct,
+              ddCol,
+            ),
+
+            // Live Account Telemetry Grid
+            h('div', { class: 'grid cols-3', style: { gap: '6px', margin: '10px 0' } },
+              h('div', { class: 'metric' }, h('span', { text: 'הון עצמי חי (Equity)' }), h('b', { class: 'mono', text: money(acct.equity) })),
+              h('div', { class: 'metric' }, h('span', { text: 'רווח/הפסד כולל' }), h('b', { class: (health.totalPnlUsd >= 0 ? 'green ' : 'red ') + 'mono', text: `${money(health.totalPnlUsd)} (${pct(health.totalReturnPct)})` })),
+              h('div', { class: 'metric' }, h('span', { text: 'רווח/הפסד יומי (היום)' }), h('b', { class: (health.dailyPnlUsd >= 0 ? 'green ' : 'red ') + 'mono', text: `${money(health.dailyPnlUsd)} (${pct(health.dailyPnlPct)})` })),
+              h('div', { class: 'metric' }, h('span', { text: 'ימים שעברו / ימי מסחר' }), h('b', { class: 'mono', text: `יום ${health.daysElapsed} · ${health.tradingDaysCount}/${health.minTradingDays} ימים` })),
+              h('div', { class: 'metric' }, h('span', { text: 'עסקאות · Win Rate' }), h('b', { class: 'mono', text: `${health.closedTradesCount} · ${health.winRate}%` })),
+              h('div', { class: 'metric' }, h('span', { text: 'עקביות (Consistency)' }), h('b', { class: (health.consistencyOk ? 'green ' : 'gold ') + 'mono', text: `${health.consistencyPct}% ${health.consistencyOk ? '✔' : '⚠'}` })),
+            ),
+
+            // Live Open Position Banner
+            acct.openTrade
+              ? h('div', {
+                  class: 'card',
+                  style: { padding: '8px 10px', marginBottom: '8px', background: 'rgba(15, 27, 45, 0.9)', borderColor: acct.openTrade.unrealizedUsd >= 0 ? 'rgba(46, 204, 113, 0.4)' : 'rgba(240, 91, 91, 0.4)' },
+                },
+                  h('div', { class: 'row between wrap', style: { gap: '6px', fontSize: '12px' } },
+                    h('strong', { style: { color: acct.openTrade.dir > 0 ? '#4ade80' : '#f87171' }, text: `📌 פוזיציה פתוחה: ${acct.openTrade.dir > 0 ? 'LONG' : 'SHORT'} ${acct.symbol}` }),
+                    h('span', { class: 'mono ' + (acct.openTrade.unrealizedUsd >= 0 ? 'green' : 'red'), text: `${acct.openTrade.unrealizedUsd >= 0 ? '+' : ''}${money(acct.openTrade.unrealizedUsd)} (${pct(acct.openTrade.unrealizedPct)})` }),
+                  ),
+                  h('div', { class: 'tiny muted mono', style: { marginTop: '4px' }, text: `כניסה: ${num(acct.openTrade.entry, 2)} · מחיר חי: ${num(acct.openTrade.markPrice || acct.lastPrice, 2)} · סטופ${acct.openTrade.trailed ? ' (נגרר)' : ''}: ${num(acct.openTrade.stop, 2)} · יעד: ${num(acct.openTrade.target, 2)}` }),
+                )
+              : h('div', { class: 'tiny muted', style: { marginBottom: '8px' }, text: acct.phase === 'blown' ? 'החשבון נעול לאחר שריפה — לחץ "🔄 אפס מבחן" לפתיחת סבב חדש.' : `ממתין לאות כניסה הבא על נתוני אמת (${acct.symbol} · מחיר אחרון: ${acct.lastPrice ? num(acct.lastPrice, 2) : '—'})` }),
+
+            // Live Equity Chart
+            eqSeries.length >= 2 ? chart(eqSeries, { height: 68, color: health.totalPnlUsd >= 0 ? 'green' : 'red', showZero: false }) : null,
+
+            // Expandable Trade History & Account Log
+            h('details', { style: { marginTop: '8px' } },
+              h('summary', { class: 'tiny muted', style: { cursor: 'pointer' }, text: `📜 יומן עסקאות סגורות (${(acct.trades || []).length}) ואירועי חשבון (${(acct.events || []).length})` }),
+              (acct.trades || []).length
+                ? h('div', { class: 'table-wrap', style: { marginTop: '6px', maxHeight: '160px', overflowY: 'auto' } },
+                  h('table', {},
+                    h('thead', {}, h('tr', {}, h('th', { text: 'תאריך' }), h('th', { text: 'כיוון' }), h('th', { class: 'num', text: 'כניסה/יציאה' }), h('th', { class: 'num', text: 'רווח $' }), h('th', { text: 'סיבה' }))),
+                    h('tbody', {}, [...acct.trades].reverse().slice(0, 15).map((tr) => h('tr', {},
+                      h('td', { class: 'tiny mono', text: tr.day || '—' }),
+                      h('td', { class: 'tiny', text: tr.side }),
+                      h('td', { class: 'num tiny mono', text: `${num(tr.entry, 2)} → ${num(tr.exit, 2)}` }),
+                      h('td', { class: 'num tiny mono ' + (tr.pnlUsd >= 0 ? 'green' : 'red'), text: `${tr.pnlUsd >= 0 ? '+' : ''}${money(tr.pnlUsd)}` }),
+                      h('td', { class: 'tiny muted', text: tr.reason }),
+                    ))),
+                  ),
+                )
+                : h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: 'אין עדיין עסקאות סגורות בחשבון זה.' }),
+              (acct.events || []).length
+                ? h('div', { style: { marginTop: '6px', display: 'grid', gap: '3px' } },
+                  ...(acct.events || []).slice(0, 6).map((ev) => h('div', { class: 'tiny muted', text: `• ${timeAgo(ev.at)} — ${ev.text}` })),
+                )
+                : null,
+            ),
+
+            // Account Action Buttons
+            h('div', { class: 'row wrap', style: { gap: '6px', marginTop: '10px' } },
+              acct.openTrade
+                ? h('button', {
+                    class: 'btn btn-sm',
+                    onclick: async () => {
+                      const r = await closeNostroAccountPosition(acct.id, 'manual');
+                      toast(r.ok ? `נסגרה פוזיציה (${money(r.trade?.pnlUsd || 0)})` : r.error, r.ok ? 'ok' : 'bad');
+                      ui.rerender();
+                    },
+                  }, '✕ סגור פוזיציה')
+                : null,
+              h('button', {
+                class: 'btn btn-sm',
+                onclick: () => {
+                  resetNostroAccount(acct.id);
+                  toast(`תיק הנוסטרו ${acct.botName} אופס מחדש לשלב 1`, 'ok');
+                  ui.rerender();
+                },
+              }, '🔄 אפס מבחן'),
+              h('button', {
+                class: 'btn btn-sm btn-ghost',
+                onclick: () => {
+                  removeNostroAccount(acct.id);
+                  toast(`הוסר ${acct.botName} מחדר הנוסטרו`, '');
+                  ui.rerender();
+                },
+              }, '🗑 הסר'),
+            ),
+          );
+        }),
+      ),
+  );
+}
 
 function svgEl(tagName, attrs, text) {
   const node = document.createElementNS('http://www.w3.org/2000/svg', tagName);
@@ -105,6 +362,7 @@ export function renderNostro(root, ui) {
   const rules = { ...DEFAULT_NOSTRO_RULES, ...(nostro.rules || {}) };
   const bots = nostro.bots || [];
   const autoMode = nostro.autoMode !== false;
+  const room = ensureNostroTradingRoom(store.state);
 
   const acctSel = h('select', { class: 'input' }, [
     [25000, '$25,000'],
@@ -126,6 +384,7 @@ export function renderNostro(root, ui) {
         accountSize: Number(acctSel.value) || 100000,
         phase1TargetPct: Number(p1Sel.value) || 8,
       }, { doOptimize, forceLive: true });
+      await tickNostroTradingRoom({ force: false });
       if (!silent) toast(doOptimize ? 'מיטוב ומבחן נוסטרו הושלמו על נתוני אמת!' : 'בדיקת הנוסטרו בזמן אמת הושלמה!', 'ok');
     } catch (err) {
       if (!silent) toast('שגיאה בהרצת מבחן נוסטרו: ' + err.message, 'bad');
@@ -156,9 +415,9 @@ export function renderNostro(root, ui) {
   mount(root,
     h('div', { class: 'page-head' },
       h('div', {},
-        h('div', { class: 'eyebrow', text: 'Autonomous Prop Firm Engine · FTMO · The5ers · FundedNext · Topstep · Apex' }),
-        h('h1', { text: 'מבחני נוסטרו אוטומטיים (Prop Firm Bot Fleet)' }),
-        h('p', { text: 'המערכת בוחנת אוטומטית בזמן אמת 5 בוטים מול חוקי החברות המובילות בעולם, מתריעה אילו בוטים מוכנים לעבור ולאיזו חברה, ומפיקה דוח הוכחות ומקורות לייצוא לאקסל.' }),
+        h('div', { class: 'eyebrow', text: 'Autonomous Prop Firm Engine & Live Paper Trading Room · FTMO · The5ers · FundedNext · Topstep · Apex' }),
+        h('h1', { text: 'מבחני נוסטרו וחדר מסחר דמה חי (Prop Firm)' }),
+        h('p', { text: 'המערכת בוחנת בוטים על נתוני שוק אמת מול 5 חברות נוסטרו, ומעבירה אוטומטית את העוברים לחדר מסחר דמה חי המדמה תיק נוסטרו אמיתי כולל התראת שריפה, ימי מסחר, עקביות וחלוקת רווחים.' }),
       ),
       h('div', { class: 'head-actions' },
         acctSel,
@@ -212,6 +471,9 @@ export function renderNostro(root, ui) {
     h('div', { class: 'metric' }, h('span', { text: 'עדכון נתוני אמת אחרון' }), h('b', { class: 'small', text: nostro.updatedAt ? timeAgo(nostro.updatedAt) : 'מאתחל…' })),
   ));
 
+  // LIVE NOSTRO PROP-FIRM PAPER TRADING ROOM (prominent above exam fleet!)
+  mount(root, renderNostroTradingRoomSection(nostro, rules, ui));
+
   // Toggleable Infographic Panel (opens and closes via the button!)
   if (showInfographic && bots.length) {
     mount(root,
@@ -230,7 +492,7 @@ export function renderNostro(root, ui) {
 
   if (!bots.length) {
     mount(root, h('div', { class: 'card', style: { marginTop: '14px' } },
-      empty('טוען ומריץ אוטומטית את 5 הבוטים מול נתוני שוק בזמן אמת…'),
+      empty('טוען ומריץ אוטומטית את הבוטים מול נתוני שוק בזמן אמת…'),
     ));
     return;
   }
@@ -240,6 +502,7 @@ export function renderNostro(root, ui) {
 
   const renderBotCard = (bot) => {
     const isReady = (bot.readyFirms || []).length > 0;
+    const enrolledAcct = (room.accounts || []).find((a) => a.botId === bot.id);
     const badgeText = isReady
       ? (bot.status === 'funded' ? bot.statusLabel : `🏆 מוכן ל-${bot.readyFirms.length} חברות`)
       : bot.statusLabel;
@@ -258,6 +521,7 @@ export function renderNostro(root, ui) {
       h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '8px' } },
         tag(bot.sourceDeskLabel ? `🧬 מופרד מבוט קיים: ${bot.sourceDeskLabel}` : '🏆 בוט נוסטרו ייעודי', 'opt'),
         tag(`סיכון: ${((bot.riskPerTrade || 0.0055) * 100).toFixed(2)}%`, 'dry'),
+        enrolledAcct ? tag(`🏛️ פעיל בחדר הנוסטרו (${enrolledAcct.firmName})`, 'live') : null,
         isReady
           ? bot.readyFirms.map((fn) => tag(`✓ מוכן ל-${fn}`, 'live'))
           : tag('טרם עמד בתנאי חברה', 'dry'),
@@ -274,6 +538,18 @@ export function renderNostro(root, ui) {
       bot.curve?.length ? chart(bot.curve, { height: 90, color: bot.status === 'failed' && !isReady ? 'red' : 'green', showZero: false }) : null,
       h('div', { class: 'tiny muted', style: { marginTop: '8px' }, text: `פרמטרים: ${describeParams(bot.strategyId, bot.params)} · מעבר שלב 1: ${bot.phase1PassedDate || '—'} · שלב 2: ${bot.phase2PassedDate || '—'}` }),
       h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '10px' } },
+        isReady && !enrolledAcct
+          ? h('button', {
+              class: 'btn btn-sm btn-primary',
+              onclick: async () => {
+                enrollBotInNostroRoom(bot, { accountSize: rules.accountSize });
+                await tickNostroTradingRoom({ force: false });
+                store.save(true);
+                toast(`${bot.name} הועבר לחדר המסחר הדמה של הנוסטרו!`, 'ok');
+                ui.rerender();
+              },
+            }, '🚀 העבר לחדר מסחר נוסטרו')
+          : null,
         h('button', {
           class: 'btn btn-sm',
           onclick: async (e) => {
@@ -284,6 +560,9 @@ export function renderNostro(root, ui) {
               const updated = await runNostroBot(bot, rules, { doOptimize: true, forceLive: true });
               const idx = store.state.nostro.bots.findIndex((b) => b.id === bot.id);
               if (idx >= 0) store.state.nostro.bots[idx] = updated;
+              if ((updated.readyFirms || []).length > 0 && room.autoEnroll !== false) {
+                enrollBotInNostroRoom(updated, { accountSize: rules.accountSize });
+              }
               store.save();
               toast(`${bot.name}: ${updated.readyFirms?.length ? 'מוכן ל-' + updated.readyFirms.join(', ') : updated.statusLabel}`, updated.readyFirms?.length ? 'ok' : '');
             } catch (err) {

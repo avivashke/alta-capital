@@ -9,6 +9,7 @@ import { store } from './store.js';
 import { getCandles, marketState } from './market.js';
 import { runBacktest } from './backtest.js';
 import { optimize } from './optimizer.js';
+import { atr } from './indicators.js';
 import { STRATEGIES, defaultsFor } from './strategies.js';
 import { scheduleDatabasePush } from './db.js';
 
@@ -22,10 +23,13 @@ export const PROP_FIRM_PROFILES = [
     maxDailyLossPct: 5,
     maxTotalDdPct: 10,
     minTrades: 8,
+    minTradingDays: 4,
+    trailingDd: false,
+    payoutCycleDays: 14,
     profitSplitPct: 80,
     focus: 'קריפטו, מדדים, מט"ח, סחורות',
     sourceUrl: 'https://ftmo.com/en/objectives/',
-    sourceNote: 'חוקי FTMO הרשמיים: יעד שלב 1 (10%), שלב 2 (5%), הפסד יומי מקס׳ 5% (Equity/Balance), הפסד כולל 10%, חלוקת רווחים 80%–90%.',
+    sourceNote: 'חוקי FTMO הרשמיים: יעד שלב 1 (10%), שלב 2 (5%), הפסד יומי מקס׳ 5% (Equity/Balance), הפסד כולל 10%, מינימום 4 ימי מסחר, חלוקת רווחים 80%–90%.',
   },
   {
     id: 'the5ers',
@@ -36,6 +40,9 @@ export const PROP_FIRM_PROFILES = [
     maxDailyLossPct: 5,
     maxTotalDdPct: 10,
     minTrades: 6,
+    minTradingDays: 3,
+    trailingDd: false,
+    payoutCycleDays: 14,
     profitSplitPct: 80,
     focus: 'מט"ח, זהב, מדדים וקריפטו',
     sourceUrl: 'https://the5ers.com/high-stakes/',
@@ -50,10 +57,13 @@ export const PROP_FIRM_PROFILES = [
     maxDailyLossPct: 5,
     maxTotalDdPct: 10,
     minTrades: 8,
+    minTradingDays: 5,
+    trailingDd: false,
+    payoutCycleDays: 14,
     profitSplitPct: 80,
     focus: 'רב-נכסי (קריפטו, מדדים, מניות, מט"ח)',
     sourceUrl: 'https://fundednext.com/stellar-challenge',
-    sourceNote: 'חוקי FundedNext Stellar: יעד שלב 1 (8%), שלב 2 (5%), הפסד יומי 5%, הפסד כולל 10%, חלוקת רווחים 80% (+15% בונוס שלב מבחן).',
+    sourceNote: 'חוקי FundedNext Stellar: יעד שלב 1 (8%), שלב 2 (5%), הפסד יומי 5%, הפסד כולל 10%, מינימום 5 ימי מסחר, חלוקת רווחים 80%.',
   },
   {
     id: 'topstep',
@@ -64,10 +74,13 @@ export const PROP_FIRM_PROFILES = [
     maxDailyLossPct: 2.5,
     maxTotalDdPct: 4,
     minTrades: 6,
+    minTradingDays: 2,
+    trailingDd: true,
+    payoutCycleDays: 10,
     profitSplitPct: 90,
     focus: 'חוזים עתידיים, מדדים (SPY/QQQ) וסחורות (זהב)',
     sourceUrl: 'https://www.topstep.com/trading-combine/',
-    sourceNote: 'חוקי Topstep Combine: שלב אחד (6% יעד רווח), מגבלת הפסד מקסימלית 3%–4% (EOD Trailing), משמעת יומית 2.5%, חלוקת רווחים 90%.',
+    sourceNote: 'חוקי Topstep Combine: שלב אחד (6% יעד רווח), מגבלת הפסד מקסימלית 4% (Trailing), משמעת יומית 2.5%, מינימום 2 ימי מסחר, חלוקת רווחים 90%.',
   },
   {
     id: 'apex',
@@ -78,10 +91,13 @@ export const PROP_FIRM_PROFILES = [
     maxDailyLossPct: 3,
     maxTotalDdPct: 4,
     minTrades: 6,
+    minTradingDays: 1,
+    trailingDd: true,
+    payoutCycleDays: 14,
     profitSplitPct: 90,
     focus: 'מדדים וסחורות (S&P 500, Nasdaq, Gold)',
     sourceUrl: 'https://apextraderfunding.com/',
-    sourceNote: 'חוקי Apex 1-Step: יעד רווח 6%, סף נגרר (Trailing Threshold) של 3%–4%, ללא מגבלת ימים מינימלית קשיחה, חלוקת רווחים 90%–100%.',
+    sourceNote: 'חוקי Apex 1-Step: יעד רווח 6%, סף נגרר (Trailing Threshold) של 4%, חלוקת רווחים 90%–100%.',
   },
 ];
 
@@ -424,10 +440,12 @@ export async function runNostroFleetSimulation(customRules = {}, { doOptimize = 
     }
   }
 
+  const prevRoom = store.state.nostro?.tradingRoom || { accounts: [], lastTickAt: null, autoEnroll: true };
   store.state.nostro = {
     rules,
     bots: results,
     autoMode: store.state.nostro?.autoMode ?? true,
+    tradingRoom: prevRoom,
     updatedAt: Date.now(),
   };
 
@@ -435,6 +453,12 @@ export async function runNostroFleetSimulation(customRules = {}, { doOptimize = 
   if (readyBots.length) {
     const summaryText = readyBots.map((b) => `${b.name} -> ${b.readyFirms.join('/')}`).join(' · ');
     store.log('ok', 'מערך נוסטרו אוטומטי', `נמצאו ${readyBots.length} בוטים מוכנים למעבר נוסטרו על נתוני אמת: ${summaryText}`);
+    if (prevRoom.autoEnroll !== false) {
+      const enrolled = autoEnrollPassedNostroBots(store.state);
+      if (enrolled.added > 0) {
+        store.log('ok', 'חדר מסחר נוסטרו', `הועברו אוטומטית ${enrolled.added} בוטים שעברו מבחנים לחדר המסחר הדמה על נתוני אמת!`);
+      }
+    }
   } else {
     store.log('info', 'מערך נוסטרו אוטומטי', `הושלמה בדיקת ${results.length} בוטים בזמן אמת`);
   }
@@ -443,6 +467,606 @@ export async function runNostroFleetSimulation(customRules = {}, { doOptimize = 
   store.emit();
   scheduleDatabasePush();
   return store.state.nostro;
+}
+
+// --- Live Nostro Prop-Firm Paper Trading Room (Real Market Data) -----------
+
+const DAY_MS = 86_400_000;
+
+function utcDayKey(ts = Date.now()) {
+  return new Date(ts).toISOString().slice(0, 10);
+}
+
+export function ensureNostroTradingRoom(state = store.state) {
+  if (!state.nostro) {
+    state.nostro = { rules: { ...DEFAULT_NOSTRO_RULES }, bots: [], autoMode: true, updatedAt: null };
+  }
+  if (!state.nostro.tradingRoom || typeof state.nostro.tradingRoom !== 'object') {
+    state.nostro.tradingRoom = { accounts: [], lastTickAt: null, autoEnroll: true };
+  }
+  if (!Array.isArray(state.nostro.tradingRoom.accounts)) {
+    state.nostro.tradingRoom.accounts = [];
+  }
+  return state.nostro.tradingRoom;
+}
+
+function getFirmProfile(firmIdOrName) {
+  if (!firmIdOrName) return PROP_FIRM_PROFILES[0];
+  const q = String(firmIdOrName).toLowerCase();
+  return PROP_FIRM_PROFILES.find((f) => f.id === q || f.name.toLowerCase() === q) || PROP_FIRM_PROFILES[0];
+}
+
+function pushAcctEvent(acct, kind, text) {
+  acct.events = acct.events || [];
+  acct.events.unshift({ at: Date.now(), kind, text });
+  if (acct.events.length > 50) acct.events.length = 50;
+}
+
+/**
+ * Enroll a passed Nostro bot into its own realistic Prop-Firm Live Paper Account.
+ */
+export function enrollBotInNostroRoom(bot, { firmId = null, accountSize = null, startPhase = 'phase1', state = store.state } = {}) {
+  if (!bot || !bot.strategyId) return null;
+  const room = ensureNostroTradingRoom(state);
+  const firm = getFirmProfile(firmId || bot.readyFirms?.[0] || 'ftmo');
+  const existing = room.accounts.find((a) => a.botId === bot.id && (firmId ? a.firmId === firm.id : true));
+  if (existing) {
+    // Sync latest optimized params onto active account if not blown
+    if (existing.phase !== 'blown' && bot.params) {
+      existing.params = JSON.parse(JSON.stringify(bot.params));
+      existing.riskPerTrade = bot.riskPerTrade || existing.riskPerTrade;
+    }
+    return { account: existing, added: false };
+  }
+
+  const cap = Number(accountSize || state.nostro?.rules?.accountSize || DEFAULT_NOSTRO_RULES.accountSize || 100000);
+  const now = Date.now();
+  const today = utcDayKey(now);
+
+  const account = {
+    id: `nacc_${bot.id}_${firm.id}`,
+    botId: bot.id,
+    botName: bot.name,
+    symbol: bot.symbol,
+    tf: bot.tf || '1h',
+    strategyId: bot.strategyId,
+    params: JSON.parse(JSON.stringify(bot.params || defaultsFor(bot.strategyId))),
+    riskPerTrade: Math.min(0.01, Math.max(0.0025, Number(bot.riskPerTrade) || 0.0055)),
+    firmId: firm.id,
+    firmName: firm.name,
+    program: firm.program,
+    rules: {
+      phase1TargetPct: firm.phase1TargetPct,
+      phase2TargetPct: firm.phase2TargetPct,
+      maxDailyLossPct: firm.maxDailyLossPct,
+      maxTotalDdPct: firm.maxTotalDdPct,
+      minTradingDays: firm.minTradingDays || 3,
+      trailingDd: !!firm.trailingDd,
+      payoutCycleDays: firm.payoutCycleDays || 14,
+      profitSplitPct: firm.profitSplitPct || 80,
+    },
+    phase: startPhase, // 'phase1' | 'phase2' | 'funded' | 'blown'
+    startedAt: now,
+    phaseStartedAt: now,
+    fundedAt: startPhase === 'funded' ? now : null,
+    initialBalance: cap,
+    balance: cap,
+    equity: cap,
+    highWaterMark: cap,
+    dayKey: today,
+    dayStartEquity: cap,
+    dailyRealizedByDay: {},
+    tradingDays: [],
+    phaseTradingDays: [],
+    openTrade: null,
+    trades: [],
+    equityHistory: [{ t: now, v: cap }],
+    totalFees: 0,
+    breached: false,
+    breachReason: null,
+    breachedAt: null,
+    dailyLockedKey: null,
+    lastPrice: bot.lastPrice || null,
+    dataProvider: bot.dataProvider || 'Live',
+    lastTickAt: null,
+    events: [
+      { at: now, kind: 'ok', text: `נכנס לחדר מסחר נוסטרו (${firm.name} · ${firm.program}) עם תיק $${cap.toLocaleString('en-US')}` },
+    ],
+  };
+
+  room.accounts.push(account);
+  return { account, added: true };
+}
+
+export function autoEnrollPassedNostroBots(state = store.state) {
+  const bots = state.nostro?.bots || [];
+  let added = 0;
+  for (const bot of bots) {
+    if ((bot.readyFirms || []).length > 0 && !bot.isSynthetic) {
+      const res = enrollBotInNostroRoom(bot, { state });
+      if (res?.added) added++;
+    }
+  }
+  return { added, total: ensureNostroTradingRoom(state).accounts.length };
+}
+
+/**
+ * Compute full real-time Prop Firm health, burn proximity, elapsed days,
+ * consistency rule, phase progress, and payout eligibility for an account.
+ */
+export function computeNostroAccountHealth(acct, now = Date.now()) {
+  const init = Number(acct.initialBalance) || 100000;
+  const eq = Number.isFinite(Number(acct.equity)) ? Number(acct.equity) : init;
+  const bal = Number.isFinite(Number(acct.balance)) ? Number(acct.balance) : init;
+  const hwm = Math.max(init, Number(acct.highWaterMark) || init, eq);
+  const dayStart = Number(acct.dayStartEquity) || bal || init;
+  const rules = acct.rules || {
+    phase1TargetPct: 8, phase2TargetPct: 5, maxDailyLossPct: 5, maxTotalDdPct: 10,
+    minTradingDays: 4, trailingDd: false, payoutCycleDays: 14, profitSplitPct: 80,
+  };
+
+  // Daily drawdown (UTC day, equity vs start-of-day equity)
+  const dailyPnlUsd = +(eq - dayStart).toFixed(2);
+  const dailyPnlPct = dayStart > 0 ? +(((eq - dayStart) / dayStart) * 100).toFixed(2) : 0;
+  const dailyLossLimitUsd = +(dayStart * (rules.maxDailyLossPct / 100)).toFixed(2);
+  const dailyLossFloor = +(dayStart - dailyLossLimitUsd).toFixed(2);
+  const dailyLossCurrentUsd = Math.max(0, dayStart - eq);
+  const dailyLossUsedPct = dailyLossLimitUsd > 0 ? +Math.min(100, (dailyLossCurrentUsd / dailyLossLimitUsd) * 100).toFixed(1) : 0;
+  const dailyLossBufferUsd = +Math.max(0, eq - dailyLossFloor).toFixed(2);
+  const dailyLossBufferPct = dayStart > 0 ? +Math.max(0, ((eq - dailyLossFloor) / dayStart) * 100).toFixed(2) : 0;
+
+  // Total drawdown (trailing from HWM for Topstep/Apex, or static from initialBalance for FTMO/The5ers/FundedNext)
+  const ddAnchor = rules.trailingDd ? hwm : init;
+  const totalDdLimitUsd = +(init * (rules.maxTotalDdPct / 100)).toFixed(2);
+  const totalDdFloor = +(ddAnchor - totalDdLimitUsd).toFixed(2);
+  const totalDdCurrentUsd = Math.max(0, ddAnchor - eq);
+  const totalDdCurrentPct = init > 0 ? +((totalDdCurrentUsd / init) * 100).toFixed(2) : 0;
+  const totalDdUsedPct = totalDdLimitUsd > 0 ? +Math.min(100, (totalDdCurrentUsd / totalDdLimitUsd) * 100).toFixed(1) : 0;
+  const totalDdBufferUsd = +Math.max(0, eq - totalDdFloor).toFixed(2);
+  const totalDdBufferPct = init > 0 ? +Math.max(0, ((eq - totalDdFloor) / init) * 100).toFixed(2) : 0;
+
+  const totalPnlUsd = +(eq - init).toFixed(2);
+  const totalReturnPct = init > 0 ? +(((eq - init) / init) * 100).toFixed(2) : 0;
+
+  // Burn proximity risk (0..100%)
+  const burnRiskPct = acct.breached || acct.phase === 'blown'
+    ? 100
+    : +Math.max(dailyLossUsedPct, totalDdUsedPct).toFixed(1);
+
+  let healthLevel = 'safe'; // 'safe' | 'warning' | 'critical' | 'burned'
+  let healthLabel = '🟢 בטוח ויציב';
+  let burnAlert = `מרווח ביטחון רחב: $${totalDdBufferUsd.toLocaleString('en-US')} עד שריפה כוללת · $${dailyLossBufferUsd.toLocaleString('en-US')} עד מגבלה יומית`;
+
+  if (acct.breached || acct.phase === 'blown' || burnRiskPct >= 100) {
+    healthLevel = 'burned';
+    healthLabel = '🔥 התיק נשרף (Breached)';
+    burnAlert = acct.breachReason || 'התיק חצה את מגבלת ההפסד של חברת הנוסטרו ונעצר.';
+  } else if (burnRiskPct >= 75) {
+    healthLevel = 'critical';
+    healthLabel = `🚨 סכנת שריפה מיידית (${burnRiskPct}%)`;
+    burnAlert = `אזהרה חמורה! נותרו רק $${Math.min(dailyLossBufferUsd, totalDdBufferUsd).toLocaleString('en-US')} לפני שריפת התיק — סיכון מוקטן אוטומטית.`;
+  } else if (burnRiskPct >= 45) {
+    healthLevel = 'warning';
+    healthLabel = `⚠️ מתקרב למגבלת הפסד (${burnRiskPct}%)`;
+    burnAlert = `שימוש של ${burnRiskPct}% ממגבלת ההפסד · נותרו $${dailyLossBufferUsd.toLocaleString('en-US')} ליום ו-$${totalDdBufferUsd.toLocaleString('en-US')} כולל.`;
+  }
+
+  // Days elapsed & trading days
+  const startedAt = acct.startedAt || now;
+  const daysElapsed = Math.max(1, Math.floor((now - startedAt) / DAY_MS) + 1);
+  const phaseDaysElapsed = Math.max(1, Math.floor((now - (acct.phaseStartedAt || startedAt)) / DAY_MS) + 1);
+  const tradingDaysCount = Array.isArray(acct.phaseTradingDays)
+    ? acct.phaseTradingDays.length
+    : (Array.isArray(acct.tradingDays) ? acct.tradingDays.length : 0);
+  const totalTradingDaysCount = Array.isArray(acct.tradingDays) ? acct.tradingDays.length : tradingDaysCount;
+  const minTradingDays = Number(rules.minTradingDays || 3);
+
+  // Daily consistency rule (best single day share of total positive realized days)
+  const dayVals = Object.values(acct.dailyRealizedByDay || {}).map(Number).filter(Number.isFinite);
+  const profitableDaysCount = dayVals.filter((v) => v > 0).length;
+  const sumPosDays = dayVals.filter((v) => v > 0).reduce((s, v) => s + v, 0);
+  const bestDayUsd = dayVals.reduce((m, v) => Math.max(m, v), 0);
+  const consistencyPct = sumPosDays > 0 ? +((bestDayUsd / sumPosDays) * 100).toFixed(1) : 0;
+
+  // Phase target & payout calculation
+  const targetPct = acct.phase === 'phase1'
+    ? rules.phase1TargetPct
+    : acct.phase === 'phase2'
+      ? (rules.phase2TargetPct || 5)
+      : 0;
+  const targetUsd = +(init * (targetPct / 100)).toFixed(2);
+  const targetProgressPct = targetUsd > 0 ? +Math.max(0, Math.min(100, (totalPnlUsd / targetUsd) * 100)).toFixed(1) : 100;
+  const remainingToTargetUsd = targetUsd > 0 ? +Math.max(0, targetUsd - totalPnlUsd).toFixed(2) : 0;
+
+  const estimatedPayoutUsd = acct.phase === 'funded' && totalPnlUsd > 0
+    ? +(totalPnlUsd * ((rules.profitSplitPct || 80) / 100)).toFixed(2)
+    : 0;
+  const fundedDays = acct.fundedAt ? Math.floor((now - acct.fundedAt) / DAY_MS) : 0;
+  const nextPayoutInDays = acct.phase === 'funded'
+    ? Math.max(0, (rules.payoutCycleDays || 14) - (fundedDays % (rules.payoutCycleDays || 14)))
+    : null;
+
+  const phaseLabel = acct.phase === 'blown'
+    ? '🔥 תיק שרוף (Breached)'
+    : acct.phase === 'funded'
+      ? '🏆 Funded (חשבון ממומן)'
+      : acct.phase === 'phase2'
+        ? `🥈 שלב 2 (יעד +${rules.phase2TargetPct}%)`
+        : `🥇 שלב 1 (יעד +${rules.phase1TargetPct}%)`;
+
+  const trades = acct.trades || [];
+  const wins = trades.filter((t) => (t.pnlUsd || 0) > 0).length;
+  const winRate = trades.length ? +((wins / trades.length) * 100).toFixed(1) : 0;
+
+  return {
+    phaseLabel,
+    healthLevel,
+    healthLabel,
+    burnRiskPct,
+    burnAlert,
+    totalPnlUsd,
+    totalReturnPct,
+    dailyPnlUsd,
+    dailyPnlPct,
+    dailyLossLimitUsd,
+    dailyLossFloor,
+    dailyLossUsedPct,
+    dailyLossBufferUsd,
+    dailyLossBufferPct,
+    totalDdLimitUsd,
+    totalDdFloor,
+    totalDdCurrentUsd: +totalDdCurrentUsd.toFixed(2),
+    totalDdCurrentPct,
+    totalDdUsedPct,
+    totalDdBufferUsd,
+    totalDdBufferPct,
+    daysElapsed,
+    phaseDaysElapsed,
+    tradingDaysCount,
+    totalTradingDaysCount,
+    minTradingDays,
+    profitableDaysCount,
+    consistencyPct,
+    consistencyOk: consistencyPct <= 45 || sumPosDays <= 0,
+    targetPct,
+    targetUsd,
+    targetProgressPct,
+    remainingToTargetUsd,
+    estimatedPayoutUsd,
+    nextPayoutInDays,
+    winRate,
+    closedTradesCount: trades.length,
+    dailyLocked: acct.dailyLockedKey === utcDayKey(now),
+  };
+}
+
+function closeAccountPositionInternal(acct, price, reason, feeRate = 0.0005, now = Date.now()) {
+  const t = acct.openTrade;
+  if (!t) return null;
+  const grossUsd = t.dir * (price - t.entry) * t.units;
+  const exitFee = Math.abs(price * t.units) * feeRate;
+  const netUsd = grossUsd - exitFee - (t.entryFee || 0);
+  const pnlPct = acct.initialBalance > 0 ? (netUsd / acct.initialBalance) * 100 : 0;
+  const rMult = t.riskUsd > 0 ? netUsd / t.riskUsd : 0;
+
+  acct.balance = +(acct.balance + grossUsd - exitFee).toFixed(2);
+  acct.totalFees = +((acct.totalFees || 0) + exitFee).toFixed(2);
+  const day = utcDayKey(now);
+  acct.dailyRealizedByDay = acct.dailyRealizedByDay || {};
+  acct.dailyRealizedByDay[day] = +((acct.dailyRealizedByDay[day] || 0) + netUsd).toFixed(2);
+  acct.tradingDays = acct.tradingDays || [];
+  if (!acct.tradingDays.includes(day)) acct.tradingDays.push(day);
+  acct.phaseTradingDays = acct.phaseTradingDays || [];
+  if (!acct.phaseTradingDays.includes(day)) acct.phaseTradingDays.push(day);
+
+  const tradeRecord = {
+    id: `ntr_${now}_${Math.random().toString(36).slice(2, 6)}`,
+    at: now,
+    day,
+    dir: t.dir,
+    side: t.dir > 0 ? 'LONG' : 'SHORT',
+    entry: +t.entry.toFixed(5),
+    exit: +price.toFixed(5),
+    units: +t.units.toFixed(6),
+    pnlUsd: +netUsd.toFixed(2),
+    pnlPct: +pnlPct.toFixed(3),
+    rMultiple: +rMult.toFixed(2),
+    feeUsd: +((t.entryFee || 0) + exitFee).toFixed(2),
+    reason,
+    phase: acct.phase,
+  };
+  acct.trades = acct.trades || [];
+  acct.trades.push(tradeRecord);
+  if (acct.trades.length > 250) acct.trades = acct.trades.slice(-250);
+  acct.openTrade = null;
+  acct.equity = acct.balance;
+  pushAcctEvent(acct, netUsd >= 0 ? 'ok' : 'warn', `סגירת ${tradeRecord.side} @ ${price.toFixed(2)} (${reason}): ${netUsd >= 0 ? '+' : ''}$${netUsd.toFixed(2)}`);
+  return tradeRecord;
+}
+
+/**
+ * Execute one real-market-data tick across all active accounts in the Nostro Paper Trading Room.
+ * Strictly skips synthetic candles so accounts only trade on real exchange/Yahoo prices.
+ */
+export async function tickNostroTradingRoom({ force = false, state = store.state } = {}) {
+  const room = ensureNostroTradingRoom(state);
+  if (!room.accounts.length) return { ok: true, updated: 0, accounts: 0 };
+
+  const s = state.settings || {};
+  const feeRate = Math.max(0.0003, Number(s.takerFee ?? s.feeRate ?? 0.0004)) + (Number(s.spread ?? 0.001) * 0.5);
+  const now = Date.now();
+  const today = utcDayKey(now);
+  let updated = 0;
+  let tradesMoved = 0;
+
+  for (const acct of room.accounts) {
+    if (acct.phase === 'blown' || acct.breached) continue;
+    try {
+      const candles = await getCandles(acct.symbol, acct.tf, { limit: 320, force });
+      if (!candles?.length || candles.__synthetic) continue;
+
+      const price = candles[candles.length - 1].c;
+      if (!Number.isFinite(price) || price <= 0) continue;
+      acct.lastPrice = price;
+      acct.dataProvider = candles.__provider || marketState.provider || acct.dataProvider || 'Live';
+      acct.lastTickAt = now;
+
+      // UTC midnight rollover: reset daily loss anchor just like real FTMO / The5ers / FundedNext
+      if (acct.dayKey !== today) {
+        acct.dayKey = today;
+        acct.dayStartEquity = acct.equity || acct.balance || acct.initialBalance;
+        acct.dailyLockedKey = null;
+      }
+
+      const strat = STRATEGIES[acct.strategyId];
+      if (!strat) continue;
+      const desired = strat.positions(candles, acct.params || defaultsFor(acct.strategyId));
+      const dir = desired[desired.length - 1] || 0;
+      const atrSeries = atr(candles, 14).filter((v) => v != null);
+      const barAtr = atrSeries[atrSeries.length - 1] || price * 0.01;
+      const stopMult = Number(acct.params?.atrStop) || 2;
+      const rr = Math.max(1.2, Number(acct.params?.rr) || 2);
+
+      // 1. Mark-to-market open position & check Stop / Trail / Target / Signal Exit
+      if (acct.openTrade) {
+        const t = acct.openTrade;
+        t.markPrice = price;
+        t.unrealizedUsd = +(t.dir * (price - t.entry) * t.units).toFixed(2);
+        t.unrealizedPct = acct.initialBalance > 0 ? +((t.unrealizedUsd / acct.initialBalance) * 100).toFixed(3) : 0;
+
+        const hitStop = t.dir > 0 ? price <= t.stop : price >= t.stop;
+        const hitTarget = t.dir > 0 ? price >= t.target : price <= t.target;
+        if (hitStop) {
+          closeAccountPositionInternal(acct, t.stop, t.trailed ? 'trail' : 'stop', feeRate, now);
+          tradesMoved++;
+        } else if (hitTarget) {
+          closeAccountPositionInternal(acct, t.target, 'target', feeRate, now);
+          tradesMoved++;
+        } else if (dir !== t.dir && dir !== 0) {
+          closeAccountPositionInternal(acct, price, 'flip', feeRate, now);
+          tradesMoved++;
+        } else if (dir === 0 && (now - (t.openedAt || 0) > 60_000)) {
+          closeAccountPositionInternal(acct, price, 'signal', feeRate, now);
+          tradesMoved++;
+        } else {
+          // Breakeven at +1R, ATR trailing stop at +1.5R
+          const initDist = t.stopDist || Math.abs(t.entry - t.stop) || barAtr * stopMult;
+          if (t.dir > 0) {
+            t.peak = Math.max(t.peak || t.entry, price);
+            const gain = t.peak - t.entry;
+            if (gain >= initDist * 1.5 && barAtr > 0) {
+              const tr = t.peak - Math.max(barAtr * 1.3, initDist * 0.75);
+              if (tr > t.stop) { t.stop = tr; t.trailed = true; }
+            } else if (gain >= initDist * 1.0) {
+              const be = t.entry + initDist * 0.1;
+              if (be > t.stop) { t.stop = be; t.trailed = true; }
+            }
+          } else {
+            t.peak = Math.min(t.peak || t.entry, price);
+            const gain = t.entry - t.peak;
+            if (gain >= initDist * 1.5 && barAtr > 0) {
+              const tr = t.peak + Math.max(barAtr * 1.3, initDist * 0.75);
+              if (tr < t.stop) { t.stop = tr; t.trailed = true; }
+            } else if (gain >= initDist * 1.0) {
+              const be = t.entry - initDist * 0.1;
+              if (be < t.stop) { t.stop = be; t.trailed = true; }
+            }
+          }
+        }
+      }
+
+      // 2. Recompute live Equity & High-Water-Mark
+      const openUnrealized = acct.openTrade ? (acct.openTrade.dir * (price - acct.openTrade.entry) * acct.openTrade.units) : 0;
+      acct.equity = +(acct.balance + openUnrealized).toFixed(2);
+      if (acct.equity > (acct.highWaterMark || acct.initialBalance)) {
+        acct.highWaterMark = acct.equity;
+      }
+
+      // 3. Enforce Strict Prop Firm Breach Rules (Daily Loss + Total Max Drawdown)
+      const health = computeNostroAccountHealth(acct, now);
+      if (health.dailyLossUsedPct >= 100 || health.totalDdUsedPct >= 100) {
+        if (acct.openTrade) {
+          closeAccountPositionInternal(acct, price, 'breach_liquidation', feeRate, now);
+          tradesMoved++;
+        }
+        acct.breached = true;
+        acct.phase = 'blown';
+        acct.breachedAt = now;
+        acct.breachReason = health.dailyLossUsedPct >= 100
+          ? `נשרף: חריגה ממגבלת הפסד יומי (${acct.rules.maxDailyLossPct}%) של ${acct.firmName}`
+          : `נשרף: חריגה ממגבלת Drawdown כולל (${acct.rules.maxTotalDdPct}%) של ${acct.firmName}`;
+        pushAcctEvent(acct, 'bad', `🔥 ${acct.breachReason}`);
+        store.log('warn', `נוסטרו · ${acct.firmName}`, `${acct.botName}: ${acct.breachReason}`);
+        updated++;
+        continue;
+      }
+
+      // 4. Daily Loss Circuit Breaker: stop new trades when >= 80% of daily limit used
+      if (health.dailyLossUsedPct >= 80 && acct.dailyLockedKey !== today) {
+        acct.dailyLockedKey = today;
+        pushAcctEvent(acct, 'warn', `🛡️ הגנת שריפה יומית הופעלה (${health.dailyLossUsedPct}% מהמגבלה) — עצירת פתיחת עסקאות עד חצות UTC`);
+      }
+
+      // 5. Open new position on real market price if flat & within prop firm risk limits
+      if (!acct.openTrade && dir !== 0 && acct.dailyLockedKey !== today) {
+        const stopDist = stopMult * barAtr;
+        // Dynamically halve risk when burnRiskPct >= 60% to protect the prop firm account!
+        const riskFactor = health.burnRiskPct >= 60 ? 0.5 : 1.0;
+        const riskUsd = acct.equity * (acct.riskPerTrade || 0.0055) * riskFactor;
+        const maxNotional = acct.equity * 0.5; // realistic prop-firm margin discipline
+        const unitsByRisk = stopDist > 0 ? riskUsd / stopDist : 0;
+        const unitsByMargin = price > 0 ? maxNotional / price : 0;
+        const units = Math.min(unitsByRisk, unitsByMargin);
+
+        if (units > 0 && Number.isFinite(units)) {
+          const entryFee = Math.abs(price * units) * feeRate;
+          acct.balance = +(acct.balance - entryFee).toFixed(2);
+          acct.totalFees = +((acct.totalFees || 0) + entryFee).toFixed(2);
+          acct.tradingDays = acct.tradingDays || [];
+          if (!acct.tradingDays.includes(today)) acct.tradingDays.push(today);
+          acct.phaseTradingDays = acct.phaseTradingDays || [];
+          if (!acct.phaseTradingDays.includes(today)) acct.phaseTradingDays.push(today);
+          acct.openTrade = {
+            dir,
+            entry: price,
+            markPrice: price,
+            peak: price,
+            stopDist,
+            stop: dir > 0 ? price - stopDist : price + stopDist,
+            target: dir > 0 ? price + stopDist * rr : price - stopDist * rr,
+            units,
+            notional: +(price * units).toFixed(2),
+            riskUsd: +riskUsd.toFixed(2),
+            entryFee: +entryFee.toFixed(2),
+            unrealizedUsd: 0,
+            unrealizedPct: 0,
+            openedAt: now,
+            trailed: false,
+          };
+          acct.equity = acct.balance;
+          tradesMoved++;
+          pushAcctEvent(acct, 'info', `פתיחת ${dir > 0 ? 'LONG' : 'SHORT'} על ${acct.symbol} @ ${price.toFixed(2)} (סיכון $${riskUsd.toFixed(0)})`);
+        }
+      }
+
+      // 6. Check Phase Advancement (Phase 1 -> Phase 2 -> Funded!)
+      const postHealth = computeNostroAccountHealth(acct, now);
+      if (acct.phase === 'phase1' && postHealth.totalReturnPct >= acct.rules.phase1TargetPct && postHealth.tradingDaysCount >= postHealth.minTradingDays) {
+        if (acct.openTrade) closeAccountPositionInternal(acct, price, 'phase1_passed', feeRate, now);
+        const nextPhase = (acct.rules.phase2TargetPct || 0) > 0 ? 'phase2' : 'funded';
+        acct.phase = nextPhase;
+        acct.phaseStartedAt = now;
+        acct.phaseTradingDays = [];
+        if (nextPhase === 'funded') acct.fundedAt = now;
+        // Reset evaluation balance to initialBalance for the next phase (exact FTMO/The5ers behavior)
+        acct.balance = acct.initialBalance;
+        acct.equity = acct.initialBalance;
+        acct.highWaterMark = acct.initialBalance;
+        acct.dayStartEquity = acct.initialBalance;
+        pushAcctEvent(acct, 'ok', nextPhase === 'funded'
+          ? `🏆 עבר מבחן ${acct.firmName} והפך לחשבון Funded אמיתי ($${acct.initialBalance.toLocaleString('en-US')})!`
+          : `✅ עבר שלב 1 של ${acct.firmName}! מתקדם לשלב 2 (יעד +${acct.rules.phase2TargetPct}%)`);
+        store.log('ok', `נוסטרו · ${acct.firmName}`, `${acct.botName}: קודם ל-${nextPhase === 'funded' ? 'Funded!' : 'שלב 2!'}`);
+      } else if (acct.phase === 'phase2' && postHealth.totalReturnPct >= (acct.rules.phase2TargetPct || 5) && postHealth.tradingDaysCount >= postHealth.minTradingDays) {
+        if (acct.openTrade) closeAccountPositionInternal(acct, price, 'phase2_passed', feeRate, now);
+        acct.phase = 'funded';
+        acct.phaseStartedAt = now;
+        acct.phaseTradingDays = [];
+        acct.fundedAt = now;
+        acct.balance = acct.initialBalance;
+        acct.equity = acct.initialBalance;
+        acct.highWaterMark = acct.initialBalance;
+        acct.dayStartEquity = acct.initialBalance;
+        pushAcctEvent(acct, 'ok', `🏆 עבר שלב 2 של ${acct.firmName}! החשבון כעת Funded (${acct.rules.profitSplitPct}% חלוקת רווחים)!`);
+        store.log('ok', `נוסטרו · ${acct.firmName}`, `${acct.botName}: עבר שלב 2 והפך ל-Funded!`);
+      }
+
+      // 7. Record live equity snapshot (throttled to 1 per minute unless trade moved)
+      acct.equityHistory = acct.equityHistory || [];
+      const lastSnap = acct.equityHistory[acct.equityHistory.length - 1];
+      if (!lastSnap || now - lastSnap.t > 60_000 || Math.abs(lastSnap.v - acct.equity) > 1) {
+        acct.equityHistory.push({ t: now, v: acct.equity });
+        if (acct.equityHistory.length > 240) acct.equityHistory = acct.equityHistory.slice(-240);
+      }
+
+      updated++;
+    } catch (err) {
+      console.warn('[nostro-room] tick failed', acct.id, err.message);
+    }
+  }
+
+  room.lastTickAt = now;
+  if (state === store.state && (updated > 0 || tradesMoved > 0)) {
+    if (typeof localStorage !== 'undefined') store.save();
+    scheduleDatabasePush(1500);
+  }
+  return { ok: true, updated, tradesMoved, accounts: room.accounts.length };
+}
+
+export async function closeNostroAccountPosition(accountId, reason = 'manual', state = store.state) {
+  const room = ensureNostroTradingRoom(state);
+  const acct = room.accounts.find((a) => a.id === accountId);
+  if (!acct || !acct.openTrade) return { ok: false, error: 'אין פוזיציה פתוחה בחשבון זה' };
+  let price = acct.lastPrice || acct.openTrade.markPrice || acct.openTrade.entry;
+  try {
+    const candles = await getCandles(acct.symbol, acct.tf, { limit: 10, force: true });
+    if (candles?.length && !candles.__synthetic) price = candles[candles.length - 1].c;
+  } catch { /* use last known real price */ }
+  const now = Date.now();
+  const tr = closeAccountPositionInternal(acct, price, reason, 0.0007, now);
+  if (acct.equity > (acct.highWaterMark || acct.initialBalance)) acct.highWaterMark = acct.equity;
+  acct.equityHistory = acct.equityHistory || [];
+  acct.equityHistory.push({ t: now, v: acct.equity });
+  if (state === store.state) {
+    store.save(true);
+    store.emit();
+    scheduleDatabasePush(1000);
+  }
+  return { ok: true, trade: tr };
+}
+
+export function resetNostroAccount(accountId, state = store.state) {
+  const room = ensureNostroTradingRoom(state);
+  const acct = room.accounts.find((a) => a.id === accountId);
+  if (!acct) return false;
+  const now = Date.now();
+  acct.phase = 'phase1';
+  acct.startedAt = now;
+  acct.phaseStartedAt = now;
+  acct.fundedAt = null;
+  acct.balance = acct.initialBalance;
+  acct.equity = acct.initialBalance;
+  acct.highWaterMark = acct.initialBalance;
+  acct.dayKey = utcDayKey(now);
+  acct.dayStartEquity = acct.initialBalance;
+  acct.dailyRealizedByDay = {};
+  acct.tradingDays = [];
+  acct.phaseTradingDays = [];
+  acct.openTrade = null;
+  acct.trades = [];
+  acct.equityHistory = [{ t: now, v: acct.initialBalance }];
+  acct.totalFees = 0;
+  acct.breached = false;
+  acct.breachReason = null;
+  acct.breachedAt = null;
+  acct.dailyLockedKey = null;
+  pushAcctEvent(acct, 'info', `🔄 החשבון אופס מחדש לשלב 1 (${acct.firmName} · $${acct.initialBalance.toLocaleString('en-US')})`);
+  if (state === store.state) {
+    store.save(true);
+    store.emit();
+    scheduleDatabasePush(1000);
+  }
+  return true;
+}
+
+export function removeNostroAccount(accountId, state = store.state) {
+  const room = ensureNostroTradingRoom(state);
+  room.accounts = room.accounts.filter((a) => a.id !== accountId);
+  if (state === store.state) {
+    store.save(true);
+    store.emit();
+    scheduleDatabasePush(1000);
+  }
 }
 
 // Multi-sheet Excel (.xls SpreadsheetML) Export with full Proof + Prop Firm Sources + Trade Log

@@ -340,8 +340,34 @@ export function mergeFirmStates(base, incoming, { forceReset = false, bumpRevisi
   shell.ideas = mergeIdeas(base.ideas, incoming.ideas);
   shell.knowledge = mergeKnowledge(base.knowledge, incoming.knowledge);
 
-  const nostro = pickFresherRicher(base.nostro, incoming.nostro, (n) => (n.bots?.length || 0));
-  if (nostro) shell.nostro = nostro;
+  const nostroScore = (n) => {
+    const bots = n.bots?.length || 0;
+    const accts = n.tradingRoom?.accounts || [];
+    const roomTrades = accts.reduce((s, a) => s + (a.trades?.length || 0) + (a.openTrade ? 1 : 0), 0);
+    return bots + accts.length * 15 + roomTrades * 100;
+  };
+  const nostro = pickFresherRicher(base.nostro, incoming.nostro, nostroScore);
+  if (nostro) {
+    // Also union tradingRoom accounts by id so no live Nostro demo account is ever dropped across devices
+    const baseAccts = base.nostro?.tradingRoom?.accounts || [];
+    const incAccts = incoming.nostro?.tradingRoom?.accounts || [];
+    if (baseAccts.length || incAccts.length) {
+      const byId = new Map();
+      for (const a of [...baseAccts, ...incAccts]) {
+        if (!a?.id) continue;
+        const prev = byId.get(a.id);
+        const aScore = (a.trades?.length || 0) * 100 + (a.lastTickAt || 0) / 1e12;
+        const pScore = prev ? ((prev.trades?.length || 0) * 100 + (prev.lastTickAt || 0) / 1e12) : -1;
+        if (!prev || aScore >= pScore) byId.set(a.id, clone(a));
+      }
+      nostro.tradingRoom = {
+        ...(nostro.tradingRoom || {}),
+        accounts: [...byId.values()],
+        lastTickAt: Math.max(base.nostro?.tradingRoom?.lastTickAt || 0, incoming.nostro?.tradingRoom?.lastTickAt || 0) || null,
+      };
+    }
+    shell.nostro = nostro;
+  }
   const gann = pickFresherRicher(base.gannLibrary, incoming.gannLibrary, (g) => (g.items?.length || g.entries?.length || g.events?.length || 0));
   if (gann) shell.gannLibrary = gann;
   const gannCfg = pickFresherRicher(base.gannConfig, incoming.gannConfig);
