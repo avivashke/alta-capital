@@ -50,6 +50,57 @@ const { handleDbRequest, readDbFile, writeDbFile, getSupaEnv } = await import('.
 const { runFirmCronJob } = await import('./netlify/functions/firm-cron.mjs');
 const { handleMarketRequest } = await import('./netlify/functions/market.mjs');
 const { mergeFirmStates, remoteHasMoreOrNewerData } = await import('./src/state_merge.js');
+const {
+  getXAgentStatus,
+  loadXAgentConfig,
+  saveXAgentConfig,
+  launchXLogin,
+  runXFundamentalScan,
+  readLatestXResearch,
+  sanitizeXResearchForSync,
+} = await import('./scripts/x-browser-agent.mjs');
+
+const xAgentJob = {
+  busy: false,
+  mode: null, // 'login' | 'scan' | null
+  startedAt: null,
+  lastResult: null,
+  lastError: null,
+};
+
+function persistXResearchToBaseDb(report) {
+  const clean = sanitizeXResearchForSync(report);
+  if (!clean) return;
+  try {
+    const db = readDbFile();
+    if (!db.state || typeof db.state !== 'object') db.state = {};
+    db.state.xResearch = clean;
+    if (Array.isArray(db.state.agents)) {
+      const roni = db.state.agents.find((a) => a.id === 'x_fundamental');
+      if (roni) {
+        roni.status = 'idle';
+        roni.lastActive = Date.now();
+        roni.completed = (Number(roni.completed) || 0) + 1;
+        roni.task = `סריקת X הושלמה: ${clean.totalPosts} ציוצים (${clean.overallBias})`;
+        roni.speech = `סרקתי ${clean.totalPosts} ציוצי אמת ב-X (${clean.loggedInHandle || ''}) · הטיה: ${clean.overallBias}`;
+      }
+    }
+    db.state.events = db.state.events || [];
+    db.state.events.unshift({
+      id: `ev_x_${Date.now()}`,
+      at: Date.now(),
+      kind: 'ok',
+      who: 'רוני · חוקר X',
+      text: `סריקת מחקר פונדמנטלי ב-X הושלמה (${clean.totalPosts} ציוצי אמת · ${clean.overallBias})`,
+    });
+    if (db.state.events.length > 240) db.state.events.length = 240;
+    db.state.stateRevision = (Number(db.state.stateRevision) || 0) + 1;
+    db.state.updatedAt = new Date().toISOString();
+    writeDbFile(db);
+  } catch (err) {
+    console.warn('[Base Server] Failed persisting X research to DB:', err.message);
+  }
+}
 
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = Number(process.env.PORT || 8181);
@@ -485,6 +536,134 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pathname === '/api/x-agent/status') {
+    try {
+      const st = await getXAgentStatus();
+      res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ...st,
+        job: {
+          busy: xAgentJob.busy,
+          mode: xAgentJob.mode,
+          startedAt: xAgentJob.startedAt,
+          lastError: xAgentJob.lastError,
+        },
+      }));
+    } catch (err) {
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/x-agent/config') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Method not allowed' }));
+      return;
+    }
+    if (!isAuthorized(req)) {
+      res.writeHead(401, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Unauthorized' }));
+      return;
+    }
+    try {
+      const raw = await readBody(req);
+      const patch = raw ? JSON.parse(raw) : {};
+      const next = saveXAgentConfig(patch);
+      res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, config: next }));
+    } catch (err) {
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/x-agent/login') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Method not allowed' }));
+      return;
+    }
+    if (!isAuthorized(req)) {
+      res.writeHead(401, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Unauthorized' }));
+      return;
+    }
+    if (xAgentJob.busy) {
+      res.writeHead(409, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: `סוכן X כבר פעיל כרגע (${xAgentJob.mode})` }));
+      return;
+    }
+    xAgentJob.busy = true;
+    xAgentJob.mode = 'login';
+    xAgentJob.startedAt = Date.now();
+    xAgentJob.lastError = null;
+    // Launch visible browser asynchronously so user has time to enter credentials & 2FA
+    launchXLogin().then((result) => {
+      xAgentJob.lastResult = result;
+      xAgentJob.lastError = result.ok ? null : (result.error || 'התחברות לא הושלמה');
+    }).catch((err) => {
+      xAgentJob.lastError = err.message;
+    }).finally(() => {
+      xAgentJob.busy = false;
+      xAgentJob.mode = null;
+      xAgentJob.startedAt = null;
+    });
+    res.writeHead(202, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      ok: true,
+      started: true,
+      message: 'חלון דפדפן גלוי נפתח במחשב שלך — התחבר לחשבון X שיצרת לרוני. לאחר ההתחברות החלון ייסגר אוטומטית והסשן יישמר.',
+    }));
+    return;
+  }
+
+  if (pathname === '/api/x-agent/scan') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Method not allowed' }));
+      return;
+    }
+    if (!isAuthorized(req)) {
+      res.writeHead(401, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Unauthorized' }));
+      return;
+    }
+    if (xAgentJob.busy) {
+      res.writeHead(409, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: `סוכן X כבר עסוק במשימה (${xAgentJob.mode})` }));
+      return;
+    }
+    xAgentJob.busy = true;
+    xAgentJob.mode = 'scan';
+    xAgentJob.startedAt = Date.now();
+    xAgentJob.lastError = null;
+    try {
+      const raw = await readBody(req);
+      const opts = raw ? JSON.parse(raw) : {};
+      const out = await runXFundamentalScan(opts);
+      xAgentJob.lastResult = out;
+      xAgentJob.lastError = out.ok ? null : (out.error || out.reason || 'סריקה נכשלה');
+      if (out.ok && out.report) {
+        persistXResearchToBaseDb(out.report);
+        syncBaseServerWithCloud().catch(() => {});
+      }
+      res.writeHead(out.ok ? 200 : 400, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(out));
+    } catch (err) {
+      xAgentJob.lastError = err.message;
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
+    } finally {
+      xAgentJob.busy = false;
+      xAgentJob.mode = null;
+      xAgentJob.startedAt = null;
+    }
+    return;
+  }
+
   if (pathname === '/api/firm-cron' || pathname === '/.netlify/functions/firm-cron') {
     try {
       const raw = req.method === 'POST' ? await readBody(req) : '';
@@ -551,10 +730,42 @@ if (ENABLE_LOCAL_CRON) {
   }, CRON_INTERVAL_MS);
 }
 
+const xAgentTimer = setInterval(async () => {
+  if (xAgentJob.busy) return;
+  try {
+    const cfg = loadXAgentConfig();
+    const intervalMin = Number(cfg.autoScanMinutes) || 0;
+    if (intervalMin <= 0 || !cfg.loggedInHandle) return;
+    const latest = readLatestXResearch();
+    const lastAt = latest?.scannedAt || 0;
+    if (Date.now() - lastAt < intervalMin * 60_000) return;
+    xAgentJob.busy = true;
+    xAgentJob.mode = 'scan';
+    xAgentJob.startedAt = Date.now();
+    console.log(`[Base Server] Running scheduled X Fundamental Research scan (${cfg.loggedInHandle})...`);
+    const out = await runXFundamentalScan();
+    if (out.ok && out.report) {
+      persistXResearchToBaseDb(out.report);
+      await syncBaseServerWithCloud().catch(() => {});
+    } else {
+      xAgentJob.lastError = out.error || out.reason || 'Scheduled scan skipped';
+    }
+  } catch (err) {
+    xAgentJob.lastError = err.message;
+  } finally {
+    if (xAgentJob.mode === 'scan') {
+      xAgentJob.busy = false;
+      xAgentJob.mode = null;
+      xAgentJob.startedAt = null;
+    }
+  }
+}, 60_000);
+
 function shutdown(sig) {
   console.log(`[Base Server] Received ${sig}, shutting down cleanly...`);
   clearInterval(syncTimer);
   if (cronTimer) clearInterval(cronTimer);
+  clearInterval(xAgentTimer);
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 3000);
 }

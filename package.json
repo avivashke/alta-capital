@@ -10,6 +10,10 @@
     "base-server": "node scripts/start-base-server.mjs",
     "setup:local-ai": "bash scripts/install-local-ai-unix.sh",
     "setup:local-ai:win": "powershell -ExecutionPolicy Bypass -File scripts/install-local-ai-windows.ps1",
+    "setup:x-agent": "bash scripts/install-x-agent-unix.sh",
+    "setup:x-agent:win": "powershell -ExecutionPolicy Bypass -File scripts/install-x-agent-windows.ps1",
+    "x-agent:login": "node scripts/x-browser-agent.mjs --login",
+    "x-agent:scan": "node scripts/x-browser-agent.mjs --scan",
     "firm": "node runner/run.mjs --cycles=5",
     "firm:deep": "node runner/run.mjs --cycles=5 --deep"
   },

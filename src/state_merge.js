@@ -374,6 +374,8 @@ export function mergeFirmStates(base, incoming, { forceReset = false, bumpRevisi
   if (gannCfg) shell.gannConfig = gannCfg;
   const fund = pickFresherRicher(base.fundamentals, incoming.fundamentals, (f) => Object.keys(f.assets || {}).length);
   if (fund) shell.fundamentals = fund;
+  const xRes = pickFresherRicher(base.xResearch, incoming.xResearch, (x) => (x.scannedAt || 0) / 1e9 + (x.posts?.length || 0));
+  if (xRes) shell.xResearch = xRes;
   const scout = pickFresherRicher(base.githubScout, incoming.githubScout, (g) => (g.repos?.length || 0));
   if (scout) shell.githubScout = scout;
   const sent = pickFresherRicher(base.sentiment, incoming.sentiment, (s) => (s.headlines?.length || 0));

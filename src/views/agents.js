@@ -170,10 +170,28 @@ const TASK_MISSIONS = [
       { speaker: 'b', text: 'גנית, עדכנתי את הסטופ הדינמי בתיק הנייר בהתאם לזווית ול-ATR!' },
     ],
   },
+  {
+    a: 'x_fundamental', b: 'auditor',
+    zone: 'research',
+    taskTitle: 'אימות ציוצי אמת ומחקר פונדמנטלי מ-X מול אמיר',
+    turns: [
+      { speaker: 'a', text: 'אמיר, חזרתי מסריקה חיה בדפדפן X — כל ציוץ כאן כולל קישור סטטוס אמיתי וחותמת זמן.' },
+      { speaker: 'b', text: 'רוני, בדקתי את הקישורים וה-@handles — מאומת ללא הזיות. אפשר להעביר לתדרוך הפונדמנטלי!' },
+    ],
+  },
+  {
+    a: 'x_fundamental', b: 'cio',
+    zone: 'nexus',
+    taskTitle: 'העברת זרזים פונדמנטליים מ-X להחלטות הקצאת הון',
+    turns: [
+      { speaker: 'a', text: 'אוריה, ב-X זיהיתי גל עדכוני מאקרו ודוחות על NVDA ו-BTC ETF עם סנטימנט שורי מובהק.' },
+      { speaker: 'b', text: 'מעולה רוני, שילבתי את הדוח הפונדמנטלי שלך בתמונת המאקרו של השולחנות!' },
+    ],
+  },
 ];
 
 function homeZoneFor(agentId = '') {
-  if (agentId === 'intel' || agentId === 'github_scout') return 'research';
+  if (agentId === 'intel' || agentId === 'github_scout' || agentId === 'x_fundamental') return 'research';
   if (agentId.startsWith('gann')) return 'gann';
   if (['quant', 'backtest', 'optimizer', 'ta'].includes(agentId)) return 'quant';
   return 'ops';
@@ -187,7 +205,7 @@ function taskZoneFor(agent) {
     if (/אמת|ביקורת|אימות|הזיות|וטו|סיכון|dd|drawdown|ביצוע|dry-run|אורז|פיתוח|רובוט|מאשר|הון/.test(txt)) return 'ops';
     if (/walk-forward|בקטסט|וריאציות|פרמטרים|hill-climb|מונטה|מגמה|מומנטום/.test(txt)) return 'quant';
     if (/גאן|ריבוע התשע|זוויות|מחזורי זמן|תבניות/.test(txt)) return 'gann';
-    if (/github|חדשות|סורק|מודיעין|סנטימנט/.test(txt)) return 'research';
+    if (/github|חדשות|סורק|מודיעין|סנטימנט|ציוצים|פונדמנטלי|\bx\b/.test(txt)) return 'research';
   }
   return homeZoneFor(id);
 }
