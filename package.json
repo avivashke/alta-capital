@@ -11,6 +11,7 @@
     "base-server:restart:win": "powershell -ExecutionPolicy Bypass -File scripts/restart-base-server-windows.ps1",
     "setup:local-ai": "bash scripts/install-local-ai-unix.sh",
     "setup:local-ai:win": "powershell -ExecutionPolicy Bypass -File scripts/install-local-ai-windows.ps1",
+    "setup:intel-arc:win": "powershell -ExecutionPolicy Bypass -File scripts/enable-intel-arc-windows.ps1",
     "setup:x-agent": "bash scripts/install-x-agent-unix.sh",
     "setup:x-agent:win": "powershell -ExecutionPolicy Bypass -File scripts/install-x-agent-windows.ps1",
     "x-agent:login": "node scripts/x-browser-agent.mjs --login",

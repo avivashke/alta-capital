@@ -91,9 +91,6 @@ export function writeDbFile(db) {
   const raw = JSON.stringify(db, null, 2);
   try {
     atomicWriteJson(LOCAL_DB_FILE, raw);
-    if (db.state) {
-      atomicWriteJson(SEED_STATE_FILE, JSON.stringify(db.state, null, 1));
-    }
     maybeWriteRollingBackup(raw);
     return { persistent: true, path: LOCAL_DB_FILE };
   } catch {

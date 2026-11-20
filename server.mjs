@@ -306,11 +306,30 @@ async function probeLocalAiEngines({ force = false } = {}) {
     }
   };
 
-  // 1. Ollama (default 11434)
+  // 1. Ollama (default 11434) + live GPU/VRAM offload check via /api/ps
   const ollamaHost = (process.env.OLLAMA_URL || 'http://127.0.0.1:11434').replace(/\/+$/, '');
-  const ollamaTags = await tryJson(`${ollamaHost}/api/tags`);
+  const [ollamaTags, ollamaPs] = await Promise.all([
+    tryJson(`${ollamaHost}/api/tags`),
+    tryJson(`${ollamaHost}/api/ps`),
+  ]);
+  const runningGpu = (Array.isArray(ollamaPs?.models) ? ollamaPs.models : []).map((rm) => {
+    const total = Number(rm.size) || 0;
+    const vram = Number(rm.size_vram) || 0;
+    return {
+      model: rm.name || rm.model,
+      sizeGB: +(total / 1e9).toFixed(2),
+      vramGB: +(vram / 1e9).toFixed(2),
+      gpuOffloadPct: total > 0 ? Math.round((vram / total) * 100) : 0,
+    };
+  });
   if (Array.isArray(ollamaTags?.models) && ollamaTags.models.length) {
-    engines.push({ engine: 'ollama', host: ollamaHost, count: ollamaTags.models.length });
+    engines.push({
+      engine: 'ollama',
+      host: ollamaHost,
+      count: ollamaTags.models.length,
+      vulkanEnabled: process.env.OLLAMA_VULKAN === '1',
+      runningGpu,
+    });
     for (const m of ollamaTags.models) {
       const name = m.name || m.model;
       if (!name) continue;
