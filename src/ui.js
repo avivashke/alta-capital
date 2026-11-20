@@ -2,6 +2,8 @@
 
 export function h(tag, props = {}, ...children) {
   const el = document.createElement(tag);
+  let deferredValue;
+  let hasValue = false;
   if (props) {
     for (const [k, v] of Object.entries(props)) {
       if (v == null || v === false) continue;
@@ -16,12 +18,13 @@ export function h(tag, props = {}, ...children) {
       }
       else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
       else if (k === 'dataset') Object.assign(el.dataset, v);
-      else if (k === 'value') el.value = v;
+      else if (k === 'value') { deferredValue = v; hasValue = true; }
       else if (k === 'checked' || k === 'disabled' || k === 'selected') el[k] = !!v;
       else el.setAttribute(k, v);
     }
   }
   append(el, children);
+  if (hasValue) el.value = deferredValue;
   return el;
 }
 

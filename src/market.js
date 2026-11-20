@@ -10,39 +10,79 @@ const TF = {
 };
 
 const SYMBOLS = {
-  BTCUSDT: { kraken: 'XBTUSD', coinbase: 'BTC-USD', base: 68000, kind: 'crypto' },
-  ETHUSDT: { kraken: 'ETHUSD', coinbase: 'ETH-USD', base: 3400, kind: 'crypto' },
-  SOLUSDT: { kraken: 'SOLUSD', coinbase: 'SOL-USD', base: 165, kind: 'crypto' },
-  NVDA:    { yahoo: 'NVDA', label: 'NVIDIA (NVDA)', base: 140, kind: 'stock' },
-  AAPL:    { yahoo: 'AAPL', label: 'Apple (AAPL)', base: 225, kind: 'stock' },
-  TSLA:    { yahoo: 'TSLA', label: 'Tesla (TSLA)', base: 250, kind: 'stock' },
-  MSFT:    { yahoo: 'MSFT', label: 'Microsoft (MSFT)', base: 420, kind: 'stock' },
-  SPY:        { yahoo: 'SPY',      label: 'S&P 500 ETF (SPY)', base: 580, kind: 'etf' },
-  QQQ:        { yahoo: 'QQQ',      label: 'Nasdaq 100 ETF (QQQ)', base: 500, kind: 'etf' },
-  AMZN:       { yahoo: 'AMZN',     label: 'Amazon (AMZN)', base: 205, kind: 'stock' },
-  GOOGL:      { yahoo: 'GOOGL',    label: 'Alphabet (GOOGL)', base: 175, kind: 'stock' },
-  'GC=F':     { yahoo: 'GC=F',     label: 'Gold Futures (GC=F)', base: 2650, kind: 'commodity' },
-  'SI=F':     { yahoo: 'SI=F',     label: 'Silver Futures (SI=F)', base: 31, kind: 'commodity' },
-  'CL=F':     { yahoo: 'CL=F',     label: 'Crude Oil (CL=F)', base: 70, kind: 'commodity' },
+  // Crypto (Binance / Bybit / OKX / Kraken / Coinbase)
+  BTCUSDT:  { kraken: 'XBTUSD',  coinbase: 'BTC-USD',  base: 68000, kind: 'crypto' },
+  ETHUSDT:  { kraken: 'ETHUSD',  coinbase: 'ETH-USD',  base: 3400,  kind: 'crypto' },
+  SOLUSDT:  { kraken: 'SOLUSD',  coinbase: 'SOL-USD',  base: 165,   kind: 'crypto' },
+  BNBUSDT:  { kraken: 'BNBUSD',  coinbase: 'BNB-USD',  base: 600,   kind: 'crypto' },
+  XRPUSDT:  { kraken: 'XRPUSD',  coinbase: 'XRP-USD',  base: 2.2,   kind: 'crypto' },
+  ADAUSDT:  { kraken: 'ADAUSD',  coinbase: 'ADA-USD',  base: 0.75,  kind: 'crypto' },
+  AVAXUSDT: { kraken: 'AVAXUSD', coinbase: 'AVAX-USD', base: 32,    kind: 'crypto' },
+  DOGEUSDT: { kraken: 'XDGUSD',  coinbase: 'DOGE-USD', base: 0.25,  kind: 'crypto' },
+  // US Stocks (Yahoo Finance / Stooq)
+  NVDA:  { yahoo: 'NVDA',  label: 'NVIDIA (NVDA)',     base: 140, kind: 'stock' },
+  AAPL:  { yahoo: 'AAPL',  label: 'Apple (AAPL)',      base: 225, kind: 'stock' },
+  MSFT:  { yahoo: 'MSFT',  label: 'Microsoft (MSFT)',  base: 420, kind: 'stock' },
+  TSLA:  { yahoo: 'TSLA',  label: 'Tesla (TSLA)',      base: 250, kind: 'stock' },
+  AMZN:  { yahoo: 'AMZN',  label: 'Amazon (AMZN)',     base: 205, kind: 'stock' },
+  GOOGL: { yahoo: 'GOOGL', label: 'Alphabet (GOOGL)',  base: 175, kind: 'stock' },
+  META:  { yahoo: 'META',  label: 'Meta (META)',       base: 580, kind: 'stock' },
+  AMD:   { yahoo: 'AMD',   label: 'AMD (AMD)',         base: 145, kind: 'stock' },
+  NFLX:  { yahoo: 'NFLX',  label: 'Netflix (NFLX)',    base: 820, kind: 'stock' },
+  PLTR:  { yahoo: 'PLTR',  label: 'Palantir (PLTR)',   base: 65,  kind: 'stock' },
+  // Indices / ETFs
+  SPY:   { yahoo: 'SPY',   label: 'S&P 500 ETF (SPY)',      base: 580, kind: 'etf' },
+  QQQ:   { yahoo: 'QQQ',   label: 'Nasdaq 100 ETF (QQQ)',   base: 500, kind: 'etf' },
+  DIA:   { yahoo: 'DIA',   label: 'Dow Jones ETF (DIA)',    base: 430, kind: 'etf' },
+  IWM:   { yahoo: 'IWM',   label: 'Russell 2000 ETF (IWM)', base: 225, kind: 'etf' },
+  // Commodities
+  'GC=F': { yahoo: 'GC=F', label: 'Gold Futures (GC=F)',      base: 2650, kind: 'commodity' },
+  'SI=F': { yahoo: 'SI=F', label: 'Silver Futures (SI=F)',    base: 31,   kind: 'commodity' },
+  'CL=F': { yahoo: 'CL=F', label: 'Crude Oil (CL=F)',         base: 70,   kind: 'commodity' },
+  'NG=F': { yahoo: 'NG=F', label: 'Natural Gas (NG=F)',       base: 3.1,  kind: 'commodity' },
+  // Forex
   'EURUSD=X': { yahoo: 'EURUSD=X', label: 'EUR/USD (Forex)', base: 1.08, kind: 'forex' },
+  'GBPUSD=X': { yahoo: 'GBPUSD=X', label: 'GBP/USD (Forex)', base: 1.27, kind: 'forex' },
+  'USDJPY=X': { yahoo: 'USDJPY=X', label: 'USD/JPY (Forex)', base: 152,  kind: 'forex' },
+  'USDILS=X': { yahoo: 'USDILS=X', label: 'USD/ILS (שקל)',   base: 3.7,  kind: 'forex' },
 };
 
 export const ASSET_CATALOG = [
-  { symbol: 'BTCUSDT', label: 'Bitcoin (BTC/USDT)' },
-  { symbol: 'ETHUSDT', label: 'Ethereum (ETH/USDT)' },
-  { symbol: 'SOLUSDT', label: 'Solana (SOL/USDT)' },
-  { symbol: 'NVDA', label: 'NVIDIA (NVDA · מניה)' },
-  { symbol: 'AAPL', label: 'Apple (AAPL · מניה)' },
-  { symbol: 'TSLA', label: 'Tesla (TSLA · מניה)' },
-  { symbol: 'MSFT', label: 'Microsoft (MSFT · מניה)' },
-  { symbol: 'AMZN', label: 'Amazon (AMZN · מניה)' },
-  { symbol: 'GOOGL', label: 'Alphabet (GOOGL · מניה)' },
-  { symbol: 'SPY', label: 'S&P 500 (SPY · מדד)' },
-  { symbol: 'QQQ', label: 'Nasdaq 100 (QQQ · מדד)' },
-  { symbol: 'GC=F', label: 'זהב (GC=F · סחורה)' },
-  { symbol: 'SI=F', label: 'כסף (SI=F · סחורה)' },
-  { symbol: 'CL=F', label: 'נפט גולמי (CL=F · סחורה)' },
-  { symbol: 'EURUSD=X', label: 'אירו / דולר (EURUSD · מט"ח)' },
+  // קריפטו
+  { symbol: 'BTCUSDT',  label: 'Bitcoin (BTC/USDT)',          group: 'קריפטו (נתוני בורסה חיים)' },
+  { symbol: 'ETHUSDT',  label: 'Ethereum (ETH/USDT)',         group: 'קריפטו (נתוני בורסה חיים)' },
+  { symbol: 'SOLUSDT',  label: 'Solana (SOL/USDT)',           group: 'קריפטו (נתוני בורסה חיים)' },
+  { symbol: 'BNBUSDT',  label: 'BNB (BNB/USDT)',              group: 'קריפטו (נתוני בורסה חיים)' },
+  { symbol: 'XRPUSDT',  label: 'XRP (XRP/USDT)',              group: 'קריפטו (נתוני בורסה חיים)' },
+  { symbol: 'ADAUSDT',  label: 'Cardano (ADA/USDT)',          group: 'קריפטו (נתוני בורסה חיים)' },
+  { symbol: 'AVAXUSDT', label: 'Avalanche (AVAX/USDT)',       group: 'קריפטו (נתוני בורסה חיים)' },
+  { symbol: 'DOGEUSDT', label: 'Dogecoin (DOGE/USDT)',        group: 'קריפטו (נתוני בורסה חיים)' },
+  // מניות
+  { symbol: 'NVDA',  label: 'NVIDIA (NVDA · מניה)',           group: 'מניות ארה״ב (Yahoo / Stooq)' },
+  { symbol: 'AAPL',  label: 'Apple (AAPL · מניה)',            group: 'מניות ארה״ב (Yahoo / Stooq)' },
+  { symbol: 'MSFT',  label: 'Microsoft (MSFT · מניה)',        group: 'מניות ארה״ב (Yahoo / Stooq)' },
+  { symbol: 'TSLA',  label: 'Tesla (TSLA · מניה)',            group: 'מניות ארה״ב (Yahoo / Stooq)' },
+  { symbol: 'AMZN',  label: 'Amazon (AMZN · מניה)',           group: 'מניות ארה״ב (Yahoo / Stooq)' },
+  { symbol: 'GOOGL', label: 'Alphabet (GOOGL · מניה)',        group: 'מניות ארה״ב (Yahoo / Stooq)' },
+  { symbol: 'META',  label: 'Meta Platforms (META · מניה)',   group: 'מניות ארה״ב (Yahoo / Stooq)' },
+  { symbol: 'AMD',   label: 'AMD (AMD · מניה)',               group: 'מניות ארה״ב (Yahoo / Stooq)' },
+  { symbol: 'NFLX',  label: 'Netflix (NFLX · מניה)',          group: 'מניות ארה״ב (Yahoo / Stooq)' },
+  { symbol: 'PLTR',  label: 'Palantir (PLTR · מניה)',         group: 'מניות ארה״ב (Yahoo / Stooq)' },
+  // מדדים
+  { symbol: 'SPY',   label: 'S&P 500 (SPY · מדד)',            group: 'מדדים ותעודות סל (ETFs)' },
+  { symbol: 'QQQ',   label: 'Nasdaq 100 (QQQ · מדד)',         group: 'מדדים ותעודות סל (ETFs)' },
+  { symbol: 'DIA',   label: 'Dow Jones (DIA · מדד)',          group: 'מדדים ותעודות סל (ETFs)' },
+  { symbol: 'IWM',   label: 'Russell 2000 (IWM · מדד)',       group: 'מדדים ותעודות סל (ETFs)' },
+  // סחורות
+  { symbol: 'GC=F',  label: 'זהב (GC=F · סחורה)',             group: 'סחורות וחוזים עתידיים' },
+  { symbol: 'SI=F',  label: 'כסף (SI=F · סחורה)',             group: 'סחורות וחוזים עתידיים' },
+  { symbol: 'CL=F',  label: 'נפט גולמי (CL=F · סחורה)',       group: 'סחורות וחוזים עתידיים' },
+  { symbol: 'NG=F',  label: 'גז טבעי (NG=F · סחורה)',         group: 'סחורות וחוזים עתידיים' },
+  // מט"ח
+  { symbol: 'EURUSD=X', label: 'אירו / דולר (EURUSD · מט"ח)', group: 'מט״ח (Forex)' },
+  { symbol: 'GBPUSD=X', label: 'ליש״ט / דולר (GBPUSD · מט"ח)', group: 'מט״ח (Forex)' },
+  { symbol: 'USDJPY=X', label: 'דולר / ין (USDJPY · מט"ח)',   group: 'מט״ח (Forex)' },
+  { symbol: 'USDILS=X', label: 'דולר / שקל (USDILS · מט"ח)',  group: 'מט״ח (Forex)' },
 ];
 
 function isCryptoSymbol(symbol) {
@@ -111,14 +151,23 @@ async function fromCoinbase(symbol, tf, limit) {
 async function fromYahoo(symbol, tf, limit) {
   const yahooSym = SYMBOLS[symbol]?.yahoo || symbol;
   if (typeof window !== 'undefined') {
-    const data = await fetchJson(`/api/market?symbol=${encodeURIComponent(yahooSym)}&tf=${encodeURIComponent(tf)}&limit=${limit}`, 10000);
-    if (!data?.ok || !Array.isArray(data.candles) || data.candles.length < 30) {
-      throw new Error(data?.error || 'yahoo: empty');
+    const qs = `symbol=${encodeURIComponent(yahooSym)}&tf=${encodeURIComponent(tf)}&limit=${limit}`;
+    const endpoints = [`/api/market?${qs}`, `http://localhost:8181/api/market?${qs}`];
+    let lastErr = null;
+    for (const ep of endpoints) {
+      try {
+        const data = await fetchJson(ep, 10000);
+        if (data?.ok && Array.isArray(data.candles) && data.candles.length >= 30) {
+          if (data.price != null) {
+            quotes[symbol] = { price: data.price, changePct: data.changePct || 0, at: Date.now(), provider: data.provider || 'Yahoo Finance' };
+          }
+          return data.candles;
+        }
+      } catch (err) {
+        lastErr = err;
+      }
     }
-    if (data.price != null) {
-      quotes[symbol] = { price: data.price, changePct: data.changePct || 0, at: Date.now(), provider: 'Yahoo Finance' };
-    }
-    return data.candles;
+    throw lastErr || new Error('yahoo: empty');
   }
   const intervalMap = { '5m': '5m', '15m': '15m', '1h': '60m', '1d': '1d', '1w': '1wk' };
   const rangeMap = { '5m': '5d', '15m': '1mo', '1h': '3mo', '1d': '2y', '1w': '5y' };

@@ -141,13 +141,225 @@ function openFundamentalEventModal(fe) {
 
 function assetKindFor(symbol) {
   if (/USDT$|USD$/i.test(symbol) && !symbol.includes('=')) return 'crypto';
-  if (symbol === 'SPY' || symbol === 'QQQ') return 'etf';
+  if (['SPY', 'QQQ', 'DIA', 'IWM'].includes(symbol)) return 'etf';
   if (symbol.includes('=F')) return 'commodity';
   if (symbol.includes('=X')) return 'forex';
   return 'stock';
 }
 
-async function loadGannData(ui) {
+function niceIncrementForPrice(price) {
+  const p = Math.abs(Number(price) || 100);
+  if (p < 2) return 0.01;
+  if (p < 20) return 0.1;
+  if (p < 200) return 1;
+  if (p < 2000) return 10;
+  if (p < 20000) return 50;
+  return 100;
+}
+
+function fmtPriceSmart(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return '—';
+  if (Math.abs(n) < 5) return n.toFixed(4);
+  if (Math.abs(n) < 50) return n.toFixed(3);
+  return n.toFixed(2);
+}
+
+/**
+ * Cleanly switches the Gann lab to any asset, clearing stale anchor/scale inputs from
+ * the previous asset (e.g., Bitcoin) so the new asset never inherits wrong price scales.
+ */
+function selectGannAsset(rawSymbol, ui, { keepManual = false } = {}) {
+  const sym = String(rawSymbol || '').trim().toUpperCase();
+  if (!sym) return;
+  const changed = sym !== gannViewState.symbol;
+  gannViewState.symbol = sym;
+  gannViewState.aiAdvice = null;
+  gannViewState.selectedMsjCell = null;
+  if (changed && !keepManual) {
+    gannViewState.manualPrice = '';
+    gannViewState.manualDate = '';
+    gannViewState.msjCustomPrice = '';
+    gannViewState.customCircleInput = '';
+    // Reset asset-specific numeric overrides in gannConfig so BTC scales don't stick on stocks/forex
+    const prevCfg = getGannzillaConfig();
+    if (prevCfg.fanScale || prevCfg.scale !== 'auto' || prevCfg.startValue !== 1 || prevCfg.increment !== 1) {
+      store.state.gannConfig = {
+        ...prevCfg,
+        fanScale: '',
+        fanDirection: 'auto',
+        scale: 'auto',
+        startValue: 1,
+        increment: 1,
+        updatedAt: new Date().toISOString(),
+      };
+      store.save();
+    }
+  }
+  gannViewState.key = null;
+  loadGannData(ui, { force: true });
+}
+
+/**
+ * Computes mathematically grounded recommended values for every Gann input field
+ * tailored to the currently loaded asset, with beginner-friendly Hebrew explanations.
+ */
+function computeGannSmartSuggestions(candles, a, symbol, tf) {
+  if (!candles?.length || !a?.anchorPivot) return null;
+  const cur = Number(a.currentPrice) || candles[candles.length - 1].c;
+  const pivotPrice = Number(a.anchorPivot.price) || cur;
+  const pivotDate = a.anchorPivot.date || new Date(candles[Math.max(0, candles.length - 60)].t).toISOString().slice(0, 10);
+  const pivotTypeHe = a.anchorPivot.type === 'low' ? 'שפל מרכזי (Swing Low)' : 'שיא מרכזי (Swing High)';
+  const fanDir = a.anchorPivot.type === 'low' ? 'up' : 'down';
+  const fanUnit = Number(a.gannFan?.autoUnit || a.gannFan?.unitPerBar) || +(cur * 0.006).toFixed(4);
+  const inc = niceIncrementForPrice(cur);
+  const startVal = Math.max(inc, Math.floor((pivotPrice * 0.85) / inc) * inc);
+  const sq9Scale = autoScaleForPrice(cur);
+  const tfLabel = tf === '1w' ? 'שבועי' : tf === '1h' ? 'שעתי' : 'יומי';
+
+  return {
+    symbol,
+    manualPrice: +fmtPriceSmart(pivotPrice),
+    manualDate: pivotDate,
+    fanScale: fanUnit,
+    fanDirection: fanDir,
+    startValue: +Number(startVal).toFixed(4),
+    increment: inc,
+    scale: sq9Scale,
+    msjCustomPrice: +fmtPriceSmart(cur),
+    customCircleInput: +fmtPriceSmart(pivotPrice),
+    rows: [
+      {
+        id: 'anchor',
+        field: 'מחיר עוגן + תאריך עוגן',
+        valueText: `${fmtPriceSmart(pivotPrice)} · ${pivotDate}`,
+        why: `זוהה ${pivotTypeHe} משמעותי בהיסטוריית הנרות של ${symbol}. לפי וו.ד. גאן, כל חישוב מחיר וזמן חייב להתחיל מנקודת מפנה אמיתית (שפל או שיא מובהק) — משם סופרים מחזורי זמן (30/45/90/144/180/360 יום) ומעלות ב-Square of 9.`,
+        apply: (ui) => {
+          gannViewState.manualPrice = String(+fmtPriceSmart(pivotPrice));
+          gannViewState.manualDate = pivotDate;
+          gannViewState.key = null;
+          loadGannData(ui);
+          toast(`אוכלסו מחיר ותאריך עוגן עבור ${symbol}`, 'ok');
+        },
+      },
+      {
+        id: 'fanScale',
+        field: 'קנה מידה למניפת גאן (יחידה/נר 1x1)',
+        valueText: `${fanUnit} ליחידה לנר (${tfLabel})`,
+        why: `חושב לפי טווח התנועה וה-ATR האמיתי של ${symbol}. גאן קבע שזווית 1x1 (45°) מייצגת איזון מושלם של "יחידת מחיר אחת לכל יחידת זמן". קנה מידה מותאם לנכס מונע מהמניפה להיות שטוחה מדי (כמו שקורה אם משאירים קנה מידה של ביטקוין על מניה!).`,
+        apply: (ui) => {
+          updateGannzillaConfig({ fanScale: String(fanUnit) }, ui, { reloadAnalysis: true });
+          toast(`קנה מידת מניפת 1x1 עודכן ל-${fanUnit} עבור ${symbol}`, 'ok');
+        },
+      },
+      {
+        id: 'fanDirection',
+        field: 'כיוון מניפת גאן (עולה / יורדת)',
+        valueText: fanDir === 'up' ? 'מניפה עולה ↑ (מהשפל)' : 'מניפה יורדת ↓ (מהשיא)',
+        why: fanDir === 'up'
+          ? `מכיוון שהעוגן הדומיננטי ב-${symbol} הוא שפל, מניפה עולה מקרינה קווי תמיכה אלכסוניים (1x1, 2x1, 1x2) שכל עוד המחיר מעליהם המגמה השורית בריאה.`
+          : `מכיוון שהעוגן הדומיננטי ב-${symbol} הוא שיא, מניפה יורדת מקרינה קווי התנגדות אלכסוניים — פריצה שלהם כלפי מעלה מסמנת היפוך מגמה.`,
+        apply: (ui) => {
+          updateGannzillaConfig({ fanDirection: fanDir }, ui, { reloadAnalysis: true });
+          toast(`כיוון המניפה עודכן ל-${fanDir === 'up' ? 'עולה ↑' : 'יורדת ↓'}`, 'ok');
+        },
+      },
+      {
+        id: 'gannzillaGrid',
+        field: 'Gannzilla · ערך התחלה וצעד (Start / Increment)',
+        valueText: `התחלה ${startVal} · צעד ${inc}`,
+        why: `במחיר נוכחי של ${fmtPriceSmart(cur)}, צעד של ${inc} והתחלה ב-${startVal} ממקמים את ${symbol} בתוך טבעות הגלגל המרכזיות של Gannzilla כך שכל רבע סיבוב (90°/180°/360°) נותן יעדי תמיכה והתנגדות פרקטיים למסחר.`,
+        apply: (ui) => {
+          updateGannzillaConfig({ startValue: +Number(startVal).toFixed(4), increment: inc }, ui, { reloadAnalysis: true });
+          toast(`גלגל Gannzilla כויל: התחלה ${startVal}, צעד ${inc}`, 'ok');
+        },
+      },
+      {
+        id: 'msjSq9',
+        field: 'MSJ_GannSQ9 · קנה מידה ומחיר מוקד',
+        valueText: `Scale ×${sq9Scale} · מחיר ${fmtPriceSmart(cur)}`,
+        why: `לפי שיטת מייקל ג׳נקינס, מנרמלים את מחיר ${symbol} בעזרת מכפיל Scale ×${sq9Scale} כדי ששורש המחיר (√P) ייפול בטווח המדויק של טבלת Square of 9 ויפיק רמות 90°/180°/360° מדויקות.`,
+        apply: (ui) => {
+          gannViewState.msjCustomPrice = String(+fmtPriceSmart(cur));
+          updateGannzillaConfig({ scale: sq9Scale }, ui, { reloadAnalysis: true });
+          toast(`מטריצת MSJ Sq9 כוילה ל-Scale ×${sq9Scale}`, 'ok');
+        },
+      },
+      {
+        id: 'priceCircles',
+        field: 'מעגלי מחיר (rluu Price Circles)',
+        valueText: fmtPriceSmart(pivotPrice),
+        why: `הזנת מחיר העוגן (${fmtPriceSmart(pivotPrice)}) במודול מעגלי המחיר מחשבת את קשתות הזמן-מחיר ב-180° ו-360° שבהן גלי התנועה של ${symbol} נוטים להגיע למיצוי או שינוי כיוון.`,
+        apply: (ui) => {
+          gannViewState.customCircleInput = String(+fmtPriceSmart(pivotPrice));
+          ui.rerender();
+          toast(`מעגלי המחיר עודכנו למחיר ${fmtPriceSmart(pivotPrice)}`, 'ok');
+        },
+      },
+    ],
+  };
+}
+
+function renderSmartAutoFillCard(a, cfg, ui) {
+  const sug = computeGannSmartSuggestions(gannViewState.candles, a, gannViewState.symbol, gannViewState.tf);
+  if (!sug) return null;
+
+  const applyAll = () => {
+    gannViewState.manualPrice = String(sug.manualPrice);
+    gannViewState.manualDate = sug.manualDate;
+    gannViewState.msjCustomPrice = String(sug.msjCustomPrice);
+    gannViewState.customCircleInput = String(sug.customCircleInput);
+    updateGannzillaConfig({
+      fanScale: String(sug.fanScale),
+      fanDirection: sug.fanDirection,
+      startValue: sug.startValue,
+      increment: sug.increment,
+      scale: sug.scale,
+    }, ui, { reloadAnalysis: true });
+    toast(`✨ כל 7 שדות גאן אוכלסו והותאמו אוטומטית עבור ${sug.symbol}!`, 'ok');
+  };
+
+  return h('div', {
+    class: 'card',
+    style: {
+      marginTop: '12px',
+      borderColor: 'rgba(56, 189, 248, 0.45)',
+      background: 'linear-gradient(180deg, rgba(12, 23, 39, 0.96), rgba(8, 14, 25, 0.96))',
+    },
+  },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: `✨ אכלוס חכם של שדות גאן עבור ${sug.symbol} (עם הסבר חינוכי למה)` }),
+        h('div', { class: 'card-sub', text: 'המערכת מנתחת את מחיר הנכס, התנודתיות ונקודות המפנה ההיסטוריות שלו ומציעה ערכים מדויקים לכל תא — עם הסבר ברור למתחילים למה דווקא הערך הזה.' }),
+      ),
+      h('button', {
+        class: 'btn btn-sm btn-primary',
+        onclick: applyAll,
+      }, `✨ אכלס אוטומטית את כל השדות עבור ${sug.symbol}`),
+    ),
+    h('div', { class: 'table-wrap' },
+      h('table', {},
+        h('thead', {}, h('tr', {},
+          h('th', { text: 'שדה / תא במודול גאן' }),
+          h('th', { text: 'ערך מומלץ לנכס' }),
+          h('th', { text: 'הסבר חינוכי — למה הערך הזה?' }),
+          h('th', { text: 'פעולה' }),
+        )),
+        h('tbody', {}, sug.rows.map((row) => h('tr', {},
+          h('td', { class: 'small', style: { fontWeight: '700', color: '#e2e8f0', whiteSpace: 'nowrap' }, text: row.field }),
+          h('td', { class: 'mono small', style: { color: '#7dd3fc', fontWeight: '700', whiteSpace: 'nowrap' }, text: row.valueText }),
+          h('td', { class: 'small muted', style: { lineHeight: '1.45' }, text: row.why }),
+          h('td', {}, h('button', {
+            class: 'btn btn-sm',
+            onclick: () => row.apply(ui),
+          }, '⚡ אכלס')),
+        ))),
+      ),
+    ),
+  );
+}
+
+async function loadGannData(ui, { force = false } = {}) {
   const key = `${gannViewState.symbol}|${gannViewState.tf}|${gannViewState.manualPrice}|${gannViewState.manualDate}`;
   if (gannViewState.loading && gannViewState.key === key) return;
   gannViewState.key = key;
@@ -155,7 +367,7 @@ async function loadGannData(ui) {
   gannViewState.error = null;
   ui.rerender();
   try {
-    const candles = await getCandles(gannViewState.symbol, gannViewState.tf, { limit: 700, force: false });
+    const candles = await getCandles(gannViewState.symbol, gannViewState.tf, { limit: 700, force });
     const lookback = gannViewState.tf === '1w' ? 5 : 10;
     const analysis = analyzeGannHistoryAndForecast(candles, {
       lookback,
@@ -167,6 +379,8 @@ async function loadGannData(ui) {
     if (!analysis.ok) throw new Error(analysis.error);
     gannViewState.candles = candles;
     gannViewState.analysis = analysis;
+    gannViewState.dataProvider = candles.__provider || marketState.provider || 'Live';
+    gannViewState.dataSynthetic = !!candles.__synthetic;
     gannViewState.selectedMsjCell = null;
   } catch (err) {
     gannViewState.error = err.message;
@@ -627,35 +841,58 @@ export function renderGann(root, ui) {
 
   const a = gannViewState.analysis;
 
+  // Build categorized <optgroup> dropdown from ASSET_CATALOG + active custom symbol if typed by user
+  const groups = new Map();
+  for (const item of ASSET_CATALOG) {
+    const g = item.group || 'נכסים זמינים';
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(item);
+  }
+  const hasActiveInCatalog = ASSET_CATALOG.some((x) => x.symbol === gannViewState.symbol);
+  const selectChildren = [];
+  if (!hasActiveInCatalog && gannViewState.symbol) {
+    selectChildren.push(
+      h('optgroup', { label: 'נכס מותאם נבחר' },
+        h('option', { value: gannViewState.symbol, selected: true }, `${gannViewState.symbol} (מותאם)`),
+      ),
+    );
+  }
+  for (const [gLabel, items] of groups.entries()) {
+    selectChildren.push(
+      h('optgroup', { label: gLabel },
+        items.map((item) => h('option', {
+          value: item.symbol,
+          selected: gannViewState.symbol === item.symbol,
+        }, item.label)),
+      ),
+    );
+  }
+
   mount(root,
     h('div', { class: 'page-head' },
       h('div', {},
         h('div', { class: 'eyebrow', text: 'Gannzilla Pro v8.3 · MSJ_GannSQ9 · W.D. Gann Fan & Trading Tools · Fundamental Proof' }),
-        h('h1', { text: 'מעבדת גאן המלאה (Gannzilla Pro · MSJ_GannSQ9 · Gann Fan)' }),
-        h('p', { text: 'מערכת מחקר וחיזוי רב-נכסית המאחדת מניפת גאן (9 זוויות), תיבת גאן, סווינג גאן (Gann Explained), מטריצת MSJ_GannSQ9, גלגל Gannzilla Pro v8.3 עם ייבוא Gannzilla.ini, קוסמוגרם פלנטרי והוכחה מול אירועים פונדמנטליסטיים.' }),
+        h('h1', { text: `מעבדת גאן המלאה · ${gannViewState.symbol}` }),
+        h('p', { text: 'בחר כל נכס מהרשימה (30 נכסים עם נתוני אמת: קריפטו, מניות, מדדים, סחורות ומט״ח) או הקלד כל סימול — וקבל אכלוס חכם של כל שדות גאן עם הסבר חינוכי למה.' }),
       ),
       h('div', { class: 'head-actions' },
         h('select', {
           class: 'input',
           value: gannViewState.symbol,
-          onchange: (e) => {
-            gannViewState.symbol = e.target.value;
-            gannViewState.key = null;
-            loadGannData(ui);
-          },
-        }, ASSET_CATALOG.map((item) => h('option', { value: item.symbol, selected: gannViewState.symbol === item.symbol }, item.label))),
+          onchange: (e) => selectGannAsset(e.target.value, ui),
+        }, selectChildren),
         h('select', {
           class: 'input',
           value: gannViewState.tf,
           onchange: (e) => {
             gannViewState.tf = e.target.value;
             gannViewState.key = null;
-            loadGannData(ui);
+            loadGannData(ui, { force: true });
           },
         }, [['1d', 'יומי (2+ שנים)'], ['1w', 'שבועי (5 שנים)'], ['1h', 'שעתי (3 חודשים)']].map(([v, l]) =>
           h('option', { value: v, selected: gannViewState.tf === v }, l)
         )),
-        h('button', { class: 'btn btn-sm btn-primary', onclick: () => loadGannData(ui) }, '⟳ הרץ ניתוח'),
+        h('button', { class: 'btn btn-sm btn-primary', onclick: () => loadGannData(ui, { force: true }) }, '⟳ הרץ ניתוח'),
         h('button', {
           class: 'btn btn-sm',
           disabled: gannViewState.multiScanLoading,
@@ -665,49 +902,73 @@ export function renderGann(root, ui) {
     ),
   );
 
-  // Manual Anchor Bar (like gann indicator script sq9.txt Manual/Auto Anchor)
+  // Manual Anchor & Custom Symbol Bar
+  const customInputEl = h('input', {
+    class: 'input',
+    type: 'text',
+    placeholder: 'כל סימול אחר (למשל JPM, COIN, LINKUSDT)',
+    style: { width: '215px' },
+    value: gannViewState.customSymbol,
+    oninput: (e) => { gannViewState.customSymbol = e.target.value.trim().toUpperCase(); },
+    onkeydown: (e) => {
+      if (e.key === 'Enter') {
+        const val = e.target.value.trim().toUpperCase();
+        if (val) { gannViewState.customSymbol = val; selectGannAsset(val, ui); }
+      }
+    },
+  });
+  const manualPriceEl = h('input', {
+    class: 'input',
+    type: 'number',
+    step: 'any',
+    placeholder: 'מחיר עוגן ידני (אופציונלי)',
+    style: { width: '175px' },
+    value: gannViewState.manualPrice,
+    oninput: (e) => { gannViewState.manualPrice = e.target.value; },
+  });
+  const manualDateEl = h('input', {
+    class: 'input',
+    type: 'date',
+    style: { width: '155px' },
+    value: gannViewState.manualDate,
+    oninput: (e) => { gannViewState.manualDate = e.target.value; },
+  });
+
   mount(root,
     h('div', { class: 'card', style: { marginTop: '12px', padding: '12px 14px' } },
       h('div', { class: 'row', style: { gap: '10px', flexWrap: 'wrap', alignItems: 'center' } },
         h('span', { class: 'small muted', text: '🎯 התאמה והזנת נכס/עוגן:' }),
-        h('input', {
-          class: 'input',
-          type: 'text',
-          placeholder: 'סימול מותאם (למשל AMD, META)',
-          style: { width: '175px' },
-          value: gannViewState.customSymbol,
-          onchange: (e) => { gannViewState.customSymbol = e.target.value.trim().toUpperCase(); },
-        }),
+        customInputEl,
         h('button', {
-          class: 'btn btn-sm',
+          class: 'btn btn-sm btn-primary',
           onclick: () => {
-            if (!gannViewState.customSymbol) return;
-            gannViewState.symbol = gannViewState.customSymbol;
+            const val = (customInputEl.value || gannViewState.customSymbol || '').trim().toUpperCase();
+            if (!val) { toast('הקלד סימול (למשל AMD, META, GC=F, LINKUSDT)', 'bad'); return; }
+            gannViewState.customSymbol = val;
+            selectGannAsset(val, ui);
+          },
+        }, 'טען נכס מותאם'),
+        manualPriceEl,
+        manualDateEl,
+        h('button', {
+          class: 'btn btn-sm btn-primary',
+          onclick: () => {
+            gannViewState.manualPrice = manualPriceEl.value;
+            gannViewState.manualDate = manualDateEl.value;
             gannViewState.key = null;
             loadGannData(ui);
           },
-        }, 'טען נכס מותאם'),
-        h('input', {
-          class: 'input',
-          type: 'number',
-          step: 'any',
-          placeholder: 'מחיר עוגן ידני (אופציונלי)',
-          style: { width: '175px' },
-          value: gannViewState.manualPrice,
-          onchange: (e) => { gannViewState.manualPrice = e.target.value; },
-        }),
-        h('input', {
-          class: 'input',
-          type: 'date',
-          style: { width: '155px' },
-          value: gannViewState.manualDate,
-          onchange: (e) => { gannViewState.manualDate = e.target.value; },
-        }),
-        h('button', { class: 'btn btn-sm btn-primary', onclick: () => { gannViewState.key = null; loadGannData(ui); } }, 'החל עוגן'),
+        }, 'החל עוגן'),
         h('button', {
           class: 'btn btn-sm',
           onclick: () => { gannViewState.manualPrice = ''; gannViewState.manualDate = ''; gannViewState.key = null; loadGannData(ui); },
         }, 'עוגן אוטומטי'),
+        gannViewState.candles?.length
+          ? tag(
+              `${gannViewState.dataSynthetic ? '⚠ נתוני הדגמה' : '✓ נתוני אמת'}: ${gannViewState.dataProvider || marketState.provider || 'Live'} · ${gannViewState.candles.length} נרות`,
+              gannViewState.dataSynthetic ? 'red' : 'live',
+            )
+          : null,
       ),
     ),
   );
@@ -740,7 +1001,7 @@ export function renderGann(root, ui) {
               h('td', { class: 'mono', text: r.nextPivot }),
               h('td', {}, h('button', {
                 class: 'btn btn-sm',
-                onclick: () => { gannViewState.symbol = r.symbol; gannViewState.key = null; loadGannData(ui); },
+                onclick: () => selectGannAsset(r.symbol, ui),
               }, 'נתח לעומק')),
             ))),
           ),
@@ -751,7 +1012,7 @@ export function renderGann(root, ui) {
 
   if (gannViewState.loading) {
     mount(root, h('div', { class: 'card', style: { marginTop: '14px', padding: '40px', textAlign: 'center' } },
-      h('div', { text: '⏳ טוען היסטוריה, מחשב Square of 9, הקסגון, נוסחאות מייקל ג׳נקינס ומאמת מול אירועים פונדמנטליסטיים…' }),
+      h('div', { text: `⏳ טוען היסטוריית ${gannViewState.symbol}, מחשב Square of 9, הקסגון, נוסחאות מייקל ג׳נקינס ומאמת מול אירועים פונדמנטליסטיים…` }),
     ));
     return;
   }
@@ -762,6 +1023,10 @@ export function renderGann(root, ui) {
   }
 
   const cfg = getGannzillaConfig();
+
+  // Smart Auto-Fill Proposal Card with Educational Explanations for every Gann field
+  mount(root, renderSmartAutoFillCard(a, cfg, ui));
+
   const effScale = cfg.scale === 'auto' || !Number(cfg.scale) ? autoScaleForPrice(a.currentPrice) : Number(cfg.scale);
   const activeMsjPrice = gannViewState.msjCustomPrice && Number(gannViewState.msjCustomPrice) > 0
     ? Number(gannViewState.msjCustomPrice)
