@@ -6,7 +6,7 @@
 # OOS: 18.14% · Sharpe 2.27
 # Params: {"fast":7,"slow":22,"signal":6,"atrStop":1.3,"rr":4}
 # Target platform: Freqtrade
-# Generated: 2026-11-20T05:19:19.212Z
+# Generated: 2026-11-20T09:04:45.169Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:
