@@ -70,6 +70,9 @@ async function callEnvEntry(entry, { system, messages, maxTokens = 400, temperat
           ...(system ? [{ role: 'system', content: system }] : []),
           ...(messages || []),
         ],
+        // Nemotron burns max_tokens on reasoning and returns content:null; without
+        // this the app received a thinking trace or an empty reply.
+        ...(/nemotron/i.test(entry.model) ? { chat_template_kwargs: { enable_thinking: false } } : {}),
       }),
     });
     const ms = Date.now() - started;

@@ -105,6 +105,10 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
         temperature,
         max_tokens: maxTokens,
         messages: [{ role: 'system', content: system }, ...history],
+        // Nemotron spends the whole max_tokens budget on reasoning and then returns
+        // content:null, so callers saw a thinking trace or nothing. Turning thinking
+        // off gives the direct answer in the same budget.
+        ...(/nemotron/i.test(entry.model) ? { chat_template_kwargs: { enable_thinking: false } } : {}),
       }),
     },
   };
