@@ -219,6 +219,11 @@ async function callEntry(entry, opts) {
             lastErr = err;
             continue modelLoop;
           }
+          // Public endpoints answer 403 to a localhost/Pages Origin even though they
+          // serve the same request server-side. Relay through our own /api/llm.
+          if (entry.provider === 'pollinations' && (res.status === 401 || res.status === 403) && typeof window !== 'undefined') {
+            return await callViaNetlifyProxy(targetUrl, init, entry.shape || 'openai');
+          }
           throw err;
         }
         const text = await parseResponsePayload(res, entry.shape || 'openai');
@@ -329,7 +334,16 @@ export function freeZeroKeyEntries() {
 export function candidates(state = store.state) {
   const list = [...availableEntries(state)];
   const seen = new Set(list.map((e) => `${e.provider}|${e.model}|${e.baseUrl}`));
-  for (const entry of freeZeroKeyEntries()) {
+  const free = freeZeroKeyEntries();
+  // In a browser the same-origin proxy goes first: upstream APIs refuse a localhost
+  // Origin (Pollinations 403, NVIDIA no CORS), while our server reaches them fine and
+  // keeps the keys server-side.
+  const browserProxy = typeof window !== 'undefined' ? free.find((e) => e.provider === 'server-proxy') : null;
+  if (browserProxy) {
+    list.unshift(browserProxy);
+    seen.add(`${browserProxy.provider}|${browserProxy.model}|${browserProxy.baseUrl}`);
+  }
+  for (const entry of free) {
     const key = `${entry.provider}|${entry.model}|${entry.baseUrl}`;
     if (seen.has(key)) continue;
     seen.add(key);
