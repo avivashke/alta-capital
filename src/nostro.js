@@ -4,7 +4,7 @@
 //  - Tracks exact pass dates, drawdown compliance, live data provider, and trade-level proof
 //  - Supports autonomous auto-refresh + multi-sheet Excel (.xls) report export
 
-import { BARS_PER_YEAR } from './config.js';
+import { BACKTEST_HISTORY, BARS_PER_YEAR } from './config.js';
 import { store } from './store.js';
 import { getCandles, marketState } from './market.js';
 import { runBacktest } from './backtest.js';
@@ -156,6 +156,8 @@ export const DEFAULT_NOSTRO_RULES = {
   maxDailyLossPct: 5,
   maxTotalDdPct: 10,
   minTrades: 8,
+  // Real challenge books require a minimum number of trading days, not only trades.
+  minTradingDays: 4,
   profitSplitPct: 80,
 };
 
@@ -165,7 +167,11 @@ function fmtDate(ts) {
 }
 
 export function evaluateCurveAgainstNostro(curve, trades, rules) {
-  const startCap = rules.accountSize;
+  const startCap = Number(rules.accountSize) || 100000;
+  const minTradingDays = Math.max(0, Number(rules.minTradingDays) || 0);
+  const dailyLimitPct = Number(rules.maxDailyLossPct) || 0;
+  const totalLimitPct = Number(rules.maxTotalDdPct) || 0;
+  const trailing = !!rules.trailingDd;
   let peak = startCap;
   let maxTotalDdPct = 0;
   let maxDailyLossPct = 0;
@@ -173,42 +179,55 @@ export function evaluateCurveAgainstNostro(curve, trades, rules) {
   let breached = null;
   let phase1PassedAt = null;
   let phase2PassedAt = null;
+  let tradingDays = 0;
 
-  const p1Target = startCap * (1 + rules.phase1TargetPct / 100);
-  const p2Target = startCap * (1 + (rules.phase1TargetPct + (rules.phase2TargetPct || 0)) / 100);
+  const p1Target = startCap * (1 + (Number(rules.phase1TargetPct) || 0) / 100);
+  // FTMO / The5ers / FundedNext reset the balance after phase 1, so "+5% for phase 2"
+  // on one continuous curve means another phase2TargetPct on top of phase 1.
+  const p2Target = startCap * (1 + ((Number(rules.phase1TargetPct) || 0) + (Number(rules.phase2TargetPct) || 0)) / 100);
 
-  const dayBuckets = new Map();
+  let dayKey = null;
+  let dayStart = startCap;
+
   for (let i = 0; i < curve.length; i++) {
     const pt = curve[i];
-    const eq = pt.v;
+    const eq = Number(pt.v);
+    if (!Number.isFinite(eq)) continue;
+    const key = new Date(pt.t || Date.now()).toISOString().slice(0, 10);
+    if (key !== dayKey) {
+      dayKey = key;
+      dayStart = eq;
+      tradingDays += 1;
+    }
     if (eq > peak) peak = eq;
-    const ddFromPeak = ((peak - eq) / peak) * 100;
-    const ddFromStart = ((startCap - eq) / startCap) * 100;
-    const effectiveDd = Math.max(ddFromPeak, ddFromStart);
+
+    // Real rule books differ: FTMO/The5ers/FundedNext measure max loss from the initial
+    // balance, Topstep/Apex trail it from the high-water mark. Applying trailing to a
+    // static firm invented breaches that the firm would never issue.
+    const ddAnchor = trailing ? peak : startCap;
+    const effectiveDd = ddAnchor > 0 ? Math.max(0, ((ddAnchor - eq) / ddAnchor) * 100) : 0;
     if (effectiveDd > maxTotalDdPct) maxTotalDdPct = effectiveDd;
 
-    const dayKey = new Date(pt.t || Date.now()).toISOString().slice(0, 10);
-    if (!dayBuckets.has(dayKey)) dayBuckets.set(dayKey, { start: eq, min: eq });
-    const b = dayBuckets.get(dayKey);
-    if (eq < b.min) b.min = eq;
-    const dailyDrop = ((b.start - b.min) / b.start) * 100;
+    const dailyDrop = dayStart > 0 ? Math.max(0, ((dayStart - eq) / dayStart) * 100) : 0;
     if (dailyDrop > maxDailyLossPct) {
       maxDailyLossPct = dailyDrop;
-      worstDailyLossDate = dayKey;
+      worstDailyLossDate = key;
     }
 
     if (!breached) {
-      if (dailyDrop >= rules.maxDailyLossPct) {
-        breached = `חריגה מהפסד יומי מקסימלי (${dailyDrop.toFixed(2)}% ≥ ${rules.maxDailyLossPct}%) בתאריך ${dayKey}`;
-      } else if (effectiveDd >= rules.maxTotalDdPct) {
-        breached = `חריגה מ-Drawdown כולל (${effectiveDd.toFixed(2)}% ≥ ${rules.maxTotalDdPct}%)`;
+      if (dailyLimitPct > 0 && dailyDrop >= dailyLimitPct) {
+        breached = `חריגה מהפסד יומי מקסימלי (${dailyDrop.toFixed(2)}% ≥ ${dailyLimitPct}%) בתאריך ${key}`;
+      } else if (totalLimitPct > 0 && effectiveDd >= totalLimitPct) {
+        breached = `חריגה מ-Drawdown כולל (${effectiveDd.toFixed(2)}% ≥ ${totalLimitPct}%)`;
       }
     }
 
-    if (!breached) {
+    // A phase is only passed once the challenge's minimum trading days are behind us,
+    // even if the profit target was reached on day one.
+    if (!breached && tradingDays >= minTradingDays) {
       if (!phase1PassedAt && eq >= p1Target) phase1PassedAt = pt.t || i;
-      if (phase1PassedAt && !phase2PassedAt && (rules.phase2TargetPct <= 0 || eq >= p2Target)) {
-        phase2PassedAt = pt.t || i;
+      if (phase1PassedAt && !phase2PassedAt) {
+        if ((Number(rules.phase2TargetPct) || 0) <= 0 || eq >= p2Target) phase2PassedAt = pt.t || i;
       }
     }
   }
@@ -236,6 +255,9 @@ export function evaluateCurveAgainstNostro(curve, trades, rules) {
   } else if (!enoughTrades) {
     status = 'in_progress';
     statusLabel = '⏳ מעט מדי עסקאות';
+  } else if (minTradingDays > 0 && tradingDays < minTradingDays) {
+    status = 'in_progress';
+    statusLabel = `⏳ ממתין לימי מסחר (${tradingDays}/${minTradingDays})`;
   }
 
   const fundedProfitUsd = status === 'funded'
@@ -252,6 +274,9 @@ export function evaluateCurveAgainstNostro(curve, trades, rules) {
     maxTotalDdPct: +maxTotalDdPct.toFixed(2),
     maxDailyLossPct: +maxDailyLossPct.toFixed(2),
     worstDailyLossDate,
+    tradingDays,
+    minTradingDays,
+    trailingDd: trailing,
     phase1Passed: !!phase1PassedAt && !breached,
     phase2Passed: !!phase2PassedAt && !breached,
     phase1PassedDate: typeof phase1PassedAt === 'number' ? fmtDate(phase1PassedAt) : null,
@@ -296,9 +321,15 @@ function scoreNostroCandidate(evalRes, btMetrics, rules) {
   return score;
 }
 
-export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { doOptimize = false, forceLive = true } = {}) {
+export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { doOptimize = false, forceLive = true, maxBars = 0 } = {}) {
   const s = store.state.settings;
-  const candles = await getCandles(botTemplate.symbol, botTemplate.tf, { limit: 700, force: forceLive });
+  // Deep history, not one month: a 700-bar sample let a bot look fundable on a lucky
+  // week. This matches the firm-wide backtest depth and the Yahoo/Binance limits.
+  const targetBars = BACKTEST_HISTORY[botTemplate.tf] || 700;
+  const candles = await getCandles(botTemplate.symbol, botTemplate.tf, {
+    limit: maxBars > 0 ? Math.min(targetBars, maxBars) : targetBars,
+    force: forceLive,
+  });
   const dataProvider = marketState.provider || 'Live';
   const isSynthetic = !!marketState.synthetic;
 
@@ -358,6 +389,8 @@ export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { 
       maxDailyLossPct: firm.maxDailyLossPct,
       maxTotalDdPct: firm.maxTotalDdPct,
       minTrades: firm.minTrades,
+      minTradingDays: firm.minTradingDays || 0,
+      trailingDd: !!firm.trailingDd,
       profitSplitPct: firm.profitSplitPct,
     };
     const fEval = evaluateCurveAgainstNostro(bt.curve || [], bt.trades || [], firmRules);
@@ -408,7 +441,7 @@ export async function runNostroBot(botTemplate, rules = DEFAULT_NOSTRO_RULES, { 
   };
 }
 
-export async function runNostroFleetSimulation(customRules = {}, { doOptimize = false, forceLive = true } = {}) {
+export async function runNostroFleetSimulation(customRules = {}, { doOptimize = false, forceLive = true, maxBars = 0 } = {}) {
   const rules = { ...DEFAULT_NOSTRO_RULES, ...(store.state.nostro?.rules || {}), ...customRules };
   const existingBots = store.state.nostro?.bots || [];
   const deskClones = buildNostroBotsFromExistingDesks(store.state.desks || []);
@@ -419,7 +452,7 @@ export async function runNostroFleetSimulation(customRules = {}, { doOptimize = 
     const prev = existingBots.find((b) => b.id === tpl.id);
     const botInput = prev?.params ? { ...tpl, params: prev.params, riskPerTrade: prev.riskPerTrade ?? tpl.riskPerTrade } : tpl;
     try {
-      const res = await runNostroBot(botInput, rules, { doOptimize, forceLive });
+      const res = await runNostroBot(botInput, rules, { doOptimize, forceLive, maxBars });
       results.push(res);
     } catch (err) {
       results.push({
@@ -569,6 +602,7 @@ export function enrollBotInNostroRoom(bot, { firmId = null, accountSize = null, 
     lastPrice: bot.lastPrice || null,
     dataProvider: bot.dataProvider || 'Live',
     lastTickAt: null,
+    lastBarTime: null,
     events: [
       { at: now, kind: 'ok', text: `נכנס לחדר מסחר נוסטרו (${firm.name} · ${firm.program}) עם תיק $${cap.toLocaleString('en-US')}` },
     ],
@@ -740,6 +774,23 @@ export function computeNostroAccountHealth(acct, now = Date.now()) {
   };
 }
 
+/**
+ * Price at which the account hits whichever loss limit binds first (daily or total),
+ * so breach liquidation stops exactly at the firm's floor instead of overshooting it.
+ */
+export function liquidationPriceFor(acct, health, fallbackPrice) {
+  const t = acct?.openTrade;
+  if (!t || !t.units || !t.dir) return fallbackPrice;
+  const balance = Number(acct.balance) || 0;
+  const floor = Math.max(Number(health?.dailyLossFloor) || -Infinity, Number(health?.totalDdFloor) || -Infinity);
+  if (!Number.isFinite(floor)) return fallbackPrice;
+  const px = t.entry + (floor - balance) / (t.dir * t.units);
+  if (!Number.isFinite(px) || px <= 0) return fallbackPrice;
+  // Never book a fill better than the market has already traded through.
+  if (t.dir > 0 ? px > fallbackPrice : px < fallbackPrice) return fallbackPrice;
+  return +px.toFixed(8);
+}
+
 function closeAccountPositionInternal(acct, price, reason, feeRate = 0.0005, now = Date.now()) {
   const t = acct.openTrade;
   if (!t) return null;
@@ -821,11 +872,25 @@ export async function tickNostroTradingRoom({ force = false, state = store.state
       const strat = STRATEGIES[acct.strategyId];
       if (!strat) continue;
       const desired = strat.positions(candles, acct.params || defaultsFor(acct.strategyId));
-      const dir = desired[desired.length - 1] || 0;
+      const lastBar = candles[candles.length - 1];
+      // A bar-driven bot may only change direction on a closed bar. Acting on every
+      // 4s tick against the forming candle produced intrabar churn that no real
+      // prop account could execute.
+      const newBar = acct.lastBarTime !== lastBar.t;
+      acct.lastBarTime = lastBar.t;
+      const signalIdx = newBar ? Math.max(0, desired.length - 2) : desired.length - 1;
+      const dir = desired[signalIdx] || 0;
       const atrSeries = atr(candles, 14).filter((v) => v != null);
       const barAtr = atrSeries[atrSeries.length - 1] || price * 0.01;
       const stopMult = Number(acct.params?.atrStop) || 2;
       const rr = Math.max(1.2, Number(acct.params?.rr) || 2);
+
+      // Stops and targets are watched live against the range the market actually
+      // traded this bar, not only its last print. A bar that pierced the stop and
+      // closed back was previously left open, which flattered every account.
+      const openedInThisBar = acct.openTrade && Number(acct.openTrade.openedAt) >= Number(lastBar.t);
+      const rangeHigh = openedInThisBar ? price : Math.max(price, Number(lastBar.h) || price);
+      const rangeLow = openedInThisBar ? price : Math.min(price, Number(lastBar.l) || price);
 
       // 1. Mark-to-market open position & check Stop / Trail / Target / Signal Exit
       if (acct.openTrade) {
@@ -834,21 +899,21 @@ export async function tickNostroTradingRoom({ force = false, state = store.state
         t.unrealizedUsd = +(t.dir * (price - t.entry) * t.units).toFixed(2);
         t.unrealizedPct = acct.initialBalance > 0 ? +((t.unrealizedUsd / acct.initialBalance) * 100).toFixed(3) : 0;
 
-        const hitStop = t.dir > 0 ? price <= t.stop : price >= t.stop;
-        const hitTarget = t.dir > 0 ? price >= t.target : price <= t.target;
+        const hitStop = t.dir > 0 ? rangeLow <= t.stop : rangeHigh >= t.stop;
+        const hitTarget = t.dir > 0 ? rangeHigh >= t.target : rangeLow <= t.target;
         if (hitStop) {
           closeAccountPositionInternal(acct, t.stop, t.trailed ? 'trail' : 'stop', feeRate, now);
           tradesMoved++;
         } else if (hitTarget) {
           closeAccountPositionInternal(acct, t.target, 'target', feeRate, now);
           tradesMoved++;
-        } else if (dir !== t.dir && dir !== 0) {
+        } else if (newBar && dir !== t.dir && dir !== 0) {
           closeAccountPositionInternal(acct, price, 'flip', feeRate, now);
           tradesMoved++;
-        } else if (dir === 0 && (now - (t.openedAt || 0) > 60_000)) {
+        } else if (newBar && dir === 0) {
           closeAccountPositionInternal(acct, price, 'signal', feeRate, now);
           tradesMoved++;
-        } else {
+        } else if (newBar) {
           // Breakeven at +1R, ATR trailing stop at +1.5R
           const initDist = t.stopDist || Math.abs(t.entry - t.stop) || barAtr * stopMult;
           if (t.dir > 0) {
@@ -886,7 +951,10 @@ export async function tickNostroTradingRoom({ force = false, state = store.state
       const health = computeNostroAccountHealth(acct, now);
       if (health.dailyLossUsedPct >= 100 || health.totalDdUsedPct >= 100) {
         if (acct.openTrade) {
-          closeAccountPositionInternal(acct, price, 'breach_liquidation', feeRate, now);
+          // Fill at the firm's loss limit, not at whatever print arrived after it: a
+          // real broker liquidates on the threshold, it does not let the account run
+          // past its maximum loss.
+          closeAccountPositionInternal(acct, liquidationPriceFor(acct, health, price), 'breach_liquidation', feeRate, now);
           tradesMoved++;
         }
         acct.breached = true;
@@ -908,7 +976,7 @@ export async function tickNostroTradingRoom({ force = false, state = store.state
       }
 
       // 5. Open new position on real market price if flat & within prop firm risk limits
-      if (!acct.openTrade && dir !== 0 && acct.dailyLockedKey !== today) {
+      if (newBar && !acct.openTrade && dir !== 0 && acct.dailyLockedKey !== today) {
         const stopDist = stopMult * barAtr;
         // Dynamically halve risk when burnRiskPct >= 60% to protect the prop firm account!
         const riskFactor = health.burnRiskPct >= 60 ? 0.5 : 1.0;
@@ -1013,7 +1081,10 @@ export async function closeNostroAccountPosition(accountId, reason = 'manual', s
     if (candles?.length && !candles.__synthetic) price = candles[candles.length - 1].c;
   } catch { /* use last known real price */ }
   const now = Date.now();
-  const tr = closeAccountPositionInternal(acct, price, reason, 0.0007, now);
+  const s = state.settings || {};
+  // Same cost model as the tick loop; a manual close used to charge a different rate.
+  const feeRate = Math.max(0.0003, Number(s.takerFee ?? s.feeRate ?? 0.0004)) + (Number(s.spread ?? 0.001) * 0.5);
+  const tr = closeAccountPositionInternal(acct, price, reason, feeRate, now);
   if (acct.equity > (acct.highWaterMark || acct.initialBalance)) acct.highWaterMark = acct.equity;
   acct.equityHistory = acct.equityHistory || [];
   acct.equityHistory.push({ t: now, v: acct.equity });

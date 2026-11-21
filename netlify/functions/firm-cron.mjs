@@ -96,7 +96,9 @@ export async function runFirmCronJob({ cycles = 2, deep = false } = {}) {
   try { await firm.promoteDryRuns(); } catch { /* ignore */ }
   try {
     const nostro = await import('../../src/nostro.js');
-    await nostro.runNostroFleetSimulation({}, { doOptimize: false, forceLive: true });
+    // The base server can afford the full multi-year history; a 10s function cannot.
+    const maxBars = process.env.ALTA_BASE_SERVER === '1' ? 0 : 1200;
+    await nostro.runNostroFleetSimulation({}, { doOptimize: false, forceLive: true, maxBars });
   } catch { /* ignore */ }
   try {
     const gann = await import('../../src/gann.js');
