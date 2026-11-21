@@ -313,6 +313,36 @@ function computeGannSmartSuggestions(candles, a, symbol, tf) {
   };
 }
 
+/**
+ * Applies a hover suggestion on a pivot: draw a Gann fan from it, open a Gann square
+ * of the chosen width from it, or mark the eighths of its range.
+ */
+function applyPivotAction(pivot, action, ui) {
+  if (!pivot) return;
+  const date = new Date(pivot.t).toISOString().slice(0, 10);
+  const typeLabel = pivot.type === 'low' ? 'שפל' : 'שיא';
+  gannViewState.manualPrice = String(+fmtPriceSmart(pivot.price));
+  gannViewState.manualDate = date;
+  gannViewState.key = null;
+
+  if (action === 'fan') {
+    updateGannzillaConfig({
+      showFanOnChart: true,
+      fanDirection: pivot.type === 'low' ? 'up' : 'down',
+    }, ui, { reloadAnalysis: true });
+    toast(`מניפת גאן נמתחה מ${typeLabel} ${fmtPriceSmart(pivot.price)} (${date})`, 'ok');
+    return;
+  }
+  if (action === 'box') {
+    const bars = Number(getGannzillaConfig().boxBars) || 0;
+    updateGannzillaConfig({ showBoxOnChart: true }, ui, { reloadAnalysis: true });
+    toast(`ריבוע גאן נפתח מ${typeLabel} ${fmtPriceSmart(pivot.price)} · ${bars ? `${bars} נרות` : 'רוחב אוטומטי'}`, 'ok');
+    return;
+  }
+  updateGannzillaConfig({ showEighthsOnChart: true }, ui, { reloadAnalysis: true });
+  toast(`שמיניות המחיר מסומנות על הגרף מ${typeLabel} ${fmtPriceSmart(pivot.price)}`, 'ok');
+}
+
 function renderSmartAutoFillCard(a, cfg, ui) {
   const sug = computeGannSmartSuggestions(gannViewState.candles, a, gannViewState.symbol, gannViewState.tf);
   if (!sug) return null;
@@ -441,7 +471,7 @@ function svgEl(tag, attrs, text) {
   return node;
 }
 
-function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG) {
+function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG, handlers = {}) {
   const show = Math.min(candles.length, 240);
   const slice = candles.slice(-show);
   const offset = candles.length - show;
@@ -505,6 +535,35 @@ function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG
     const y = yAt(val);
     svg.appendChild(svgEl('line', { x1: padL, x2: width - 8, y1: y, y2: y, stroke: '#162235', 'stroke-width': 1 }));
     svg.appendChild(svgEl('text', { x: 4, y: y + 4, fill: '#8fa3bf', 'font-size': '10' }, val >= 100 ? val.toFixed(0) : val.toFixed(2)));
+  }
+
+  // Gann eighths (and thirds) of the visible range, so the price ladder is readable
+  // on the chart itself instead of only in the calculation table.
+  if (cfg.showEighthsOnChart !== false) {
+    const visHigh = Math.max(...highs);
+    const visLow = Math.min(...lows);
+    const visRange = visHigh - visLow || 1;
+    const ladder = [
+      [0, '0/8', true], [0.125, '1/8', false], [0.25, '2/8', true], [0.3333, '1/3', true],
+      [0.375, '3/8', false], [0.5, '4/8', true], [0.625, '5/8', false], [0.6667, '2/3', true],
+      [0.75, '6/8', true], [0.875, '7/8', false], [1, '8/8', true],
+    ];
+    const gEighths = svgEl('g', {});
+    for (const [ratio, label, strong] of ladder) {
+      const price8 = visLow + visRange * ratio;
+      const y = yAt(price8);
+      if (y < padT + 1 || y > padT + chartH - 1) continue;
+      gEighths.appendChild(svgEl('line', {
+        x1: padL, x2: padL + chartW, y1: y, y2: y,
+        stroke: strong ? 'rgba(242, 204, 96, 0.55)' : 'rgba(115, 191, 255, 0.3)',
+        'stroke-width': strong ? 1.1 : 0.8,
+        'stroke-dasharray': strong ? '0' : '2,3',
+      }));
+      gEighths.appendChild(svgEl('text', {
+        x: padL + 3, y: y - 3, fill: strong ? '#f2cc60' : '#8ecbff', 'font-size': '8.5',
+      }, `${label} · ${fmtPriceSmart(price8)}`));
+    }
+    svg.appendChild(gEighths);
   }
 
   // Optional W.D. Gann Box (Square of Price & Time) Overlay
@@ -612,16 +671,63 @@ function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG
     svg.appendChild(svgEl('text', { x: cx - 5, y: cy - 8, fill: '#f2cc60', 'font-size': '13' }, '★'));
   }
 
-  // Historical Pivots
+  // Historical Pivots — hover a pivot for Gann suggestions you can apply with a click
+  const hoverLayer = svgEl('g', {});
+  const boxBars = Number(cfg.boxBars) || 0;
   for (const p of analysis.pivots) {
     const rel = p.idx - offset;
     if (rel < 0 || rel >= show) continue;
-    svg.appendChild(svgEl('circle', {
-      cx: xAt(rel), cy: yAt(p.price), r: 4,
+    const cx = xAt(rel);
+    const cy = yAt(p.price);
+    const pivotGroup = svgEl('g', { style: 'cursor:pointer' });
+    pivotGroup.appendChild(svgEl('circle', {
+      cx, cy, r: 4,
       fill: p.type === 'low' ? '#2ecc71' : '#f05b5b',
       stroke: '#070c14', 'stroke-width': 1.2,
     }));
+    const hit = svgEl('circle', { cx, cy, r: 13, fill: 'transparent' });
+    pivotGroup.appendChild(hit);
+
+    const showSuggestions = () => {
+      hoverLayer.textContent = '';
+      const w = 196;
+      const h = 78;
+      const tx = Math.min(Math.max(padL, cx - w / 2), width - padR - w);
+      const ty = cy > padT + h + 15 ? cy - h - 12 : cy + 12;
+      hoverLayer.appendChild(svgEl('rect', {
+        x: tx, y: ty, width: w, height: h, rx: 6,
+        fill: 'rgba(8, 15, 26, 0.97)', stroke: 'rgba(56, 189, 248, 0.65)', 'stroke-width': 1,
+      }));
+      hoverLayer.appendChild(svgEl('text', {
+        x: tx + 8, y: ty + 15, fill: '#e2e8f0', 'font-size': '9.5', 'font-weight': '700',
+      }, `${p.type === 'low' ? 'שפל' : 'שיא'} ${fmtPriceSmart(p.price)} · ${new Date(p.t).toISOString().slice(0, 10)}`));
+      const rows = [
+        ['↗ מניפת גאן מהנקודה', 'fan', '#7dd3fc'],
+        [`▦ ריבוע ${boxBars ? `${boxBars} נרות` : 'אוטומטי'} מכאן`, 'box', '#f2cc60'],
+        ['⅛ שמיניות מהטווח', 'eighths', '#8ecbff'],
+      ];
+      rows.forEach(([label, action, color], idx) => {
+        const rowY = ty + 31 + idx * 16;
+        const bg = svgEl('rect', {
+          x: tx + 6, y: rowY - 10, width: w - 12, height: 14, rx: 3,
+          fill: 'rgba(56, 189, 248, 0.12)', style: 'cursor:pointer', 'pointer-events': 'all',
+        });
+        bg.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          handlers.onPivotAction?.(p, action);
+        });
+        hoverLayer.appendChild(bg);
+        hoverLayer.appendChild(svgEl('text', {
+          x: tx + 10, y: rowY + 1, fill: color, 'font-size': '9', 'pointer-events': 'none',
+        }, label));
+      });
+    };
+
+    hit.addEventListener('mouseenter', showSuggestions);
+    hit.addEventListener('click', () => handlers.onPivotAction?.(p, 'fan'));
+    svg.appendChild(pivotGroup);
   }
+  svg.appendChild(hoverLayer);
 
   // Future Projected Time Lines
   analysis.futurePivots.slice(0, 5).forEach((fp, idx) => {
@@ -1153,6 +1259,19 @@ export function renderGann(root, ui) {
           class: `btn btn-sm ${cfg.showBoxOnChart ? 'btn-primary' : ''}`,
           onclick: () => updateGannzillaConfig({ showBoxOnChart: !cfg.showBoxOnChart }, ui),
         }, '▦ תיבת גאן (Gann Box)'),
+        h('select', {
+          class: 'input',
+          style: { width: '148px' },
+          title: 'רוחב ריבוע גאן בברים (0 = אוטומטי)',
+          value: String(cfg.boxBars || 0),
+          onchange: (e) => updateGannzillaConfig({ boxBars: Number(e.target.value) || 0, showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+        }, [['0', 'ריבוע: אוטומטי'], ['36', 'ריבוע 36 נרות'], ['72', 'ריבוע 72 נרות'], ['90', 'ריבוע 90 נרות'], ['144', 'ריבוע 144 נרות'], ['180', 'ריבוע 180 נרות'], ['360', 'ריבוע 360 נרות']].map(([v, l]) =>
+          h('option', { value: v, selected: String(cfg.boxBars || 0) === v }, l)
+        )),
+        h('button', {
+          class: `btn btn-sm ${cfg.showEighthsOnChart !== false ? 'btn-primary' : ''}`,
+          onclick: () => updateGannzillaConfig({ showEighthsOnChart: cfg.showEighthsOnChart === false }, ui),
+        }, '⅛ שמיניות מחיר'),
         h('button', {
           class: `btn btn-sm ${cfg.showSwingOnChart ? 'btn-primary' : ''}`,
           onclick: () => updateGannzillaConfig({ showSwingOnChart: !cfg.showSwingOnChart }, ui),
@@ -1166,7 +1285,10 @@ export function renderGann(root, ui) {
           h('option', { value: v, selected: String(cfg.swingBarMode || 2) === v }, l)
         )),
       ),
-      renderGannForecastSvg(gannViewState.candles, a, cfg),
+      renderGannForecastSvg(gannViewState.candles, a, cfg, {
+        boxBars: Number(cfg.boxBars) || 0,
+        onPivotAction: (pivot, action) => applyPivotAction(pivot, action, ui),
+      }),
       a.gannFan?.ruleOfAllAngles
         ? h('div', { class: 'small muted', style: { marginTop: '8px' }, text: a.gannFan.ruleOfAllAngles })
         : null,

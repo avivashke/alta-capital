@@ -525,16 +525,22 @@ export function computeGannAngles(candles, anchorPivot, opts = {}) {
 
 // --- W.D. Gann Box / Square of Price & Time ---
 
-export function computeGannBox(candles, anchorPivot, swingHigh, swingLow) {
+export function computeGannBox(candles, anchorPivot, swingHigh, swingLow, opts = {}) {
   if (!candles?.length || !anchorPivot) return null;
   const n = candles.length;
-  const startIdx = Math.max(0, Math.min(n - 10, anchorPivot.idx ?? Math.max(0, n - 90)));
+  const startIdx = Math.max(0, Math.min(n - 10,
+    Number.isInteger(opts.anchorIdx) ? opts.anchorIdx : (anchorPivot.idx ?? Math.max(0, n - 90))));
   const elapsed = Math.max(10, n - 1 - startIdx);
   const naturalWidths = [36, 45, 52, 72, 90, 120, 144, 180, 240];
-  const widthBars = naturalWidths.find((w) => w >= elapsed) || 144;
+  // A chosen square width wins over the natural one, so the same pivot can be opened
+  // as a 90, 144, 180 or 360-bar square of price and time.
+  const forcedWidth = Number(opts.widthBars) || 0;
+  const widthBars = forcedWidth > 0
+    ? Math.max(20, Math.min(720, Math.round(forcedWidth)))
+    : (naturalWidths.find((w) => w >= elapsed) || 144);
   const endIdx = startIdx + widthBars;
-  const high = Math.max(swingHigh, swingLow);
-  const low = Math.min(swingHigh, swingLow);
+  const high = Number(opts.priceHigh) || Math.max(swingHigh, swingLow);
+  const low = Number(opts.priceLow) || Math.min(swingHigh, swingLow);
   const range = Math.max(1e-6, high - low);
 
   const priceRatios = [0, 0.125, 0.25, 0.3333, 0.5, 0.6667, 0.75, 0.875, 1];
@@ -818,6 +824,8 @@ export const DEFAULT_GANNZILLA_CONFIG = {
   showFanOnChart: true,
   showBoxOnChart: false,
   showSwingOnChart: false,
+  showEighthsOnChart: true,
+  boxBars: 0,
   swingBarMode: 2,
   fanDirection: 'auto',
   fanScale: '',
@@ -1567,8 +1575,18 @@ export function analyzeGannHistoryAndForecast(
   }
   if (manualAnchorPrice && Number(manualAnchorPrice) > 0) {
     const manualTs = manualAnchorDate ? Date.parse(`${manualAnchorDate}T00:00:00Z`) : anchorPivot.t;
+    // A manual anchor used to keep the old pivot's index, so a fan "from this pivot"
+    // was still drawn from wherever the auto anchor sat. Find the bar for that date.
+    let manualIdx = anchorPivot.idx;
+    if (Number.isFinite(manualTs)) {
+      let bestDiff = Infinity;
+      for (let i = 0; i < candles.length; i++) {
+        const diff = Math.abs(candles[i].t - manualTs);
+        if (diff < bestDiff) { bestDiff = diff; manualIdx = i; }
+      }
+    }
     anchorPivot = {
-      idx: anchorPivot.idx,
+      idx: manualIdx,
       t: Number.isFinite(manualTs) ? manualTs : anchorPivot.t,
       price: Number(manualAnchorPrice),
       type: Number(manualAnchorPrice) >= currentPrice ? 'high' : 'low',
@@ -1641,7 +1659,10 @@ export function analyzeGannHistoryAndForecast(
   });
   const angles = gannFan.rays;
   const angle1x1 = angles.find((a) => a.mult === 1);
-  const gannBox = computeGannBox(candles, anchorPivot, swingHigh, swingLow);
+  const gannBox = computeGannBox(candles, anchorPivot, swingHigh, swingLow, {
+    widthBars: Number(gzCfg.boxBars) || 0,
+    anchorIdx: anchorPivot.idx,
+  });
   const swingChart = computeGannSwingChart(candles, { barMode: gzCfg.swingBarMode || 2 });
 
   // 5b. MSJ_GannSQ9 Spiral Matrix & Degree/Time Calculator
@@ -1807,6 +1828,20 @@ export const HISTORICAL_GANN_WEB_ARCHIVE = [
     explanation: 'שילוב של מחזור זמן 3 שנים / 1080 ימים עם רמת שורש ריבועי קרדינלית ב-Square of 9.',
     sourceName: 'Gann Master Time Factor Archive',
     sourceUrl: 'https://www.topstep.com/',
+  },
+  {
+    id: 'web_gann_2026_11_master_cycles_729',
+    kind: 'web_documented',
+    symbol: 'נכס הבסיס · רמות 703–729',
+    date: '2026-11-20',
+    title: 'התכנסות שלושה מחזורי מאסטר ושבירת 729 (27²) — 729 הופכת להתנגדות',
+    category: 'מחזורי מאסטר + שבירת Square of 9',
+    marketPrice: 729,
+    proven: true,
+    details: 'בתאריך 2026-11-20 פקעו במקביל שלושה מחזורי מאסטר: 81 חודשים משיא 2020, 49 חודשים מתחתית 2022 ו-289 חודשים משפל 2002. באותו יום נשברה רמת 729 — הנמצאת על אותה זווית גאן שעליה יושבים כל שלושת השפלים/שיאים. השבירה הפכה את 729 מהתנגדות לתמיכה/התנגדות חוזרת, 716 גם היא התנגדות, ויעד הירידה הוא הטווח 703–707.',
+    explanation: '729 = 27², כלומר "Square Out" מושלם של שורש המחיר, ולכן הוא רמת ויברציה קרדינלית ב-Square of 9. התכנסות של 81 (9×9), 49 (7×7) ו-289 (17×17) חודשים על אותה זווית היא המקרה הקלאסי של גאן: זמן ומחיר נסגרים יחד, והשבירה מסמנת מעבר שליטה לידי המוכרים. היפוך תפקיד של 729 ל-716 ואז לטווח 703–707 תואם את כללי גאן לנסיגות של 1/8–2/8 מהטווח.',
+    sourceName: 'ניתוח מחזורי זמן של הצוות · Alta Capital Gann Desk',
+    sourceUrl: '',
   },
 ];
 
