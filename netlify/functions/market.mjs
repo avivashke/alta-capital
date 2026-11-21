@@ -4,13 +4,17 @@
 //   GET /api/market?symbol=NVDA&tf=1d&limit=500  -> OHLCV candles + live quote
 //   GET /api/market?action=quotes&symbols=NVDA,AAPL,SPY -> live quotes batch
 
+// Yahoo hard limits: 5m/15m ~60d, 60m ~730d, 1d/1wk can span a decade or more.
+// Deep history is what lets the backtests look years back instead of months.
 const TF_MAP = {
-  '5m':  { interval: '5m',  range: '5d' },
-  '15m': { interval: '15m', range: '1mo' },
-  '1h':  { interval: '60m', range: '3mo' },
-  '1d':  { interval: '1d',  range: '2y' },
-  '1w':  { interval: '1wk', range: '5y' },
+  '5m':  { interval: '5m',  range: '3mo' },
+  '15m': { interval: '15m', range: '3mo' },
+  '1h':  { interval: '60m', range: '1y' },
+  '1d':  { interval: '1d',  range: '10y' },
+  '1w':  { interval: '1wk', range: '10y' },
 };
+
+const MAX_CANDLES = 6000;
 
 const SEC_CIKS = {
   NVDA: '0001045810',
@@ -199,7 +203,7 @@ async function fetchYahooChart(symbol, tf = '1d', limit = 500) {
     price: meta.regularMarketPrice ?? candles[candles.length - 1]?.c ?? null,
     changePct: meta.regularMarketChangePercent ?? 0,
     currency: meta.currency || 'USD',
-    candles: candles.slice(-Math.max(60, Math.min(1000, Number(limit) || 500))),
+    candles: candles.slice(-Math.max(60, Math.min(MAX_CANDLES, Number(limit) || 500))),
   };
 }
 
@@ -219,7 +223,7 @@ async function fetchStooqDaily(symbol, limit = 500) {
     candles.push({ t: ts, o: +o, h: +h, l: +l, c: +c, v: +(v || 0) });
   }
   if (candles.length < 30) throw new Error('Stooq: insufficient candles');
-  const sliced = candles.slice(-Math.max(60, Math.min(1000, Number(limit) || 500)));
+  const sliced = candles.slice(-Math.max(60, Math.min(MAX_CANDLES, Number(limit) || 500)));
   return {
     ok: true,
     provider: 'Stooq (Zero-Key)',

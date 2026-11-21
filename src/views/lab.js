@@ -4,7 +4,7 @@ import { STRATEGIES, STRATEGY_IDS } from '../strategies.js';
 import { marketState } from '../market.js';
 import { h, pct, num, chart, section, statusTag, tag, notice, empty, openModal, timeAgo, toast } from '../ui.js';
 import { runAiDirector } from '../ai.js';
-import { metricsTable, gateList, strategyName } from './shared.js';
+import { metricsTable, gateList, strategyName, universeTable, dataSpan } from './shared.js';
 import { runDeskCycle, resetDesk, switchStrategy } from '../firm.js';
 
 export function renderLab(root, ui) {
@@ -109,6 +109,7 @@ export function renderLab(root, ui) {
           notice('אם ה-OOS נמוך משמעותית מה-in-sample, זו עדות ל-overfitting. במקרה כזה הפחת פרמטרים או החלף משפחת אסטרטגיה.', 'blue'),
         ),
         statsCard(desk),
+        universeTable(desk),
         technicalCard(desk),
         aiDirectorCard(desk, ui),
         h('div', { class: 'card' },
@@ -117,7 +118,7 @@ export function renderLab(root, ui) {
           ),
           gateList(desk, s),
           h('div', { class: 'small muted', style: { marginTop: '8px' } },
-            `נתונים: ${desk.lastCandles ? num(desk.lastCandles) + ' נרות' : '—'} · מקור: ${marketLabel()}`,
+            `נתונים: ${desk.lastCandles ? num(desk.lastCandles) + ' נרות' : '—'}${desk.dataWindow ? ' · ' + dataSpan(desk.dataWindow) : ''} · מקור: ${marketLabel()}`,
           ),
         ),
         h('div', { class: 'card' },

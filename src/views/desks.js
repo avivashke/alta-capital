@@ -1,6 +1,6 @@
 import { store } from '../store.js';
 import { h, pct, num, money, section, statusTag, chart, tag, notice, empty } from '../ui.js';
-import { metricsTable, gateList, strategyName } from './shared.js';
+import { metricsTable, gateList, strategyName, universeTable } from './shared.js';
 import { runDeskCycle, resetDesk, setDeskStatus, getPaperPortfolio, ensurePaperPortfolio } from '../firm.js';
 import { quotes } from '../market.js';
 
@@ -130,7 +130,7 @@ export function renderDesks(root, ui) {
           ),
         ),
       ),
-      desk.metrics ? h('div', { style: { marginTop: '12px' } }, metricsTable(desk)) : empty('אין עדיין תוצאות בקטסט לשולחן זה'),
+      desk.metrics ? h('div', { style: { marginTop: '12px' } }, metricsTable(desk), universeTable(desk)) : empty('אין עדיין תוצאות בקטסט לשולחן זה'),
       desk.history.length ? h('div', { style: { marginTop: '12px' } },
         h('h3', { style: { fontSize: '13px' }, text: 'גרסאות אחרונות' }),
         h('div', { class: 'table-wrap' }, h('table', {},

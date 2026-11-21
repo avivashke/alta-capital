@@ -2,6 +2,21 @@
 
 export const BARS_PER_YEAR = { '5m': 105120, '15m': 35040, '1h': 8760, '4h': 2190, '1d': 365, '1w': 52 };
 
+// How deep each backtest looks, in bars. 1d ≈ 10+ years, 1w ≈ 10 years, 1h ≈ a year.
+// Providers page back as far as they allow and the rest is sliced to these limits.
+export const BACKTEST_HISTORY = { '5m': 2000, '15m': 3000, '1h': 4000, '1d': 3000, '1w': 800 };
+
+// Symbols each desk's winning strategy is cross-tested on, so the team can see
+// which stock (or coin) the strategy actually works best on.
+export const SCAN_UNIVERSE = {
+  stock: ['NVDA', 'AAPL', 'MSFT', 'TSLA', 'AMZN', 'GOOGL', 'META', 'AMD', 'NFLX', 'PLTR', 'SPY', 'QQQ'],
+  crypto: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'ADAUSDT', 'AVAXUSDT', 'DOGEUSDT'],
+};
+
+export function scanUniverseFor(symbol) {
+  return /USDT$/i.test(symbol || '') ? SCAN_UNIVERSE.crypto : SCAN_UNIVERSE.stock;
+}
+
 export const DESKS = [
   {
     id: 'desk_5m', label: 'תוך־יומי · 5 דקות', short: '5m', tf: '5m', kind: 'intraday',

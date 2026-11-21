@@ -50,6 +50,13 @@ export function metric(label, value, delta = null) {
   );
 }
 
+export function dataSpan(win) {
+  if (!win?.from || !win?.to) return '';
+  const years = (win.to - win.from) / (365.25 * 24 * 3600 * 1000);
+  const yearsTxt = years >= 1 ? `${years.toFixed(1)} שנים` : `${Math.max(1, Math.round(years * 12))} חודשים`;
+  return `${win.bars} נרות · ${yearsTxt} אחורה`;
+}
+
 export function metricsTable(desk) {
   const rows = [
     ['תשואה', desk.isMetrics ? pct(desk.isMetrics.returnPct) : '—', desk.oosMetrics ? pct(desk.oosMetrics.returnPct) : '—', desk.metrics ? pct(desk.metrics.returnPct) : '—'],
@@ -75,6 +82,55 @@ export function metricsTable(desk) {
         h('td', { class: 'num', text: String(r[3]) }),
       ))),
     ),
+    desk.dataWindow ? h('div', { class: 'tiny muted', style: { marginTop: '6px' } },
+      `עומק נתונים: ${dataSpan(desk.dataWindow)}${desk.dataWindow.synthetic ? ' · נתוני הדגמה' : ''}`) : null,
+  );
+}
+
+/** Ranked cross-market scan: which symbol the desk's strategy works best on. */
+export function universeTable(desk) {
+  const scan = desk?.universeScan;
+  if (!scan || !Array.isArray(scan.rows) || !scan.rows.length) return null;
+  const rows = scan.rows.slice(0, 12);
+  return h('div', { class: 'card', style: { marginTop: '14px' } },
+    h('div', { class: 'card-head' },
+      h('div', {},
+        h('h2', { text: 'סריקת סל נכסים · איפה האסטרטגיה עובדת הכי טוב' }),
+        h('div', { class: 'card-sub', text:
+          `${scan.strategyId ? STRATEGY_LABELS[scan.strategyId] || scan.strategyId : ''} · ${scan.ok}/${scan.scanned} נכסים · ${scan.tf} · ${num(scan.years || 0)} שנים אחורה` }),
+      ),
+      scan.best ? tag(`מוביל: ${scan.best.symbol} ${pct(scan.best.returnPct)}`, 'green') : null,
+    ),
+    h('div', { class: 'table-wrap' },
+      h('table', {},
+        h('thead', {}, h('tr', {},
+          h('th', { text: '#' }),
+          h('th', { text: 'נכס' }),
+          h('th', { class: 'num', text: 'תשואה' }),
+          h('th', { class: 'num', text: 'PF' }),
+          h('th', { class: 'num', text: 'DD' }),
+          h('th', { class: 'num', text: 'עסקאות' }),
+          h('th', { class: 'num', text: 'שנים' }),
+        )),
+        h('tbody', {}, rows.map((r, i) => r.error
+          ? h('tr', {},
+            h('td', { class: 'mono', text: String(i + 1) }),
+            h('td', { text: r.symbol }),
+            h('td', { class: 'num muted', text: r.error, colSpan: '5' }),
+          )
+          : h('tr', {},
+            h('td', { class: 'mono', text: String(i + 1) }),
+            h('td', {}, h('b', { text: r.symbol }), i === 0 ? ' ' : '', i === 0 ? tag('מוביל', 'green') : null),
+            h('td', { class: 'num mono ' + signClass(r.returnPct), text: pct(r.returnPct) }),
+            h('td', { class: 'num mono', text: String(r.profitFactor) }),
+            h('td', { class: 'num mono', text: pct(-r.maxDrawdownPct) }),
+            h('td', { class: 'num mono', text: String(r.trades) }),
+            h('td', { class: 'num mono', text: String(r.years ?? '—') }),
+          ))),
+      ),
+    ),
+    h('div', { class: 'tiny muted', style: { marginTop: '6px' } },
+      scan.worst ? `החלש בסל: ${scan.worst.symbol} ${pct(scan.worst.returnPct)} — שקול לפסול גרסה שנשענת על נכס אחד בלבד.` : ''),
   );
 }
 

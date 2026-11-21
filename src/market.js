@@ -109,10 +109,23 @@ async function fetchJson(url, timeout = 9000) {
 }
 
 async function fromBinance(symbol, tf, limit) {
-  const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${TF[tf].binance}&limit=${limit}`;
-  const rows = await fetchJson(url);
-  if (!Array.isArray(rows) || rows.length < 60) throw new Error('binance: empty');
-  return rows.map((k) => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
+  // Binance returns at most 1000 bars per call, so page backwards to reach years of history.
+  const target = Math.min(Math.max(Number(limit) || 0, 60), 6000);
+  const out = [];
+  let endTime = Date.now();
+  while (out.length < target) {
+    const batch = Math.min(1000, target - out.length);
+    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${TF[tf].binance}`
+      + `&limit=${batch}&endTime=${endTime}`;
+    const rows = await fetchJson(url);
+    if (!Array.isArray(rows) || !rows.length) break;
+    out.unshift(...rows.map((k) => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] })));
+    endTime = +rows[0][0] - 1;
+    if (rows.length < batch) break;
+  }
+  const dedup = [...new Map(out.map((c) => [c.t, c])).values()].sort((a, b) => a.t - b.t);
+  if (dedup.length < 60) throw new Error('binance: empty');
+  return dedup.slice(-target);
 }
 
 async function fromKraken(symbol, tf, limit) {
@@ -133,7 +146,7 @@ async function fromCoinbase(symbol, tf, limit) {
   if (!meta || !gran) throw new Error('coinbase: unsupported');
   const out = [];
   let end = Date.now();
-  for (let page = 0; page < 5 && out.length < limit; page++) {
+  for (let page = 0; page < 8 && out.length < limit; page++) {
     const start = end - gran * 1000 * 290;
     const url = `https://api.exchange.coinbase.com/products/${meta.coinbase}/candles?granularity=${gran}` +
       `&start=${new Date(start).toISOString()}&end=${new Date(end).toISOString()}`;
@@ -156,7 +169,7 @@ async function fromYahoo(symbol, tf, limit) {
     let lastErr = null;
     for (const ep of endpoints) {
       try {
-        const data = await fetchJson(ep, 10000);
+        const data = await fetchJson(ep, 15000);
         if (data?.ok && Array.isArray(data.candles) && data.candles.length >= 30) {
           if (data.price != null) {
             quotes[symbol] = { price: data.price, changePct: data.changePct || 0, at: Date.now(), provider: data.provider || 'Yahoo Finance' };
@@ -170,7 +183,8 @@ async function fromYahoo(symbol, tf, limit) {
     throw lastErr || new Error('yahoo: empty');
   }
   const intervalMap = { '5m': '5m', '15m': '15m', '1h': '60m', '1d': '1d', '1w': '1wk' };
-  const rangeMap = { '5m': '5d', '15m': '1mo', '1h': '3mo', '1d': '2y', '1w': '5y' };
+  // Yahoo hard limits: 5m/15m ~60d, 60m ~730d, 1d/1wk can span a decade or more.
+  const rangeMap = { '5m': '3mo', '15m': '3mo', '1h': '1y', '1d': '10y', '1w': '10y' };
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${intervalMap[tf] || '1d'}&range=${rangeMap[tf] || '2y'}`;
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' } });
   if (!res.ok) throw new Error('yahoo HTTP ' + res.status);
@@ -339,7 +353,7 @@ async function fromOkx(symbol, tf, limit) {
   const bar = okxMap[tf] || '1D';
   const collected = [];
   let afterTs = null;
-  const maxPages = Math.min(4, Math.ceil(limit / 280));
+  const maxPages = Math.min(40, Math.ceil(limit / 100));
   for (let page = 0; page < maxPages && collected.length < limit; page++) {
     const endpoint = page === 0 ? 'candles' : 'history-candles';
     const perPage = page === 0 ? Math.min(300, limit) : 100;

@@ -1,12 +1,13 @@
 // The firm: orchestration of desks, agents, optimization cycles, versioning and paper execution.
 
-import { BARS_PER_YEAR, DESKS, BINANCE_TESTNET, PAPER_TRADING } from './config.js';
+import { BARS_PER_YEAR, BACKTEST_HISTORY, DESKS, BINANCE_TESTNET, PAPER_TRADING, scanUniverseFor } from './config.js';
 import { store } from './store.js';
 import { getCandles, lastPrice, startQuotes, marketState } from './market.js';
 import { STRATEGIES } from './strategies.js';
 import { optimize, detectMarketRegime } from './optimizer.js';
 import { auditDeskPromotion, auditSystemTruth } from './auditor.js';
 import { runBacktest, passesGates } from './backtest.js';
+import { scanUniverse } from './universe.js';
 import { buildArtifact } from './platforms.js';
 import { atr } from './indicators.js';
 import { assessStrategy } from './stats.js';
@@ -20,7 +21,9 @@ import { createPaperPortfolio } from './paper_portfolio.js';
 import { recordVersionInDb, recordTradeInDb, recordCycleInDb, scheduleDatabasePush, pushStateToDatabase } from './db.js';
 import { runAiDirector } from './ai.js';
 
-const LIMITS = { '5m': 800, '15m': 800, '1h': 800, '1d': 600, '1w': 420 };
+// Deep history per timeframe (years back on 1d/1w, months on intraday) so the
+// backtest is not decided by a few weeks of one market regime.
+const LIMITS = BACKTEST_HISTORY;
 const ROUNDS = { intraday: { rounds: 26, climb: 12 }, swing: { rounds: 30, climb: 14 } };
 
 let lastEmit = 0;
@@ -224,6 +227,15 @@ export async function runDeskCycle(desk, opts = {}) {
       limit: LIMITS[desk.tf] || 700,
       force: !!opts.focus,
     });
+    desk.dataWindow = candles.length
+      ? {
+        bars: candles.length,
+        from: candles[0]?.t || null,
+        to: candles[candles.length - 1]?.t || null,
+        provider: candles.__provider || null,
+        synthetic: !!candles.__synthetic,
+      }
+      : null;
 
     // Detect live market regime from real OHLCV candles for continuous adaptive optimization
     const regime = detectMarketRegime(candles);
@@ -344,7 +356,9 @@ export async function runDeskCycle(desk, opts = {}) {
       cfg,
       isMetrics: ev.is,
       oosMetrics: ev.oos,
-      folds: 4,
+      // Deeper history earns more walk-forward folds: each fold retrains and then
+      // trades an unseen slice, so 6 folds test the strategy across more regimes.
+      folds: candles.length >= 1500 ? 6 : 4,
       mcIterations: desk.kind === 'swing' ? 500 : 700,
     });
     desk.assessment = assessment;
@@ -390,6 +404,49 @@ export async function runDeskCycle(desk, opts = {}) {
         speech: audit.summary,
         speechType: 'speak',
       });
+    }
+
+    // Cross-market depth: run the winning strategy + parameters over a whole
+    // universe, so the team sees which stock (or coin) it actually works best on.
+    const scanDue = opts.focus || !desk.universeScan || Date.now() - (desk.universeScan.at || 0) > 20 * 60_000;
+    if (scanDue && winner?.params) {
+      setAgent('backtest', {
+        status: 'busy',
+        task: `בודק את האסטרטגיה על פני סל נכסים · ${desk.short}`,
+        progress: 75,
+        thinking: 'מריץ את אותם פרמטרים על מניות/מטבעות נוספים ומדרג איפה האסטרטגיה עובדת הכי טוב',
+      });
+      try {
+        const uni = await scanUniverse({
+          symbols: scanUniverseFor(desk.symbol),
+          tf: desk.tf,
+          strategyId: candStrategyId,
+          params: winner.params,
+          cfg,
+          limit: LIMITS[desk.tf] || 700,
+          minTrades: Math.max(4, Math.round((gates.minTrades || 10) / 2)),
+        });
+        desk.universeScan = {
+          at: Date.now(),
+          tf: desk.tf,
+          strategyId: candStrategyId,
+          baseSymbol: desk.symbol,
+          scanned: uni.scanned,
+          ok: uni.ok,
+          years: uni.years,
+          rows: uni.rows,
+          best: uni.best,
+          worst: uni.worst,
+        };
+        if (uni.best) {
+          store.log('info', 'איתי · בקטסט',
+            `${desk.label}: ${uni.ok}/${uni.scanned} נכסים נבדקו לאורך ${uni.years} שנים · הכי טוב ${uni.best.symbol} (${uni.best.returnPct}% · PF ${uni.best.profitFactor} · ${uni.best.trades} עסקאות)`);
+        } else {
+          store.log('warn', 'איתי · בקטסט', `${desk.label}: סריקת הסל לא נמצאה רווחית באף נכס (${uni.ok}/${uni.scanned} תקפים)`);
+        }
+      } catch (err) {
+        store.log('warn', 'איתי · בקטסט', `${desk.label}: סריקת הסל נכשלה · ${err.message}`);
+      }
     }
 
     const prevReturn = desk.bestReturn;
