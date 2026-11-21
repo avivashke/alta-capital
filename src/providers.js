@@ -9,12 +9,18 @@ export const PROVIDER_ORDER = [
   'anthropic', 'gateway', 'ollama', 'webllm', 'custom',
 ];
 
+// Public models reachable without any API key. Verified live against
+// GET https://text.pollinations.ai/models: the anonymous tier currently serves
+// openai-fast (GPT-OSS 20B) only, and throttles uncached prompts to one reply
+// every 45 seconds, so exactly one entry is kept to avoid self-inflicted 402s.
+export const POLLINATIONS_MODELS = ['openai-fast'];
+
 export const PROVIDERS = {
   pollinations: {
     label: 'Pollinations AI (רשת פתוחה · חינם ללא מפתח)',
     shape: 'openai',
     baseUrl: 'https://text.pollinations.ai/openai',
-    models: ['openai', 'mistral', 'llama'],
+    models: POLLINATIONS_MODELS,
     free: true,
     noKey: true,
     limits: { rpm: 15, rpd: 500 },
@@ -25,7 +31,7 @@ export const PROVIDERS = {
     label: 'Groq',
     shape: 'openai',
     baseUrl: 'https://api.groq.com/openai/v1',
-    models: ['llama-3.1-8b-instant', 'llama-3.1-70b-versatile', 'llama-3.2-3b-preview'],
+    models: ['openai/gpt-oss-120b', 'llama-3.1-8b-instant', 'llama-3.3-70b-versatile'],
     free: true,
     limits: { rpm: 30, rpd: 1000 },
     keyUrl: 'https://console.groq.com/keys',
@@ -92,7 +98,10 @@ export const PROVIDERS = {
     label: 'NVIDIA NIM',
     shape: 'openai',
     baseUrl: 'https://integrate.api.nvidia.com/v1',
-    models: ['nvidia/nemotron-3-ultra-550b-a55b', 'meta/llama-3.1-70b-instruct', 'z-ai/glm-4.6'],
+    // Verified live against the free NIM key: llama-3.1/3.3 and gpt-oss now answer 410
+    // (end of life) and glm/glm-4.6 404s. Only the Nemotron flagship is served, and it
+    // is a reasoning model, so its text may arrive in message.reasoning.
+    models: ['nvidia/nemotron-3-ultra-550b-a55b'],
     free: true,
     limits: { rpm: 40, rpd: 1000 },
     keyUrl: 'https://build.nvidia.com',
@@ -157,6 +166,17 @@ export const PROVIDERS = {
     limits: {},
     keyUrl: 'https://console.anthropic.com/settings/keys',
     note: 'בתשלום. מתאים אחרי שכבת החינם, כגיבוי איכותי.',
+  },
+  'server-proxy': {
+    label: 'Alta Proxy (אותו דומיין · /api/llm)',
+    shape: 'openai',
+    baseUrl: '/api/llm',
+    models: ['auto'],
+    free: true,
+    noKey: true,
+    limits: {},
+    keyUrl: '',
+    note: 'פרוקסי השרת של Alta עצמו: עוקף CORS ו-Origin allowlist של Workers חיצוניים, ומריץ את בריכת המודלים בצד השרת.',
   },
   gateway: {
     label: 'שער מאוחד (self-hosted)',

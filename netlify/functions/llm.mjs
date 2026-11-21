@@ -34,12 +34,14 @@ function getEnvPoolSafe() {
     model: e.model,
     baseUrl: e.baseUrl,
     hasKey: !!e.key,
+    free: !e.key,
   }));
 }
 
 async function callEnvEntry(entry, { system, messages, maxTokens = 400, temperature = 0.4 }) {
   const base = (entry.baseUrl || '').replace(/\/+$/, '').replace('{account_id}', entry.accountId || '');
-  const primaryUrl = /\/chat(\/completions)?$/i.test(base) ? base : `${base}/chat/completions`;
+  // Pollinations and Worker proxies already serve the full chat endpoint.
+  const primaryUrl = /\/chat(\/completions)?$|\/openai$/i.test(base) ? base : `${base}/chat/completions`;
   const urls = [primaryUrl];
   if (entry.provider === 'gateway') {
     try {
@@ -81,17 +83,26 @@ async function callEnvEntry(entry, { system, messages, maxTokens = 400, temperat
     let text = '';
     try {
       const data = JSON.parse(raw);
+      const message = data.choices?.[0]?.message || {};
       text = (
-        data.choices?.[0]?.message?.content
+        message.content
+        // NVIDIA NIM reasoning models answer in reasoning_content / reasoning and
+        // leave content null; without this the call looked successful but empty.
+        || message.reasoning_content
+        || message.reasoning
+        || data.choices?.[0]?.text
         || data.reply
         || data.response
         || data.text
         || data.output
         || data.result?.response
         || ''
-      ).trim();
+      ).replace(/<\/?think>/gi, '').trim();
     } catch {
       text = raw.trim();
+    }
+    if (!text) {
+      return { ok: false, status: 502, ms, error: 'Empty response from model', provider: entry.provider, label: entry.label, model: entry.model };
     }
     return { ok: true, ms, text, provider: entry.provider, label: entry.label, model: entry.model };
   }

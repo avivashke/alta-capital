@@ -1,8 +1,52 @@
 // Persistent state in localStorage + a tiny pub/sub.
 
 import { AGENT_ROSTER, DESKS } from './config.js';
+import { POLLINATIONS_MODELS } from './providers.js';
+import { reviveEntries } from './keypool.js';
 
 const STORAGE_KEY = 'alta-capital-firm-v1';
+const FREE_WEB_BASE = 'https://text.pollinations.ai/openai';
+
+// Keyless web AI is part of the pool on every install, so no feature ever reports
+// "no model configured" before the user adds a key.
+function ensureFreeWebEntries(st) {
+  if (!st?.pool || !Array.isArray(st.pool.entries)) return;
+  let added = 0;
+  // The anonymous Pollinations tier drops and adds models; keep only the ones it serves
+  // now so the pool does not retry retired names on every cycle.
+  const before = st.pool.entries.length;
+  st.pool.entries = st.pool.entries.filter((e) => e.provider !== 'pollinations'
+    || POLLINATIONS_MODELS.includes(e.model));
+  added += before - st.pool.entries.length;
+  for (const model of POLLINATIONS_MODELS) {
+    if (st.pool.entries.some((e) => e.provider === 'pollinations' && e.model === model)) continue;
+    st.pool.entries.push({
+      id: `free_pollinations_${model}`,
+      provider: 'pollinations',
+      label: `Pollinations · ${model} (חינם מהווב)`,
+      shape: 'openai',
+      baseUrl: FREE_WEB_BASE,
+      accountId: '',
+      model,
+      key: '',
+      enabled: true,
+      valid: true,
+      weight: 1,
+      addedAt: Date.now(),
+      lastUsedAt: null,
+      uses: 0,
+      day: new Date().toISOString().slice(0, 10),
+      dayCount: 0,
+      minuteStart: 0,
+      minuteCount: 0,
+      cooldownUntil: 0,
+      failStreak: 0,
+      lastError: '',
+    });
+    added += 1;
+  }
+  if (added) st.pool.updatedAt = Date.now();
+}
 
 export const uid = (prefix = 'id') => prefix + '_' + Math.random().toString(36).slice(2, 9);
 
@@ -30,7 +74,7 @@ export function defaults() {
       autoCreateRobots: true,
       cloudflareProxyUrl: '',
       cloudflareProxyKey: '',
-      cloudflareProxyModel: 'llama-3.3-70b-versatile',
+      cloudflareProxyModel: 'openai/gpt-oss-120b',
       feeRate: 0.0004,
       makerFee: 0.00025,
       takerFee: 0.0004,
@@ -121,59 +165,74 @@ export const store = {
     }
     this.ensureTeam();
     this.ensureCloudflareProxy();
+    this.ensureOllamaEntry();
     this.markReloaded();
     return this.state;
   },
 
+  ensureOllamaEntry() {
+    const st = this.state?.settings;
+    if (!st) return;
+    // Ensure Ollama (local) entry exists in the pool, 
+    const exists = st.pool.entries.find(e => e.provider === 'ollama');
+    if (exists && /:11435\b/.test(exists.baseUrl || '')) { exists.baseUrl = 'http://localhost:11434/v1'; exists.failStreak = 0; exists.cooldownUntil = 0; exists.valid = true; }
+    if (!exists) {
+      st.pool.entries.unshift({
+        id: 'ollama_local',
+        provider: 'ollama',
+        label: 'Ollama (מקומי, GPU/CPU)',
+        shape: 'openai',
+        baseUrl: 'http://localhost:11434/v1',
+        accountId: '',
+        model: 'qwen2.5:3b', // default fast model, can be overridden by UI
+        key: '',
+        enabled: true,
+        valid: true,
+        weight: 1,
+        addedAt: Date.now(),
+        lastUsedAt: null,
+        uses: 0,
+        day: new Date().toISOString().slice(0, 10),
+        dayCount: 0,
+        minuteStart: 0,
+        minuteCount: 0,
+        cooldownUntil: 0,
+        failStreak: 0,
+        lastError: '',
+      });
+      st.pool.updatedAt = Date.now();
+    }
+  },
   ensureCloudflareProxy() {
     const st = this.state?.settings;
     if (!st) return;
-    const url = (st.cloudflareProxyUrl || 'https://alta-groq.avivashke95.workers.dev/v1').trim() || 'https://alta-groq.avivashke95.workers.dev/v1';
-    const model = (st.cloudflareProxyModel || 'llama-3.3-70b-versatile').trim() || 'llama-3.3-70b-versatile';
+    const url = (st.cloudflareProxyUrl || '').trim();
+    const model = (st.cloudflareProxyModel || 'openai/gpt-oss-120b').trim() || 'openai/gpt-oss-120b';
     st.cloudflareProxyUrl = url;
     st.cloudflareProxyModel = model;
     if (!st.pool || !Array.isArray(st.pool.entries)) st.pool = { entries: [], updatedAt: null };
-    // Remove deprecated pollinations entry if present
-    st.pool.entries = st.pool.entries.filter((e) => e.provider !== 'pollinations');
 
-    const defaultWorkers = [
-      {
-        id: 'cf_proxy_default',
-        label: 'Cloudflare Worker Proxy (Alta)',
-        baseUrl: url,
-        model,
-        key: st.cloudflareProxyKey || '',
-      },
-      {
-        id: 'cf_proxy_tight_cake',
-        label: 'CF Worker · tight-cake-d704',
-        baseUrl: 'https://tight-cake-d704.avivashke95.workers.dev/v1',
-        model: 'llama-3.3-70b-versatile',
-        key: '',
-      },
-    ];
+    // Two Workers used to be baked in. Both now refuse every caller (403 Origin not
+    // allowed / retired Groq model), so drop them instead of retrying dead URLs.
+    st.pool.entries = st.pool.entries.filter((e) => !(e.provider === 'gateway'
+      && /tight-cake-d704|alta-groq\./i.test(e.baseUrl || '')));
 
-    const hostOf = (u) => {
-      try { return new URL(u).hostname.toLowerCase(); } catch { return String(u || '').replace(/\/+$/, '').toLowerCase(); }
-    };
+    ensureFreeWebEntries(st);
 
-    for (const w of defaultWorkers) {
-      const targetNorm = w.baseUrl.replace(/\/+$/, '').toLowerCase();
-      const targetHost = hostOf(w.baseUrl);
-      const exists = st.pool.entries.find((e) => e.provider === 'gateway' && (
-        (e.baseUrl || '').replace(/\/+$/, '').toLowerCase() === targetNorm
-        || hostOf(e.baseUrl) === targetHost
-      ));
+    if (url) {
+      const target = url.replace(/\/+$/, '').toLowerCase();
+      const exists = st.pool.entries.find((e) => e.provider === 'gateway'
+        && (e.baseUrl || '').replace(/\/+$/, '').toLowerCase() === target);
       if (!exists) {
         st.pool.entries.unshift({
-          id: w.id,
+          id: 'cf_proxy_default',
           provider: 'gateway',
-          label: w.label,
+          label: 'Cloudflare Worker Proxy',
           shape: 'openai',
-          baseUrl: w.baseUrl,
+          baseUrl: url,
           accountId: '',
-          model: w.model,
-          key: w.key,
+          model,
+          key: st.cloudflareProxyKey || '',
           enabled: true,
           valid: true,
           weight: 1,
@@ -190,12 +249,13 @@ export const store = {
         });
         st.pool.updatedAt = Date.now();
       } else {
-        exists.enabled = exists.enabled !== false;
-        exists.valid = exists.valid !== false;
-        if (!exists.model || exists.model === 'openai/gpt-oss-120b') exists.model = w.model;
-        if (w.key) exists.key = exists.key || w.key;
+        if (st.cloudflareProxyKey) exists.key = exists.key || st.cloudflareProxyKey;
+        exists.model = st.cloudflareProxyModel;
       }
     }
+
+    // Old builds permanently disabled a proxy on any 403; bring those entries back.
+    reviveEntries(this.state);
   },
 
   ensureTeam() {

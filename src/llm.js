@@ -6,11 +6,17 @@
 //   (Netlify Function proxy) or any active Cloudflare Worker proxy in the pool.
 
 import { LLM_PROVIDERS } from './config.js';
+import { POLLINATIONS_MODELS } from './providers.js';
 import { store } from './store.js';
 import { availableEntries, markFailure, markUsed, poolEntries } from './keypool.js';
 import * as webllm from './webllm.js';
 
+// A proxy that answers 400 "Model not allowed" is misconfigured, not dead. Try the
+// model the Worker was built for before dropping the entry for this request.
+const GATEWAY_FALLBACK_MODELS = ['openai/gpt-oss-120b', 'llama-3.1-8b-instant', 'llama-3.3-70b-versatile'];
+
 const TIMEOUT_MS = 45_000;
+const LOCAL_TIMEOUT_MS = 90_000;
 
 export class LlmError extends Error {
   constructor(message, status = 0) {
@@ -83,7 +89,9 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
   }
 
   if (!entry.key && entry.provider !== 'ollama' && entry.provider !== 'pollinations' && !isProxyChat) throw new LlmError('חסר מפתח API');
-  const chatUrl = /\/chat(\/completions)?$/i.test(base) ? base : (base + '/chat/completions');
+  // Pollinations and Worker proxies already expose the full chat endpoint; appending
+  // /chat/completions to them produced a 404 that looked like a dead provider.
+  const chatUrl = /\/chat(\/completions)?$|\/openai$/i.test(base) ? base : (base + '/chat/completions');
   return {
     url: chatUrl,
     init: {
@@ -102,6 +110,10 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
   };
 }
 
+function stripThinking(text) {
+  return String(text || '').replace(/<\/?think>/gi, '').replace(/<\/?reasoning>/gi, '').trim();
+}
+
 function extractText(shape, data) {
   if (typeof data === 'string') return data.trim();
   if (shape === 'anthropic') return (data.content || []).map((c) => c.text || '').join('\n').trim();
@@ -111,7 +123,14 @@ function extractText(shape, data) {
   if (typeof data?.text === 'string') return data.text.trim();
   if (typeof data?.output === 'string') return data.output.trim();
   if (typeof data?.result?.response === 'string') return data.result.response.trim();
-  return (data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || '').trim();
+  const message = data?.choices?.[0]?.message || {};
+  const content = stripThinking(message.content);
+  if (content) return content;
+  // Reasoning models (NVIDIA NIM nemotron/qwen, vLLM) put the answer in
+  // reasoning_content / reasoning and leave content null; reading only content
+  // made a working model look like it returned nothing at all.
+  const reasoning = stripThinking(message.reasoning_content || message.reasoning || data?.choices?.[0]?.text);
+  return reasoning;
 }
 
 function gatewayCandidateUrls(primaryUrl) {
@@ -162,51 +181,71 @@ async function callEntry(entry, opts) {
     });
     return text;
   }
-  const { url, init } = buildRequest(entry, opts);
-  const urlsToTry = entry.provider === 'gateway' ? gatewayCandidateUrls(url) : [url];
+  // Same-origin proxy: no CORS, no Origin allowlist, runs the whole pool server-side.
+  if (entry?.provider === 'server-proxy') {
+    const res = await callServerEnvChat(opts);
+    return res.text;
+  }
+
+  const models = entry.provider === 'gateway'
+    ? [...new Set([entry.model, ...GATEWAY_FALLBACK_MODELS].filter(Boolean))]
+    : [entry.model];
   let lastErr = null;
 
-  for (const targetUrl of urlsToTry) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    try {
-      const res = await fetch(targetUrl, { ...init, signal: controller.signal });
-      if (!res.ok) {
-        const err = await readError(res);
-        // If a Cloudflare Worker doesn't mount /v1/chat/completions, try /chat/completions, /chat, or /
-        if (entry.provider === 'gateway' && (res.status === 404 || res.status === 405)) {
-          lastErr = err;
-          continue;
-        }
-        throw err;
-      }
-      const text = await parseResponsePayload(res, entry.shape || 'openai');
-      // Remember resolved working route on the gateway entry
-      if (entry.provider === 'gateway' && targetUrl !== url) {
-        entry.baseUrl = targetUrl.replace(/\/chat\/completions$/i, '');
-      }
-      return text;
-    } catch (err) {
-      if (err?.name === 'AbortError') throw new LlmError('המודל/פרוקסי לא ענה בזמן (timeout)', 408);
-      if (err instanceof LlmError) {
-        if (entry.provider === 'gateway' && (err.status === 404 || err.status === 405)) {
-          lastErr = err;
-          continue;
-        }
-        throw err;
-      }
-      // Browser CORS or network error -> try forwarding via Netlify Function /api/llm
+  modelLoop: for (const model of models) {
+    const candidate = model === entry.model ? entry : { ...entry, model };
+    const { url, init } = buildRequest(candidate, opts);
+    const urlsToTry = entry.provider === 'gateway' ? gatewayCandidateUrls(url) : [url];
+
+    for (const targetUrl of urlsToTry) {
+      const isLocal = entry.provider === 'ollama' || /\/api\/local-ai|127\.0\.0\.1:11434|localhost:11434|127\.0\.0\.1:11435|localhost:11435/i.test(targetUrl || '');
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), isLocal ? LOCAL_TIMEOUT_MS : TIMEOUT_MS);
       try {
-        return await callViaNetlifyProxy(targetUrl, init, entry.shape || 'openai');
-      } catch (proxyErr) {
-        lastErr = proxyErr instanceof LlmError ? proxyErr : new LlmError(err?.message || 'שגיאת רשת בחיבור למודל/פרוקסי', 0);
-        if (entry.provider === 'gateway' && (lastErr.status === 404 || lastErr.status === 405)) {
-          continue;
+        const res = await fetch(targetUrl, { ...init, signal: controller.signal });
+        if (!res.ok) {
+          const err = await readError(res);
+          // If a Cloudflare Worker doesn't mount /v1/chat/completions, try /chat/completions, /chat, or /
+          if (entry.provider === 'gateway' && (res.status === 404 || res.status === 405)) {
+            lastErr = err;
+            continue;
+          }
+          // Model rejected by the proxy allowlist: retry with the next known model.
+          if (entry.provider === 'gateway' && res.status === 400 && /model/i.test(err.message)) {
+            lastErr = err;
+            continue modelLoop;
+          }
+          throw err;
         }
-        throw lastErr;
+        const text = await parseResponsePayload(res, entry.shape || 'openai');
+        // Remember the route and model that actually answered.
+        if (entry.provider === 'gateway') {
+          entry.model = model;
+          if (targetUrl !== url) entry.baseUrl = targetUrl.replace(/\/chat\/completions$/i, '');
+        }
+        return text;
+      } catch (err) {
+        if (err?.name === 'AbortError') throw new LlmError('המודל/פרוקסי לא ענה בזמן (timeout)', 408);
+        if (err instanceof LlmError) {
+          if (entry.provider === 'gateway' && (err.status === 404 || err.status === 405)) {
+            lastErr = err;
+            continue;
+          }
+          throw err;
+        }
+        // Browser CORS or network error -> try forwarding via Netlify Function /api/llm
+        try {
+          return await callViaNetlifyProxy(targetUrl, init, entry.shape || 'openai');
+        } catch (proxyErr) {
+          lastErr = proxyErr instanceof LlmError ? proxyErr : new LlmError(err?.message || 'שגיאת רשת בחיבור למודל/פרוקסי', 0);
+          if (entry.provider === 'gateway' && (lastErr.status === 404 || lastErr.status === 405)) {
+            continue;
+          }
+          throw lastErr;
+        }
+      } finally {
+        clearTimeout(timer);
       }
-    } finally {
-      clearTimeout(timer);
     }
   }
   throw lastErr || new LlmError('הפרוקסי לא החזיר תגובה תקינה', 0);
@@ -251,37 +290,47 @@ export function webllmEntry() {
   };
 }
 
+// Free, keyless AI from the open web plus Alta's own same-origin proxy. These are part
+// of the pool, not a last resort, so every AI feature can answer with no keys at all.
 export function freeZeroKeyEntries() {
-  return [
-    {
-      id: 'free_pollinations_openai',
-      provider: 'pollinations',
-      label: 'Pollinations AI (חינמי ללא מפתח)',
+  const list = POLLINATIONS_MODELS.map((model) => ({
+    id: `free_pollinations_${model}`,
+    provider: 'pollinations',
+    label: `Pollinations · ${model} (חינם ללא מפתח)`,
+    shape: 'openai',
+    baseUrl: 'https://text.pollinations.ai/openai',
+    accountId: '',
+    model,
+    key: '',
+    enabled: true,
+    valid: true,
+  }));
+  if (typeof window !== 'undefined') {
+    list.unshift({
+      id: 'server_proxy_alta',
+      provider: 'server-proxy',
+      label: 'Alta Proxy (/api/llm · ללא CORS)',
       shape: 'openai',
-      baseUrl: 'https://text.pollinations.ai/openai',
+      baseUrl: '/api/llm',
       accountId: '',
-      model: 'openai',
-      key: 'free',
+      model: 'auto',
+      key: '',
       enabled: true,
       valid: true,
-    },
-    {
-      id: 'free_pollinations_mistral',
-      provider: 'pollinations',
-      label: 'Pollinations Mistral (חינמי ללא מפתח)',
-      shape: 'openai',
-      baseUrl: 'https://text.pollinations.ai/openai',
-      accountId: '',
-      model: 'mistral',
-      key: 'free',
-      enabled: true,
-      valid: true,
-    },
-  ];
+    });
+  }
+  return list;
 }
 
 export function candidates(state = store.state) {
   const list = [...availableEntries(state)];
+  const seen = new Set(list.map((e) => `${e.provider}|${e.model}|${e.baseUrl}`));
+  for (const entry of freeZeroKeyEntries()) {
+    const key = `${entry.provider}|${entry.model}|${entry.baseUrl}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    list.push(entry);
+  }
   const leg = legacyEntry(state);
   if (leg) list.push(leg);
   const w = webllmEntry();
@@ -316,11 +365,82 @@ async function callServerEnvChat({ system, messages, maxTokens = 1200, temperatu
   };
 }
 
+async function callLocalBaseServerAi({ system, messages, maxTokens = 1200, temperature = 0.4 }) {
+  if (typeof window === 'undefined') throw new LlmError('local-ai browser only', 0);
+  const origins = [];
+  if (/^https?:/.test(window.location.origin)) origins.push(window.location.origin);
+  const cfgBase = (store.state?.settings?.db?.baseServerUrl || '').trim().replace(/\/+$/, '');
+  if (cfgBase && !origins.includes(cfgBase)) origins.push(cfgBase);
+  if (!origins.includes('http://localhost:8181')) origins.push('http://localhost:8181');
+
+  let lastErr = null;
+  for (const origin of origins) {
+    try {
+      const stCtrl = new AbortController();
+      const stTimer = setTimeout(() => stCtrl.abort(), 5000);
+      const stRes = await fetch(`${origin}/api/local-ai/status`, { signal: stCtrl.signal, headers: { Accept: 'application/json' } });
+      clearTimeout(stTimer);
+      if (!stRes.ok) continue;
+      const st = await stRes.json();
+      if (!st?.ok || !Array.isArray(st.models) || !st.models.length) continue;
+
+      const preferred = st.models.find((m) => /^qwen2\.5:3b/i.test(m.model))
+        || st.models.find((m) => /^llama3/i.test(m.model))
+        || st.models.find((m) => /^qwen2\.5:7b/i.test(m.model))
+        || st.models[0];
+
+      const chatCtrl = new AbortController();
+      const chatTimer = setTimeout(() => chatCtrl.abort(), LOCAL_TIMEOUT_MS);
+      const res = await fetch(`${origin}/api/local-ai/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        signal: chatCtrl.signal,
+        body: JSON.stringify({
+          model: preferred.model,
+          temperature,
+          max_tokens: Math.min(maxTokens, 420),
+          messages: [
+            ...(system ? [{ role: 'system', content: system }] : []),
+            ...historyOf(messages),
+          ],
+        }),
+      });
+      clearTimeout(chatTimer);
+      if (!res.ok) throw await readError(res);
+      const text = await parseResponsePayload(res, 'openai');
+      if (!text) throw new LlmError('Local AI returned empty text', 502);
+      return {
+        text,
+        entryId: `local-ai:${preferred.model}`,
+        provider: 'ollama',
+        model: preferred.model,
+        accountId: null,
+        label: `Ollama המקומי (${preferred.model})`,
+        attempts: [],
+      };
+    } catch (err) {
+      lastErr = err instanceof LlmError ? err : new LlmError(err?.message || 'Local AI unavailable', 0);
+    }
+  }
+  throw lastErr || new LlmError('Local AI not reachable', 0);
+}
+
 export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
   const state = store.state;
   const temperature = Number(state.settings?.llm?.temperature ?? 0.4);
   const list = candidates(state);
-  const queue = list.slice(0, 10);
+  // Pick at most ONE fast local model (prefer 3B qwen2.5/llama3 via Base Server proxy to avoid VRAM swapping)
+  const localAll = list.filter((e) => e.provider === 'ollama' || /\/api\/local-ai|127\.0\.0\.1:11434|localhost:11434/i.test(e.baseUrl || ''));
+  const localFast = localAll.find((e) => /\/api\/local-ai/i.test(e.baseUrl || '') && /qwen2\.5:3b/i.test(e.model || ''))
+    || localAll.find((e) => /qwen2\.5:3b/i.test(e.model || ''))
+    || localAll.find((e) => /llama3\.2:3b/i.test(e.model || ''))
+    || localAll[0];
+  const cloudRest = list.filter((e) => !localAll.includes(e));
+  const queue = [...(localFast ? [localFast] : []), ...cloudRest.slice(0, 6)];
+  // Keyless web/proxy entries are always in the queue, even when the pool is full.
+  for (const entry of freeZeroKeyEntries()) {
+    if (!queue.some((q) => q.provider === entry.provider && q.model === entry.model)) queue.push(entry);
+  }
 
   const attempts = [];
   for (const entry of queue) {
@@ -345,6 +465,16 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
     }
   }
 
+  // Fallback 0: Direct Local Base Server AI (Ollama / Intel Arc GPU) even if pool entries were in cooldown
+  if (typeof window !== 'undefined') {
+    try {
+      const localRes = await callLocalBaseServerAi({ system, messages, maxTokens, temperature });
+      return { ...localRes, attempts };
+    } catch (err) {
+      attempts.push({ provider: 'Local Ollama (Base Server)', model: 'auto', error: err.message, status: err.status || 0 });
+    }
+  }
+
   // Fallback 1: server-side Netlify Env AI (/api/llm env_chat, e.g. NVIDIA_API_KEY)
   if (typeof window !== 'undefined') {
     try {
@@ -352,26 +482,6 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
       return { ...envRes, attempts };
     } catch (err) {
       attempts.push({ provider: 'Netlify Env AI', model: 'env_chat', error: err.message, status: err.status || 0 });
-    }
-  }
-
-  // Fallback 2: Free Zero-Key Public AI Pool (Pollinations.ai)
-  for (const freeEntry of freeZeroKeyEntries()) {
-    try {
-      const text = await callEntry(freeEntry, { system, messages, maxTokens, temperature });
-      if (text) {
-        return {
-          text,
-          entryId: freeEntry.id,
-          provider: freeEntry.provider,
-          model: freeEntry.model,
-          accountId: null,
-          label: freeEntry.label,
-          attempts,
-        };
-      }
-    } catch (err) {
-      attempts.push({ provider: freeEntry.label, model: freeEntry.model, error: err.message, status: err.status || 0 });
     }
   }
 
@@ -387,12 +497,14 @@ export async function chat(opts) {
   return res.text;
 }
 
+// True whenever some model can answer — including the keyless web/proxy entries, so
+// features do not fall back to "no model configured" on a fresh install.
 export function hasModelKey() {
   return candidates(store.state).length > 0;
 }
 
 export function poolIsEmpty() {
-  return poolEntries(store.state).length === 0 && !legacyEntry(store.state) && !webllm.isReady();
+  return candidates(store.state).length === 0;
 }
 
 export async function testEntry(entry) {

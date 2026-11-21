@@ -1,0 +1,22 @@
+# Alta AI Proxy
+#
+#   cd workers/ai-proxy
+#   npx wrangler deploy
+#
+# Then put the printed https://alta-ai-proxy.<subdomain>.workers.dev/v1 into
+# Settings -> Model Pool -> Cloudflare Worker Proxy (or CLOUDFLARE_WORKER_URLS).
+#
+# Optional upstreams (JSON). keyEnv names a Worker secret, so keys never live here:
+#   npx wrangler secret put GROQ_API_KEY
+#   wrangler.toml  vars.AI_UPSTREAMS = '[{"name":"groq","url":"https://api.groq.com/openai/v1","keyEnv":"GROQ_API_KEY","models":["openai/gpt-oss-120b"]}]'
+# With AI_UPSTREAMS empty the Worker serves Pollinations (no key required).
+
+name = "alta-ai-proxy"
+main = "index.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Comma separated exact origins or prefix wildcards. Requests with no Origin
+# (Netlify functions, curl) are always accepted. "*" allows everything.
+ALLOWED_ORIGINS = "http://localhost:8181,http://127.0.0.1:8181,https://alta-capital.netlify.app,https://avivashke.github.io"
+AI_UPSTREAMS = "[]"

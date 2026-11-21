@@ -8,7 +8,7 @@
 //   * cooldown with exponential backoff on 429/5xx, permanent disable on 401/403
 //   * fallback: the caller walks the list until a model answers
 
-import { PROVIDERS, PROVIDER_ORDER, providerBaseUrl } from './providers.js';
+import { POLLINATIONS_MODELS, PROVIDERS, PROVIDER_ORDER, providerBaseUrl } from './providers.js';
 
 const MINUTE = 60_000;
 const MAX_COOLDOWN = 60 * MINUTE;
@@ -127,15 +127,24 @@ export function markUsed(state, entry, now = Date.now()) {
   ensurePool(state).updatedAt = now;
 }
 
+// A proxy without a key cannot be "invalid": 403 from a Worker means its Origin/model
+// allowlist rejected us, which is a policy reply, not a dead credential. Only a real
+// key that is rejected may be disabled, and only on 401.
+const keylessProvider = (entry) => ['gateway', 'ollama', 'pollinations', 'webllm', 'server-proxy', 'custom'].includes(entry?.provider) || !entry?.key;
+
 export function markFailure(state, entry, { status = 0, message = '' } = {}, now = Date.now()) {
   refreshCounter(entry, now);
   entry.failStreak = (entry.failStreak || 0) + 1;
   entry.lastError = String(message || `HTTP ${status}`).slice(0, 200);
+  entry.lastStatus = status;
   const streak = entry.failStreak;
 
-  if (status === 401 || status === 403) {
+  if (status === 401 && !keylessProvider(entry)) {
     entry.valid = false;
     entry.enabled = false;
+  } else if (status === 401 || status === 403) {
+    // Proxy/keyless refusal: back off, never bury the entry for good.
+    entry.cooldownUntil = now + Math.min(6 * 60 * MINUTE, 10 * MINUTE * Math.pow(2, Math.min(streak - 1, 4)));
   } else if (status === 402 || status === 429) {
     const base = status === 402 ? 6 * 60 * MINUTE : MINUTE;
     entry.cooldownUntil = now + Math.min(MAX_COOLDOWN * 6, base * Math.pow(2, Math.min(streak - 1, 5)));
@@ -150,8 +159,30 @@ export function resetCooldowns(state, now = Date.now()) {
     entry.cooldownUntil = 0;
     entry.failStreak = 0;
     entry.lastError = '';
+    if (keylessProvider(entry)) {
+      entry.enabled = true;
+      entry.valid = true;
+    }
   }
   ensurePool(state).updatedAt = now;
+}
+
+// Older builds disabled proxies permanently on any 403. Restore them on load so the
+// pool stops carrying entries that can never be picked again.
+export function reviveEntries(state, now = Date.now()) {
+  let revived = 0;
+  for (const entry of poolEntries(state)) {
+    if (!entry.enabled || !entry.valid) {
+      if (!keylessProvider(entry)) continue;
+      entry.enabled = true;
+      entry.valid = true;
+      entry.cooldownUntil = 0;
+      entry.failStreak = 0;
+      revived += 1;
+    }
+  }
+  if (revived) ensurePool(state).updatedAt = now;
+  return revived;
 }
 
 export function poolStats(state, now = Date.now()) {
@@ -210,6 +241,21 @@ const ENV_KEYS = [
   ['OPENAI_API_KEY', 'openai'],
 ];
 
+// Keys get pasted under the wrong variable name (an `nvapi-` NVIDIA key in
+// OPENAI_API_KEY is a real case). Route on the prefix so the pool does not spend a
+// guaranteed 401 on the wrong provider.
+export function providerForKey(value, fallback) {
+  const key = String(value || '').trim();
+  if (/^nvapi-/i.test(key)) return 'nvidia';
+  if (/^gsk_/i.test(key)) return 'groq';
+  if (/^sk-ant-/i.test(key)) return 'anthropic';
+  if (/^xai-/i.test(key)) return 'xai';
+  if (/^AIza[0-9A-Za-z_-]{20,}/.test(key)) return 'gemini';
+  if (/^sk-or-v1-/i.test(key)) return 'openrouter';
+  if (/^[A-Za-z0-9]{32}$/.test(key) && ['mistral', 'together', 'deepseek'].includes(fallback)) return fallback;
+  return fallback;
+}
+
 export function buildPoolFromEnv(env = {}, now = Date.now()) {
   const state = { settings: { pool: { entries: [], updatedAt: now } } };
   const add = (input) => addPoolEntry(state, input, now);
@@ -222,7 +268,17 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
       add({ provider: 'custom', key: value, baseUrl: 'https://api.cerebras.ai/v1', model: env.CEREBRAS_MODEL || 'llama-3.3-70b' });
       continue;
     }
-    add({ provider, key: value, model: env[`${provider.toUpperCase()}_MODEL`] || '' });
+    const routed = providerForKey(value, provider);
+    const modelName = env[`${routed.toUpperCase()}_MODEL`] || '';
+    // NVIDIA's flagship is a reasoning model: it answers in message.reasoning and
+    // can spend a small max_tokens budget before content appears. Offer an instruct
+    // model too so the pool has a normal chat model on the same key.
+    if (routed === 'nvidia') {
+      const models = modelName ? [modelName] : PROVIDERS.nvidia.models;
+      for (const model of models) add({ provider: 'nvidia', key: value, model });
+      continue;
+    }
+    add({ provider: routed, key: value, model: modelName });
   }
 
   // Cloudflare: one free allowance per account, so several accounts are supported.
@@ -254,33 +310,39 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
     });
   }
 
+  const gatewayModel = env.LLM_GATEWAY_MODEL || 'openai/gpt-oss-120b';
   if (env.LLM_GATEWAY_URL) {
     add({
       provider: 'gateway',
       key: env.LLM_GATEWAY_KEY || '',
       baseUrl: env.LLM_GATEWAY_URL,
-      model: env.LLM_GATEWAY_MODEL || 'llama-3.3-70b-versatile',
+      model: gatewayModel,
       label: 'Cloudflare Worker Proxy',
     });
   }
 
-  // Always include embedded project Cloudflare Worker AI proxies in server/CI pool
-  add({
-    provider: 'gateway',
-    key: '',
-    baseUrl: 'https://tight-cake-d704.avivashke95.workers.dev/v1',
-    model: env.LLM_GATEWAY_MODEL || 'llama-3.3-70b-versatile',
-    label: 'CF Worker · tight-cake-d704',
-  });
+  // Proxies are configured, never hardcoded: a Worker URL baked into the source dies
+  // silently when its allowlist or model list changes, which is how the pool lost
+  // tight-cake-d704 and alta-groq.
+  for (const item of parseWorkerProxies(env.CLOUDFLARE_WORKER_URLS || env.LLM_GATEWAY_URLS || '')) {
+    add({
+      provider: 'gateway',
+      key: item.key,
+      baseUrl: item.url,
+      model: item.model || gatewayModel,
+      label: item.label || `Proxy · ${new URL(item.url).hostname.split('.')[0]}`,
+    });
+  }
 
-  if (env.CLOUDFLARE_WORKER_URLS) {
-    for (const item of parseWorkerProxies(env.CLOUDFLARE_WORKER_URLS)) {
+  // Free public web AI: no key, no signup, always reachable from Netlify and from the
+  // local runner, so every AI feature has a model even with zero configured keys.
+  if (String(env.DISABLE_FREE_WEB_AI || '') !== '1') {
+    for (const model of POLLINATIONS_MODELS) {
       add({
-        provider: 'gateway',
-        key: item.key,
-        baseUrl: item.url,
-        model: item.model || 'llama-3.3-70b-versatile',
-        label: item.label || `CF Worker · ${new URL(item.url).hostname.split('.')[0]}`,
+        provider: 'pollinations',
+        key: '',
+        model,
+        label: `Pollinations · ${model} (חינם מהווב)`,
       });
     }
   }
@@ -392,6 +454,7 @@ export function parseWorkerProxies(text = '') {
       url,
       model: parts[1] || 'openai/gpt-oss-120b',
       key: parts[2] || '',
+      label: parts[3] || '',
     });
   }
   return out;
