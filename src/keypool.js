@@ -447,7 +447,9 @@ export function parseWorkerProxies(text = '') {
   for (const line of raw.split(/[\n;]+/)) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
-    const parts = trimmed.split(/[,\t]+/).map((s) => s.trim()).filter(Boolean);
+    // Keep positions: dropping empty fields shifted "url,model,,label" so the label
+    // ended up as the bearer token.
+    const parts = trimmed.split(/[,\t]/).map((s) => s.trim());
     const url = parts[0] || '';
     if (!/^https?:\/\//i.test(url)) continue;
     out.push({
