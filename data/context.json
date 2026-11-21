@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-21T06:51:29.822Z",
+ "generatedAt": "2026-11-21T15:16:22.556Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -15,7 +15,7 @@
    "timeframe": "5m",
    "symbol": "BTCUSDT",
    "status": "dry-run",
-   "version": "v1.3",
+   "version": "v1.4",
    "strategyId": "vol_breakout",
    "params": {
     "emaP": 22,
@@ -23,45 +23,50 @@
     "mult": 2.9,
     "erP": 17,
     "erMin": 0.5,
-    "atrStop": 3,
-    "rr": 3
+    "atrStop": 2.5,
+    "rr": 2.7
    },
    "metrics": {
-    "returnPct": 1.9,
-    "maxDrawdownPct": 5.25,
-    "sharpe": 3.15,
-    "profitFactor": 1.29,
-    "winRate": 40,
-    "trades": 25,
-    "avgR": 0.052,
-    "expectancy": 2.86,
+    "returnPct": 3.33,
+    "maxDrawdownPct": 4.65,
+    "sharpe": 5.26,
+    "profitFactor": 1.45,
+    "winRate": 33.3,
+    "trades": 27,
+    "avgR": 0.081,
+    "expectancy": 4.5,
     "exposurePct": 20.7,
-    "bestTradePct": 1.927,
-    "worstTradePct": -0.956,
-    "finalEquity": 3821.4,
+    "bestTradePct": 2.325,
+    "worstTradePct": -0.946,
+    "finalEquity": 3874.84,
     "curvePoints": 1900,
-    "totalFees": 157.2334,
-    "barsInMarket": 394
+    "totalFees": 171.8021,
+    "barsInMarket": 393
    },
    "oos": {
-    "returnPct": 5.19,
-    "maxDrawdownPct": 1.36,
-    "sharpe": 18.95,
-    "profitFactor": 6.05,
-    "winRate": 66.7,
-    "trades": 9,
-    "avgR": 0.378,
-    "expectancy": 21.6,
-    "exposurePct": 21.2,
-    "bestTradePct": 1.989,
-    "worstTradePct": -0.619,
-    "finalEquity": 3944.44,
+    "returnPct": 7.62,
+    "maxDrawdownPct": 1.7,
+    "sharpe": 24.4,
+    "profitFactor": 5.98,
+    "winRate": 58.3,
+    "trades": 12,
+    "avgR": 0.407,
+    "expectancy": 23.51,
+    "exposurePct": 26.5,
+    "bestTradePct": 2.422,
+    "worstTradePct": -0.365,
+    "finalEquity": 4035.62,
     "curvePoints": 600,
-    "totalFees": 55.4202,
-    "barsInMarket": 127
+    "totalFees": 77.3333,
+    "barsInMarket": 159
    },
-   "bestReturn": 5.19,
+   "bestReturn": 7.62,
    "versions": [
+    {
+     "version": "v1.4",
+     "at": 1795274093917,
+     "oos": 7.62
+    },
     {
      "version": "v1.3",
      "at": 1795243799097,
@@ -428,51 +433,56 @@
    "timeframe": "1h",
    "symbol": "NVDA",
    "status": "live",
-   "version": "v1.4",
+   "version": "v1.5",
    "strategyId": "ema_trend",
    "params": {
-    "fast": 23,
-    "slow": 37,
-    "atrStop": 1.4,
-    "rr": 3.6,
+    "fast": 10,
+    "slow": 57,
+    "atrStop": 1.9,
+    "rr": 3.1,
     "trendFilter": false
    },
    "metrics": {
-    "returnPct": 42.5,
-    "maxDrawdownPct": 4.91,
-    "sharpe": 15.55,
-    "profitFactor": 3.44,
-    "winRate": 61.1,
-    "trades": 36,
-    "avgR": 0.673,
-    "expectancy": 35.37,
-    "exposurePct": 87.8,
-    "bestTradePct": 6.909,
-    "worstTradePct": -2.133,
-    "finalEquity": 4275.01,
-    "curvePoints": 296,
-    "totalFees": 172.8874,
-    "barsInMarket": 260
+    "returnPct": 18.55,
+    "maxDrawdownPct": 18.41,
+    "sharpe": 2.06,
+    "profitFactor": 1.2,
+    "winRate": 46.3,
+    "trades": 147,
+    "avgR": 0.088,
+    "expectancy": 3.78,
+    "exposurePct": 90.7,
+    "bestTradePct": 5.061,
+    "worstTradePct": -1.775,
+    "finalEquity": 3556.6,
+    "curvePoints": 1583,
+    "totalFees": 551.0415,
+    "barsInMarket": 1436
    },
    "oos": {
-    "returnPct": 33.74,
-    "maxDrawdownPct": 2.94,
-    "sharpe": 24.1,
-    "profitFactor": 6.26,
-    "winRate": 76.5,
-    "trades": 17,
-    "avgR": 1.166,
-    "expectancy": 59.45,
-    "exposurePct": 87.6,
-    "bestTradePct": 6.484,
-    "worstTradePct": -2.002,
-    "finalEquity": 4012.23,
-    "curvePoints": 137,
-    "totalFees": 67.4194,
-    "barsInMarket": 120
+    "returnPct": 29.67,
+    "maxDrawdownPct": 5.15,
+    "sharpe": 7.79,
+    "profitFactor": 1.95,
+    "winRate": 51.1,
+    "trades": 45,
+    "avgR": 0.402,
+    "expectancy": 19.76,
+    "exposurePct": 91.4,
+    "bestTradePct": 5.536,
+    "worstTradePct": -1.941,
+    "finalEquity": 3890.22,
+    "curvePoints": 523,
+    "totalFees": 192.1962,
+    "barsInMarket": 478
    },
-   "bestReturn": 33.74,
+   "bestReturn": 29.67,
    "versions": [
+    {
+     "version": "v1.5",
+     "at": 1795274094575,
+     "oos": 29.67
+    },
     {
      "version": "v1.4",
      "at": 1795218895188,
@@ -506,52 +516,58 @@
    "timeframe": "1d",
    "symbol": "SPY",
    "status": "live",
-   "version": "v1.4",
-   "strategyId": "supertrend_adx",
+   "version": "v1.5",
+   "strategyId": "vol_breakout",
    "params": {
-    "period": 14,
-    "mult": 2,
-    "adxPeriod": 16,
-    "adxMin": 32,
+    "emaP": 33,
+    "atrP": 20,
+    "mult": 2.3,
+    "erP": 20,
+    "erMin": 0.5,
     "atrStop": 1.8,
-    "rr": 2.4
+    "rr": 1.8
    },
    "metrics": {
-    "returnPct": 14.21,
-    "maxDrawdownPct": 1.63,
-    "sharpe": 2.76,
-    "profitFactor": 99,
-    "winRate": 100,
-    "trades": 7,
-    "avgR": 1.282,
-    "expectancy": 60.91,
-    "exposurePct": 27.1,
-    "bestTradePct": 3.73,
-    "worstTradePct": 0.059,
-    "finalEquity": 3426.36,
-    "curvePoints": 391,
-    "totalFees": 25.1723,
-    "barsInMarket": 106
+    "returnPct": 37.6,
+    "maxDrawdownPct": 6.44,
+    "sharpe": 0.85,
+    "profitFactor": 1.8,
+    "winRate": 54.8,
+    "trades": 84,
+    "avgR": 0.262,
+    "expectancy": 13.43,
+    "exposurePct": 30.7,
+    "bestTradePct": 3.485,
+    "worstTradePct": -2.314,
+    "finalEquity": 4127.88,
+    "curvePoints": 2414,
+    "totalFees": 436.5436,
+    "barsInMarket": 740
    },
    "oos": {
-    "returnPct": 4.71,
-    "maxDrawdownPct": 1.08,
-    "sharpe": 2.87,
-    "profitFactor": 99,
-    "winRate": 100,
-    "trades": 2,
-    "avgR": 1.555,
-    "expectancy": 70.59,
-    "exposurePct": 21.2,
-    "bestTradePct": 3.489,
-    "worstTradePct": 1.217,
-    "finalEquity": 3141.18,
-    "curvePoints": 151,
-    "totalFees": 8.1539,
-    "barsInMarket": 32
+    "returnPct": 21.22,
+    "maxDrawdownPct": 5.81,
+    "sharpe": 1.46,
+    "profitFactor": 2.66,
+    "winRate": 60.9,
+    "trades": 23,
+    "avgR": 0.571,
+    "expectancy": 27.68,
+    "exposurePct": 36.4,
+    "bestTradePct": 3.071,
+    "worstTradePct": -2.039,
+    "finalEquity": 3636.72,
+    "curvePoints": 755,
+    "totalFees": 122.1107,
+    "barsInMarket": 275
    },
-   "bestReturn": 4.71,
+   "bestReturn": 21.22,
    "versions": [
+    {
+     "version": "v1.5",
+     "at": 1795274095371,
+     "oos": 21.22
+    },
     {
      "version": "v1.4",
      "at": 1795197089680,
@@ -585,51 +601,56 @@
    "timeframe": "1d",
    "symbol": "AAPL",
    "status": "live",
-   "version": "v1.4",
+   "version": "v1.5",
    "strategyId": "rsi_reversion",
    "params": {
-    "period": 10,
-    "oversold": 36,
-    "overbought": 84,
+    "period": 22,
+    "oversold": 35,
+    "overbought": 74,
     "atrStop": 1.3,
-    "rr": 1.6
+    "rr": 1.7
    },
    "metrics": {
-    "returnPct": 10.86,
-    "maxDrawdownPct": 2.1,
-    "sharpe": 2,
-    "profitFactor": 7.36,
-    "winRate": 90.9,
-    "trades": 11,
-    "avgR": 0.632,
-    "expectancy": 29.62,
-    "exposurePct": 16.7,
-    "bestTradePct": 2.514,
-    "worstTradePct": -1.708,
-    "finalEquity": 3325.82,
-    "curvePoints": 401,
-    "totalFees": 28.8306,
-    "barsInMarket": 67
+    "returnPct": 27.66,
+    "maxDrawdownPct": 4.42,
+    "sharpe": 1,
+    "profitFactor": 3.18,
+    "winRate": 70.4,
+    "trades": 27,
+    "avgR": 0.616,
+    "expectancy": 30.74,
+    "exposurePct": 5.9,
+    "bestTradePct": 3.062,
+    "worstTradePct": -1.848,
+    "finalEquity": 3829.9,
+    "curvePoints": 2414,
+    "totalFees": 85.245,
+    "barsInMarket": 143
    },
    "oos": {
-    "returnPct": 3.24,
-    "maxDrawdownPct": 1.37,
-    "sharpe": 1.97,
-    "profitFactor": 99,
-    "winRate": 100,
-    "trades": 3,
-    "avgR": 0.715,
-    "expectancy": 32.36,
-    "exposurePct": 16.6,
-    "bestTradePct": 2.341,
-    "worstTradePct": 0.067,
-    "finalEquity": 3097.08,
-    "curvePoints": 151,
-    "totalFees": 6.3206,
-    "barsInMarket": 25
+    "returnPct": 15.49,
+    "maxDrawdownPct": 2.98,
+    "sharpe": 1.51,
+    "profitFactor": 10.26,
+    "winRate": 90.9,
+    "trades": 11,
+    "avgR": 0.884,
+    "expectancy": 42.23,
+    "exposurePct": 10.6,
+    "bestTradePct": 2.77,
+    "worstTradePct": -1.672,
+    "finalEquity": 3464.56,
+    "curvePoints": 755,
+    "totalFees": 24.7293,
+    "barsInMarket": 80
    },
-   "bestReturn": 3.24,
+   "bestReturn": 15.49,
    "versions": [
+    {
+     "version": "v1.5",
+     "at": 1795274095498,
+     "oos": 15.49
+    },
     {
      "version": "v1.4",
      "at": 1795218895565,
@@ -663,7 +684,7 @@
    "timeframe": "1d",
    "symbol": "BTCUSDT",
    "status": "dry-run",
-   "version": "v1.0",
+   "version": "v1.1",
    "strategyId": "structure_pullback",
    "params": {
     "fast": 14,
@@ -674,41 +695,46 @@
     "rr": 2.9
    },
    "metrics": {
-    "returnPct": 16.97,
-    "maxDrawdownPct": 3.23,
-    "sharpe": 2.11,
-    "profitFactor": 3.6,
-    "winRate": 55.6,
-    "trades": 18,
-    "avgR": 0.595,
-    "expectancy": 18.84,
-    "exposurePct": 81.1,
-    "bestTradePct": 4.784,
-    "worstTradePct": -1.574,
-    "finalEquity": 2339.45,
-    "curvePoints": 380,
-    "totalFees": 13.6675,
-    "barsInMarket": 308
+    "returnPct": 91.34,
+    "maxDrawdownPct": 7.66,
+    "sharpe": 1.19,
+    "profitFactor": 1.96,
+    "winRate": 47,
+    "trades": 149,
+    "avgR": 0.301,
+    "expectancy": 12.26,
+    "exposurePct": 74.4,
+    "bestTradePct": 7.85,
+    "worstTradePct": -2.589,
+    "finalEquity": 3826.87,
+    "curvePoints": 2880,
+    "totalFees": 130.7053,
+    "barsInMarket": 2143
    },
    "oos": {
-    "returnPct": 7.59,
-    "maxDrawdownPct": 3.35,
-    "sharpe": 2.18,
-    "profitFactor": 2.88,
-    "winRate": 55.6,
-    "trades": 9,
-    "avgR": 0.558,
-    "expectancy": 16.84,
-    "exposurePct": 77.3,
-    "bestTradePct": 4.4,
-    "worstTradePct": -1.532,
-    "finalEquity": 2151.81,
-    "curvePoints": 150,
-    "totalFees": 7.4454,
-    "barsInMarket": 116
+    "returnPct": 20.67,
+    "maxDrawdownPct": 6.38,
+    "sharpe": 1.16,
+    "profitFactor": 1.91,
+    "winRate": 50,
+    "trades": 50,
+    "avgR": 0.261,
+    "expectancy": 8.26,
+    "exposurePct": 75.2,
+    "bestTradePct": 4.95,
+    "worstTradePct": -1.633,
+    "finalEquity": 2413.34,
+    "curvePoints": 900,
+    "totalFees": 36.1118,
+    "barsInMarket": 677
    },
-   "bestReturn": 7.59,
+   "bestReturn": 20.67,
    "versions": [
+    {
+     "version": "v1.1",
+     "at": 1795274109244,
+     "oos": 20.67
+    },
     {
      "version": "v1.0",
      "at": 1795218896324,
@@ -941,7 +967,7 @@
   }
  ],
  "sentiment": {
-  "updatedAt": 1795243888899,
+  "updatedAt": 1795274181573,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 12,
@@ -966,58 +992,59 @@
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.74,
+    "score": -0.37,
     "bias": "דובי",
-    "technical": -0.7,
-    "news": -0.68,
+    "technical": 0,
+    "news": -0.38,
     "drivers": [
-     "Bitcoin falls below $60K for first time since July amid broader market selloff",
-     "Bitcoin nodes could be stalled by repeating one ID 50,000 times. AI found the bug",
-     "Bitcoin tanks below $57,000 for the first time in two years, and its not alone"
+     "Bitcoin falls to its lowest in two years",
+     "Microtonal BitcoinCash Transaction Sonifier and Visualizer",
+     "Is the AI Bubble Finally Popping? Nvidia Crashes 48% as Wall Street Experts Sound the Alarm"
     ],
-    "price": 57849.2
+    "price": 59910.3
    },
    "ETHUSDT": {
-    "score": -0.15,
-    "bias": "ניטרלי",
+    "score": -0.4,
+    "bias": "דובי",
     "technical": 0,
-    "news": 0,
+    "news": -0.5,
     "drivers": [
-     "📺 Closing Bell panel weighs whether the selloff is a buying opportunity",
-     "Fairmint plans tokenized stock venue on Canton, Ethereum under SEC experiment"
+     "Is the AI Bubble Finally Popping? Nvidia Crashes 48% as Wall Street Experts Sound the Alarm",
+     "Ether treasury firm BTCS warns SEC its $54 million Aave loan could be liquidated"
     ],
-    "price": 1650.16
+    "price": 1680.41
    },
    "NVDA": {
-    "score": -0.46,
+    "score": -0.22,
     "bias": "דובי",
     "technical": -0.5,
-    "news": -0.03,
+    "news": 0.1,
     "drivers": [
-     "Nvidia Shares Sink to 52-Week Low After Report SEC Is Probing Accounting",
-     "After Its Worst Week in 18 Years, Nvidia Now Faces an SEC Investigation. What It Means for Investors",
-     "Follow the Smart Money: 4 AI Stocks Billionaire Dan Loeb Just Bought"
+     "Jensen Huang's 'Lying' Alarmed Nvidia Board Ahead of His Resignation",
+     "Manage Kubernetes Clusters for GPU Infrastructure with Nvidia Kubernetes Engine",
+     "The Nvidia Board Removed Jensen on False Pretenses"
     ],
     "price": 125.53
    },
    "SPY": {
-    "score": -0.54,
-    "bias": "דובי",
-    "technical": -0.5,
-    "news": -0.28,
-    "drivers": [
-     "Dow, S&P 500 enter correction as Nasdaq suffers worst week since 2020",
-     "Chip stocks see $2.3 trillion weekly wipeout as panic grips the AI trade",
-     "These stocks were crushed the most this week as the tech wreck accelerated"
-    ],
-    "price": 689.81
-   },
-   "AAPL": {
     "score": -0.35,
     "bias": "דובי",
     "technical": -0.5,
     "news": 0,
     "drivers": [
+     "Prediction markets outlook for stocks in 2026 dims amid AI sell-off",
+     "Warsh wants Fed officials to talk less. Instead, they’re talking more",
+     "Federal Reserve announces College Fed Challenge winners"
+    ],
+    "price": 689.81
+   },
+   "AAPL": {
+    "score": -0.1,
+    "bias": "ניטרלי",
+    "technical": -0.5,
+    "news": 0.5,
+    "drivers": [
+     "📺 Wall Street Confronts AI Reality Check",
      "Startup sues Apple in India over tap-to-share contacts feature"
     ],
     "price": 342.56
@@ -1025,66 +1052,174 @@
   },
   "headlines": [
    {
-    "title": "Tech outages are rattling Americans so much that they&#x2019;re stockpiling cash and supplies",
-    "url": "https://www.marketwatch.com/story/why-are-these-tech-outages-rattling-americans-so-much-that-theyre-stockpiling-cash-and-supplies-07516bdd?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "A lack of clarity from world leaders is prompting some people to prepare for the worst.",
-    "at": 1795231200000,
+    "title": "What is alternative grading? These TMU professors share how it works",
+    "url": "https://www.ctvnews.ca/toronto/article/what-is-alternative-grading-these-tmu-professors-share-how-it-works/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795271077000,
     "score": 0
    },
    {
-    "title": "Dow, S&P 500 enter correction as Nasdaq suffers worst week since 2020",
-    "url": "https://www.marketwatch.com/story/dow-s-p-500-enter-correction-as-nasdaq-suffers-worst-week-since-2020-bd74dadf?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "All 11 S&P 500 sectors finished more than 1% lower this week for the first time since April 2025.",
-    "at": 1795214760000,
+    "title": "Show HN: I made a PS1 style racing game",
+    "url": "https://outpostracer.com",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795268865000,
     "score": 0
    },
    {
-    "title": "Chip stocks see $2.3 trillion weekly wipeout as panic grips the AI trade",
-    "url": "https://www.marketwatch.com/story/chip-stocks-see-2-3-trillion-weekly-wipeout-as-panic-grips-the-ai-trade-371f2f03?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "A major semiconductor index just posted its worst weekly performance in 25 years.",
-    "at": 1795214640000,
+    "title": "Jensen Huang's 'Lying' Alarmed Nvidia Board Ahead of His Resignation",
+    "url": "https://www.wired.com/story/jensen-huangs-lying-alarmed-nvidia-board-ahead-of-his-resignation/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 1",
+    "at": 1795265952000,
     "score": 0
    },
    {
-    "title": "These stocks were crushed the most this week as the tech wreck accelerated",
-    "url": "https://www.marketwatch.com/story/these-stocks-were-crushed-the-most-this-week-as-the-tech-wreck-accelerated-8d6f7323?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "94% of stocks in the S&P 500 declined for the week, 11 of them by at least 20%. But for now, analysts still think you can make a lot of money if you buy them.",
-    "at": 1795214640000,
-    "score": 1
-   },
-   {
-    "title": "Federal Reserve announces College Fed Challenge winners",
-    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120b.htm",
-    "source": "Federal Reserve",
-    "channelKind": "news",
-    "body": "Federal Reserve announces College Fed Challenge winners",
-    "at": 1795209300000,
+    "title": "The Blame Game Has Begun over Anthropic's Turbulent Trading Debut",
+    "url": "https://www.wsj.com/finance/stocks/the-blame-game-has-begun-over-anthropics-turbulent-trading-debut-280a34b1",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 6 · Comments: 0",
+    "at": 1795263599000,
     "score": 0
    },
    {
-    "title": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
-    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120a.htm",
-    "source": "Federal Reserve",
-    "channelKind": "news",
-    "body": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
-    "at": 1795186800000,
+    "title": "Bitcoin falls to its lowest in two years",
+    "url": "https://www.reuters.com/business/bitcoin-falls-357-56814-2026-11-21/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 8 · Comments: 3",
+    "at": 1795261902000,
+    "score": 0
+   },
+   {
+    "title": "Biochar and River Mud Recycling Cut Emissions in Traditional Silk Dyeing",
+    "url": "https://bioengineer.org/biochar-and-river-mud-recycling-cut-emissions-in-traditional-silk-dyeing/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795257520000,
     "score": -1
    },
    {
-    "title": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
-    "url": "https://www.federalreserve.gov/newsevents/pressreleases/enforcement20261119a.htm",
-    "source": "Federal Reserve",
+    "title": "Show HN: Stop applying to jobs using AI-generated resume",
+    "url": "https://unmark.grandimam.com/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 4 · Comments: 3",
+    "at": 1795256461000,
+    "score": 0
+   },
+   {
+    "title": "Ask HN: Solo dev at an early-stage startup (4 YoE). How to land mid-level roles?",
+    "url": "https://news.ycombinator.com/item?id=50587779",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795256404000,
+    "score": 0
+   },
+   {
+    "title": "Microtonal BitcoinCash Transaction Sonifier and Visualizer",
+    "url": "https://spiritsofbitcoin.cash/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 1",
+    "at": 1795253106000,
+    "score": 0
+   },
+   {
+    "title": "Manage Kubernetes Clusters for GPU Infrastructure with Nvidia Kubernetes Engine",
+    "url": "https://developer.nvidia.com/blog/manage-kubernetes-clusters-for-gpu-infrastructure-with-nvidia-kubernetes-engine/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795239632000,
+    "score": 0
+   },
+   {
+    "title": "The Nvidia Board Removed Jensen on False Pretenses",
+    "url": "https://twitter.com/brianchau57/status/2123771396849344595",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 3 · Comments: 1",
+    "at": 1795234785000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: Askingprice.io – guess the price of 7 marketplace listings each day",
+    "url": "https://askingprice.io",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 4",
+    "at": 1795232100000,
+    "score": 0
+   },
+   {
+    "title": "American State Capitalism Helped Produce the Nvidia Scandal",
+    "url": "https://www.wsj.com/economy/american-state-capitalism-helped-produce-the-nvidia-scandal-56ce6dee",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 4 · Comments: 1",
+    "at": 1795227503000,
+    "score": 0
+   },
+   {
+    "title": "Officials approved the sale of 580k Nvidia chips to Chinese companies",
+    "url": "https://www.washingtonpost.com/technology/2026/11/20/officials-approved-sale-580000-nvidia-chips-chinese-companies/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 13 · Comments: 5",
+    "at": 1795217409000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: Hey, Calling for Devs",
+    "url": "https://news.ycombinator.com/item?id=50576909",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 2",
+    "at": 1795190955000,
+    "score": 0
+   },
+   {
+    "title": "Here&#x2019;s what&#x2019;s been proven to help GLP-1 users from losing too much muscle from the drug",
+    "url": "https://www.marketwatch.com/story/heres-whats-been-proven-to-help-glp-1-users-who-have-lost-muscle-from-the-drug-2c71cdbf?mod=mw_rss_topstories",
+    "source": "MarketWatch",
     "channelKind": "news",
-    "body": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
-    "at": 1795104000000,
+    "body": "People taking Zepbound who engage in consistent resistance training can still get stronger even if they lose some of their muscle, according to a new study.",
+    "at": 1795273380000,
+    "score": 1
+   },
+   {
+    "title": "One thing Thanksgiving travelers can be thankful for: Gas prices are down 75 cents from this year&#x2019;s peak",
+    "url": "https://www.marketwatch.com/story/one-thing-thanksgiving-travelers-can-be-thankful-for-gas-prices-are-down-75-cents-from-this-years-peak-efac1809?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "Travelers preparing for Thanksgiving trips will find cheaper gasoline prices at the pump after months of elevated fuel prices.",
+    "at": 1795273260000,
+    "score": 0
+   },
+   {
+    "title": "&#x2018;Never too late to start&#x2019;: Practical investing advice from some of the top women in finance",
+    "url": "https://www.marketwatch.com/story/never-too-late-to-start-practical-investing-advice-from-some-of-the-top-women-in-finance-e01f0755?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "There are plenty of rich and influential women in the U.S. Their time may be coming.",
+    "at": 1795273200000,
+    "score": 0
+   },
+   {
+    "title": "My husband spent $80,000 on a boat, yet says my plans for a $100,000 pottery studio are irresponsible. Who&#x2019;s right?",
+    "url": "https://www.marketwatch.com/story/my-husband-spent-80-000-on-a-boat-yet-says-my-plans-for-a-100-000-pottery-studio-are-irresponsible-whos-right-1a69436a?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "&#x201c;We have $2.9 million in retirement accounts. That includes some money that we inherited about 10 years ago.&#x201d;",
+    "at": 1795272120000,
     "score": -1
    },
    {
@@ -1124,6 +1259,87 @@
     "score": 1.414213562373095
    },
    {
+    "title": "Federal Reserve announces College Fed Challenge winners",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120b.htm",
+    "source": "Federal Reserve",
+    "channelKind": "news",
+    "body": "Federal Reserve announces College Fed Challenge winners",
+    "at": 1795209300000,
+    "score": 0
+   },
+   {
+    "title": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120a.htm",
+    "source": "Federal Reserve",
+    "channelKind": "news",
+    "body": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
+    "at": 1795186800000,
+    "score": -1
+   },
+   {
+    "title": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/enforcement20261119a.htm",
+    "source": "Federal Reserve",
+    "channelKind": "news",
+    "body": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
+    "at": 1795104000000,
+    "score": -1
+   },
+   {
+    "title": "Is the AI Bubble Finally Popping? Nvidia Crashes 48% as Wall Street Experts Sound the Alarm",
+    "url": "https://decrypt.co/383754/ai-bubble-finally-popping-nvidia-crashes-48-wall-street-alarm",
+    "source": "Decrypt",
+    "channelKind": "news",
+    "body": "Tech stocks are buckling after Anthropic’s historic IPO and Nvidia’s leadership crisis, while Bitcoin has slipped below $60,000. Experts disagree on whether AI faces a correction or a dot-com-style bust.",
+    "at": 1795269666000,
+    "score": -1
+   },
+   {
+    "title": "Claude Claims Historic Math Breakthrough One Day After Anthropic IPO",
+    "url": "https://decrypt.co/383747/claude-historic-math-breakthrough-anthropic-ipo",
+    "source": "Decrypt",
+    "channelKind": "news",
+    "body": "Levent Alpöge claims Claude helped prove a 167-year-old math conjecture, but independent checks remain pending, and the release just after Anthropic’s IPO has prompted questions about its unusual publication timing.",
+    "at": 1795210562000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia Shares Sink to 52-Week Low After Report SEC Is Probing Accounting",
+    "url": "https://decrypt.co/383744/nvidia-shares-sink-52-week-low-sec-probing-accounting",
+    "source": "Decrypt",
+    "channelKind": "news",
+    "body": "Nvidia shares fell about 13% to a 52-week low after reports that SEC enforcement staff are examining potential accounting issues, adding to pressure on the chipmaker after Jensen Huang’s resignation.",
+    "at": 1795207014000,
+    "score": 0
+   },
+   {
+    "title": "Here’s what happened in crypto today",
+    "url": "https://cointelegraph.com/news/what-happened-in-crypto-today?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "Need to know what happened in crypto today? Here is the latest news on daily trends and events impacting Bitcoin price, blockchain, DeFi, Web3 and crypto regulation.",
+    "at": 1795259932000,
+    "score": 0
+   },
+   {
+    "title": "ECB seeks industry partners for tokenized deposits, securities experiments",
+    "url": "https://cointelegraph.com/news/ecb-tokenized-deposits-securities-experiments-appia?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "Industry groups have until Dec. 11 to apply for the ECB’s first experimental exercises under its Appia initiative, with later submissions reviewed on a rolling basis.",
+    "at": 1795254536000,
+    "score": -1
+   },
+   {
+    "title": "US lawmakers propose up to 30% rewards for prediction market whistleblowers",
+    "url": "https://cointelegraph.com/news/us-prediction-market-whistleblower-rewards-30-percent?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "Whistleblowers could receive 10% to 30% of monetary sanctions in qualifying prediction market fraud cases exceeding $1 million in penalties.",
+    "at": 1795247507000,
+    "score": -1
+   },
+   {
     "title": "Hong Kong pushes to bring crypto custodians, advisers under licensing rules",
     "url": "https://cointelegraph.com/news/hong-kong-crypto-custody-advisory-licensing-bill?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
     "source": "Cointelegraph",
@@ -1131,6 +1347,240 @@
     "body": "Hong Kong’s securities regulator says the proposal would strengthen investor protections, with the bill set for its first reading in the Legislative Council on Dec. 2.",
     "at": 1795239635000,
     "score": 0
+   },
+   {
+    "title": "SA Asks: Should Nvidia bring back Jensen Huang?",
+    "url": "https://seekingalpha.com/news/4675366-sa-asks-should-nvidia-bring-back-jensen-huang?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795273228000,
+    "score": 0
+   },
+   {
+    "title": "Big banks, crypto stocks, neoclouds among losers: week's financials wrap",
+    "url": "https://seekingalpha.com/news/4675265-big-banks-crypto-stocks-neoclouds-among-losers-weeks-financials-wrap?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795273225000,
+    "score": -1
+   },
+   {
+    "title": "Trump threatens &#x2018;tremendous tax&#x2019; on U.S. firms building data centers abroad",
+    "url": "https://seekingalpha.com/news/4675392-trump-threatens-us-firms-building-overseas-data-centers?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795272738000,
+    "score": 0
+   },
+   {
+    "title": "Ether treasury firm BTCS warns SEC its $54 million Aave loan could be liquidated",
+    "url": "https://www.coindesk.com/markets/2026/11/21/ether-treasury-firm-btcs-warns-sec-its-usd54-million-aave-loan-could-be-liquidated",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "BTCS cut its reported Aave debt by about $10 million in ten days, but falling ether prices are keeping its collateral under pressure.",
+    "at": 1795264200000,
+    "score": 0
+   },
+   {
+    "title": "Bitcoin nodes could be stalled by repeating one ID 50,000 times. AI found the bug",
+    "url": "https://www.coindesk.com/markets/2026/11/21/bitcoin-nodes-could-be-stalled-by-repeating-one-id-50-000-times-ai-found-the-bug",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "Bitcoin Core shipped fixes on Friday for a bug flagged by Loupe, an open-source scanner from Block’s Spiral that uses AI agents to examine bitcoin code.",
+    "at": 1795241802000,
+    "score": 0
+   },
+   {
+    "title": "XRP falls 10% as long bets unwind and ETF assets slip below $1 billion",
+    "url": "https://www.coindesk.com/markets/2026/11/21/xrp-falls-10-as-long-bets-unwind-and-etf-assets-slip-below-usd1-billion",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "The token broke its previous November lows during Saturday's crypto selloff, with long positions accounting for most XRP liquidations and technical indicators showing further weakness.",
+    "at": 1795240759000,
+    "score": -1.414213562373095
+   },
+   {
+    "title": "Bitcoin tanks below $57,000 for the first time in two years, and its not alone",
+    "url": "https://www.coindesk.com/markets/2026/11/21/bitcoin-tanks-below-usd57-000-for-the-first-time-in-two-years-and-its-not-alone",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "BTC's sell-off deepened on Saturday, with prices hitting two-year lows under $57,000.",
+    "at": 1795234207000,
+    "score": -1
+   },
+   {
+    "title": "The Nasdaq Just Triggered a Correction. 1 Move I'm Making Right Now -- and 1 I'm Avoiding",
+    "url": "https://www.fool.com/investing/2026/11/21/the-nasdaq-just-triggered-a-correction-1-move-im-making-right-now-and-1-im-avoiding/?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "Now is a good time to keep buying stocks if you’re diversified and focused on the long term.",
+    "at": 1795273502000,
+    "score": 1
+   },
+   {
+    "title": "Here's How Much $2,500 in General Mills Stock Could Pay You in Dividends in 2027",
+    "url": "https://www.fool.com/investing/2026/11/21/here-s-how-much-usd2-500-in-general-mills-stock-could-pay-you-in-dividends-in-2027/?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "Is General Mills' frozen dividend a red flag or a smart turnaround move? See what a $2,500 investment pays in 2027 while this consumer staples leader works through a tough economy.",
+    "at": 1795273022000,
+    "score": 0
+   },
+   {
+    "title": "Chip Stocks are Now Repeating What Happened in 2001",
+    "url": "https://247wallst.com/investing/2026/11/21/chip-stocks-are-now-repeating-what-happened-in-2001/?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "Chip stocks just suffered their ugliest week in a quarter century, and one company dominates the fallout. The profits behind today's leaders dwarf anything from the dot-com era, yet a familiar pattern and a fresh SEC cloud raise a tougher question for fund own",
+    "at": 1795272772000,
+    "score": 1
+   },
+   {
+    "title": "📺 Is AI a Bubble? History Offers Some Clues",
+    "url": "https://www.youtube.com/watch?v=dF3hfxgFqrg",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Bloomberg Opinion columnist Justin Fox tells Bloomberg This Weekend that history offers warning signs for financial bubbles, but little reliable guidance about exactly when they will burst, making debt and investor sentiment important risks to watch amid the A",
+    "at": 1795273685000,
+    "score": -1
+   },
+   {
+    "title": "📺 Don't Wait Until It's Too Late: Crucial Financial Lessons From 25 Experts",
+    "url": "https://www.youtube.com/watch?v=SopfYgUpDBQ",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "Rebecca Patterson and Catherine Keating asked 25 senior women in finance one question: when a friend or a daughter asks what really matters about money, what do you actually tell them, rather than what your firm pays you to say. Each of them wrote a chapter, a",
+    "at": 1795273216000,
+    "score": 0
+   },
+   {
+    "title": "📺 GTA 6: The Blockbuster That is Changing Gaming Forever",
+    "url": "https://www.youtube.com/watch?v=1wMDgN2y65U",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Grand Theft Auto 6 is one of the biggest entertainment releases in recent history. But can one blockbuster video game revive an industry facing layoffs, consolidation and slowing consumer spending? NYU Stern professor Joost van Dreunen and Griffin Gaming Partn",
+    "at": 1795273202000,
+    "score": -1
+   },
+   {
+    "title": "📺 Wall Street Confronts AI Reality Check",
+    "url": "https://www.youtube.com/watch?v=60hFHZ1wvlw",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Bloomberg US equities reporter Natalia Kniazhevich tells Bloomberg This Weekend that Anthropic’s record IPO failed to reverse deteriorating market sentiment as investors grapple with Nvidia turmoil, AI spending concerns and selling by systematic funds. Speakin",
+    "at": 1795272574000,
+    "score": 1
+   },
+   {
+    "title": "📺 Michael Irvin on if the NFL is supersizing the schedule",
+    "url": "https://www.youtube.com/shorts/OR1IJgyFbS0",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "NFL Hall of Famer and Dallas Cowboys legend Michael Irvin talks with CNBC’s Alex Sherman about the “player’s perspective” when it comes to changes to the NFL schedule. Watch the full interview on the CNBC Sport podcast in related video.",
+    "at": 1795271423000,
+    "score": 0
+   },
+   {
+    "title": "📺 Shenzhen Wants to Become a Cultural Capital",
+    "url": "https://www.youtube.com/watch?v=iS-Tv_sXT3A",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Bloomberg’s Tiffany Ap tells Bloomberg This Weekend how Shenzhen is spending billions on museums as the technology and manufacturing hub tries to establish itself as a cultural destination and attract talent and tourism. Speaking with hosts David Gura and Chri",
+    "at": 1795270978000,
+    "score": 0
+   },
+   {
+    "title": "📺 Paris Hilton on human connection in the age of AI",
+    "url": "https://www.youtube.com/shorts/KfS3q96rZPY",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "Paris Hilton talks with CNBC’s Julia Boorstin about how she uses AI while still maintaining a human connection with her fans. Watch the full interview on the CNBC Changemakers podcast in related video.",
+    "at": 1795269603000,
+    "score": 0
+   },
+   {
+    "title": "📺 Why Would Anyone Spend $1 Billion on GTA 6?",
+    "url": "https://www.youtube.com/watch?v=7MYXy0ROFM8",
+    "source": "YouTube · Patrick Boyle",
+    "channelKind": "youtube",
+    "body": "Go to https://surfshark.com/boyle or use code BOYLE at checkout to get 4 extra months of Surfshark! Grand Theft Auto 6 is finally here, and with a budget estimated at one to one and a half billion dollars, it’s the most expensive video game ever made. In this ",
+    "at": 1795269375000,
+    "score": 0
+   },
+   {
+    "title": "📺 Bitcoin: The Lower Low",
+    "url": "https://www.youtube.com/watch?v=ZNy4XdW59dc",
+    "source": "YouTube · Benjamin Cowen",
+    "channelKind": "youtube",
+    "body": "Live stream the conference: https://www.youtube.com/@benjaminjcowen/join Come to the conference: https://www.benjamincowen.com/conference Into The Cryptoverse Premium SALE: https://intothecryptoverse.com For inquiries and to subscribe to the monthly newsletter",
+    "at": 1795237315000,
+    "score": 0
+   },
+   {
+    "title": "📺 Carta CEO Henry Ward: Who Actually Wins When the AI Trade Cracks?",
+    "url": "https://www.youtube.com/watch?v=gBKxEjna78c",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "Chip sales are at record levels while chip stocks fall, and Deirdre Bosa makes the case that power is shifting from the companies that sell AI chips to the companies that buy them. Then Carta CEO Henry Ward explains the growing gap between private and public A",
+    "at": 1795226413000,
+    "score": 1.414213562373095
+   },
+   {
+    "title": "📺 Joking about Theranos is a bold move when you’re building a blood test.",
+    "url": "https://www.youtube.com/shorts/4HUyZThOJAw",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "What’s the best way to answer Theranos comparisons? Helios went with jokes. Helios came out of stealth this week. The startup says its at-home test measures more than 1,000 proteins. You collect the sample with its proprietary device, then get insights from th",
+    "at": 1795224672000,
+    "score": 0
+   },
+   {
+    "title": "📺 Mad Money 11/20/26 | Audio Only",
+    "url": "https://www.youtube.com/watch?v=4fQW__mvEcs",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "Listen to Jim Cramer’s personal guide through the confusing jungle of Wall Street investing, navigating through opportunities and pitfalls with one goal in mind - to help you make money. For access to live and exclusive video from CNBC subscribe to CNBC PRO: h",
+    "at": 1795220136000,
+    "score": 0
+   },
+   {
+    "title": "Tech outages are rattling Americans so much that they&#x2019;re stockpiling cash and supplies",
+    "url": "https://www.marketwatch.com/story/why-are-these-tech-outages-rattling-americans-so-much-that-theyre-stockpiling-cash-and-supplies-07516bdd?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "A lack of clarity from world leaders is prompting some people to prepare for the worst.",
+    "at": 1795231200000,
+    "score": 0
+   },
+   {
+    "title": "Dow, S&P 500 enter correction as Nasdaq suffers worst week since 2020",
+    "url": "https://www.marketwatch.com/story/dow-s-p-500-enter-correction-as-nasdaq-suffers-worst-week-since-2020-bd74dadf?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "All 11 S&P 500 sectors finished more than 1% lower this week for the first time since April 2025.",
+    "at": 1795214760000,
+    "score": 0
+   },
+   {
+    "title": "Chip stocks see $2.3 trillion weekly wipeout as panic grips the AI trade",
+    "url": "https://www.marketwatch.com/story/chip-stocks-see-2-3-trillion-weekly-wipeout-as-panic-grips-the-ai-trade-371f2f03?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "A major semiconductor index just posted its worst weekly performance in 25 years.",
+    "at": 1795214640000,
+    "score": 0
+   },
+   {
+    "title": "These stocks were crushed the most this week as the tech wreck accelerated",
+    "url": "https://www.marketwatch.com/story/these-stocks-were-crushed-the-most-this-week-as-the-tech-wreck-accelerated-8d6f7323?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "94% of stocks in the S&P 500 declined for the week, 11 of them by at least 20%. But for now, analysts still think you can make a lot of money if you buy them.",
+    "at": 1795214640000,
+    "score": 1
    },
    {
     "title": "Wrapped Monero token crashes 99.8% amid suspected $13.5M exploit",
@@ -1158,24 +1608,6 @@
     "body": "Bitcoin fell nearly 6% as US stocks declined, with the Nasdaq dropping more than 2% and Anthropic shares losing almost 10%.",
     "at": 1795193751000,
     "score": -1.414213562373095
-   },
-   {
-    "title": "Claude Claims Historic Math Breakthrough One Day After Anthropic IPO",
-    "url": "https://decrypt.co/383747/claude-historic-math-breakthrough-anthropic-ipo",
-    "source": "Decrypt",
-    "channelKind": "news",
-    "body": "Levent Alpöge claims Claude helped prove a 167-year-old math conjecture, but independent checks remain pending, and the release just after Anthropic’s IPO has prompted questions about its unusual publication timing.",
-    "at": 1795210562000,
-    "score": 0
-   },
-   {
-    "title": "Nvidia Shares Sink to 52-Week Low After Report SEC Is Probing Accounting",
-    "url": "https://decrypt.co/383744/nvidia-shares-sink-52-week-low-sec-probing-accounting",
-    "source": "Decrypt",
-    "channelKind": "news",
-    "body": "Nvidia shares fell about 13% to a 52-week low after reports that SEC enforcement staff are examining potential accounting issues, adding to pressure on the chipmaker after Jensen Huang’s resignation.",
-    "at": 1795207014000,
-    "score": 0
    },
    {
     "title": "SBF’s 'The Altruists' Plot Twist: FTX’s Anthropic Shares Would Be Worth $43 Billion",
@@ -1250,66 +1682,12 @@
     "score": 0
    },
    {
-    "title": "Bitcoin nodes could be stalled by repeating one ID 50,000 times. AI found the bug",
-    "url": "https://www.coindesk.com/markets/2026/11/21/bitcoin-nodes-could-be-stalled-by-repeating-one-id-50-000-times-ai-found-the-bug",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "Bitcoin Core shipped fixes on Friday for a bug flagged by Loupe, an open-source scanner from Block’s Spiral that uses AI agents to examine bitcoin code.",
-    "at": 1795241802000,
-    "score": 0
-   },
-   {
-    "title": "XRP falls 10% as long bets unwind and ETF assets slip below $1 billion",
-    "url": "https://www.coindesk.com/markets/2026/11/21/xrp-falls-10-as-long-bets-unwind-and-etf-assets-slip-below-usd1-billion",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "The token broke its previous November lows during Saturday's crypto selloff, with long positions accounting for most XRP liquidations and technical indicators showing further weakness.",
-    "at": 1795240759000,
-    "score": -1.414213562373095
-   },
-   {
-    "title": "Bitcoin tanks below $57,000 for the first time in two years, and its not alone",
-    "url": "https://www.coindesk.com/markets/2026/11/21/bitcoin-tanks-below-usd57-000-for-the-first-time-in-two-years-and-its-not-alone",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "BTC's sell-off deepened on Saturday, with prices hitting two-year lows under $57,000.",
-    "at": 1795234207000,
-    "score": -1
-   },
-   {
     "title": "Ask HN: Has the quality of HN content/discussions gone down?",
     "url": "https://news.ycombinator.com/item?id=50586343",
     "source": "Hacker News",
     "channelKind": "hackernews",
     "body": "HN Points: 1 · Comments: 1",
     "at": 1795240002000,
-    "score": 0
-   },
-   {
-    "title": "Manage Kubernetes Clusters for GPU Infrastructure with Nvidia Kubernetes Engine",
-    "url": "https://developer.nvidia.com/blog/manage-kubernetes-clusters-for-gpu-infrastructure-with-nvidia-kubernetes-engine/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795239632000,
-    "score": 0
-   },
-   {
-    "title": "The Nvidia Board Removed Jensen on False Pretenses",
-    "url": "https://twitter.com/brianchau57/status/2123771396849344595",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795234785000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: Askingprice.io – guess the price of 7 marketplace listings each day",
-    "url": "https://askingprice.io",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 4",
-    "at": 1795232100000,
     "score": 0
    },
    {
@@ -1340,15 +1718,6 @@
     "score": 0
    },
    {
-    "title": "American State Capitalism Helped Produce the Nvidia Scandal",
-    "url": "https://www.wsj.com/economy/american-state-capitalism-helped-produce-the-nvidia-scandal-56ce6dee",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 1",
-    "at": 1795227503000,
-    "score": 0
-   },
-   {
     "title": "Ask HN: What are people doing to improve the security of your organization?",
     "url": "https://news.ycombinator.com/item?id=50584813",
     "source": "Hacker News",
@@ -1367,15 +1736,6 @@
     "score": 0
    },
    {
-    "title": "Officials approved the sale of 580k Nvidia chips to Chinese companies",
-    "url": "https://www.washingtonpost.com/technology/2026/11/20/officials-approved-sale-580000-nvidia-chips-chinese-companies/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 11 · Comments: 4",
-    "at": 1795217409000,
-    "score": 0
-   },
-   {
     "title": "US SEC's Nvidia probe is examining potential accounting issues – sources",
     "url": "https://www.marketscreener.com/news/us-sec-s-nvidia-probe-is-examining-potential-accounting-issues-sources-say-ce785ed3dd8ff627",
     "source": "Hacker News",
@@ -1383,15 +1743,6 @@
     "body": "HN Points: 271 · Comments: 144",
     "at": 1795206161000,
     "score": -1
-   },
-   {
-    "title": "Show HN: Hey, Calling for Devs",
-    "url": "https://news.ycombinator.com/item?id=50576909",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 1",
-    "at": 1795190955000,
-    "score": 0
    },
    {
     "title": "Hay,Calling for Devs and HN",
@@ -1412,42 +1763,6 @@
     "score": 0
    },
    {
-    "title": "📺 Bitcoin: The Lower Low",
-    "url": "https://www.youtube.com/watch?v=ZNy4XdW59dc",
-    "source": "YouTube · Benjamin Cowen",
-    "channelKind": "youtube",
-    "body": "Live stream the conference: https://www.youtube.com/@benjaminjcowen/join Come to the conference: https://www.benjamincowen.com/conference Into The Cryptoverse Premium SALE: https://intothecryptoverse.com For inquiries and to subscribe to the monthly newsletter",
-    "at": 1795237315000,
-    "score": 0
-   },
-   {
-    "title": "📺 Carta CEO Henry Ward: Who Actually Wins When the AI Trade Cracks?",
-    "url": "https://www.youtube.com/watch?v=gBKxEjna78c",
-    "source": "YouTube · Yahoo Finance",
-    "channelKind": "youtube",
-    "body": "Chip sales are at record levels while chip stocks fall, and Deirdre Bosa makes the case that power is shifting from the companies that sell AI chips to the companies that buy them. Then Carta CEO Henry Ward explains the growing gap between private and public A",
-    "at": 1795226413000,
-    "score": 1.414213562373095
-   },
-   {
-    "title": "📺 Joking about Theranos is a bold move when you’re building a blood test.",
-    "url": "https://www.youtube.com/shorts/4HUyZThOJAw",
-    "source": "YouTube · Yahoo Finance",
-    "channelKind": "youtube",
-    "body": "What’s the best way to answer Theranos comparisons? Helios went with jokes. Helios came out of stealth this week. The startup says its at-home test measures more than 1,000 proteins. You collect the sample with its proprietary device, then get insights from th",
-    "at": 1795224672000,
-    "score": 0
-   },
-   {
-    "title": "📺 Mad Money 11/20/26 | Audio Only",
-    "url": "https://www.youtube.com/watch?v=4fQW__mvEcs",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "Listen to Jim Cramer’s personal guide through the confusing jungle of Wall Street investing, navigating through opportunities and pitfalls with one goal in mind - to help you make money. For access to live and exclusive video from CNBC subscribe to CNBC PRO: h",
-    "at": 1795220136000,
-    "score": 0
-   },
-   {
     "title": "📺 Trump Vows To Tax US Companies Building Data Centers Abroad",
     "url": "https://www.youtube.com/watch?v=H4ZByULvs-Q",
     "source": "YouTube · Bloomberg Television",
@@ -1455,301 +1770,28 @@
     "body": "\"Balance of Power\" focuses on the intersection of politics and global business. On today's show, Dean Curnutt, founder and CEO of Macro Risk Advisors, says the market selloff could prove “cleansing” by resetting valuations and making room for fresh capital, bu",
     "at": 1795219779000,
     "score": -1
-   },
-   {
-    "title": "📺 Wall Street Week | Gaming Blockbuster, Healthcare Costs, Cybersecurity Meets AI",
-    "url": "https://www.youtube.com/watch?v=JDWS_SF4ir0",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "This week, former New York Fed President Bill Dudley and Kathryn Judge of Columbia Law School discuss what the Treasury and Fed can do to tackle the nation’s debt crisis. Plus, what Grand Theft Auto 6’s release means for a video game industry that routinely fa",
-    "at": 1795219231000,
-    "score": 0
-   },
-   {
-    "title": "📺 Is the AI Trade Headed for a Dot-Com Crash? Dan Niles Weighs In",
-    "url": "https://www.youtube.com/watch?v=RT1x8q8ma7I",
-    "source": "YouTube · Yahoo Finance",
-    "channelKind": "youtube",
-    "body": "== AlphaSpace by Yahoo Finance: A Professional-Grade Investment Platform Built for Everyday Investors. 👉 https://finance.yahoo.com/about/promos/gold/alphaspace?ncid=100003571",
-    "at": 1795219206000,
-    "score": -1
-   },
-   {
-    "title": "📺 Historic Market Selloff Deepens After Anthropic IPO",
-    "url": "https://www.youtube.com/watch?v=dM5_l_31zIU",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "The Close brings you the latest news and analysis leading up to the final minutes and seconds before and after the closing bell on Wall Street. Today's guests are ProShares Head of Research and CIO of Active Investments Alessio De Longis, PsiQuantum CEO Victor",
-    "at": 1795218674000,
-    "score": -1
-   },
-   {
-    "title": "📺 Gov. Lujan Grisham: 2028 Hopefuls Already Eyeing New Mexico",
-    "url": "https://www.youtube.com/watch?v=EWPEat-a_LU",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "New Mexico Governor Michelle Lujan Grisham says prospective 2028 Democratic presidential contenders are already making their presence felt in the state, naming Mark Kelly, Rahm Emanuel, Pete Buttigieg and Cory Booker among those who have been on the ground. Ne",
-    "at": 1795217879000,
-    "score": 0
-   },
-   {
-    "title": "📺 President Trump would love to see Nvidia give Jensen Huang a second chance.",
-    "url": "https://www.youtube.com/shorts/qK2Z_0go_Ek",
-    "source": "YouTube · Yahoo Finance",
-    "channelKind": "youtube",
-    "body": "“That’s a very important company to us … we have to protect our brilliant people. Jensen is one of them,” Trump said to the press on Friday.",
-    "at": 1795216778000,
-    "score": 0
-   },
-   {
-    "title": "📺 Market Close: Ugly Wall Street Fall, Major Averages in Correction, Anthropic Drops • 11/20/26",
-    "url": "https://www.youtube.com/watch?v=PUZSFuGDkEo",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "CNBC Business News Update with Jessica Ettinger - Markets & Business News With Expert Analysis From Top Business Names. Visit CNBC.com For More. For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC ",
-    "at": 1795212278000,
-    "score": -1
-   },
-   {
-    "title": "📺 Closing Bell panel weighs whether the selloff is a buying opportunity",
-    "url": "https://www.youtube.com/watch?v=nDiqt15QiVQ",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "Cameron Dawson, NewEdge Wealth CIO, and Kevin Gordon, Schwab Center for Financial Research, join 'Closing Bell' with reaction the the day's selloff.",
-    "at": 1795209773000,
-    "score": 0
-   },
-   {
-    "title": "Nvidia&#x2019;s stock clinches a stretch of weekly losses not seen since 2008",
-    "url": "https://www.marketwatch.com/story/nvidias-stock-heads-for-a-stretch-of-weekly-losses-unseen-since-2008-91aba9a6?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "One fund manager says the continued uncertainty makes Nvidia vulnerable to more selling, even as the stock has erased $1.16 trillion in market value in the past seven trading sessions.",
-    "at": 1795211880000,
-    "score": -1
-   },
-   {
-    "title": "U.S.-China trade, Taiwan and tech tensions remain unresolved as Trump returns from Asia",
-    "url": "https://www.cnbc.com/2026/11/20/apec-summit-trump-xi-china-trade-taiwan.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Analysts note few concrete outcomes from the high-profile trilateral and other meetings for APEC in Shenzhen this week.",
-    "at": 1795181390000,
-    "score": 0
-   },
-   {
-    "title": "Orange County Bancorp raises dividend by 27.85 to $0.23",
-    "url": "https://seekingalpha.com/news/4675380-orange-county-bancorp-raises-dividend-by-2785-to-023?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
-    "source": "SeekingAlpha",
-    "channelKind": "news",
-    "body": "",
-    "at": 1795214425000,
-    "score": -1
-   },
-   {
-    "title": "US Senate advances prediction market restrictions with DEATH BETS Act",
-    "url": "https://cointelegraph.com/news/us-senate-advances-prediction-market-restrictions-with-death-bets-act?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "The Senate-approved bill would ban prediction market contracts tied to war, assassination and death amid concerns over potential insider trading on military events.",
-    "at": 1795190122000,
-    "score": -1
-   },
-   {
-    "title": "Kalshi races to get ahead of New York order that could shut down exchange",
-    "url": "https://www.coindesk.com/policy/2026/11/20/kalshi-races-to-get-ahead-of-new-york-order-that-could-shut-down-exchange",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "The U.S. prediction market firm asked a New York court to give the company a chance to argue against a pending restraining order stemming from a new court loss.",
-    "at": 1795215074000,
-    "score": 0
-   },
-   {
-    "title": "Fairmint plans tokenized stock venue on Canton, Ethereum under SEC experiment",
-    "url": "https://www.coindesk.com/business/2026/11/20/fairmint-plans-tokenized-stock-venue-on-canton-ethereum-under-sec-experiment",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "The firm is the latest to join in building blockchain-based stock markets under the agency’s five-year \"innovation exemption\" for tokenized trading.",
-    "at": 1795212331000,
-    "score": 0
-   },
-   {
-    "title": "Bitcoin plunges below $59,000 as rush to cash puts new bear market lows back in play",
-    "url": "https://www.coindesk.com/markets/2026/11/20/bitcoin-plunges-below-usd59-000-as-rush-to-cash-puts-new-bear-market-lows-back-in-play",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "Bitcoin is closing in on its $57,700 summer low as Delphi Digital strategist warns the Fed could make matters worse and STS Digital sees cash as the place to hide.",
-    "at": 1795198432000,
-    "score": -1
-   },
-   {
-    "title": "Former Point72 head of proprietary research says AI could turn data into a new asset class for Wall Street",
-    "url": "https://www.coindesk.com/markets/2026/11/20/former-point72-head-of-proprietary-research-says-ai-could-turn-data-into-a-new-asset-class-for-wall-street",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "A former Point72 executive says AI could reshape Wall Street's data market, turning once-exclusive information into a source of revenue and financing.",
-    "at": 1795186470000,
-    "score": 0
-   },
-   {
-    "title": "NVDA Stock Clocks Worst Week In 18 Years As SEC Reportedly Probes Its Accounting Practices",
-    "url": "https://stocktwits.com/news-articles/markets/equity/nvda-stock-clocks-worst-week-in-18-years-as-sec-reportedly-probes-its-accounting-practices/cNbSDIWR91Q?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "SEC is scrutinizing Nvidia’s accounting practices, Reuters reported, citing two people familiar with the matter.",
-    "at": 1795217892000,
-    "score": -1
-   },
-   {
-    "title": "At AI Summit, Industry Titans Wave Off Market Woes—and Defend Jensen Huang",
-    "url": "https://finance.yahoo.com/m/b4ceaf2c-2be0-3edd-98d2-13d5b3cc7cca/at-ai-summit%2C-industry-titans.html?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "Execs and investors at the TomorrowX conference in Austin, Texas, are as bullish as ever about AI’s ability to improve lives. The rest of America isn’t so sure.",
-    "at": 1795217280000,
-    "score": 1
-   },
-   {
-    "title": "Data Center AI Chips Could Change the Winners: Broadcom and Marvell",
-    "url": "https://247wallst.com/investing/2026/11/20/data-center-ai-chips-could-change-the-winners-broadcom-and-marvell/?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "While investors fixate on Nvidia's share price, hyperscalers are quietly buying different chips for different jobs. Counting accelerators misses the real money, and a memory-stack model shows why the chip tally can mislead.",
-    "at": 1795217154000,
-    "score": 0
-   },
-   {
-    "title": "Ask HN: Should Uber Ratings Decay over Time?",
-    "url": "https://news.ycombinator.com/item?id=50583294",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795213972000,
-    "score": 0
-   },
-   {
-    "title": "Ask HN: Do you feel developers are more \"grumpy\" these days?",
-    "url": "https://news.ycombinator.com/item?id=50582890",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 4 · Comments: 5",
-    "at": 1795212011000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: Trichroma, a Platformer of Light",
-    "url": "https://trichroma.namirsab.dev/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795210685000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: Build a trading bot in 10 seconds",
-    "url": "https://board.blink.cash/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 2",
-    "at": 1795210047000,
-    "score": 0
-   },
-   {
-    "title": "Who Should Make Medical-Necessity Decisions: AI, Insurers, or Physicians?",
-    "url": "https://medcitynews.com/2026/11/who-should-make-medical-necessity-decisions-ai-insurers-or-treating-physicians/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795207667000,
-    "score": 0
-   },
-   {
-    "title": "Nvidia accounting under SEC investigation, sources say",
-    "url": "https://finance.yahoo.com/markets/article/nvidia-stock-extends-25-trillion-rout-as-sec-probe-reportedly-investigates-its-accounting-194945274.html",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 194 · Comments: 91",
-    "at": 1795206161000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: A browser game about trying to join a meeting",
-    "url": "https://a.drien.com/games/ceci-nest-pas-du-travail/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 1",
-    "at": 1795204786000,
-    "score": 0
-   },
-   {
-    "title": "Nvidia's accounting is a focus of US SEC investigation",
-    "url": "https://www.reuters.com/world/us-secs-nvidia-probe-is-examining-potential-accounting-issues-sources-say-2026-11-20/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 15 · Comments: 1",
-    "at": 1795202889000,
-    "score": 0
-   },
-   {
-    "title": "Nvidia's share slide knocks it below Alphabet in valuation",
-    "url": "https://www.reuters.com/business/retail-consumer/nvidias-share-slide-knocks-it-below-alphabet-valuation-2026-11-20/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795199855000,
-    "score": 0
-   },
-   {
-    "title": "Ask HN: How does one build an LLM router with a labelled set of 100 tasks?",
-    "url": "https://news.ycombinator.com/item?id=50575992",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795188201000,
-    "score": 0
-   },
-   {
-    "title": "📺 Stocks Plunge After Anthropic IPO, Trump Returns from Asia",
-    "url": "https://www.youtube.com/watch?v=BFiDTr97in4",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Bloomberg Money takes the pulse of your financial life, powered by the reporting of our global newsroom. Today's guests: Managing Partner & Head of CVC Marathon Bruce Richards and BlackRock Chief Investment & Portfolio Strategist Gargi Chaudhrui. YouTube Chapt",
-    "at": 1795217654000,
-    "score": -1
-   },
-   {
-    "title": "📺 Sol Trujillo Says Latino Economic Growth Is an Undervalued Investment Opportunity",
-    "url": "https://www.youtube.com/watch?v=uPUVs41q4eo",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Sol Trujillo & Andy Sieg discuss Citi’s partnership with Trujillo to invest in and expand financial access for the Latino population in the United States. They said the opportunity is attractive but has been overlooked because investors have not segmented the ",
-    "at": 1795217495000,
-    "score": 1
-   },
-   {
-    "title": "📺 Rediker: AI Selloff Is a ‘Healthy’ Correction",
-    "url": "https://www.youtube.com/watch?v=7fbq429Zdbg",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Doug Rediker, managing partner at International Capital Strategy, says the market correction is helping “rationalize and normalize” the AI thesis after a period of heavy investment and rising financing risk, calling the pullback both necessary and healthy. He ",
-    "at": 1795217463000,
-    "score": -1
-   },
-   {
-    "title": "📺 Curnutt: Selloff May Be ‘Cleansing,’ But Risks Remain",
-    "url": "https://www.youtube.com/watch?v=Xx6jz7bo9FM",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Dean Curnutt, founder and CEO of Macro Risk Advisors, says the market selloff could prove “cleansing” by resetting valuations and making room for fresh capital, but warns that the growing overlap between the AI trade and the broader economy could leave markets",
-    "at": 1795217221000,
-    "score": -1
    }
   ],
   "trending": [
    {
+    "name": "WASTED",
+    "symbol": "WASTED",
+    "rank": 823
+   },
+   {
+    "name": "Wanted Star",
+    "symbol": "WSTAR",
+    "rank": 933
+   },
+   {
+    "name": "Official Trump",
+    "symbol": "TRUMP",
+    "rank": 135
+   },
+   {
     "name": "Chunkee The Manatee",
     "symbol": "CHUNKEE",
-    "rank": 926
+    "rank": 937
    },
    {
     "name": "Bitcoin",
@@ -1757,47 +1799,32 @@
     "rank": 1
    },
    {
+    "name": "Pudgy Penguins",
+    "symbol": "PENGU",
+    "rank": 127
+   },
+   {
+    "name": "Derive",
+    "symbol": "DRV",
+    "rank": 114
+   },
+   {
+    "name": "Backpack",
+    "symbol": "BP",
+    "rank": 149
+   },
+   {
     "name": "Hyperliquid",
     "symbol": "HYPE",
     "rank": 10
    },
    {
-    "name": "Zcash",
-    "symbol": "ZEC",
-    "rank": 11
-   },
-   {
-    "name": "Solana",
-    "symbol": "SOL",
-    "rank": 7
-   },
-   {
-    "name": "Ethereum",
-    "symbol": "ETH",
-    "rank": 2
-   },
-   {
-    "name": "Lighter",
-    "symbol": "LIT",
-    "rank": 90
-   },
-   {
-    "name": "Pudgy Penguins",
-    "symbol": "PENGU",
-    "rank": 130
-   },
-   {
-    "name": "Ethena",
-    "symbol": "ENA",
-    "rank": 57
-   },
-   {
-    "name": "Sui",
-    "symbol": "SUI",
-    "rank": 34
+    "name": "Pearl",
+    "symbol": "PEARL",
+    "rank": 82
    }
   ],
-  "newsScore": -0.18,
+  "newsScore": -0.12,
   "arxivPapers": [
    {
     "title": "A joint framework for SPX, VIX and VXX",
@@ -1923,6 +1950,102 @@
   "arxivUpdatedAt": 1795218902260,
   "youtubeVideos": [
    {
+    "title": "Is AI a Bubble? History Offers Some Clues",
+    "url": "https://www.youtube.com/watch?v=dF3hfxgFqrg",
+    "videoId": "dF3hfxgFqrg",
+    "thumbnail": "https://i1.ytimg.com/vi/dF3hfxgFqrg/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "Bloomberg Opinion columnist Justin Fox tells Bloomberg This Weekend that history offers warning signs for financial bubbles, but little reliable guidance about exactly when they will burst, making debt and investor sentiment important risks to watch amid the A",
+    "pubDate": "2026-11-21T15:08:05+00:00",
+    "at": 1795273685000,
+    "score": -1
+   },
+   {
+    "title": "Don't Wait Until It's Too Late: Crucial Financial Lessons From 25 Experts",
+    "url": "https://www.youtube.com/watch?v=SopfYgUpDBQ",
+    "videoId": "SopfYgUpDBQ",
+    "thumbnail": "https://i4.ytimg.com/vi/SopfYgUpDBQ/hqdefault.jpg",
+    "channel": "Yahoo Finance",
+    "category": "דוחות, פד ומניות",
+    "summary": "Rebecca Patterson and Catherine Keating asked 25 senior women in finance one question: when a friend or a daughter asks what really matters about money, what do you actually tell them, rather than what your firm pays you to say. Each of them wrote a chapter, a",
+    "pubDate": "2026-11-21T15:00:16+00:00",
+    "at": 1795273216000,
+    "score": 0
+   },
+   {
+    "title": "GTA 6: The Blockbuster That is Changing Gaming Forever",
+    "url": "https://www.youtube.com/watch?v=1wMDgN2y65U",
+    "videoId": "1wMDgN2y65U",
+    "thumbnail": "https://i2.ytimg.com/vi/1wMDgN2y65U/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "Grand Theft Auto 6 is one of the biggest entertainment releases in recent history. But can one blockbuster video game revive an industry facing layoffs, consolidation and slowing consumer spending? NYU Stern professor Joost van Dreunen and Griffin Gaming Partn",
+    "pubDate": "2026-11-21T15:00:02+00:00",
+    "at": 1795273202000,
+    "score": -1
+   },
+   {
+    "title": "Wall Street Confronts AI Reality Check",
+    "url": "https://www.youtube.com/watch?v=60hFHZ1wvlw",
+    "videoId": "60hFHZ1wvlw",
+    "thumbnail": "https://i3.ytimg.com/vi/60hFHZ1wvlw/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "Bloomberg US equities reporter Natalia Kniazhevich tells Bloomberg This Weekend that Anthropic’s record IPO failed to reverse deteriorating market sentiment as investors grapple with Nvidia turmoil, AI spending concerns and selling by systematic funds. Speakin",
+    "pubDate": "2026-11-21T14:49:34+00:00",
+    "at": 1795272574000,
+    "score": 1
+   },
+   {
+    "title": "Michael Irvin on if the NFL is supersizing the schedule",
+    "url": "https://www.youtube.com/shorts/OR1IJgyFbS0",
+    "videoId": "OR1IJgyFbS0",
+    "thumbnail": "https://i4.ytimg.com/vi/OR1IJgyFbS0/hqdefault.jpg",
+    "channel": "CNBC Television",
+    "category": "חדשות שוק ומניות",
+    "summary": "NFL Hall of Famer and Dallas Cowboys legend Michael Irvin talks with CNBC’s Alex Sherman about the “player’s perspective” when it comes to changes to the NFL schedule. Watch the full interview on the CNBC Sport podcast in related video.",
+    "pubDate": "2026-11-21T14:30:23+00:00",
+    "at": 1795271423000,
+    "score": 0
+   },
+   {
+    "title": "Shenzhen Wants to Become a Cultural Capital",
+    "url": "https://www.youtube.com/watch?v=iS-Tv_sXT3A",
+    "videoId": "iS-Tv_sXT3A",
+    "thumbnail": "https://i2.ytimg.com/vi/iS-Tv_sXT3A/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "Bloomberg’s Tiffany Ap tells Bloomberg This Weekend how Shenzhen is spending billions on museums as the technology and manufacturing hub tries to establish itself as a cultural destination and attract talent and tourism. Speaking with hosts David Gura and Chri",
+    "pubDate": "2026-11-21T14:22:58+00:00",
+    "at": 1795270978000,
+    "score": 0
+   },
+   {
+    "title": "Paris Hilton on human connection in the age of AI",
+    "url": "https://www.youtube.com/shorts/KfS3q96rZPY",
+    "videoId": "KfS3q96rZPY",
+    "thumbnail": "https://i4.ytimg.com/vi/KfS3q96rZPY/hqdefault.jpg",
+    "channel": "CNBC Television",
+    "category": "חדשות שוק ומניות",
+    "summary": "Paris Hilton talks with CNBC’s Julia Boorstin about how she uses AI while still maintaining a human connection with her fans. Watch the full interview on the CNBC Changemakers podcast in related video.",
+    "pubDate": "2026-11-21T14:00:03+00:00",
+    "at": 1795269603000,
+    "score": 0
+   },
+   {
+    "title": "Why Would Anyone Spend $1 Billion on GTA 6?",
+    "url": "https://www.youtube.com/watch?v=7MYXy0ROFM8",
+    "videoId": "7MYXy0ROFM8",
+    "thumbnail": "https://i4.ytimg.com/vi/7MYXy0ROFM8/hqdefault.jpg",
+    "channel": "Patrick Boyle",
+    "category": "קוונט, קרנות גידור ומאקרו",
+    "summary": "Go to https://surfshark.com/boyle or use code BOYLE at checkout to get 4 extra months of Surfshark! Grand Theft Auto 6 is finally here, and with a budget estimated at one to one and a half billion dollars, it’s the most expensive video game ever made. In this ",
+    "pubDate": "2026-11-21T13:56:15+00:00",
+    "at": 1795269375000,
+    "score": 0
+   },
+   {
     "title": "Bitcoin: The Lower Low",
     "url": "https://www.youtube.com/watch?v=ZNy4XdW59dc",
     "videoId": "ZNy4XdW59dc",
@@ -1971,76 +2094,16 @@
     "score": 0
    },
    {
-    "title": "Trump Vows To Tax US Companies Building Data Centers Abroad",
-    "url": "https://www.youtube.com/watch?v=H4ZByULvs-Q",
-    "videoId": "H4ZByULvs-Q",
-    "thumbnail": "https://i1.ytimg.com/vi/H4ZByULvs-Q/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "\"Balance of Power\" focuses on the intersection of politics and global business. On today's show, Dean Curnutt, founder and CEO of Macro Risk Advisors, says the market selloff could prove “cleansing” by resetting valuations and making room for fresh capital, bu",
-    "pubDate": "2026-11-21T00:09:39+00:00",
-    "at": 1795219779000,
-    "score": -1
-   },
-   {
-    "title": "Wall Street Week | Gaming Blockbuster, Healthcare Costs, Cybersecurity Meets AI",
-    "url": "https://www.youtube.com/watch?v=JDWS_SF4ir0",
-    "videoId": "JDWS_SF4ir0",
-    "thumbnail": "https://i3.ytimg.com/vi/JDWS_SF4ir0/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "This week, former New York Fed President Bill Dudley and Kathryn Judge of Columbia Law School discuss what the Treasury and Fed can do to tackle the nation’s debt crisis. Plus, what Grand Theft Auto 6’s release means for a video game industry that routinely fa",
-    "pubDate": "2026-11-21T00:00:31+00:00",
-    "at": 1795219231000,
-    "score": 0
-   },
-   {
     "title": "Is the AI Trade Headed for a Dot-Com Crash? Dan Niles Weighs In",
     "url": "https://www.youtube.com/watch?v=RT1x8q8ma7I",
     "videoId": "RT1x8q8ma7I",
     "thumbnail": "https://i3.ytimg.com/vi/RT1x8q8ma7I/hqdefault.jpg",
     "channel": "Yahoo Finance",
     "category": "דוחות, פד ומניות",
-    "summary": "== AlphaSpace by Yahoo Finance: A Professional-Grade Investment Platform Built for Everyday Investors. 👉 https://finance.yahoo.com/about/promos/gold/alphaspace?ncid=100003571",
+    "summary": "Tech stocks got crushed as the AI trade unraveled, and Dan Niles of Niles Investment Management tells Deirdre Bosa whether this looks more like the dot-com crash or 1997. He walks through the rallies investors saw on the way down from 2000 to 2002, why compani",
     "pubDate": "2026-11-21T00:00:06+00:00",
     "at": 1795219206000,
     "score": -1
-   },
-   {
-    "title": "Historic Market Selloff Deepens After Anthropic IPO",
-    "url": "https://www.youtube.com/watch?v=dM5_l_31zIU",
-    "videoId": "dM5_l_31zIU",
-    "thumbnail": "https://i1.ytimg.com/vi/dM5_l_31zIU/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "The Close brings you the latest news and analysis leading up to the final minutes and seconds before and after the closing bell on Wall Street. Today's guests are ProShares Head of Research and CIO of Active Investments Alessio De Longis, PsiQuantum CEO Victor",
-    "pubDate": "2026-11-20T23:51:14+00:00",
-    "at": 1795218674000,
-    "score": -1
-   },
-   {
-    "title": "Gov. Lujan Grisham: 2028 Hopefuls Already Eyeing New Mexico",
-    "url": "https://www.youtube.com/watch?v=EWPEat-a_LU",
-    "videoId": "EWPEat-a_LU",
-    "thumbnail": "https://i2.ytimg.com/vi/EWPEat-a_LU/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "New Mexico Governor Michelle Lujan Grisham says prospective 2028 Democratic presidential contenders are already making their presence felt in the state, naming Mark Kelly, Rahm Emanuel, Pete Buttigieg and Cory Booker among those who have been on the ground. Ne",
-    "pubDate": "2026-11-20T23:37:59+00:00",
-    "at": 1795217879000,
-    "score": 0
-   },
-   {
-    "title": "President Trump would love to see Nvidia give Jensen Huang a second chance.",
-    "url": "https://www.youtube.com/shorts/qK2Z_0go_Ek",
-    "videoId": "qK2Z_0go_Ek",
-    "thumbnail": "https://i2.ytimg.com/vi/qK2Z_0go_Ek/hqdefault.jpg",
-    "channel": "Yahoo Finance",
-    "category": "דוחות, פד ומניות",
-    "summary": "“That’s a very important company to us … we have to protect our brilliant people. Jensen is one of them,” Trump said to the press on Friday.",
-    "pubDate": "2026-11-20T23:19:38+00:00",
-    "at": 1795216778000,
-    "score": 0
    },
    {
     "title": "Market Close: Ugly Wall Street Fall, Major Averages in Correction, Anthropic Drops • 11/20/26",
@@ -2053,30 +2116,6 @@
     "pubDate": "2026-11-20T22:04:38+00:00",
     "at": 1795212278000,
     "score": -1
-   },
-   {
-    "title": "Closing Bell panel weighs whether the selloff is a buying opportunity",
-    "url": "https://www.youtube.com/watch?v=nDiqt15QiVQ",
-    "videoId": "nDiqt15QiVQ",
-    "thumbnail": "https://i3.ytimg.com/vi/nDiqt15QiVQ/hqdefault.jpg",
-    "channel": "CNBC Television",
-    "category": "חדשות שוק ומניות",
-    "summary": "Cameron Dawson, NewEdge Wealth CIO, and Kevin Gordon, Schwab Center for Financial Research, join 'Closing Bell' with reaction the the day's selloff.",
-    "pubDate": "2026-11-20T21:22:53+00:00",
-    "at": 1795209773000,
-    "score": 0
-   },
-   {
-    "title": "Alphabet outperforms Mag 7 peers amid tech sell-off",
-    "url": "https://www.youtube.com/shorts/jeweqVGk3M8",
-    "videoId": "jeweqVGk3M8",
-    "thumbnail": "https://i3.ytimg.com/vi/jeweqVGk3M8/hqdefault.jpg",
-    "channel": "CNBC Television",
-    "category": "חדשות שוק ומניות",
-    "summary": "CNBC’s MacKenzie Sigalos reports on why Alphabet is holding up better than its Mag 7 peers amid a sharp tech sell-off.",
-    "pubDate": "2026-11-20T21:00:20+00:00",
-    "at": 1795208420000,
-    "score": 0
    },
    {
     "title": "Bitcoin Drops Below $60k",
@@ -2149,21 +2188,9 @@
     "pubDate": "2026-11-18T16:00:36+00:00",
     "at": 1795017636000,
     "score": 0
-   },
-   {
-    "title": "Bitcoin: The Bull's Dilemma",
-    "url": "https://www.youtube.com/watch?v=HNuV6mayKmk",
-    "videoId": "HNuV6mayKmk",
-    "thumbnail": "https://i1.ytimg.com/vi/HNuV6mayKmk/hqdefault.jpg",
-    "channel": "Benjamin Cowen",
-    "category": "מחזורי שוק וקוונט קריפטו",
-    "summary": "What is the bull's dilemma? Let's discuss! 0:00 - INTRO 0:21 Conference access and livestream details 2:33 Framing Bitcoin’s bull dilemma 4:25 Stablecoin charts challenge the bullish case 6:40 How USDT dominance affects Bitcoin ratios 8:20 Stablecoin market ca",
-    "pubDate": "2026-11-18T15:36:39+00:00",
-    "at": 1795016199000,
-    "score": 1
    }
   ],
-  "youtubeUpdatedAt": 1795243887253
+  "youtubeUpdatedAt": 1795274179956
  },
  "lessons": [
   "יוטיוב גאן (Wd Gann Trader): דיוק רמות תמיכה/התנגדות Sq9 (45°/90°/180°) עם שבירת סווינג וסטופ מובנה — \"Gann Cosmogram Nifty analysis using Jupiter-Jupiter Opposition\"",

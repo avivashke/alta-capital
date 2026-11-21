@@ -1,70 +1,70 @@
 {
- "at": "2026-11-21T06:51:29.814Z",
+ "at": "2026-11-21T15:16:22.549Z",
  "summary": [
   {
    "desk": "desk_5m",
    "timeframe": "5m",
    "ok": true,
-   "published": false,
-   "version": "v1.2",
-   "oos": 4.36,
-   "robustness": 49
-  },
-  {
-   "desk": "desk_5m",
-   "timeframe": "5m",
-   "ok": true,
    "published": true,
-   "version": "v1.3",
-   "oos": 5.19,
-   "robustness": 60
+   "version": "v1.4",
+   "oos": 7.62,
+   "robustness": 65
   },
   {
-   "desk": "desk_15m",
-   "timeframe": "15m",
-   "ok": true,
-   "published": true,
-   "version": "v1.3",
-   "oos": 2.39,
-   "robustness": 64
-  },
-  {
-   "desk": "desk_1h",
+   "desk": "desk_nvda",
    "timeframe": "1h",
    "ok": true,
    "published": true,
-   "version": "v1.2",
-   "oos": 7.99,
+   "version": "v1.5",
+   "oos": 29.67,
    "robustness": 75
   },
   {
-   "desk": "desk_1d",
+   "desk": "desk_spy",
    "timeframe": "1d",
    "ok": true,
-   "published": false,
-   "version": "v1.4",
-   "oos": 18.14,
-   "robustness": 78
+   "published": true,
+   "version": "v1.5",
+   "oos": 21.22,
+   "robustness": 85
+  },
+  {
+   "desk": "desk_aapl",
+   "timeframe": "1d",
+   "ok": true,
+   "published": true,
+   "version": "v1.5",
+   "oos": 15.49,
+   "robustness": 82
+  },
+  {
+   "desk": "yt_bot_silvia_rumer_structure_pullback_BTCUS",
+   "timeframe": "1d",
+   "ok": true,
+   "published": true,
+   "version": "v1.1",
+   "oos": 20.67,
+   "robustness": 85
   }
  ],
  "stats": {
-  "cycles": 114,
-  "backtests": 23748,
-  "deployments": 48,
-  "scans": 100,
+  "cycles": 119,
+  "backtests": 24804,
+  "deployments": 53,
+  "scans": 108,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 100884,
+  "durationMs": 98819,
   "node": "v20.20.2"
  },
  "ai": {
   "source": "model",
   "focusDesk": "desk_5m",
-  "strategyId": "breakout",
-  "rationale": "הדוח מצביע על ביצועים OOS חיוביים אך רגישות גבוהה למגוון, לכן נרצה להמשיך עם breakout אך לצמצם את הטווחים למינימום כדי למזער סיכון.",
+  "strategyId": "vol_breakout",
+  "rationale": "desk_5m הוא הדסק היחיד עם ביצועים OOS שליליים וה-robustness נמוך יחסית; חיזוק ה-stop על ידי ATR מייצב את הסיכון.",
   "provider": "pollinations",
   "model": "openai-fast",
   "accountId": null,
