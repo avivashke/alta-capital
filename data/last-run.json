@@ -1,70 +1,70 @@
 {
- "at": "2026-11-21T15:16:22.549Z",
+ "at": "2026-11-21T20:56:45.211Z",
  "summary": [
   {
    "desk": "desk_5m",
    "timeframe": "5m",
    "ok": true,
-   "published": true,
-   "version": "v1.4",
-   "oos": 7.62,
-   "robustness": 65
+   "published": false,
+   "version": null,
+   "oos": -2.03,
+   "robustness": 27
   },
   {
-   "desk": "desk_nvda",
+   "desk": "yt_bot_matt_schoeneberger_structure_pullback",
    "timeframe": "1h",
    "ok": true,
-   "published": true,
-   "version": "v1.5",
-   "oos": 29.67,
-   "robustness": 75
+   "published": false,
+   "version": null,
+   "oos": 8.07,
+   "robustness": 41
   },
   {
-   "desk": "desk_spy",
-   "timeframe": "1d",
+   "desk": "desk_5m",
+   "timeframe": "5m",
    "ok": true,
-   "published": true,
-   "version": "v1.5",
-   "oos": 21.22,
-   "robustness": 85
+   "published": false,
+   "version": null,
+   "oos": -2.03,
+   "robustness": 31
   },
   {
-   "desk": "desk_aapl",
-   "timeframe": "1d",
+   "desk": "desk_15m",
+   "timeframe": "15m",
    "ok": true,
-   "published": true,
-   "version": "v1.5",
-   "oos": 15.49,
-   "robustness": 82
+   "published": false,
+   "version": "v1.3",
+   "oos": 2.39,
+   "robustness": 66
   },
   {
-   "desk": "yt_bot_silvia_rumer_structure_pullback_BTCUS",
-   "timeframe": "1d",
+   "desk": "desk_1h",
+   "timeframe": "1h",
    "ok": true,
-   "published": true,
-   "version": "v1.1",
-   "oos": 20.67,
-   "robustness": 85
+   "published": false,
+   "version": "v1.2",
+   "oos": 7.99,
+   "robustness": 78
   }
  ],
  "stats": {
-  "cycles": 119,
-  "backtests": 24804,
+  "cycles": 124,
+  "backtests": 26556,
   "deployments": 53,
-  "scans": 108,
+  "scans": 116,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 98819,
+  "durationMs": 29857,
   "node": "v20.20.2"
  },
  "ai": {
   "source": "model",
   "focusDesk": "desk_5m",
-  "strategyId": "vol_breakout",
-  "rationale": "desk_5m הוא הדסק היחיד עם ביצועים OOS שליליים וה-robustness נמוך יחסית; חיזוק ה-stop על ידי ATR מייצב את הסיכון.",
+  "strategyId": "rsi_reversion",
+  "rationale": "החלף את vol_breakout ל‑rsi_reversion כדי לנצל תנודתיות גבוהה של BTCUSDT ב‑5m, תוך שמירה על פרמטרים בטווח המוגדר ושיפור ה‑OOS.",
   "provider": "pollinations",
   "model": "openai-fast",
   "accountId": null,
