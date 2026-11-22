@@ -1,70 +1,70 @@
 {
- "at": "2026-11-22T08:04:37.831Z",
+ "at": "2026-11-22T16:21:38.655Z",
  "summary": [
   {
-   "desk": "desk_5m",
-   "timeframe": "5m",
-   "ok": true,
-   "published": false,
-   "version": null,
-   "oos": 5.21,
-   "robustness": 45
-  },
-  {
-   "desk": "yt_bot_poc_point_of_control_structure_pullba",
+   "desk": "desk_nvda",
    "timeframe": "1h",
    "ok": true,
    "published": false,
-   "version": null,
-   "oos": 8.27,
-   "robustness": 45
+   "version": "v1.6",
+   "oos": 33.89,
+   "robustness": 80
   },
   {
-   "desk": "yt_bot_matt_schoeneberger_structure_pullback",
+   "desk": "desk_1d",
+   "timeframe": "1d",
+   "ok": true,
+   "published": false,
+   "version": "v1.4",
+   "oos": 18.14,
+   "robustness": 84
+  },
+  {
+   "desk": "desk_1w",
+   "timeframe": "1w",
+   "ok": true,
+   "published": false,
+   "version": "v1.11",
+   "oos": 22.64,
+   "robustness": 85
+  },
+  {
+   "desk": "desk_nvda",
    "timeframe": "1h",
    "ok": true,
-   "published": false,
-   "version": null,
-   "oos": 8.8,
-   "robustness": 47
+   "published": true,
+   "version": "v1.7",
+   "oos": 37.9,
+   "robustness": 80
   },
   {
-   "desk": "desk_5m",
-   "timeframe": "5m",
+   "desk": "desk_spy",
+   "timeframe": "1d",
    "ok": true,
    "published": false,
-   "version": null,
-   "oos": 6.01,
-   "robustness": 75
-  },
-  {
-   "desk": "desk_15m",
-   "timeframe": "15m",
-   "ok": true,
-   "published": false,
-   "version": "v1.3",
-   "oos": 2.39,
-   "robustness": 51
+   "version": "v1.5",
+   "oos": 21.22,
+   "robustness": 87
   }
  ],
  "stats": {
-  "cycles": 134,
-  "backtests": 29156,
-  "deployments": 55,
-  "scans": 132,
+  "cycles": 139,
+  "backtests": 30084,
+  "deployments": 56,
+  "scans": 140,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 72518,
+  "durationMs": 75608,
   "node": "v20.20.2"
  },
  "ai": {
   "source": "model",
-  "focusDesk": "desk_5m",
-  "strategyId": "rsi_reversion",
-  "rationale": "desk_5m הוא השולחן החלש ביותר עם OOS שלילי ו-robustness נמוך; חיזוק הפרמטרים בתוך הטווחים המותרים יכול לשפר את ביצועי הרווח והיציבות.",
+  "focusDesk": "desk_nvda",
+  "strategyId": "ema_trend",
+  "rationale": "הדסק בעל ביצועים נמוכים ביותר, נבחר משפחה עם מגמה כדי לנצל תנודות קבועות",
   "provider": "pollinations",
   "model": "openai-fast",
   "accountId": null,
