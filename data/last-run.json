@@ -1,5 +1,5 @@
 {
- "at": "2026-11-21T20:56:45.211Z",
+ "at": "2026-11-22T01:09:24.102Z",
  "summary": [
   {
    "desk": "desk_5m",
@@ -8,63 +8,63 @@
    "published": false,
    "version": null,
    "oos": -2.03,
-   "robustness": 27
+   "robustness": 26
   },
   {
-   "desk": "yt_bot_matt_schoeneberger_structure_pullback",
+   "desk": "desk_1w",
+   "timeframe": "1w",
+   "ok": true,
+   "published": true,
+   "version": "v1.11",
+   "oos": 22.64,
+   "robustness": 77
+  },
+  {
+   "desk": "desk_nvda",
    "timeframe": "1h",
    "ok": true,
-   "published": false,
-   "version": null,
-   "oos": 8.07,
-   "robustness": 41
+   "published": true,
+   "version": "v1.6",
+   "oos": 33.89,
+   "robustness": 80
   },
   {
-   "desk": "desk_5m",
-   "timeframe": "5m",
+   "desk": "desk_spy",
+   "timeframe": "1d",
    "ok": true,
    "published": false,
-   "version": null,
-   "oos": -2.03,
-   "robustness": 31
+   "version": "v1.5",
+   "oos": 21.22,
+   "robustness": 85
   },
   {
-   "desk": "desk_15m",
-   "timeframe": "15m",
+   "desk": "desk_aapl",
+   "timeframe": "1d",
    "ok": true,
    "published": false,
-   "version": "v1.3",
-   "oos": 2.39,
-   "robustness": 66
-  },
-  {
-   "desk": "desk_1h",
-   "timeframe": "1h",
-   "ok": true,
-   "published": false,
-   "version": "v1.2",
-   "oos": 7.99,
-   "robustness": 78
+   "version": "v1.5",
+   "oos": 15.49,
+   "robustness": 82
   }
  ],
  "stats": {
-  "cycles": 124,
-  "backtests": 26556,
-  "deployments": 53,
-  "scans": 116,
+  "cycles": 129,
+  "backtests": 27800,
+  "deployments": 55,
+  "scans": 124,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 29857,
+  "durationMs": 54768,
   "node": "v20.20.2"
  },
  "ai": {
   "source": "model",
   "focusDesk": "desk_5m",
   "strategyId": "rsi_reversion",
-  "rationale": "החלף את vol_breakout ל‑rsi_reversion כדי לנצל תנודתיות גבוהה של BTCUSDT ב‑5m, תוך שמירה על פרמטרים בטווח המוגדר ושיפור ה‑OOS.",
+  "rationale": "הדסק 5m הוא החזקת החולשה עם חוסן נמוך ו-OOS שלילי; התאמת פרמטרים במגבלת ה‑range של rsi_reversion תורמת לשיפור ה‑robustness וה‑profit factor תוך שמירה על סיכון ניהולי.",
   "provider": "pollinations",
   "model": "openai-fast",
   "accountId": null,
