@@ -26,6 +26,33 @@ import { runAiDirector } from './ai.js';
 const LIMITS = BACKTEST_HISTORY;
 const ROUNDS = { intraday: { rounds: 26, climb: 12 }, swing: { rounds: 30, climb: 14 } };
 
+// --- risk governor ---------------------------------------------------------
+// The live book once ran until it was gone. These are the limits the risk desk
+// now enforces by itself on every tick: a bot has to keep earning to stay live,
+// and the whole paper book has a hard circuit breaker.
+const LIVE_RISK = {
+  deskMaxLossPct: 6,               // live drop from the desk's own high-water mark
+  deskVerdictTrades: 8,            // ...or this many live trades with a losing, low-hit-rate run
+  deskMinWinRate: 0.35,
+  portfolioMaxDdPct: 12,           // the whole paper book, from its peak equity
+  maxLiveDesks: 6,
+  cooldownMs: 12 * 60 * 60 * 1000, // paused desks may re-enter optimisation after this
+};
+
+// What a nostro bot must show before the team lets it trade the live book.
+const NOSTRO_LIVE_GATES = {
+  minTrades: 20,
+  minProfitFactor: 1.25,
+  maxDrawdownPct: 20,
+  minReturnPct: 8,
+  minCandles: 600,
+  maxPerCycle: 2,
+};
+
+function cloneParams(params) {
+  try { return JSON.parse(JSON.stringify(params || {})); } catch { return { ...(params || {}) }; }
+}
+
 let lastEmit = 0;
 let ticking = false;
 
@@ -188,6 +215,8 @@ export function ensureDeskFields() {
     desk.openTrade = desk.openTrade || null;
     desk.status = desk.status || 'research';
     desk.ideas = desk.ideas || [];
+    desk.livePnl = Number(desk.livePnl) || 0;
+    desk.livePeakPnl = Math.max(Number(desk.livePeakPnl) || 0, desk.livePnl);
   }
 }
 
@@ -821,7 +850,9 @@ export async function tickLive() {
       } else if (dir !== 0 && s.autopilot) {
         const stopDist = stopMult * a;
         const capitalUsdt = Math.min(s.capital || 100000, pf.cash);
-        const riskAmount = capitalUsdt * Number(s.riskPerTrade || 0.015);
+        // Per-desk risk wins: a promoted nostro bot trades at its hardened size, not
+        // the portfolio-wide default that helped the book evaporate.
+        const riskAmount = capitalUsdt * Number(desk.riskPerTrade || s.riskPerTrade || 0.015);
         const stopDistance = Math.abs(price - (dir > 0 ? price - stopDist : price + stopDist));
         const quantity = stopDistance > 0 ? riskAmount / stopDistance : 0;
 
@@ -911,6 +942,178 @@ export async function tickLive() {
   }
 }
 
+/**
+ * Risk governor: pauses live bots that bleed and trips a portfolio-wide circuit
+ * breaker, so no bot can quietly lose the book again. Also releases desks whose
+ * cooldown expired back to optimisation — they must re-earn promotion.
+ */
+export function enforceLiveRiskControls() {
+  ensureDeskFields();
+  const state = store.state;
+  const pf = ensurePaperPortfolio();
+  const now = Date.now();
+  const paused = [];
+
+  for (const desk of state.desks.filter((d) => d.status === 'live')) {
+    desk.livePnl = Number(desk.livePnl) || 0;
+    desk.livePeakPnl = Math.max(Number(desk.livePeakPnl) || 0, desk.livePnl);
+    const liveDd = desk.livePeakPnl - desk.livePnl;
+    const recent = (desk.liveTrades || []).slice(0, LIVE_RISK.deskVerdictTrades);
+    const recentSum = recent.reduce((sum, t) => sum + (Number(t.pct) || 0), 0);
+    const winRate = recent.length ? recent.filter((t) => (Number(t.pct) || 0) > 0).length / recent.length : null;
+    let reason = null;
+    if (liveDd >= LIVE_RISK.deskMaxLossPct) {
+      reason = `ירדה ${liveDd.toFixed(1)}% מהשיא החי שלה`;
+    } else if (recent.length >= LIVE_RISK.deskVerdictTrades && recentSum < 0 && winRate < LIVE_RISK.deskMinWinRate) {
+      reason = `${recent.length} העסקאות האחרונות הפסידו ${recentSum.toFixed(1)}% (${Math.round(winRate * 100)}% הצלחה)`;
+    }
+    if (!reason) continue;
+    desk.status = 'paused';
+    desk.pausedAt = now;
+    desk.pauseReason = reason;
+    desk.openTrade = null;
+    paused.push({ id: desk.id, label: desk.label, reason });
+    store.log('warn', 'דניאל · סיכונים',
+      `${desk.label}: הופסק אוטומטית — ${reason}. לא נפתחות פוזיציות חדשות עד לכיול מחדש ולמעבר חוזר בשערים`);
+  }
+
+  // Portfolio-wide breaker: the book first, the tactics later.
+  const hist = Array.isArray(pf.equityHistory) ? pf.equityHistory : [];
+  const peak = Math.max(Number(pf.initialBalance) || 0, ...hist.map((h) => Number(h.equity) || 0));
+  const equity = hist.length ? Number(hist[hist.length - 1].equity) || peak : peak;
+  const bookDd = peak > 0 ? ((peak - equity) / peak) * 100 : 0;
+  if (bookDd >= LIVE_RISK.portfolioMaxDdPct) {
+    const liveLeft = state.desks.filter((d) => d.status === 'live');
+    for (const desk of liveLeft) {
+      desk.status = 'paused';
+      desk.pausedAt = now;
+      desk.pauseReason = `בלם חירום על התיק (${bookDd.toFixed(1)}% ירידה מהשיא)`;
+      desk.openTrade = null;
+      paused.push({ id: desk.id, label: desk.label, reason: desk.pauseReason });
+    }
+    state.settings.emergencyStop = {
+      at: now,
+      drawdownPct: +bookDd.toFixed(2),
+      peak: +peak.toFixed(2),
+      equity: +equity.toFixed(2),
+    };
+    if (liveLeft.length) pf.deactivate({ reason: `בלם חירום — ירידה של ${bookDd.toFixed(1)}% מהשיא` });
+    store.log('bad', 'דניאל · סיכונים',
+      `בלם חירום: התיק בנייר ירד ${bookDd.toFixed(1)}% מהשיא (${equity.toFixed(0)} מתוך ${peak.toFixed(0)}) — כל ${liveLeft.length} הבוטים החיים הופסקו. הצוות ממשיך לכייל ולחפש, אבל לא פותח פוזיציות`);
+  }
+
+  // Cooldown: a paused bot goes back to optimisation and has to pass the ladder again.
+  let released = 0;
+  for (const desk of state.desks.filter((d) => d.status === 'paused')) {
+    const since = Number(desk.pausedAt) || now;
+    if (now - since < LIVE_RISK.cooldownMs) continue;
+    desk.status = 'optimizing';
+    desk.dryRunCycles = 0;
+    desk.openTrade = null;
+    desk.pausedAt = null;
+    desk.livePnl = 0;
+    desk.livePeakPnl = 0;
+    desk.liveTrades = [];
+    released++;
+    store.log('info', 'דניאל · סיכונים',
+      `${desk.label}: צינון הסתיים (${desk.pauseReason || 'הפסדים'}) — חזרה לכיול; יקודם חזרה רק אם יעבור בקטסט, OOS וביקורת אמת`);
+  }
+  if (released && !state.desks.some((d) => d.status === 'paused')) delete state.settings.emergencyStop;
+
+  if (paused.length || released) {
+    store.save(true);
+    store.emit();
+    scheduleDatabasePush(1000);
+  }
+  return { paused, released, bookDrawdownPct: +bookDd.toFixed(2) };
+}
+
+function nostroPromotionBlocker(bot) {
+  if (!bot || bot.isSynthetic) return 'נתוני דמה';
+  if (!bot.strategyId || !STRATEGIES[bot.strategyId]) return 'אסטרטגיה לא מוכרת';
+  if (bot.breached) return `נפסל בפירמה (${bot.breached})`;
+  if (!(bot.readyFirms || []).length) return 'לא עבר אף חברת פרופ';
+  if ((bot.candlesCount || 0) < NOSTRO_LIVE_GATES.minCandles) return 'היסטוריית בדיקה קצרה';
+  const m = bot.metrics || {};
+  if ((m.trades || 0) < NOSTRO_LIVE_GATES.minTrades) return `מעט מדי עסקאות (${m.trades || 0})`;
+  if ((m.profitFactor || 0) < NOSTRO_LIVE_GATES.minProfitFactor) return `profit factor ${m.profitFactor || 0}`;
+  if ((m.maxDrawdownPct || 0) > NOSTRO_LIVE_GATES.maxDrawdownPct) return `drawdown ${m.maxDrawdownPct}%`;
+  if ((bot.totalReturnPct || 0) < NOSTRO_LIVE_GATES.minReturnPct) return `תשואה ${bot.totalReturnPct || 0}%`;
+  return null;
+}
+
+/**
+ * Our own promotion decision: a nostro bot that proved itself on real data and
+ * passed at least one prop firm is moved into the live paper book as its own desk,
+ * with hardened per-trade risk and under the risk governor above.
+ */
+export async function promoteNostroWinnersToLive() {
+  ensureDeskFields();
+  const state = store.state;
+  const bots = state.nostro?.bots || [];
+  if (!bots.length) return { promoted: 0 };
+
+  let promoted = 0;
+  let liveCount = state.desks.filter((d) => d.status === 'live').length;
+  for (const bot of bots) {
+    if (promoted >= NOSTRO_LIVE_GATES.maxPerCycle) break;
+    if (liveCount >= LIVE_RISK.maxLiveDesks) break;
+    const deskId = `nostro_live_${String(bot.id).replace(/[^a-z0-9_]/gi, '_')}`;
+    if (state.desks.some((d) => d.id === deskId)) continue;
+    const blocker = nostroPromotionBlocker(bot);
+    if (blocker) continue;
+
+    const m = bot.metrics || {};
+    const isCrypto = String(bot.symbol || '').endsWith('USDT');
+    const kind = (bot.tf === '1d' || bot.tf === '1w') ? 'swing' : 'intraday';
+    const risk = Number(bot.riskPerTrade) > 0 ? Math.min(0.01, Number(bot.riskPerTrade)) : 0.005;
+    const desk = {
+      id: deskId,
+      label: `${bot.name || bot.id} · מסחר שוטף`,
+      short: bot.symbol || bot.id,
+      tf: bot.tf || '1h',
+      kind,
+      symbol: bot.symbol || 'BTCUSDT',
+      venue: isCrypto ? 'Binance / Kraken' : 'Yahoo Finance',
+      weight: 0.05,
+      horizon: kind === 'swing' ? 'סווינג' : 'תוך־יומי',
+      mandate: `קודם מהנוסטרו למסחר השוטף אחרי שעבר ${bot.readyFirms.join(', ')} על נתוני אמת: ${m.trades} עסקאות, PF ${m.profitFactor}, DD ${m.maxDrawdownPct}%, תשואה ${bot.totalReturnPct}%. סיכון ${(risk * 100).toFixed(2)}% לעסקה ובלם הפסד חי של ${LIVE_RISK.deskMaxLossPct}%.`,
+      strategyId: bot.strategyId,
+      params: cloneParams(bot.params),
+      lockedStrategy: true,
+      source: 'nostro_promotion',
+      nostroBotId: bot.id,
+      riskPerTrade: risk,
+      status: 'live',
+      liveSince: Date.now(),
+      dryRunCycles: PAPER_TRADING.dryRunCyclesBeforeLive,
+      history: [],
+      equity: [],
+      liveTrades: [],
+      livePnl: 0,
+      livePeakPnl: 0,
+      openTrade: null,
+      ideas: [],
+      metrics: { ...m },
+      createdAt: Date.now(),
+    };
+    state.desks.push(desk);
+    liveCount++;
+    promoted++;
+    store.log('ok', 'אוריה · CIO',
+      `${bot.name}: קודם מהנוסטרו למסחר השוטף — עבר ${bot.readyFirms.join('/')} · ${m.trades} עסקאות · PF ${m.profitFactor} · DD ${m.maxDrawdownPct}% · תשואה ${bot.totalReturnPct}%`);
+    store.log('info', 'דניאל · סיכונים',
+      `${bot.name}: רץ במסחר השוטף בסיכון ${(risk * 100).toFixed(2)}% לעסקה; ייעצר אוטומטית ב-${LIVE_RISK.deskMaxLossPct}% ירידה מהשיא החי או ב-${LIVE_RISK.deskVerdictTrades} עסקאות מפסידות`);
+  }
+
+  if (promoted) {
+    store.save(true);
+    store.emit();
+    scheduleDatabasePush(800);
+  }
+  return { promoted, liveCount };
+}
+
 export async function promoteDryRuns() {
   const pf = ensurePaperPortfolio();
   let promoted = false;
@@ -921,6 +1124,13 @@ export async function promoteDryRuns() {
     const gatesOk = passesGates(desk.metrics, gateSettings(desk)).ok;
     const profitableAfterFees = isBacktestProfitableAfterFeesAndTax(desk.metrics);
     const auditOk = !desk.lastAudit?.vetoed && !marketState.synthetic;
+
+    const liveCapReached = store.state.desks.filter((d) => d.status === 'live').length >= LIVE_RISK.maxLiveDesks;
+    const emergencyStop = !!store.state.settings?.emergencyStop;
+    if (liveCapReached && gatesOk) {
+      continue;
+    }
+    if (emergencyStop) continue;
 
     if (desk.dryRunCycles >= PAPER_TRADING.dryRunCyclesBeforeLive && gatesOk && profitableAfterFees && auditOk) {
       desk.status = 'live';
@@ -961,6 +1171,8 @@ export async function tick({ reason = 'auto' } = {}) {
     state.stats.cycles = (state.stats.cycles || 0) + 1;
     state.lastTickAt = Date.now();
     const result = await runDeskCycle(desk, { deep: (state.stats.cycles||0) % 4 === 0 });
+    enforceLiveRiskControls();
+    await promoteNostroWinnersToLive();
     await tickLive();
     await promoteDryRuns();
     savePaperPortfolio();
