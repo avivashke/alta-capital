@@ -3,6 +3,7 @@
 // using Graham, Buffett, Lynch & Dalio methodologies with visual SVG infographics & live news.
 
 import { store } from '../store.js';
+import { chat as llmChat } from '../llm.js';
 import { h, mount, num, pct, tag, notice, empty, timeAgo, toast } from '../ui.js';
 import {
   FUNDAMENTAL_ASSETS,
@@ -33,78 +34,196 @@ let fundViewState = {
   xPollTimer: null,
 };
 
-function svgEl(tagName, attrs, text) {
-  const node = document.createElementNS('http://www.w3.org/2000/svg', tagName);
-  for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, String(v));
-  if (text != null) node.textContent = text;
-  return node;
+// ---------- Responsive HTML infographic (no fixed-width SVG => no clipped labels) ----------
+function scoreColor(s) { return s >= 68 ? '#2ecc71' : s >= 48 ? '#3b82f6' : '#f05b5b'; }
+
+function barRow(label, valueText, pctFill, color) {
+  return h('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(110px, 38%) 1fr auto', gap: '10px', alignItems: 'center', margin: '9px 0' } },
+    h('div', { style: { color: '#cbd5e1', fontSize: '12.5px', lineHeight: '1.3', overflowWrap: 'anywhere' }, text: label }),
+    h('div', { style: { background: '#111c2e', borderRadius: '6px', height: '18px', overflow: 'hidden' } },
+      h('div', { style: { width: `${Math.max(2, Math.min(100, pctFill))}%`, height: '100%', background: color, borderRadius: '6px' } })),
+    h('div', { class: 'mono', style: { color, fontWeight: '700', fontSize: '12px', whiteSpace: 'nowrap' }, text: valueText }),
+  );
 }
 
-// Visual SVG Infographic: 4 Methodologies Gauge + Financial / Macro Diagram
-function renderMethodologySvg(methods, item, macro) {
-  const width = 920;
-  const height = 240;
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.style.width = '100%';
-  svg.style.height = 'auto';
-  svg.style.display = 'block';
-  svg.style.background = 'linear-gradient(180deg, #0b1220, #070c14)';
-  svg.style.borderRadius = '12px';
+function renderMethodologyInfographic(methods, item, macro) {
+  const left = h('div', { style: { flex: '1 1 320px', minWidth: '0' } },
+    h('div', { style: { color: '#e2e8f0', fontWeight: '700', fontSize: '13.5px', marginBottom: '6px' }, text: 'ציון לפי 4 מתודולוגיות העל (0–100)' }),
+    ...methods.map((m) => barRow(m.name, `${m.score}/100`, m.score, scoreColor(m.score))),
+  );
 
-  // Left: 4 Methodology Score Gauges
-  svg.appendChild(svgEl('text', { x: 24, y: 24, fill: '#e2e8f0', 'font-size': '13', 'font-weight': '700' }, 'ציון לפי 4 מתודולוגיות העל (0–100)'));
-  methods.forEach((m, i) => {
-    const y = 46 + i * 44;
-    const barW = 240;
-    const fillW = Math.round((m.score / 100) * barW);
-    const col = m.score >= 68 ? '#2ecc71' : m.score >= 48 ? '#3b82f6' : '#f05b5b';
-    svg.appendChild(svgEl('text', { x: 24, y: y + 14, fill: '#cbd5e1', 'font-size': '11' }, m.name));
-    svg.appendChild(svgEl('rect', { x: 210, y, width: barW, height: 18, rx: 5, fill: '#111c2e' }));
-    svg.appendChild(svgEl('rect', { x: 210, y, width: fillW, height: 18, rx: 5, fill: col }));
-    svg.appendChild(svgEl('text', { x: 460, y: y + 14, fill: col, 'font-size': '11.5', 'font-weight': '700' }, `${m.score}/100`));
-  });
-
-  // Right: Balance Sheet / Macro Visual Diagram
-  const rx = 540;
-  svg.appendChild(svgEl('text', { x: rx, y: 24, fill: '#e2e8f0', 'font-size': '13', 'font-weight': '700' },
-    item?.kind === 'stock' ? 'מבנה מאזן ורווחיות (SEC EDGAR)' : 'מדדי מאקרו ונזילות (Macro Regime)'));
-
+  let rightRows;
   if (item?.kind === 'stock') {
-    const bars = [
+    const vals = [
       { label: 'הכנסות', val: item.revenue || 0, col: '#3b82f6' },
       { label: 'רווח נקי', val: Math.max(0, item.netIncome || 0), col: '#2ecc71' },
       { label: 'מזומן', val: item.cash || 0, col: '#a78bfa' },
     ];
-    const maxV = Math.max(1, ...bars.map((b) => b.val));
-    bars.forEach((b, i) => {
-      const bx = rx + i * 115;
-      const bh = Math.max(8, Math.round((b.val / maxV) * 125));
-      const by = 185 - bh;
-      svg.appendChild(svgEl('rect', { x: bx, y: by, width: 68, height: bh, rx: 6, fill: b.col }));
-      svg.appendChild(svgEl('text', { x: bx + 34, y: by - 6, fill: '#e2e8f0', 'font-size': '10', 'text-anchor': 'middle' }, formatCompactUsd(b.val)));
-      svg.appendChild(svgEl('text', { x: bx + 34, y: 206, fill: '#94a3b8', 'font-size': '10.5', 'text-anchor': 'middle' }, b.label));
-    });
+    const maxV = Math.max(1, ...vals.map((b) => b.val));
+    rightRows = vals.map((b) => barRow(b.label, formatCompactUsd(b.val), (b.val / maxV) * 100, b.col));
   } else {
     const vix = macro?.vix ?? 18;
     const tnx = macro?.us10yYield ?? 4.2;
-    const items = [
-      { label: 'VIX (פחד)', val: `${vix}`, pct: Math.min(100, (vix / 40) * 100), col: vix > 25 ? '#f05b5b' : '#2ecc71' },
-      { label: 'תשואת 10Y', val: `${tnx}%`, pct: Math.min(100, (tnx / 6) * 100), col: tnx > 4.7 ? '#f2cc60' : '#3b82f6' },
-      { label: 'ציון כולל', val: `${item?.score ?? 50}`, pct: item?.score ?? 50, col: '#a78bfa' },
+    rightRows = [
+      barRow('VIX (מדד הפחד)', `${vix}`, (vix / 40) * 100, vix > 25 ? '#f05b5b' : '#2ecc71'),
+      barRow('תשואת אג"ח 10Y', `${tnx}%`, (tnx / 6) * 100, tnx > 4.7 ? '#f2cc60' : '#3b82f6'),
+      barRow('ציון כולל', `${item?.score ?? 50}`, item?.score ?? 50, '#a78bfa'),
     ];
-    items.forEach((it, i) => {
-      const y = 55 + i * 52;
-      svg.appendChild(svgEl('text', { x: rx, y: y + 13, fill: '#cbd5e1', 'font-size': '11' }, it.label));
-      svg.appendChild(svgEl('rect', { x: rx + 95, y, width: 190, height: 18, rx: 5, fill: '#111c2e' }));
-      svg.appendChild(svgEl('rect', { x: rx + 95, y, width: Math.round((it.pct / 100) * 190), height: 18, rx: 5, fill: it.col }));
-      svg.appendChild(svgEl('text', { x: rx + 295, y: y + 13, fill: '#e2e8f0', 'font-size': '11', 'font-weight': '700' }, it.val));
-    });
   }
+  const right = h('div', { style: { flex: '1 1 320px', minWidth: '0' } },
+    h('div', { style: { color: '#e2e8f0', fontWeight: '700', fontSize: '13.5px', marginBottom: '6px' },
+      text: item?.kind === 'stock' ? 'מבנה מאזן ורווחיות (SEC EDGAR)' : 'מדדי מאקרו ונזילות (Macro Regime)' }),
+    ...rightRows,
+  );
 
-  return svg;
+  return h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '24px', padding: '16px', background: 'linear-gradient(180deg, #0b1220, #070c14)', borderRadius: '12px' } }, left, right);
 }
 
+// ---------- Smart AI analyst: per-asset summary, news refresh, Q&A ----------
+const ANALYST_SYSTEM = 'אתה אנליסט פונדמנטלי בכיר בעברית. השתמש אך ורק בנתונים שסופקו לך בהקשר. אם נתון חסר — אמור זאת במפורש ואל תמציא. היה תמציתי וברור, הסבר מושגים בפשטות כמו מורה פרטי. זה לא ייעוץ השקעות.';
+let aiState = { summaries: {}, chats: {}, draft: '', busy: false, bulk: false, bulkLines: {} };
+
+function buildAssetContext(symbol, item, macro, methods, news) {
+  const lines = [`נכס: ${symbol}${item?.entityName ? ` (${item.entityName})` : ''}`];
+  if (item) {
+    lines.push(`ציון פונדמנטלי כולל: ${item.score}/100 (${item.bias})`);
+    if (item.kind === 'stock') {
+      lines.push(`P/E: ${item.pe ?? 'לא ידוע'} · שולי רווח נקי: ${item.netMarginPct ?? 'לא ידוע'}% · הכנסות: ${formatCompactUsd(item.revenue)} · רווח נקי: ${formatCompactUsd(item.netIncome)} · מזומן: ${formatCompactUsd(item.cash)}`);
+    } else {
+      lines.push(`שווי שוק: ${formatCompactUsd(item.marketCap)} · שינוי 30 יום: ${item.change30dPct ?? 'לא ידוע'}% · מרחק משיא: ${item.athDrawdownPct ?? 'לא ידוע'}%`);
+    }
+  }
+  if (methods?.length) lines.push('מתודולוגיות: ' + methods.map((m) => `${m.name}=${m.score}/100`).join('; '));
+  if (macro?.ok) lines.push(`מאקרו: משטר ${macro.regime}, VIX ${macro.vix ?? '—'}, תשואת 10Y ${macro.us10yYield ?? '—'}%, DXY ${macro.dxy ?? '—'}`);
+  if (news?.length) lines.push('כותרות חדשות אחרונות:\n' + news.slice(0, 6).map((n, i) => `${i + 1}. ${n.title}`).join('\n'));
+  return lines.join('\n');
+}
+
+async function aiSummarize(symbol, ui, { refreshNews = false } = {}) {
+  if (aiState.busy) return;
+  aiState.busy = true;
+  ui.rerender();
+  try {
+    if (refreshNews) fundViewState.newsBySymbol[symbol] = await fetchAssetNews(symbol);
+    const st = store.state.fundamentals || {};
+    const item = st.assets?.[symbol] || null;
+    const methods = analyzeFundamentalMethodologies(item, st.macro || null);
+    const ctx = buildAssetContext(symbol, item, st.macro, methods, fundViewState.newsBySymbol[symbol]);
+    const text = await llmChat({
+      system: ANALYST_SYSTEM,
+      messages: [{ role: 'user', content: `${ctx}\n\nכתוב סיכום חכם: 1) תמונת מצב ב-2 משפטים 2) חוזקות 3) סיכונים 4) מה החדשות האחרונות משנות 5) מה כדאי לעקוב אחריו.` }],
+      maxTokens: 450,
+    });
+    aiState.summaries[symbol] = { text, at: Date.now(), withNews: refreshNews };
+  } catch (err) {
+    toast(`האנליסט לא הצליח: ${err.message}`, 'bad');
+  } finally {
+    aiState.busy = false;
+    ui.rerender();
+  }
+}
+
+async function aiAsk(symbol, ui) {
+  const q = (aiState.draft || '').trim();
+  if (!q || aiState.busy) return;
+  aiState.draft = '';
+  aiState.busy = true;
+  const thread = (aiState.chats[symbol] = aiState.chats[symbol] || []);
+  thread.push({ role: 'user', content: q });
+  ui.rerender();
+  try {
+    const st = store.state.fundamentals || {};
+    const item = st.assets?.[symbol] || null;
+    const methods = analyzeFundamentalMethodologies(item, st.macro || null);
+    const ctx = buildAssetContext(symbol, item, st.macro, methods, fundViewState.newsBySymbol[symbol]);
+    const history = thread.slice(-8);
+    const msgs = history.map((m, i) => (i === 0 && m.role === 'user' ? { role: 'user', content: `הקשר נתונים:\n${ctx}\n\nשאלה: ${m.content}` } : m));
+    if (msgs[0]?.role !== 'user') msgs.unshift({ role: 'user', content: `הקשר נתונים:\n${ctx}` });
+    const text = await llmChat({ system: ANALYST_SYSTEM, messages: msgs, maxTokens: 400 });
+    thread.push({ role: 'assistant', content: text });
+  } catch (err) {
+    thread.push({ role: 'assistant', content: `⚠️ שגיאה: ${err.message}` });
+  } finally {
+    aiState.busy = false;
+    ui.rerender();
+  }
+}
+
+async function aiSummarizeAll(ui) {
+  if (aiState.bulk) return;
+  aiState.bulk = true;
+  ui.rerender();
+  const st = store.state.fundamentals || {};
+  for (const sym of FUNDAMENTAL_ASSETS) {
+    const item = st.assets?.[sym];
+    if (!item) continue;
+    try {
+      const methods = analyzeFundamentalMethodologies(item, st.macro || null);
+      aiState.bulkLines[sym] = await llmChat({
+        system: ANALYST_SYSTEM,
+        messages: [{ role: 'user', content: `${buildAssetContext(sym, item, st.macro, methods, null)}\n\nסכם במשפט אחד קצר (עד 25 מילים) את התמונה הפונדמנטלית.` }],
+        maxTokens: 90,
+      });
+    } catch (err) {
+      aiState.bulkLines[sym] = `⚠️ ${err.message}`;
+    }
+    ui.rerender();
+  }
+  aiState.bulk = false;
+  ui.rerender();
+}
+
+function renderAiAnalyst(symbol, item, ui) {
+  const sum = aiState.summaries[symbol];
+  const thread = aiState.chats[symbol] || [];
+  const st = store.state.fundamentals || {};
+  const box = { background: 'rgba(15, 29, 48, 0.92)', borderRadius: '10px', padding: '12px', lineHeight: '1.6', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' };
+  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(56, 189, 248, 0.45)' } },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: `🧠 אנליסט AI — ${item?.entityName || symbol}` }),
+        h('div', { class: 'card-sub', text: 'סיכום חכם לנכס, עדכון חדשות לפי דרישה, ושאלות חופשיות. מבוסס על הנתונים שבמסך בלבד.' }),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px' } },
+        h('button', { class: 'btn btn-sm btn-primary', disabled: aiState.busy, onclick: () => aiSummarize(symbol, ui) }, aiState.busy ? '⏳ חושב…' : '✨ סכם נכס'),
+        h('button', { class: 'btn btn-sm', disabled: aiState.busy, onclick: () => aiSummarize(symbol, ui, { refreshNews: true }) }, '📰 עדכן חדשות וסכם'),
+      ),
+    ),
+    sum ? h('div', { style: box },
+      h('div', { class: 'tiny muted', style: { marginBottom: '6px' }, text: `${sum.withNews ? 'כולל חדשות מעודכנות · ' : ''}${timeAgo(sum.at)}` }),
+      sum.text,
+    ) : h('div', { class: 'small muted', text: 'לחץ על "סכם נכס" כדי לקבל סיכום חכם, או שאל שאלה למטה.' }),
+
+    h('div', { style: { marginTop: '12px' } },
+      ...thread.map((m) => h('div', { style: { ...box, margin: '6px 0', background: m.role === 'user' ? 'rgba(59, 130, 246, 0.16)' : box.background } },
+        h('div', { class: 'tiny muted', text: m.role === 'user' ? 'אתה' : 'האנליסט' }), m.content)),
+      h('div', { class: 'row', style: { gap: '8px', marginTop: '8px' } },
+        h('input', {
+          class: 'input', style: { flex: '1' }, placeholder: `שאל על ${symbol}: למה הציון נמוך? מה המשמעות של P/E?`, value: aiState.draft,
+          oninput: (e) => { aiState.draft = e.target.value; },
+          onkeydown: (e) => { if (e.key === 'Enter') aiAsk(symbol, ui); },
+        }),
+        h('button', { class: 'btn btn-sm btn-primary', disabled: aiState.busy, onclick: () => aiAsk(symbol, ui) }, 'שאל'),
+      ),
+    ),
+
+    h('div', { style: { marginTop: '16px' } },
+      h('div', { class: 'row between', style: { marginBottom: '6px' } },
+        h('strong', { text: 'סקירה מהירה של כל הנכסים' }),
+        h('button', { class: 'btn btn-sm', disabled: aiState.bulk || aiState.busy, onclick: () => aiSummarizeAll(ui) }, aiState.bulk ? '⏳ מסכם…' : 'סכם את כולם'),
+      ),
+      h('div', { class: 'table-wrap' }, h('table', {},
+        h('tbody', {}, FUNDAMENTAL_ASSETS.map((s) => {
+          const a = st.assets?.[s];
+          return h('tr', {},
+            h('td', { class: 'mono', style: { fontWeight: '700', whiteSpace: 'nowrap' }, text: s }),
+            h('td', {}, a ? tag(`${a.score}/100`, a.score >= 62 ? 'live' : 'opt') : '—'),
+            h('td', { class: 'small', style: { overflowWrap: 'anywhere' }, text: aiState.bulkLines[s] || '' }));
+        })),
+      )),
+    ),
+  );
+}
 async function loadNews(symbol, ui) {
   if (fundViewState.newsLoading) return;
   fundViewState.newsLoading = true;
@@ -510,9 +629,12 @@ export function renderFundamentals(root, ui) {
         ),
         tag(item?.bias || 'מחשב…', item?.score >= 62 ? 'live' : 'opt'),
       ),
-      renderMethodologySvg(methods, item, macro),
+      renderMethodologyInfographic(methods, item, macro),
     ),
   );
+
+  // Smart AI analyst (summary, news refresh, Q&A)
+  mount(root, renderAiAnalyst(fundViewState.symbol, item, ui));
 
   // 4 Methodology Cards with Educational Explanations
   mount(root,

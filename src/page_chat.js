@@ -5,37 +5,83 @@
 import { NAV } from './config.js';
 import { store } from './store.js';
 import { chatDetailed } from './llm.js';
+import { toast } from './ui.js';
 
 const chatState = {
   open: false,
   busy: false,
   lastRoute: null,
+  lastQuestion: '',
   messages: [], // { role: 'assistant' | 'user', content: string }
 };
+
+function extractVisualSnapshot() {
+  const view = document.getElementById('view');
+  if (!view) return '';
+  const lines = [];
+  const h1 = view.querySelector('h1')?.textContent?.trim();
+  if (h1) lines.push(`כותרת מסך: ${h1}`);
+
+  const metrics = [...view.querySelectorAll('.metric, .kpi')].slice(0, 10)
+    .map((el) => el.innerText.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  if (metrics.length) lines.push(`מדדים מרכזיים על המסך: ${metrics.join(' | ')}`);
+
+  const pills = [...view.querySelectorAll('.pill, .tag')].slice(0, 12)
+    .map((el) => el.textContent.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  if (pills.length) lines.push(`סטטוסים ותגיות: ${[...new Set(pills)].slice(0, 10).join(' · ')}`);
+
+  const svgCount = view.querySelectorAll('svg').length;
+  const cardHeads = [...view.querySelectorAll('.card h2')].slice(0, 8)
+    .map((el) => el.textContent.trim())
+    .filter(Boolean);
+  if (svgCount || cardHeads.length) {
+    lines.push(`רכיבים חזותיים (${svgCount} גרפים): ${cardHeads.join(' | ')}`);
+  }
+
+  const notices = [...view.querySelectorAll('.notice')].slice(0, 2)
+    .map((el) => el.innerText.replace(/\s+/g, ' ').trim().slice(0, 160))
+    .filter(Boolean);
+  if (notices.length) lines.push(`התראות/סיכומים: ${notices.join(' // ')}`);
+
+  return lines.join('\n').slice(0, 900);
+}
 
 function getPageContextSummary(route) {
   const navItem = NAV.find((n) => n.id === route) || { label: route || 'סקירה' };
   const s = store.state;
-  const parts = [`המשתמש נמצא כעת בעמוד: "${navItem.label}" (#/${route}).`];
+  const parts = [`עמוד נוכחי: "${navItem.label}" (#/${route}).`];
+  const visual = extractVisualSnapshot();
+  if (visual) parts.push(visual);
 
   if (route === 'nostro') {
     const bots = s.nostro?.bots || [];
     const ready = bots.filter((b) => (b.readyFirms || []).length > 0);
-    parts.push(`מבחני נוסטרו: נבדקו ${bots.length} בוטים. ${ready.length} בוטים מוכנים למעבר חברות נוסטרו.`);
-    bots.forEach((b) => {
-      parts.push(`- ${b.name} (${b.symbol} ${b.tf}): תשואה ${b.totalReturnPct}%, MaxDD ${b.maxTotalDdPct}%, יומי ${b.maxDailyLossPct}%, מוכן ל: ${(b.readyFirms || []).join(', ') || 'טרם עבר'}.`);
-    });
-  } else if (route === 'gann') {
-    const viewText = document.getElementById('view')?.innerText?.slice(0, 1200) || '';
-    parts.push('עמוד מעבדת גאן המורחבת (Gannzilla, מייקל ג׳נקינס, Square of 9, הקסגון 60° והוכחה מול אירועים פונדמנטליסטיים).');
-    if (viewText) parts.push(`תוכן נוכחי על המסך:\n${viewText}`);
-  } else {
-    const viewText = document.getElementById('view')?.innerText?.slice(0, 1000) || '';
-    parts.push(`מחזורי חברה: ${s.cycles || 0}, הון תיק דמה: $${Math.round(s.paper?.cash || 0)}.`);
-    if (viewText) parts.push(`תקציר הנתונים הגלויים בעמוד:\n${viewText}`);
+    parts.push(`מבחני נוסטרו: ${bots.length} בוטים נבדקו, ${ready.length} מוכנים.`);
+  } else if (route === 'gann' && s.whatsappGann?.groupName) {
+    parts.push(`מודיעין וואטסאפ גאן: קבוצת "${s.whatsappGann.groupName}" (${s.whatsappGann.relevantInsightsCount || 0} תובנות · הטיה: ${s.whatsappGann.overallBias || '—'}).`);
   }
 
-  return { label: navItem.label, summary: parts.join('\n') };
+  return { label: navItem.label, summary: parts.join('\n').slice(0, 950) };
+}
+
+function buildSmartExternalPrompt(route, question) {
+  const ctx = getPageContextSummary(route);
+  const q = (question || chatState.lastQuestion || 'הסבר לי מה אני רואה כרגע על המסך, מה המשמעות של הנתונים והגרפים, ומה ההמלצות והסיכונים המרכזיים.').trim();
+  const s = store.state;
+  const pf = s.paperPortfolio || {};
+  return [
+    'אני עובד במערכת המסחר והמחקר Alta Capital ומבקש ניתוח מעמיק בעברית.',
+    '',
+    `❓ השאלה שלי:\n${q}`,
+    '',
+    `🖥️ תיאור חזותי ונתונים חיים מהמסך כרגע:\n${ctx.summary}`,
+    '',
+    `📊 קונטקסט מערכת: מחזורים=${s.stats?.cycles || 0}, עסקאות תיק נייר=${pf.totalTradesCount || pf.trades?.length || 0}, מזומן=$${Math.round(pf.cash || 0)}.`,
+    '',
+    'אנא תן תשובה ברורה, פרקטית ומבוססת על הנתונים למעלה (בלי להמציא מספרים שלא הופיעו).',
+  ].join('\n');
 }
 
 function defaultPageIntro(route) {
@@ -46,7 +92,7 @@ function defaultPageIntro(route) {
     overview: 'אתה נמצא בעמוד **הסקירה הראשית**. כאן רואים את מצב תיק הדמה, פעילות הסוכנים האוטונומיים וביצועי הדסקים.',
     agents: 'אתה נמצא ב**זירת הסוכנים התלת-ממדית**. כאן צוות הסוכנים מנתח שווקים, מריץ בק-טסטים ומחפש אסטרטגיות.',
     academy: 'אתה נמצא ב**אקדמיה וצ׳אט המחקר**. כאן ניתן לשאול כל שאלה על ניתוח טכני, פונדמנטלי וגאן.',
-    settings: 'אתה נמצא ב**הגדרות ומפתחות**. כאן מנהלים את חיבורי ה-AI, ענן ה-Supabase והפרמטרים הכלליים.',
+    settings: 'אתה נמצא ב**הגדרות ומפתחות**. כאן מנהלים את חיבורי ה-AI, מסד הנתונים המקומי והפרמטרים הכלליים.',
   };
   return guides[route] || `אתה נמצא בעמוד **${label}**. שאל אותי כל שאלה על מה שמופיע כאן ואסביר לך את המשמעות וההמלצות!`;
 }
@@ -122,6 +168,7 @@ export function mountPageChat(ui) {
 
   async function askPageAi(question) {
     if (!question.trim() || chatState.busy) return;
+    chatState.lastQuestion = question.trim();
     chatState.messages.push({ role: 'user', content: question.trim() });
     chatState.busy = true;
     renderMessages();
@@ -130,7 +177,7 @@ export function mountPageChat(ui) {
     const ctx = getPageContextSummary(route);
     const system = [
       'אתה יועץ המסחר והמחקר האישי של המשתמש במערכת Alta Capital.',
-      'השב בעברית ברורה, תמציתית ומדויקת.',
+      'השב בעברית ברורה, תמציתית ומדויקת (עד 6-8 שורות).',
       'הסבר למשתמש מה הוא רואה בעמוד הנוכחי, מה המשמעות של המספרים/גרפים, ואיך לקבל החלטה מושכלת.',
       `הקשר חי מתוך העמוד הנוכחי:\n${ctx.summary}`,
     ].join('\n\n');
@@ -138,18 +185,35 @@ export function mountPageChat(ui) {
     try {
       const res = await chatDetailed({
         system,
-        messages: chatState.messages.slice(-8),
-        maxTokens: 700,
+        messages: chatState.messages.slice(-6),
+        maxTokens: 380,
       });
-      chatState.messages.push({ role: 'assistant', content: res.text || 'לא התקבלה תשובה.' });
-    } catch {
+      const via = res.label || res.model ? `\n\n— ${res.label || res.model}` : '';
+      chatState.messages.push({ role: 'assistant', content: (res.text || 'לא התקבלה תשובה.') + via });
+    } catch (err) {
       chatState.messages.push({
         role: 'assistant',
-        content: `${defaultPageIntro(route)}\n\n(הערה: חיבור ה-AI בענן לא היה זמין כרגע, ולכן מוצג הסבר מקומי מתוך נתוני העמוד.)`,
+        content: `${defaultPageIntro(route)}\n\n(הערה: חיבור ה-AI לא החזיר תשובה כרגע: ${err?.message || 'שגיאת חיבור'} — תוכל ללחוץ למטה על "✨ שאל ב-Gemini" או "📋 העתק לאנטיוגרוויטי" לשאילתה חכמה עם כל הקונטקסט.)`,
       });
     } finally {
       chatState.busy = false;
       renderMessages();
+    }
+  }
+
+  async function copySmartPrompt(openGemini = false) {
+    const route = ui.route || 'overview';
+    const prompt = buildSmartExternalPrompt(route, input.value || chatState.lastQuestion);
+    try {
+      await navigator.clipboard.writeText(prompt);
+      toast(openGemini ? '✓ השאילתה החכמה + הקונטקסט הועתקו — הדבק (Ctrl+V) ב-Gemini!' : '✓ השאילתה החכמה + התיאור החזותי הועתקו — הדבק (Ctrl+V) באנטיוגרוויטי!', 'ok');
+    } catch {
+      toast('לא ניתן להעתיק אוטומטית — השאילתה הוצגה בצ׳אט להעתקה ידנית.', 'opt');
+      chatState.messages.push({ role: 'assistant', content: prompt });
+      renderMessages();
+    }
+    if (openGemini) {
+      window.open('https://gemini.google.com/app', '_blank', 'noopener');
     }
   }
 
@@ -162,6 +226,25 @@ export function mountPageChat(ui) {
     chip.onclick = () => askPageAi(q);
     quickRow.appendChild(chip);
   });
+
+  const externalRow = document.createElement('div');
+  externalRow.style.cssText = 'padding:5px 10px;border-top:1px solid #172338;display:flex;gap:6px;flex-wrap:wrap;background:#08101d;';
+
+  const geminiBtn = document.createElement('button');
+  geminiBtn.type = 'button';
+  geminiBtn.className = 'btn btn-sm';
+  geminiBtn.style.cssText = 'font-size:11px;padding:3px 8px;border-color:rgba(88,166,255,0.45);color:#93c5fd;flex:1;';
+  geminiBtn.textContent = '✨ שאל ב-Gemini (עם קונטקסט)';
+  geminiBtn.onclick = () => copySmartPrompt(true);
+
+  const agyBtn = document.createElement('button');
+  agyBtn.type = 'button';
+  agyBtn.className = 'btn btn-sm btn-ghost';
+  agyBtn.style.cssText = 'font-size:11px;padding:3px 8px;border:1px solid rgba(167,139,250,0.4);color:#c4b5fd;flex:1;';
+  agyBtn.textContent = '📋 העתק לאנטיוגרוויטי';
+  agyBtn.onclick = () => copySmartPrompt(false);
+
+  externalRow.append(geminiBtn, agyBtn);
 
   form.onsubmit = (e) => {
     e.preventDefault();
@@ -185,7 +268,7 @@ export function mountPageChat(ui) {
   }
 
   toggleBtn.onclick = () => toggle();
-  panel.append(header, msgBox, quickRow, form);
+  panel.append(header, msgBox, quickRow, externalRow, form);
   wrap.append(panel, toggleBtn);
   document.body.appendChild(wrap);
 }

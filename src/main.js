@@ -74,6 +74,9 @@ const ui = {
   rerender() {
     render({ force: true });
   },
+  refresh() {
+    render({ force: true });
+  },
 };
 
 let renderQueued = false;

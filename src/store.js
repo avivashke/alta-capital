@@ -87,7 +87,7 @@ export function defaults() {
       db: {
         enabled: true,
         mode: 'auto',
-        supabaseUrl: 'https://lqiakdsdpdvdlobeeovz.supabase.co',
+        supabaseUrl: '',
         supabaseKey: '',
         netlifyToken: '',
         cloudApiUrl: '',

@@ -239,15 +239,138 @@ function renderGann(candles) {
 }
 
 function signalSummary(candles){
-  const closes=candles.map(c=>c.c); const r=last(rsi(closes,14)); const m=macd(closes);
-  const mh = last(m.hist||[]); const e20=last(ema(closes,20)), e50=last(ema(closes,50)); const p=closes[closes.length-1];
+  const closes=candles.map(c=>c.c);
+  const r=last(rsi(closes,14));
+  const m=macd(closes);
+  const mh = last(m.hist||[]);
+  const mLine = last(m.macd||m.line||[]);
+  const mSig = last(m.signal||[]);
+  const e20=last(ema(closes,20)), e50=last(ema(closes,50)), e200=last(ema(closes,200));
+  const bb = bollinger(closes,20,2);
+  const bbUp = last(bb.upper||[]), bbMid = last(bb.mid||[]), bbLo = last(bb.lower||[]);
+  const atrVal = last(atr(candles, 14) || []);
+  const p=closes[closes.length-1];
   let score=0; const notes=[];
   if(r!=null){ if(r<35){score++; notes.push('RSI מכירת־יתר');} else if(r>70){score--; notes.push('RSI קניית־יתר');} else notes.push('RSI נייטרלי'); }
   if(mh!=null){ if(mh>0){score++; notes.push('MACD חיובי');} else {score--; notes.push('MACD שלילי');} }
   if(e20!=null&&e50!=null){ if(e20>e50){score++; notes.push('EMA20 מעל EMA50');} else {score--; notes.push('EMA20 מתחת EMA50');} }
   if(p!=null&&e20!=null){ if(p>e20){score++;} else {score--; } }
   const bias = score>=2?'שורי':score<=-2?'דובי':'נייטרלי';
-  return { bias, notes, r, mh, e20, e50, p };
+  return { bias, score, notes, r, mh, mLine, mSig, e20, e50, e200, bbUp, bbMid, bbLo, atrVal, p };
+}
+
+function fmtPrice(v) {
+  if (v == null || !Number.isFinite(Number(v))) return '—';
+  const n = Number(v);
+  return num(n, Math.abs(n) >= 100 ? 2 : 4);
+}
+
+function legendItem(color, label, dashed = false) {
+  return h('span', {
+    class: 'tiny',
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '5px',
+      padding: '3px 7px',
+      borderRadius: '6px',
+      background: 'rgba(15, 23, 42, 0.72)',
+      border: '1px solid rgba(148, 163, 184, 0.18)',
+      color: '#cbd5e1',
+    },
+  },
+    h('span', {
+      style: {
+        display: 'inline-block',
+        width: '14px',
+        height: '0px',
+        borderTop: `2.5px ${dashed ? 'dashed' : 'solid'} ${color}`,
+      },
+    }),
+    label,
+  );
+}
+
+function explainBox(title, liveText, bullets = []) {
+  return h('div', {
+    style: {
+      marginTop: '10px',
+      padding: '10px 12px',
+      borderRadius: '10px',
+      background: 'rgba(11, 18, 32, 0.85)',
+      border: '1px solid rgba(88, 166, 255, 0.22)',
+      fontSize: '12.5px',
+      lineHeight: '1.6',
+      color: '#cbd5e1',
+    },
+  },
+    h('div', { style: { fontWeight: 700, color: '#93c5fd', marginBottom: '4px' }, text: title }),
+    liveText ? h('div', { style: { color: '#f1f5f9', marginBottom: bullets.length ? '6px' : '0' }, text: liveText }) : null,
+    bullets.length
+      ? h('ul', { style: { margin: '0', paddingRight: '18px', display: 'grid', gap: '3px' } },
+          bullets.map((b) => h('li', { text: b })),
+        )
+      : null,
+  );
+}
+
+function buildMainChartReading(sig, symbol) {
+  const parts = [];
+  if (sig.p != null && sig.e20 != null && sig.e50 != null) {
+    if (sig.p > sig.e20 && sig.e20 > sig.e50) {
+      parts.push(`המחיר (${fmtPrice(sig.p)}) נמצא מעל EMA20 (${fmtPrice(sig.e20)}) שמעל EMA50 (${fmtPrice(sig.e50)}) — מבנה מגמה עולה תקין.`);
+    } else if (sig.p < sig.e20 && sig.e20 < sig.e50) {
+      parts.push(`המחיר (${fmtPrice(sig.p)}) נמצא מתחת ל-EMA20 (${fmtPrice(sig.e20)}) שמתחת ל-EMA50 (${fmtPrice(sig.e50)}) — לחץ ירידות / מגמה דובית.`);
+    } else {
+      parts.push(`המחיר (${fmtPrice(sig.p)}) נע בין הממוצעים EMA20 (${fmtPrice(sig.e20)}) ו-EMA50 (${fmtPrice(sig.e50)}) — אזור דשדוש או מעבר מגמה.`);
+    }
+  }
+  if (sig.p != null && sig.e200 != null) {
+    parts.push(sig.p >= sig.e200
+      ? `מעל EMA200 (${fmtPrice(sig.e200)}) = מגמה ארוכת טווח חיובית.`
+      : `מתחת ל-EMA200 (${fmtPrice(sig.e200)}) = מגמה ארוכת טווח שלילית.`);
+  }
+  if (sig.p != null && sig.bbUp != null && sig.bbLo != null) {
+    if (sig.p >= sig.bbUp) parts.push('המחיר נוגע/פורץ את רצועת בולינגר העליונה — מתיחה חזקה למעלה (זהירות מתיקון קצר או פריצת מומנטום).');
+    else if (sig.p <= sig.bbLo) parts.push('המחיר נוגע/שובר את רצועת בולינגר התחתונה — מתיחה חדה למטה (פוטנציאל לריבאונד או האצת ירידה).');
+    else parts.push('המחיר בתוך רצועות בולינגר — תנודתיות תקינה.');
+  }
+  return parts.length ? `${symbol}: ${parts.join(' ')}` : 'טוען ניתוח מגמה וממוצעים נעים…';
+}
+
+function buildRsiReading(sig) {
+  if (sig.r == null) return 'אין עדיין מספיק נרות לחישוב RSI(14).';
+  const val = sig.r.toFixed(1);
+  if (sig.r >= 70) return `ערך נוכחי: ${val} — אזור קניית-יתר (Overbought). העליות מהירות מאוד ויש סיכון מוגבר למימוש או תיקון.`;
+  if (sig.r <= 30) return `ערך נוכחי: ${val} — אזור מכירת-יתר (Oversold). לחץ המכירות קיצוני ועשוי להיווצר תיקון כלפי מעלה.`;
+  if (sig.r >= 55) return `ערך נוכחי: ${val} — מומנטום חיובי (מעל קו ה-50) בלי קיצון של קניית-יתר.`;
+  if (sig.r <= 45) return `ערך נוכחי: ${val} — מומנטום חלש/שלילי (מתחת לקו ה-50), המוכרים עדיין בשליטה יחסית.`;
+  return `ערך נוכחי: ${val} — אזור מאוזן סביב קו ה-50 (אין הכרעה חזקה בין קונים למוכרים).`;
+}
+
+function buildMacdReading(sig) {
+  if (sig.mh == null || sig.mLine == null || sig.mSig == null) return 'אין עדיין מספיק נרות לחישוב MACD.';
+  const dir = sig.mh >= 0 ? 'חיובית (ירוקה)' : 'שלילית (אדומה)';
+  const cross = sig.mLine >= sig.mSig
+    ? 'קו ה-MACD נמצא מעל קו ה-Signal — המומנטום נוטה לעליות.'
+    : 'קו ה-MACD נמצא מתחת לקו ה-Signal — המומנטום נוטה לירידות.';
+  return `היסטוגרמה ${dir} (${sig.mh.toFixed(3)}) · ${cross}`;
+}
+
+function buildGannReading(candles) {
+  const n = candles.length, show = Math.min(n, MAX_BARS), start = n - show;
+  const slice = candles.slice(start);
+  const lastP = slice[slice.length - 1]?.c || 0;
+  const pivot = detectAutoPivot(slice, 16);
+  const levels = gannLevels(pivot.anchorPrice, lastP);
+  const above = levels.filter((l) => l.v > lastP).sort((a, b) => a.v - b.v)[0];
+  const below = levels.filter((l) => l.v <= lastP).sort((a, b) => b.v - a.v)[0];
+  const parts = [
+    `עוגן גאן אוטומטי (${pivot.isBullish ? 'שפל' : 'שיא'}): ${fmtPrice(pivot.anchorPrice)}.`,
+  ];
+  if (below) parts.push(`תמיכת Square of 9 קרובה: ${fmtPrice(below.v)} (${below.degree}° ${below.isCardinal ? 'Cardinal חזקה' : 'Ordinal'}).`);
+  if (above) parts.push(`התנגדות Square of 9 קרובה: ${fmtPrice(above.v)} (${above.degree}° ${above.isCardinal ? 'Cardinal חזקה' : 'Ordinal'}).`);
+  return parts.join(' ');
 }
 
 export function renderCharts(root, ui) {
@@ -318,29 +441,113 @@ export function renderCharts(root, ui) {
   }
 
   const sig = safe(()=>signalSummary(candles), {bias:'—', notes:[]});
+  const gannReading = safe(()=>buildGannReading(candles), '');
+  const biasDesc = sig.bias === 'שורי'
+    ? 'רוב האינדיקטורים מצביעים על מומנטום חיובי ומגמת עלייה.'
+    : sig.bias === 'דובי'
+      ? 'רוב האינדיקטורים מצביעים על חולשה ולחץ מוכרים.'
+      : 'האינדיקטורים מעורבים — אין כרגע כיוון חד-משמעי (אזור המתנה/דשדוש).';
+
   mount(root,
+    // Quick Plain-Hebrew Overview of what is currently visible on the charts
+    h('div', {
+      class: 'notice ' + (sig.bias === 'שורי' ? 'ok' : sig.bias === 'דובי' ? 'bad' : 'blue'),
+      style: { marginTop: '14px', lineHeight: '1.6', fontSize: '13px' },
+    },
+      h('div', {},
+        h('strong', { text: `🧭 מה רואים עכשיו ב-${symbol} (${tf}) · הטיה כוללת: ${sig.bias}` }),
+        h('div', { text: `${biasDesc}${sig.atrVal != null ? ` · תנודתיות ממוצעת לנר (ATR 14): ±${fmtPrice(sig.atrVal)}.` : ''}` }),
+      ),
+    ),
+
     h('div', { class: 'card', style: { marginTop: '14px' } },
       h('div', { class: 'card-head' },
         h('div', {}, h('h2', { text: symbol + ' · ' + tf + ' · גרף ראשי' }), h('div', { class: 'card-sub', text: 'נרות + EMA20/50/200 + בולינגר + רמות גאן + נפח' })),
         h('span', { class: 'pill ' + (sig.bias==='שורי'?'pill-live':sig.bias==='דובי'?'pill-warn':'pill-sim'), text: 'הטיה: ' + sig.bias }),
       ),
+      h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '8px' } },
+        legendItem('#2ecc71', 'נר עולה (ירוק)'),
+        legendItem('#f05b5b', 'נר יורד (אדום)'),
+        legendItem('#58a6ff', 'EMA 20 (קצר)'),
+        legendItem('#a78bfa', 'EMA 50 (בינוני)'),
+        legendItem('#f2cc60', 'EMA 200 (מגמה ארוכה)', true),
+        legendItem('rgba(88,166,255,.75)', 'בולינגר (20,2)', true),
+        legendItem('rgba(242,204,96,.6)', 'שמיניות גאן', true),
+      ),
       safe(()=>renderCandles(candles), h('div', { class: 'empty', text: 'שגיאה ברינדור הגרף הראשי' })),
       h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '8px' } }, ...(sig.notes||[]).map(n=>h('span',{class:'tag',text:n}))),
+      explainBox(
+        '📖 מה רואים בגרף הראשי ומה זה אומר?',
+        buildMainChartReading(sig, symbol),
+        [
+          'נרות יפניים + נפח (בתחתית): נר ירוק = המחיר עלה בתוך הנר (הקונים שלטו); נר אדום = המחיר ירד. עמודות גבוהות בתחתית מעידות על נפח מסחר חזק שמאשר את התנועה.',
+          'ממוצעים נעים (EMA 20 כחול / EMA 50 סגול / EMA 200 צהוב מקווקו): כש-EMA20 מעל EMA50 והמחיר מעליהם — מגמה עולה. EMA200 משמש קו גבול מרכזי בין שוק שורי (מעליו) לדובי (מתחתיו).',
+          'רצועות בולינגר (כחול מקווקו): מודדות תנודתיות סביב ממוצע 20. נגיעה ברצועה העליונה = מתיחה למעלה; נגיעה בתחתונה = מתיחה למטה; התכווצות של הרצועות (Squeeze) מרמזת לרוב על תנועה חדה קרובה.',
+          'קווי שמיניות גאן (צהוב אופקי מקווקו): מחלקים את טווח המחיר ל-8 חלקים שווים — קו ה-50% (האמצעי) הוא רמת איזון חשובה לתמיכה והתנגדות.',
+        ],
+      ),
     ),
     h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },
       h('div', { class: 'card' },
-        h('div', { class: 'card-head' }, h('div', {}, h('h2', { text: 'RSI (14)' }), h('div', { class: 'card-sub', text: 'מומנטום · 30/70' }))),
+        h('div', { class: 'card-head' },
+          h('div', {}, h('h2', { text: 'RSI (14)' }), h('div', { class: 'card-sub', text: 'מדד עוצמה יחסית (מומנטום) · גבולות 30 / 50 / 70' })),
+          sig.r != null ? h('span', { class: 'pill ' + (sig.r >= 70 ? 'pill-warn' : sig.r <= 30 ? 'pill-live' : 'pill-sim'), text: `RSI: ${sig.r.toFixed(1)}` }) : null,
+        ),
         safe(()=>renderRSI(candles), h('div',{class:'empty',text:'שגיאה ב-RSI'})),
+        explainBox(
+          '📖 איך קוראים את RSI (14)?',
+          buildRsiReading(sig),
+          [
+            'מעל 70 (קו אדום עליון): קניית-יתר (Overbought) — הנכס עלה מהר יחסית, ויש סיכון לתיקון או עצירה.',
+            'מתחת ל-30 (קו אדום תחתון): מכירת-יתר (Oversold) — ירידה חדה שעשויה להוביל לריבאונד.',
+            'קו 50 (אפור באמצע): מעל 50 המומנטום שורי, מתחת ל-50 המומנטום דובי.',
+          ],
+        ),
       ),
       h('div', { class: 'card' },
-        h('div', { class: 'card-head' }, h('div', {}, h('h2', { text: 'MACD (12,26,9)' }), h('div', { class: 'card-sub', text: 'היסטוגרמה + קו MACD/סיגנל' }))),
+        h('div', { class: 'card-head' },
+          h('div', {}, h('h2', { text: 'MACD (12,26,9)' }), h('div', { class: 'card-sub', text: 'זיהוי שינויי מגמה ומומנטום' })),
+          sig.mh != null ? h('span', { class: 'pill ' + (sig.mh >= 0 ? 'pill-live' : 'pill-warn'), text: sig.mh >= 0 ? 'מומנטום חיובי' : 'מומנטום שלילי' }) : null,
+        ),
+        h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '8px' } },
+          legendItem('#58a6ff', 'קו MACD'),
+          legendItem('#f2cc60', 'קו Signal'),
+          legendItem('#2ecc71', 'היסטוגרמה חיובית'),
+          legendItem('#f05b5b', 'היסטוגרמה שלילית'),
+        ),
         safe(()=>renderMACD(candles), h('div',{class:'empty',text:'שגיאה ב-MACD'})),
+        explainBox(
+          '📖 איך קוראים את MACD?',
+          buildMacdReading(sig),
+          [
+            'חציית קו MACD (כחול) מעל קו Signal (צהוב) = איתות מומנטום שורי; חצייה מתחתיו = איתות דובי.',
+            'עמודות ההיסטוגרמה מראות את המרחק בין שני הקווים: עמודות ירוקות שגדלות = האצת עליות; עמודות שמתקצרות = היחלשות המומנטום ואפשרות להיפוך.',
+            'חצייה של קו ה-0 מאשרת מעבר רחב יותר בין מגמת ירידה למגמת עלייה (ולהפך).',
+          ],
+        ),
       ),
     ),
     h('div', { class: 'card', style: { marginTop: '14px' } },
       h('div', { class: 'card-head' }, h('div', {}, h('h2', { text: 'אינדיקטורי גאן — מחיר וזמן' }), h('div', { class: 'card-sub', text: 'רמות גאן (Square of 9) ומניפות זווית (Gann Fan) על גבי מחיר — שימוש למחקר אסטרטגיות גאן טכניות ומחזורי זמן' }))),
+      h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '8px' } },
+        legendItem('#58a6ff', 'קו מחיר'),
+        legendItem('rgba(41, 98, 255, 0.95)', 'Cardinal (90°/180°/270°/360° — חזק)'),
+        legendItem('rgba(167, 139, 250, 0.85)', 'Ordinal (45°/135°/225°/315° — ביניים)', true),
+        legendItem('rgba(46,204,113,.85)', 'זווית גאן 1x1 (45° — קו האיזון)'),
+        legendItem('rgba(242,204,96,.65)', 'שאר קרני מניפת גאן'),
+      ),
       safe(()=>renderGann(candles), h('div',{class:'empty',text:'שגיאה ברינדור גאן'})),
-      notice('רמות וזוויות גאן מחושבות אלגוריתמית מנתוני המחיר (הערכה/מחקר). לשילוב עם מחזורי זמן/לוח שנה — הסוכנים חוקרים ומטמיעים אסטרטגיות גאן במחקר ובמעבדת האסטרטגיות.', 'blue'),
+      explainBox(
+        '📖 מה רואים בגרף גאן (Square of 9 + מניפת זוויות) ומה זה אומר?',
+        gannReading,
+        [
+          'נקודת העוגן (הנקודה הירוקה/אדומה): שפל או שיא משמעותי אחרון שממנו מחושבים כל קווי התמיכה, ההתנגדות והזוויות.',
+          'רמות Cardinal (כחול רציף — 90°, 180°, 270°, 360°): רמות תמיכה והתנגדות ראשיות וחזקות לפי ריבוע התשע (Square of 9). מחיר נוטה להיעצר או להתהפך סביבן.',
+          'רמות Ordinal (סגול מקווקו — 45°, 135°, 225°, 315°): רמות ביניים משניות — שימושיות ליעדים קצרים או זיהוי בלימה מוקדמת.',
+          'מניפת גאן (הקרניים האלכסוניות): הקו הירוק (45° / 1x1) מייצג איזון של יחידת מחיר ליחידת זמן. כל עוד המחיר מעליו — המגמה חזקה; שבירה מתחתיו מאותתת על היחלשות המגמה.',
+        ],
+      ),
+      notice('רמות וזוויות גאן מחושבות אלגוריתמית מנתוני המחיר (הערכה/מחקר). לניתוח גאן מלא כולל תאריכי היפוך, לוח שנה ומודיעין קבוצת הוואטסאפ — עבור לעמוד "גאן".', 'blue'),
     ),
   );
 }

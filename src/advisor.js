@@ -99,7 +99,7 @@ export function localAdvice(state = store.state) {
   if (live.length) {
     out.push({
       title: 'פקח על פער בין בקטסט לנייר חי',
-      detail: `בהרצה חיה: ${live.map((d) => `${d.short} (${d.livePnl.toFixed(2)}%)`).join(', ')}. פער שלילי מתמשך מעיד על overfitting — שקול להחזיר לכיול.`,
+      detail: `בהרצה חיה: ${live.map((d) => `${d.short} (${(Number(d.livePnl) || 0).toFixed(2)}%)`).join(', ')}. פער שלילי מתמשך מעיד על overfitting — שקול להחזיר לכיול.`,
       action: { label: 'לשולחנות', route: 'desks' },
     });
   }
