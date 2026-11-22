@@ -82,7 +82,7 @@ export function defaults() {
       impactFactor: 1.0,
       exchangeFee: 0,
       platform: 'freqtrade',
-      llm: { provider: 'openai', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', apiKey: '', temperature: 0.4 },
+      llm: { provider: 'openai', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', apiKey: '', temperature: 0.4, preferColibri: true },
       pool: { entries: [], updatedAt: null },
       db: {
         enabled: true,

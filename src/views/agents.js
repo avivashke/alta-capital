@@ -2,7 +2,7 @@ import { store } from '../store.js';
 import { LLM_PROVIDERS } from '../config.js';
 import { PROVIDERS } from '../providers.js';
 import { addPoolEntry, poolEntries } from '../keypool.js';
-import { testConnection } from '../llm.js';
+import { testConnection, colibriConfigured } from '../llm.js';
 import { h, num, section, notice, timeAgo, toast, tag } from '../ui.js';
 import { feedList } from './shared.js';
 import { tick } from '../firm.js';
@@ -931,6 +931,12 @@ export function renderAgents(root, ui) {
         h('div', { class: 'eyebrow', text: '3D Mission Spaces · תנועה בין מרחבי משימה, מפגשים וצ׳אט חינוכי' }),
         h('h1', { text: 'מרחב הצוות התלת־ממדי והאקדמיה' }),
         h('p', { text: 'הסוכנים עוברים בזמן אמת בין 4 מרחבי משימה מוגדרים (מחקר, מעבדת גאן, קוונטים/בקטסט, ופיקוד/ביצוע) וצומת התיאום המרכזי בהתאם למשימה הנוכחית שלהם.' }),
+        h('div', { class: 'row wrap', style: { gap: '6px', marginTop: '8px' } },
+          tag(colibriConfigured() ? 'מוח הצוות: Colibri מקומי' : 'Colibri לא מחובר — החשיבה בענן', colibriConfigured() ? 'live' : 'dry'),
+          state.aiDirector
+            ? tag(`החלטה אחרונה: ${state.aiDirector.source === 'model' ? (state.aiDirector.model || 'מודל') : 'כללים מקומיים'} · ${timeAgo(state.aiDirector.at)}`)
+            : tag('טרם התקבלה החלטת AI', 'dry'),
+        ),
       ),
       h('div', { class: 'head-actions' },
         h('button', {
@@ -954,6 +960,7 @@ export function renderAgents(root, ui) {
             btn.disabled = true;
             try {
               spawnMeeting('quant');
+              if (colibriConfigured()) toast('הצוות חושב על Colibri המקומי — החשיבה עשויה לקחת כמה דקות', '');
               await runAiDirector({ useFallback: true }).catch(() => {});
               await tick({ reason: 'manual' });
               ui.rerender();

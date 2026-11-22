@@ -572,12 +572,15 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const upstreamUrl = `${matched.upstreamBase}/chat/completions`;
+      // Colibri (the local MoE brain) generates at ~1 tok/s: it needs a decision-sized
+      // token budget and a long timeout, while the small Ollama models stay snappy.
+      const isColibri = matched.engine === 'colibri';
       const upstreamCtrl = new AbortController();
-      const upstreamTimer = setTimeout(() => upstreamCtrl.abort(), 90_000);
+      const upstreamTimer = setTimeout(() => upstreamCtrl.abort(), isColibri ? 900_000 : 90_000);
       req.on('close', () => {
         if (!res.writableEnded) upstreamCtrl.abort();
       });
-      const safeMaxTokens = Math.max(32, Math.min(Number(parsed.max_tokens) || 400, 450));
+      const safeMaxTokens = Math.max(32, Math.min(Number(parsed.max_tokens) || 400, isColibri ? 700 : 450));
       let upstreamRes;
       try {
         upstreamRes = await fetch(upstreamUrl, {

@@ -20,10 +20,20 @@ const LOCAL_TIMEOUT_MS = 90_000;
 // Colibri streams a 35B MoE from disk at about a token a second on this machine, so it
 // needs its own budget and a smaller answer cap: it is the brain that never goes offline,
 // not a fast chat model.
-const COLIBRI_TIMEOUT_MS = 600_000;
-const COLIBRI_MAX_TOKENS = 500;
+// Colibri runs ~1-1.5 tok/s on the Intel Arc, so a decision-sized answer needs room:
+// 700 tokens can take ~10 minutes. The budget must fit the whole JSON, otherwise the
+// reply is cut mid-object and the team silently falls back to rules.
+const COLIBRI_TIMEOUT_MS = 900_000;
+const COLIBRI_MAX_TOKENS = 700;
+// Colibri's window is 4096 tokens. Anything longer than this (in characters, Hebrew
+// tokenises densely) plus its answer would overflow, so those requests keep the fast
+// local model and the cloud first and Colibri stays the last resort.
+const COLIBRI_PROMPT_CHAR_LIMIT = 6000;
 const COLIBRI_URL_RE = /(?:127\.0\.0\.1|localhost):8000\b/;
-const isColibriEntry = (entry) => COLIBRI_URL_RE.test(String(entry?.baseUrl || ''));
+// Colibri also arrives through the base-server local-AI proxy with the same model id,
+// so match on the model as well — otherwise the team never recognises its own brain.
+const isColibriEntry = (entry) => COLIBRI_URL_RE.test(String(entry?.baseUrl || ''))
+  || /colibri/i.test(String(entry?.model || ''));
 
 export class LlmError extends Error {
   constructor(message, status = 0) {
@@ -182,6 +192,42 @@ async function callViaNetlifyProxy(url, init, shape) {
   return await parseResponsePayload(res, shape);
 }
 
+// Colibri answers at ~1 token/second, so a non-streamed reply can send no headers for
+// minutes — and Node's fetch aborts a request that waits 300s for headers. Streaming
+// returns headers immediately (SSE) and lets the answer accumulate chunk by chunk in
+// both the browser and the 24/7 runner.
+async function readColibriStream(res) {
+  // The base-server proxy may answer with a plain JSON completion instead of SSE.
+  const contentType = String(res.headers?.get?.('content-type') || '');
+  if (/application\/json/i.test(contentType)) return parseResponsePayload(res, 'openai');
+  if (!res.body?.getReader) return parseResponsePayload(res, 'openai');
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let text = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('data:')) continue;
+      const payload = trimmed.slice(5).trim();
+      if (!payload || payload === '[DONE]') continue;
+      try {
+        const json = JSON.parse(payload);
+        const choice = json?.choices?.[0];
+        const delta = choice?.delta?.content ?? choice?.message?.content ?? choice?.text;
+        if (typeof delta === 'string') text += delta;
+      } catch { /* keep reading: a chunk can split a JSON line */ }
+    }
+  }
+  if (!text.trim()) throw new LlmError('Colibri החזיר תשובה ריקה', 502);
+  return text;
+}
+
 async function callEntry(entry, opts) {
   if (entry?.provider === 'webllm') {
     const text = await webllm.chat({
@@ -216,10 +262,16 @@ async function callEntry(entry, opts) {
     for (const targetUrl of urlsToTry) {
       const isLocal = entry.provider === 'ollama' || /\/api\/local-ai|127\.0\.0\.1:11434|localhost:11434|127\.0\.0\.1:11435|localhost:11435|127\.0\.0\.1:8000|localhost:8000/i.test(targetUrl || '');
       const controller = new AbortController();
-      const localBudget = COLIBRI_URL_RE.test(targetUrl || '') ? COLIBRI_TIMEOUT_MS : LOCAL_TIMEOUT_MS;
+      const localBudget = colibri ? COLIBRI_TIMEOUT_MS : LOCAL_TIMEOUT_MS;
       const timer = setTimeout(() => controller.abort(), isLocal ? localBudget : TIMEOUT_MS);
+      let requestInit = init;
+      if (colibri) {
+        try {
+          requestInit = { ...init, body: JSON.stringify({ ...JSON.parse(init.body || '{}'), stream: true }) };
+        } catch { /* keep the request unchanged if the body is not JSON */ }
+      }
       try {
-        const res = await fetch(targetUrl, { ...init, signal: controller.signal });
+        const res = await fetch(targetUrl, { ...requestInit, signal: controller.signal });
         if (!res.ok) {
           const err = await readError(res);
           // If a Cloudflare Worker doesn't mount /v1/chat/completions, try /chat/completions, /chat, or /
@@ -239,7 +291,7 @@ async function callEntry(entry, opts) {
           }
           throw err;
         }
-        const text = await parseResponsePayload(res, entry.shape || 'openai');
+        const text = colibri ? await readColibriStream(res) : await parseResponsePayload(res, entry.shape || 'openai');
         // Remember the route and model that actually answered.
         if (entry.provider === 'gateway') {
           entry.model = model;
@@ -462,17 +514,23 @@ export async function chatDetailed({ system, messages, maxTokens = 1200, preferC
   const list = candidates(state);
   // Pick at most ONE fast local model (prefer 3B qwen2.5/llama3 via Base Server proxy to avoid VRAM swapping)
   const localAll = list.filter((e) => e.provider === 'ollama' || /\/api\/local-ai|127\.0\.0\.1:11434|localhost:11434|127\.0\.0\.1:8000|localhost:8000/i.test(e.baseUrl || ''));
-  const localFast = localAll.find((e) => /\/api\/local-ai/i.test(e.baseUrl || '') && /qwen2\.5:3b/i.test(e.model || ''))
-    || localAll.find((e) => /qwen2\.5:3b/i.test(e.model || ''))
-    || localAll.find((e) => /llama3\.2:3b/i.test(e.model || ''))
-    || localAll[0];
+  const localFast = localAll.find((e) => !isColibriEntry(e) && /\/api\/local-ai/i.test(e.baseUrl || '') && /qwen2\.5:3b/i.test(e.model || ''))
+    || localAll.find((e) => !isColibriEntry(e) && /qwen2\.5:3b/i.test(e.model || ''))
+    || localAll.find((e) => !isColibriEntry(e) && /llama3\.2:3b/i.test(e.model || ''))
+    || localAll.find((e) => !isColibriEntry(e));
   const cloudRest = list.filter((e) => !localAll.includes(e));
   const colibriEntry = localAll.find((e) => e !== localFast && isColibriEntry(e));
   // Colibri is slow but always there: it is the brain of last resort behind the cloud,
   // or the first brain when there is no cloud key at all / this call asks for it.
-  const colibriFirst = preferColibri || state.settings?.llm?.preferColibri === true;
+  const promptChars = String(system || '').length
+    + (Array.isArray(messages) ? messages.reduce((n, m) => n + String(m?.content || '').length, 0) : 0);
+  const colibriFirst = !!colibriEntry
+    && promptChars <= COLIBRI_PROMPT_CHAR_LIMIT
+    && (preferColibri || state.settings?.llm?.preferColibri !== false);
+  // "Colibri first" must mean Colibri, not the 3B sidecar: the team's thinking is
+  // meant to happen on the big local brain, and only then degrade to fast local/cloud.
   const queue = colibriFirst
-    ? [...(localFast ? [localFast] : []), ...(colibriEntry ? [colibriEntry] : []), ...cloudRest.slice(0, 6)]
+    ? [...(colibriEntry ? [colibriEntry] : []), ...(localFast ? [localFast] : []), ...cloudRest.slice(0, 6)]
     : [...(localFast ? [localFast] : []), ...cloudRest.slice(0, 6), ...(colibriEntry ? [colibriEntry] : [])];
   // Keyless web/proxy entries are always in the queue, even when the pool is full.
   for (const entry of freeZeroKeyEntries()) {
@@ -547,6 +605,12 @@ export function hasCloudKey(state = store.state) {
     && e.provider !== 'pollinations'
     && e.provider !== 'server-proxy'
     && e.provider !== 'webllm');
+}
+
+// True when a Colibri entry is in the pool (from COLIBRI_BASE_URL or a saved entry),
+// i.e. the team can think on the local brain at all.
+export function colibriConfigured(state = store.state) {
+  return candidates(state).some(isColibriEntry);
 }
 
 export function poolIsEmpty() {

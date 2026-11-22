@@ -2,7 +2,7 @@
 
 import { STRATEGIES } from './strategies.js';
 import { PLATFORMS } from './config.js';
-import { hasModelKey, chat } from './llm.js';
+import { hasModelKey, chatDetailed, colibriConfigured } from './llm.js';
 import { store } from './store.js';
 import { marketState } from './market.js';
 
@@ -170,7 +170,14 @@ export async function askAdvisor(question, history = []) {
     { role: 'user', content: `${context}\n\nשאלת המשתמש: ${question}` },
   ];
   if (!hasModelKey()) return localAnswer(question, digest);
-  return await chat({ system: SYSTEM, messages, maxTokens: 1400 });
+  // The advisor is one of the team's thinking seats: Colibri answers when it exists.
+  const res = await chatDetailed({
+    system: SYSTEM,
+    messages,
+    maxTokens: 1400,
+    preferColibri: colibriConfigured(),
+  });
+  return res.text;
 }
 
 export function localAnswer(question, digest = buildDigest()) {

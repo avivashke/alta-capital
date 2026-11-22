@@ -30,6 +30,7 @@ export function renderSettings(root, ui) {
   const model = h('input', { type: 'text', value: s.llm.model || '', placeholder: 'gpt-4o-mini', dir: 'ltr' });
   const keyInput = h('input', { type: 'password', value: s.llm.apiKey || '', placeholder: 'sk-...', dir: 'ltr', autocomplete: 'off' });
   const temperature = h('input', { type: 'number', min: '0', max: '1.5', step: '0.1', value: s.llm.temperature });
+  const preferColibri = h('input', { type: 'checkbox', checked: s.llm.preferColibri !== false });
 
   const autopilot = h('input', { type: 'checkbox', checked: s.autopilot });
   const tickSeconds = h('input', { type: 'number', min: '3', max: '120', value: s.tickSeconds });
@@ -54,11 +55,15 @@ export function renderSettings(root, ui) {
   const save = () => {
     store.mutate((st) => {
       st.settings.llm = {
+        // Keep every other brain setting (preferColibri, cooldowns, chosen local model)
+        // instead of wiping the object on each save.
+        ...(st.settings.llm || {}),
         provider: provider.value,
         baseUrl: baseUrl.value.trim(),
         model: model.value.trim(),
         apiKey: keyInput.value.trim(),
         temperature: Number(temperature.value) || 0.4,
+        preferColibri: preferColibri.checked,
       };
       st.settings.autopilot = autopilot.checked;
       st.settings.tickSeconds = Math.max(3, Number(tickSeconds.value) || 7);
@@ -125,6 +130,7 @@ export function renderSettings(root, ui) {
       h('div', { class: 'full' }, field('כתובת API / Proxy Base URL', baseUrl)),
       field('מפתח API / Token', keyInput),
       field('Temperature (יצירתיות 0-1.5)', temperature),
+      field('מוח הצוות: Colibri מקומי לפני הענן (איטי אך פרטי)', preferColibri),
     ),
     h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '12px' } },
       h('button', {

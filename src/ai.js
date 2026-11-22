@@ -4,7 +4,7 @@
 
 import { store } from './store.js';
 import { STRATEGY_IDS, STRATEGIES } from './strategies.js';
-import { chatDetailed, hasModelKey, hasCloudKey } from './llm.js';
+import { chatDetailed, hasModelKey, hasCloudKey, colibriConfigured } from './llm.js';
 
 const SYSTEM = `אתה סמנכ"ל ההשקעות של Alta Capital, חברת השקעות שמנוהלת על ידי סוכנים.
 אתה מקבל נתוני בקטסט, חלונות walk-forward, Monte Carlo, ניתוח טכני (EMA, RSI, MACD, ADX, ATR, Gann Square of 9), נתונים פונדמנטליסטיים רשמיים (SEC EDGAR: הכנסות, רווח נקי, מכפיל P/E, מרווח נקי, חוב לנכסים; CoinGecko: שווי שוק, נפח, היצע) ומאקרו (VIX, תשואת אג"ח 10 שנים, DXY).
@@ -55,6 +55,38 @@ function deskSummary(desk) {
     } : null,
     versions: desk.history.slice(0, 4).map((h) => ({ version: h.version, oos: h.oosReturn, robustness: h.robustness })),
   };
+}
+
+// Colibri runs at ~1 tok/s and has a 4096-token window, so the full committee brief
+// does not fit and its prefill alone would take minutes. This is the same decision in
+// the smallest form that still carries the numbers: one line per desk, the allowed
+// families with their ranges, and a short JSON schema.
+export function buildColibriPlanPrompt(state = store.state) {
+  const rows = state.desks.map((d) => {
+    const m = d.metrics;
+    return [d.id, d.tf, d.status, d.strategyId || '-',
+      d.isMetrics?.returnPct ?? '-', d.oosMetrics?.returnPct ?? '-',
+      m?.profitFactor ?? '-', m?.trades ?? '-', m?.maxDrawdownPct ?? '-',
+      d.assessment?.robustness ?? d.robustness ?? '-'].join('|');
+  });
+  const families = STRATEGY_IDS.map((id) => {
+    const space = STRATEGIES[id].space || {};
+    const ranges = Object.entries(space)
+      .filter(([, spec]) => spec.type !== 'bool')
+      .map(([k, spec]) => `${k} ${spec.min}-${spec.max}`)
+      .join(', ');
+    return `${id}: ${ranges}`;
+  });
+  return `ענה ב-JSON בלבד, בלי הסבר ובלי code fences.
+שולחנות (id|טווח|סטטוס|אסטרטגיה|IS%|OOS%|PF|עסקאות|DD%|חוסן):
+${rows.join('\n')}
+
+משפחות אסטרטגיה וטווחי פרמטרים:
+${families.join('\n')}
+
+בחר שולחן חלש להתמקדות, משפחה מתאימה, וטווחי פרמטרים צרים בתוך הטווחים שלמעלה.
+החזר:
+{"focusDesk":"<id>","strategyId":"<family>","paramBias":{"<param>":[min,max]},"rationale":"משפט קצר בעברית","nextActions":["פעולה","פעולה"]}`;
 }
 
 export function buildPrompt(state = store.state) {
@@ -239,13 +271,16 @@ export async function runAiDirector({ useFallback = false } = {}) {
   let reply;
   let used = null;
   try {
-    // With no cloud key the committee thinks on the local Colibri brain instead of
-    // degrading to pure rules: slower, but it is real reasoning and it never runs dry.
+    // The committee thinks on the local Colibri brain whenever it is available, even
+    // when a cloud key exists: it is slower, but the reasoning stays on our machine and
+    // the cloud is only the fallback. Its decision then drives the next optimization
+    // cycle (strategy family + parameter ranges), so the team optimizes on that brain.
+    const onColibri = colibriConfigured(state) || !hasCloudKey();
     used = await chatDetailed({
       system: SYSTEM,
-      messages: [{ role: 'user', content: buildPrompt(state) }],
-      maxTokens: 900,
-      preferColibri: !hasCloudKey(),
+      messages: [{ role: 'user', content: onColibri ? buildColibriPlanPrompt(state) : buildPrompt(state) }],
+      maxTokens: onColibri ? 320 : 900,
+      preferColibri: onColibri,
     });
     reply = used.text;
   } catch (err) {
