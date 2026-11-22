@@ -17,6 +17,13 @@ const GATEWAY_FALLBACK_MODELS = ['openai/gpt-oss-120b', 'llama-3.1-8b-instant', 
 
 const TIMEOUT_MS = 45_000;
 const LOCAL_TIMEOUT_MS = 90_000;
+// Colibri streams a 35B MoE from disk at about a token a second on this machine, so it
+// needs its own budget and a smaller answer cap: it is the brain that never goes offline,
+// not a fast chat model.
+const COLIBRI_TIMEOUT_MS = 600_000;
+const COLIBRI_MAX_TOKENS = 500;
+const COLIBRI_URL_RE = /(?:127\.0\.0\.1|localhost):8000\b/;
+const isColibriEntry = (entry) => COLIBRI_URL_RE.test(String(entry?.baseUrl || ''));
 
 export class LlmError extends Error {
   constructor(message, status = 0) {
@@ -196,15 +203,21 @@ async function callEntry(entry, opts) {
     : [entry.model];
   let lastErr = null;
 
+  const colibri = isColibriEntry(entry);
+  const callOpts = colibri
+    ? { ...opts, maxTokens: Math.min(Number(opts.maxTokens) || COLIBRI_MAX_TOKENS, COLIBRI_MAX_TOKENS) }
+    : opts;
+
   modelLoop: for (const model of models) {
     const candidate = model === entry.model ? entry : { ...entry, model };
-    const { url, init } = buildRequest(candidate, opts);
+    const { url, init } = buildRequest(candidate, callOpts);
     const urlsToTry = entry.provider === 'gateway' ? gatewayCandidateUrls(url) : [url];
 
     for (const targetUrl of urlsToTry) {
       const isLocal = entry.provider === 'ollama' || /\/api\/local-ai|127\.0\.0\.1:11434|localhost:11434|127\.0\.0\.1:11435|localhost:11435|127\.0\.0\.1:8000|localhost:8000/i.test(targetUrl || '');
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), isLocal ? LOCAL_TIMEOUT_MS : TIMEOUT_MS);
+      const localBudget = COLIBRI_URL_RE.test(targetUrl || '') ? COLIBRI_TIMEOUT_MS : LOCAL_TIMEOUT_MS;
+      const timer = setTimeout(() => controller.abort(), isLocal ? localBudget : TIMEOUT_MS);
       try {
         const res = await fetch(targetUrl, { ...init, signal: controller.signal });
         if (!res.ok) {
@@ -443,7 +456,7 @@ async function callLocalBaseServerAi({ system, messages, maxTokens = 1200, tempe
   throw lastErr || new LlmError('Local AI not reachable', 0);
 }
 
-export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
+export async function chatDetailed({ system, messages, maxTokens = 1200, preferColibri = false }) {
   const state = store.state;
   const temperature = Number(state.settings?.llm?.temperature ?? 0.4);
   const list = candidates(state);
@@ -454,8 +467,13 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
     || localAll.find((e) => /llama3\.2:3b/i.test(e.model || ''))
     || localAll[0];
   const cloudRest = list.filter((e) => !localAll.includes(e));
-  const colibriEntry = localAll.find((e) => e !== localFast && /:8000\b/.test(e.baseUrl || ''));
-  const queue = [...(localFast ? [localFast] : []), ...(colibriEntry ? [colibriEntry] : []), ...cloudRest.slice(0, 6)];
+  const colibriEntry = localAll.find((e) => e !== localFast && isColibriEntry(e));
+  // Colibri is slow but always there: it is the brain of last resort behind the cloud,
+  // or the first brain when there is no cloud key at all / this call asks for it.
+  const colibriFirst = preferColibri || state.settings?.llm?.preferColibri === true;
+  const queue = colibriFirst
+    ? [...(localFast ? [localFast] : []), ...(colibriEntry ? [colibriEntry] : []), ...cloudRest.slice(0, 6)]
+    : [...(localFast ? [localFast] : []), ...cloudRest.slice(0, 6), ...(colibriEntry ? [colibriEntry] : [])];
   // Keyless web/proxy entries are always in the queue, even when the pool is full.
   for (const entry of freeZeroKeyEntries()) {
     if (!queue.some((q) => q.provider === entry.provider && q.model === entry.model)) queue.push(entry);
@@ -520,6 +538,15 @@ export async function chat(opts) {
 // features do not fall back to "no model configured" on a fresh install.
 export function hasModelKey() {
   return candidates(store.state).length > 0;
+}
+
+// A key we pay for (or a Worker proxy with one): when one exists the cloud answers first
+// and Colibri stays the fallback. With none, Colibri is the team's brain.
+export function hasCloudKey(state = store.state) {
+  return candidates(state).some((e) => !!e.key
+    && e.provider !== 'pollinations'
+    && e.provider !== 'server-proxy'
+    && e.provider !== 'webllm');
 }
 
 export function poolIsEmpty() {

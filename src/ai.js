@@ -4,7 +4,7 @@
 
 import { store } from './store.js';
 import { STRATEGY_IDS, STRATEGIES } from './strategies.js';
-import { chatDetailed, hasModelKey } from './llm.js';
+import { chatDetailed, hasModelKey, hasCloudKey } from './llm.js';
 
 const SYSTEM = `אתה סמנכ"ל ההשקעות של Alta Capital, חברת השקעות שמנוהלת על ידי סוכנים.
 אתה מקבל נתוני בקטסט, חלונות walk-forward, Monte Carlo, ניתוח טכני (EMA, RSI, MACD, ADX, ATR, Gann Square of 9), נתונים פונדמנטליסטיים רשמיים (SEC EDGAR: הכנסות, רווח נקי, מכפיל P/E, מרווח נקי, חוב לנכסים; CoinGecko: שווי שוק, נפח, היצע) ומאקרו (VIX, תשואת אג"ח 10 שנים, DXY).
@@ -239,7 +239,14 @@ export async function runAiDirector({ useFallback = false } = {}) {
   let reply;
   let used = null;
   try {
-    used = await chatDetailed({ system: SYSTEM, messages: [{ role: 'user', content: buildPrompt(state) }], maxTokens: 900 });
+    // With no cloud key the committee thinks on the local Colibri brain instead of
+    // degrading to pure rules: slower, but it is real reasoning and it never runs dry.
+    used = await chatDetailed({
+      system: SYSTEM,
+      messages: [{ role: 'user', content: buildPrompt(state) }],
+      maxTokens: 900,
+      preferColibri: !hasCloudKey(),
+    });
     reply = used.text;
   } catch (err) {
     if (!useFallback) return { ok: false, reason: err.message };

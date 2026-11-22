@@ -30,10 +30,13 @@ if ($hasIntelArc) {
 # 2. Persist GPU acceleration environment variables for Ollama
 Write-Host "[2/4] Setting Ollama GPU environment variables (User scope)..." -ForegroundColor Yellow
 $envMap = @{
-  "OLLAMA_VULKAN"          = "1"
+  # The Intel Arc is reserved for Colibri's routed-expert tier, which is what made the
+  # 23 GB model usable on this box. Ollama therefore runs CPU-only and unloads a model
+  # immediately after each request, so it never takes the card back.
+  "OLLAMA_VULKAN"          = "0"
   "OLLAMA_FLASH_ATTENTION" = "1"
   "OLLAMA_KV_CACHE_TYPE"   = "q8_0"
-  "OLLAMA_KEEP_ALIVE"        = "15m"
+  "OLLAMA_KEEP_ALIVE"        = "0"
   "OLLAMA_MAX_LOADED_MODELS" = "1"
   "OLLAMA_NUM_PARALLEL"      = "1"
   "OLLAMA_ORIGINS"           = "*"

@@ -310,6 +310,21 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
     });
   }
 
+  // Colibri: a frontier MoE kept on the local disk, with the Intel Arc holding the hot
+  // experts. No key, no quota, no cloud — the brain that is still there when every
+  // provider above has failed, so the team never stops thinking.
+  const colibriUrl = String(env.COLIBRI_BASE_URL || '').trim();
+  if (colibriUrl) {
+    add({
+      provider: 'ollama',
+      key: '',
+      baseUrl: colibriUrl.replace(/\/+$/, '') + '/v1',
+      model: env.COLIBRI_MODEL || 'qwen3.6-colibri',
+      label: 'Colibri מקומי (CPU + Arc)',
+      weight: 1,
+    });
+  }
+
   const gatewayModel = env.LLM_GATEWAY_MODEL || 'openai/gpt-oss-120b';
   if (env.LLM_GATEWAY_URL) {
     add({
