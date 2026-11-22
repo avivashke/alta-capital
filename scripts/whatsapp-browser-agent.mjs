@@ -22,6 +22,7 @@ const DATA_DIR = path.join(ROOT, 'data');
 export const WA_PROFILE_DIR = path.join(DATA_DIR, 'whatsapp-browser-profile');
 export const WA_CONFIG_PATH = path.join(DATA_DIR, 'whatsapp-agent-config.json');
 export const WA_REPORT_PATH = path.join(DATA_DIR, 'whatsapp_gann.json');
+export const WA_QR_PATH = path.join(DATA_DIR, 'whatsapp-qr.png');
 
 export const DEFAULT_WA_AGENT_CONFIG = {
   groupName: '', // Exact (or partial) WhatsApp group title whitelisted by user
@@ -117,6 +118,7 @@ export async function getWhatsAppAgentStatus() {
     profileExists,
     loggedIn: !!(profileExists && config.loggedIn),
     loggedInAt: config.loggedInAt || null,
+    qrAvailable: fs.existsSync(WA_QR_PATH),
     groupName: config.groupName || '',
     discoveredGroups: config.discoveredGroups || [],
     config: {
@@ -708,7 +710,9 @@ export async function launchWhatsAppLogin({ timeoutMs = 240_000 } = {}) {
 
     const deadline = Date.now() + timeoutMs;
     let qrLogged = false;
+    let lastQrShotAt = 0;
     let ready = false;
+    try { fs.unlinkSync(WA_QR_PATH); } catch { /* ignore */ }
 
     while (Date.now() < deadline) {
       if (page.isClosed()) {
@@ -718,9 +722,25 @@ export async function launchWhatsAppLogin({ timeoutMs = 240_000 } = {}) {
         ready = true;
         break;
       }
-      if (!qrLogged && await isQrScreenVisible(page)) {
-        qrLogged = true;
-        console.log('🟢 קוד QR מופיע – אנא סרוק עם הטלפון שלך (WhatsApp -> מכשירים מקושרים -> קישור מכשיר)');
+      if (await isQrScreenVisible(page)) {
+        if (!qrLogged) {
+          qrLogged = true;
+          saveWhatsAppConfig({ loggedIn: false });
+          console.log('🟢 קוד QR מופיע – אנא סרוק עם הטלפון שלך (WhatsApp -> מכשירים מקושרים -> קישור מכשיר)');
+        }
+        if (Date.now() - lastQrShotAt >= 2500) {
+          try {
+            const qrEl = await page.$('canvas[aria-label*="Scan"], canvas[aria-label*="QR"], [data-testid="qrcode"], [data-ref] canvas, [data-ref]');
+            const tmpPath = `${WA_QR_PATH}.tmp.png`;
+            if (qrEl) {
+              await qrEl.screenshot({ path: tmpPath });
+            } else {
+              await page.screenshot({ path: tmpPath, fullPage: false });
+            }
+            fs.renameSync(tmpPath, WA_QR_PATH);
+            lastQrShotAt = Date.now();
+          } catch { /* retry next tick */ }
+        }
       }
       await sleep(1500);
     }
@@ -747,6 +767,7 @@ export async function launchWhatsAppLogin({ timeoutMs = 240_000 } = {}) {
   } catch (err) {
     return { ok: false, error: `שגיאה בחיבור WhatsApp Web: ${err.message}` };
   } finally {
+    try { fs.unlinkSync(WA_QR_PATH); } catch { /* ignore */ }
     if (context) {
       try { await context.close(); } catch { /* ignore */ }
     }

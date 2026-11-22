@@ -50,10 +50,14 @@ function ensureStatusLoaded(ui) {
       waUiState.loaded = true;
       if (st.groupName && !waUiState.groupInput) waUiState.groupInput = st.groupName;
       if (st.config?.autoScanMinutes != null) waUiState.autoScanMinutes = Number(st.config.autoScanMinutes) || 0;
+      if (st.job?.busy && st.job?.mode === 'login') {
+        waUiState.loggingIn = true;
+        startLoginPoll(ui);
+      }
     })
     .finally(() => {
       waUiState.loadingStatus = false;
-      ui?.refresh?.();
+      ui?.rerender?.();
     });
 }
 
@@ -65,7 +69,7 @@ function startLoginPoll(ui) {
     const st = await fetchWhatsAppStatus();
     waUiState.status = st;
     if (st.groupName && !waUiState.groupInput) waUiState.groupInput = st.groupName;
-    if (!st.job?.busy || ticks > 90) {
+    if (!st.job?.busy || ticks > 100) {
       clearInterval(waUiState.pollTimer);
       waUiState.pollTimer = null;
       waUiState.loggingIn = false;
@@ -74,7 +78,9 @@ function startLoginPoll(ui) {
       } else if (st.job?.lastError) {
         toast(st.job.lastError, 'bad');
       }
-      ui?.refresh?.();
+      ui?.rerender?.();
+    } else {
+      ui?.rerender?.();
     }
   }, 2500);
 }
@@ -190,7 +196,7 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
             disabled: waUiState.loggingIn || waUiState.scanning || st?.job?.busy,
             onclick: async () => {
               waUiState.loggingIn = true;
-              ui?.refresh?.();
+              ui?.rerender?.();
               const res = await launchWhatsAppLogin();
               if (res.ok) {
                 toast(res.message || 'חלון WhatsApp Web נפתח — סרוק QR מהטלפון', 'ok');
@@ -198,7 +204,7 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
               } else {
                 waUiState.loggingIn = false;
                 toast(res.error || 'שגיאה בפתיחת WhatsApp Web', 'bad');
-                ui?.refresh?.();
+                ui?.rerender?.();
               }
             },
           }, waUiState.loggingIn ? '⏳ ממתין לסריקת QR…' : (loggedIn ? '🔄 חבר מחדש QR / רענן רשימת קבוצות' : '📱 חבר WhatsApp Web (QR)')),
@@ -224,7 +230,7 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
               if (res.ok) {
                 toast(`✓ נשמרה קבוצת היעד "${name}" (קריאה בלבד)`, 'ok');
                 waUiState.status = await fetchWhatsAppStatus();
-                ui?.refresh?.();
+                ui?.rerender?.();
               } else {
                 toast(res.error || 'שגיאה בשמירת הגדרות וואטסאפ', 'bad');
               }
@@ -243,7 +249,7 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
               }
               waUiState.scanning = true;
               waUiState.groupInput = name;
-              ui?.refresh?.();
+              ui?.rerender?.();
               await saveWhatsAppConfig({ groupName: name, autoScanMinutes: waUiState.autoScanMinutes });
               const res = await runWhatsAppScan({ groupName: name });
               waUiState.scanning = false;
@@ -253,7 +259,7 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
               } else {
                 toast(res.error || 'שגיאה בסריקת הקבוצה', 'bad');
               }
-              ui?.refresh?.();
+              ui?.rerender?.();
             },
           }, waUiState.scanning ? '⏳ סורק קבוצת וואטסאפ…' : '🔍 סרוק קבוצה ושלב בגאן'),
         )
@@ -264,6 +270,60 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
             ? `☁️ צופה בנתונים מסונכרנים מקבוצת "${report.groupName}" (${report.relevantInsightsCount} תובנות). כדי לבצע סריקה חיה חדשה של WhatsApp Web, פתח את Alta Capital במחשב שבו Base Server פעיל.`
             : 'כדי לחבר קבוצת וואטסאפ (WhatsApp Web, סריקת QR חד-פעמית), פתח את הדשבורד במחשב שלך (http://localhost:8181/#/gann). לאחר סריקה אחת, כל התובנות, שמות הכותבים והודעות המקור מסתנכרנים אוטומטית גם לטלפון ולענן.',
         }),
+
+    // Live inline QR Code box while waiting for phone scan (works even if Chrome popup is behind/hidden)
+    (waUiState.loggingIn || (st?.job?.busy && st?.job?.mode === 'login'))
+      ? h('div', {
+          style: {
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '16px',
+            alignItems: 'center',
+            padding: '14px 16px',
+            marginBottom: '12px',
+            borderRadius: '12px',
+            background: 'rgba(6, 78, 59, 0.25)',
+            border: '1px solid rgba(37, 211, 102, 0.55)',
+          },
+        },
+          st?.qrAvailable && st?.origin
+            ? h('img', {
+                src: `${st.origin}/api/whatsapp-agent/qr?t=${Date.now()}`,
+                alt: 'WhatsApp Web QR Code',
+                style: {
+                  width: '230px',
+                  height: '230px',
+                  objectFit: 'contain',
+                  background: '#ffffff',
+                  padding: '10px',
+                  borderRadius: '12px',
+                  boxShadow: '0 6px 20px rgba(0,0,0,0.45)',
+                },
+              })
+            : h('div', {
+                style: {
+                  width: '230px',
+                  height: '230px',
+                  display: 'grid',
+                  placeItems: 'center',
+                  textAlign: 'center',
+                  background: 'rgba(15, 23, 42, 0.85)',
+                  borderRadius: '12px',
+                  border: '1px dashed rgba(37, 211, 102, 0.45)',
+                  padding: '14px',
+                  color: '#86efac',
+                  fontSize: '13px',
+                },
+                text: '⏳ טוען את קוד ה-QR מ-WhatsApp Web… (כמה שניות)',
+              }),
+          h('div', { style: { flex: '1', minWidth: '220px', lineHeight: '1.65' } },
+            h('div', { style: { fontWeight: 700, fontSize: '15px', color: '#86efac', marginBottom: '6px' }, text: '📱 סרוק את קוד ה-QR מהטלפון שלך' }),
+            h('div', { class: 'small', text: '1. פתח WhatsApp בטלפון → תפריט (⋮ / הגדרות) → מכשירים מקושרים (Linked Devices).' }),
+            h('div', { class: 'small', text: '2. לחץ "קישור מכשיר" (Link a Device) וכוון את המצלמה לקוד ה-QR שכאן משמאל.' }),
+            h('div', { class: 'tiny muted', style: { marginTop: '6px' }, text: 'הקוד מתעדכן כאן אוטומטית כל 2.5 שניות. מיד אחרי הסריקה החיבור יישמר והקבוצות ייטענו אוטומטית.' }),
+          ),
+        )
+      : null,
 
     // Active Asset Matched Gann Overlay (if current symbol appears in group)
     assetSig
@@ -338,7 +398,7 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
                 class: `btn btn-sm ${waUiState.filter === f.id ? 'btn-primary' : 'btn-ghost'}`,
                 onclick: () => {
                   waUiState.filter = f.id;
-                  ui?.refresh?.();
+                  ui?.rerender?.();
                 },
               }, f.label)),
             ),
