@@ -92,6 +92,9 @@ export async function runFirmCronJob({ cycles = 2, deep = false } = {}) {
     }
   }
 
+  // The risk governor runs before any new position: a bleeding desk is paused and a
+  // 12% book drawdown stops the whole live book in the 24/7 path too, not only in a tab.
+  try { firm.enforceLiveRiskControls(); } catch { /* ignore */ }
   try { await firm.tickLive(); } catch { /* ignore */ }
   try { await firm.promoteDryRuns(); } catch { /* ignore */ }
   try {
@@ -100,6 +103,7 @@ export async function runFirmCronJob({ cycles = 2, deep = false } = {}) {
     const maxBars = process.env.ALTA_BASE_SERVER === '1' ? 0 : 1200;
     await nostro.runNostroFleetSimulation({}, { doOptimize: false, forceLive: true, maxBars });
   } catch { /* ignore */ }
+  try { await firm.promoteNostroWinnersToLive(); } catch { /* ignore */ }
   try {
     const gann = await import('../../src/gann.js');
     await gann.runAutonomousGannLibraryAuditIfDue();
