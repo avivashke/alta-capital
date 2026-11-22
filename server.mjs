@@ -145,7 +145,9 @@ function persistWhatsAppReportToBaseDb(report) {
 }
 
 const HOST = process.env.HOST || '0.0.0.0';
-const PORT = Number(process.env.PORT || 8181);
+// `|| 8181` matters: a PORT of "0" in the parent environment would otherwise bind an
+// ephemeral port and the app would silently stop answering on 8181.
+const PORT = Number(process.env.PORT) || 8181;
 const SYNC_INTERVAL_MS = Math.max(15, Number(process.env.SYNC_INTERVAL_SEC || 60)) * 1000;
 const ENABLE_LOCAL_CRON = process.env.ENABLE_LOCAL_CRON !== 'false';
 const CRON_INTERVAL_MS = Math.max(5, Number(process.env.CRON_INTERVAL_MIN || 15)) * 60 * 1000;
