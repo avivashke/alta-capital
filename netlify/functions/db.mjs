@@ -102,13 +102,93 @@ export function writeDbFile(db) {
   }
 }
 
+// ---------- Local relational DB (SQLite, data/alta.db) ----------
+// Enabled with DB_MODE=local in .env. Same interface as the Supabase REST layer, so the rest of the code is unchanged.
+let DatabaseSync = null;
+try { ({ DatabaseSync } = await import('node:sqlite')); } catch { /* node:sqlite unavailable (e.g. old Node on Netlify) */ }
+
+export function isLocalSql() {
+  return process.env.DB_MODE === 'local' && !!DatabaseSync;
+}
+
+const SQL_FILE = path.join(DATA_DIR, 'alta.db');
+const SQL_TABLES = new Set(['firm_state', 'firm_versions', 'firm_trades', 'firm_cycles']);
+let sqlDb = null;
+
+export function getSqlDb() {
+  if (sqlDb) return sqlDb;
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const d = new DatabaseSync(SQL_FILE);
+  d.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = NORMAL;
+    CREATE TABLE IF NOT EXISTS firm_state (
+      id TEXT PRIMARY KEY, state TEXT NOT NULL,
+      cycles INTEGER DEFAULT 0, backtests INTEGER DEFAULT 0, deployments INTEGER DEFAULT 0,
+      updated_at TEXT);
+    CREATE TABLE IF NOT EXISTS firm_versions (
+      id TEXT PRIMARY KEY, data TEXT NOT NULL, created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+    CREATE TABLE IF NOT EXISTS firm_trades (
+      id TEXT PRIMARY KEY, data TEXT NOT NULL, created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+    CREATE TABLE IF NOT EXISTS firm_cycles (
+      id TEXT PRIMARY KEY, data TEXT NOT NULL, created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+  `);
+  sqlDb = d;
+  // One-time import of the existing JSON database
+  try {
+    const has = d.prepare('SELECT 1 AS x FROM firm_state WHERE id = ?').get('main');
+    if (!has && fs.existsSync(LOCAL_DB_FILE)) {
+      const old = JSON.parse(fs.readFileSync(LOCAL_DB_FILE, 'utf8'));
+      sqlUpsert('firm_state', old.state ? { id: 'main', state: old.state, cycles: old.state.stats?.cycles || 0, backtests: old.state.stats?.backtests || 0, deployments: old.state.stats?.deployments || 0, updated_at: old.state.updatedAt || old.updatedAt } : null);
+      for (const [tbl, arr] of [['firm_versions', old.versions], ['firm_trades', old.trades], ['firm_cycles', old.cycles]]) {
+        for (const rec of arr || []) if (rec?.id != null) sqlUpsert(tbl, rec);
+      }
+    }
+  } catch { /* ignore import errors */ }
+  return d;
+}
+
+function sqlUpsert(table, rec) {
+  if (!rec) return;
+  const d = sqlDb;
+  if (table === 'firm_state') {
+    d.prepare(`INSERT INTO firm_state (id,state,cycles,backtests,deployments,updated_at) VALUES (?,?,?,?,?,?)
+      ON CONFLICT(id) DO UPDATE SET state=excluded.state,cycles=excluded.cycles,backtests=excluded.backtests,deployments=excluded.deployments,updated_at=excluded.updated_at`)
+      .run(rec.id || 'main', JSON.stringify(rec.state), rec.cycles || 0, rec.backtests || 0, rec.deployments || 0, rec.updated_at || new Date().toISOString());
+  } else {
+    d.prepare(`INSERT INTO ${table} (id,data) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data`)
+      .run(String(rec.id), JSON.stringify(rec));
+  }
+}
+
+function localSqlFetch(table, { method, body }) {
+  if (!SQL_TABLES.has(table)) return { ok: false, error: `unknown table ${table}` };
+  try {
+    getSqlDb();
+    if (method === 'GET') {
+      if (table === 'firm_state') {
+        const r = sqlDb.prepare('SELECT state, updated_at FROM firm_state WHERE id = ?').get('main');
+        return { ok: true, data: r ? [{ state: JSON.parse(r.state), updated_at: r.updated_at }] : [] };
+      }
+      const rows = sqlDb.prepare(`SELECT data FROM ${table} ORDER BY created_at DESC LIMIT 500`).all();
+      return { ok: true, data: rows.map((r) => JSON.parse(r.data)) };
+    }
+    for (const rec of Array.isArray(body) ? body : [body]) sqlUpsert(table, rec);
+    return { ok: true, data: null };
+  } catch (err) {
+    return { ok: false, error: `SQLite: ${err.message}` };
+  }
+}
+
 export function getSupaEnv() {
+  if (isLocalSql()) return { url: 'local-sqlite', key: 'local', configured: true, local: true };
   const url = (process.env.SUPABASE_URL || 'https://lqiakdsdpdvdlobeeovz.supabase.co').trim().replace(/\/+$/, '');
   const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
   return { url, key, configured: !!(url && key) };
 }
 
 export async function supaFetch(table, { method = 'GET', query = '', body = null, upsert = false } = {}) {
+  if (isLocalSql()) return localSqlFetch(table, { method, body });
   const { url, key } = getSupaEnv();
   if (!url || !key) return { ok: false, error: 'SUPABASE_ANON_KEY not set in Environment Variables' };
   const ctrl = new AbortController();
@@ -231,7 +311,7 @@ export async function handleDbRequest(method, bodyObj = {}) {
     }
 
     const provider = supabaseConnected
-      ? (isBaseServer ? 'Base Server + Supabase PostgreSQL' : 'Supabase PostgreSQL (Netlify Env)')
+      ? (isBaseServer ? (isLocalSql() ? 'Base Server + SQLite (local)' : 'Base Server + Supabase PostgreSQL') : 'Supabase PostgreSQL (Netlify Env)')
       : (isBaseServer ? 'Base Server + GitHub Cloud 24/7' : 'Netlify + GitHub Cloud 24/7');
 
     return {
@@ -287,7 +367,7 @@ export async function handleDbRequest(method, bodyObj = {}) {
     }
 
     const provider = supaWrite?.ok
-      ? (isBaseServer ? 'Base Server + Supabase PostgreSQL' : 'Supabase PostgreSQL (Netlify Env)')
+      ? (isBaseServer ? (isLocalSql() ? 'Base Server + SQLite (local)' : 'Base Server + Supabase PostgreSQL') : 'Supabase PostgreSQL (Netlify Env)')
       : (isBaseServer ? 'Base Server Local DB' : 'Netlify Database');
 
     return {
@@ -329,7 +409,7 @@ export async function handleDbRequest(method, bodyObj = {}) {
   }
 
   const provider = supaWrite?.ok
-    ? (isBaseServer ? 'Base Server + Supabase PostgreSQL' : 'Supabase PostgreSQL (Netlify Env)')
+    ? (isBaseServer ? (isLocalSql() ? 'Base Server + SQLite (local)' : 'Base Server + Supabase PostgreSQL') : 'Supabase PostgreSQL (Netlify Env)')
     : (isBaseServer ? 'Base Server Local DB' : 'Netlify Database');
 
   return {

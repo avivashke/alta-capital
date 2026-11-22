@@ -6,6 +6,9 @@ node_modules/
 .env.local
 data/.localstorage.json
 data/db.json
+data/alta.db
+data/alta.db-shm
+data/alta.db-wal
 data/backups/
 data/x-browser-profile/
 data/x-agent-config.json
