@@ -540,7 +540,7 @@ async function synthesizeWithLocalAi(analysis) {
     if (!r.ok) return null;
     const j = await r.json();
     const names = (j?.models || []).map((m) => m.name || m.model).filter(Boolean);
-    model = names.find((n) => /qwen2\.5:7b/i.test(n))
+    model = names.find((n) => /qwen2\.5:3b/i.test(n))
       || names.find((n) => /qwen2\.5/i.test(n))
       || names.find((n) => /llama3/i.test(n))
       || names[0]

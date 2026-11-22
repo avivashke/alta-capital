@@ -53,6 +53,7 @@ async function fetchJsonFast(url, timeoutMs = 2500) {
  * 1. Alta Capital Base Server proxy (/api/local-ai/status) — works even from phone/LAN!
  * 2. Direct Ollama (http://localhost:11434/api/tags)
  * 3. Direct LM Studio (http://localhost:1234/v1/models)
+ * 4. Colibri (http://localhost:8000/v1/models)
  */
 export async function discoverLocalAiModels({ baseServerUrl = '' } = {}) {
   const found = [];
@@ -146,6 +147,28 @@ export async function discoverLocalAiModels({ baseServerUrl = '' } = {}) {
       }
     }
   } catch { /* LM Studio not running */ }
+
+  // 4. Colibri (github.com/JustVugg/colibri) — pure-C engine that streams huge MoE models from disk.
+  //    Exposes an OpenAI-compatible API (default http://127.0.0.1:8000/v1).
+  const colibriHost = typeof window === 'undefined' ? 'http://127.0.0.1:8000' : 'http://localhost:8000';
+  try {
+    const data = await fetchJsonFast(`${colibriHost}/v1/models`, 1800);
+    const list = Array.isArray(data?.data) ? data.data : [];
+    if (list.length) {
+      engines.push({ engine: 'colibri', label: 'Colibri (מקומי)', url: `${colibriHost}/v1`, count: list.length });
+      for (const m of list) {
+        if (!m?.id) continue;
+        pushModel({
+          engine: 'colibri',
+          model: m.id,
+          label: `🐦 Colibri · ${m.id}`,
+          baseUrl: `${colibriHost}/v1`,
+          sizeGB: null,
+          viaBaseServer: false,
+        });
+      }
+    }
+  } catch { /* Colibri not running */ }
 
   return {
     ok: found.length > 0,

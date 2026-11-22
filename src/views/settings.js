@@ -6,7 +6,7 @@ import { PROVIDERS, PROVIDER_ORDER } from '../providers.js';
 import { addPoolEntry, entryStatus, limitsFor, movePoolEntry, parseCloudflareKeys, parseWorkerProxies, poolEntries, poolStats, removePoolEntry, resetCooldowns } from '../keypool.js';
 import { h, notice, toast, openModal, downloadFile, timeAgo, tag, copyText, commandBlock } from '../ui.js';
 import { syncFromCloud, syncBidirectional, buildMagicSyncUrl } from '../remote.js';
-import { dbState, testDatabaseConnection, pushStateToDatabase, pullFromDatabase, checkBaseServerHealth, SUPABASE_SQL_SCHEMA } from '../db.js';
+import { dbState, testDatabaseConnection, pushStateToDatabase, pullFromDatabase, checkBaseServerHealth } from '../db.js';
 import * as webllm from '../webllm.js';
 import { discoverLocalAiModels, syncLocalModelsToPool, RECOMMENDED_LOCAL_MODELS } from '../local_ai.js';
 
@@ -100,7 +100,7 @@ export function renderSettings(root, ui) {
       h('div', {},
         h('div', { class: 'eyebrow', text: 'Control room · Database · Model Pool · Netlify 24/7' }),
         h('h1', { text: 'הגדרות, מסד נתונים ובריכת מודלים' }),
-        h('p', { text: 'חיבור מסד הנתונים (Netlify DB / Supabase / Cloudflare), בריכת המודלים (API + Cloudflare Workers Proxies), וריצה 24/7 ב-Netlify.' }),
+        h('p', { text: 'חיבור מסד הנתונים (מסד נתונים מקומי SQLite / Cloudflare), בריכת המודלים (API + Cloudflare Workers Proxies), וריצה 24/7 ב-Netlify.' }),
       ),
       h('div', { class: 'head-actions' },
         h('button', { class: 'btn btn-primary', onclick: async () => { save(); try { const r = await testConnection(); toast('בריכת המודלים ענתה: ' + r, 'ok'); } catch (err) { toast('בדיקת חיבור נכשלה: ' + err.message, 'bad'); } } }, 'שמור ובדוק בריכת מודלים'),
@@ -1012,25 +1012,11 @@ function helpBlock(providerSel) {
 function dbCard(ui) {
   const dbCfg = store.state.settings.db || {};
   const modeSel = h('select', {}, [
-    ['auto', 'אוטומטי (ענן + Supabase + שרת בסיס במקביל)'],
+    ['auto', 'אוטומטי (מסד מקומי SQLite + שרת בסיס)'],
     ['netlify', 'Netlify / Base Server API (/api/db)'],
-    ['supabase', 'Supabase PostgreSQL (REST API)'],
     ['worker', 'Cloudflare Worker D1 / KV'],
   ].map(([val, label]) => h('option', { value: val, selected: (dbCfg.mode || 'auto') === val }, label)));
 
-  const supaUrl = h('input', {
-    type: 'url',
-    value: dbCfg.supabaseUrl || 'https://lqiakdsdpdvdlobeeovz.supabase.co',
-    placeholder: 'https://lqiakdsdpdvdlobeeovz.supabase.co',
-    dir: 'ltr',
-  });
-  const supaKey = h('input', {
-    type: 'password',
-    value: dbCfg.supabaseKey || '',
-    placeholder: 'Supabase Anon Key (eyJ... / sb_publishable_...)',
-    dir: 'ltr',
-    autocomplete: 'off',
-  });
   const cloudApiUrl = h('input', {
     type: 'url',
     value: dbCfg.cloudApiUrl || '',
@@ -1070,8 +1056,8 @@ function dbCard(ui) {
         ...(st.settings.db || {}),
         enabled: true,
         mode: modeSel.value,
-        supabaseUrl: supaUrl.value.trim(),
-        supabaseKey: supaKey.value.trim(),
+        supabaseUrl: '',
+        supabaseKey: '',
         cloudApiUrl: cloudApiUrl.value.trim(),
         baseServerUrl: baseServerUrl.value.trim(),
         baseServerToken: baseServerToken.value.trim(),
@@ -1087,8 +1073,8 @@ function dbCard(ui) {
   }
 
   const supaBadge = dbState.supabaseConnected
-    ? tag('🟢 Supabase מחובר ופעיל', 'live')
-    : tag('🔴 Supabase לא מחובר', 'red');
+    ? tag('🟢 מסד נתונים מקומי (SQLite) פעיל', 'live')
+    : tag('🔴 מסד נתונים מקומי לא מחובר', 'red');
 
   const baseBadge = dbState.baseServerConnected
     ? tag('🖥 שרת בסיס מחובר', 'live')
@@ -1118,23 +1104,14 @@ function dbCard(ui) {
       ),
     ),
     notice(
-      dbState.supabaseConnected && dbState.baseServerConnected
-        ? '✅ מצב היברידי מלא פעיל: שרת הבסיס והענן (Supabase) מסונכרנים דו-כיוונית! כל פתיחה ממחשב או טלפון טוענת וממזגת אוטומטית את היתרה וההיסטוריה המלאה.'
-        : dbState.supabaseConnected
-          ? '✅ חיבור ל-Supabase PostgreSQL מאומת ופעיל! כל מכשיר שתפתח ממנו מסתנכרן אוטומטית בלי איפוס יתרה או היסטוריה.'
-          : dbState.baseServerConnected
-            ? '✅ שרת הבסיס המקומי פעיל ושומר הכל בדיסק + גיבויים שעתיים. כדי לסנכרן גם מחוץ לבית/מהענן, הגדר SUPABASE_ANON_KEY בקובץ .env וב-Netlify.'
-            : 'לסנכרון חוצה מכשירים בענן 24/7: הגדר ב-Netlify את SUPABASE_URL ו-SUPABASE_ANON_KEY (וב-GitHub Secrets לאותו ריפו), או הזן מפתח Supabase / כתובת שרת בסיס למטה.',
+      dbState.baseServerConnected
+        ? '✅ שרת הבסיס המקומי פעיל ושומר הכל במסד נתונים רלציוני מקומי (SQLite) + גיבויים שעתיים. מכשירים ברשת הביתית ניגשים אליו דרך כתובת ה-LAN.'
+        : 'שרת הבסיס המקומי לא מחובר. הפעל אותו במחשב (npm run base-server) או הזן את כתובתו למטה.',
       'blue',
     ),
     lanHint ? h('div', { class: 'small muted', style: { marginTop: '6px' }, text: `כתובות שרת הבסיס ברשת המקומית: ${lanHint}` }) : null,
-    dbState.supabaseError && !dbState.supabaseConnected
-      ? h('div', { class: 'notice bad', style: { marginTop: '8px' }, text: 'סטטוס Supabase: ' + dbState.supabaseError })
-      : null,
     h('div', { class: 'form-grid', style: { marginTop: '12px' } },
       field('מצב מסד נתונים', modeSel),
-      field('Supabase Project URL', supaUrl),
-      field('Supabase Key (אופציונלי אם מוגדר ב-Netlify Env)', supaKey),
       field('כתובת Cloud API (Netlify — אופציונלי)', cloudApiUrl),
       field('כתובת שרת הבסיס (המחשב שלך — LAN / Tunnel)', baseServerUrl),
       field('טוקן שרת בסיס (אופציונלי)', baseServerToken),
@@ -1238,24 +1215,13 @@ function dbCard(ui) {
           }
         },
       }, '⚡ הרץ מחזור אופטימיזציה בשרת'),
-      h('button', {
-        class: 'btn btn-sm btn-ghost',
-        onclick: () => {
-          copyText(SUPABASE_SQL_SCHEMA);
-          toast('סכמת SQL ל-Supabase הועתקה ללוח', 'ok');
-        },
-      }, '📋 העתק סכמת SQL ל-Supabase'),
-      h('button', {
-        class: 'btn btn-sm btn-ghost',
-        onclick: () => openModal('סכמת טבלאות PostgreSQL עבור Supabase', h('pre', { class: 'code', text: SUPABASE_SQL_SCHEMA }), { wide: true }),
-      }, '👁 הצג SQL ל-Supabase'),
     ),
     h('details', { style: { marginTop: '12px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '10px 12px' } },
       h('summary', { style: { cursor: 'pointer', fontWeight: '700', fontSize: '13px' }, text: '🖥 הפיכת המחשב שלך לשרת בסיס קבוע (Base Server) שמסתנכרן עם הענן 24/7' }),
       h('div', { class: 'small muted', style: { marginTop: '8px', lineHeight: '1.7' } },
-        'שרת הבסיס רץ קבוע על המחשב שלך (גם אחרי הפעלה מחדש), שומר את כל התיק וההיסטוריה בדיסק המקומי + גיבויים שעתיים, ומסנכרן דו-כיוונית עם הענן (Supabase / Netlify) כל 60 שניות. כך האפליקציה עובדת בענן מכל מכשיר, ותמיד יש לך שרת בסיס מקומי פעיל גם ב-LAN.'),
+        'שרת הבסיס רץ קבוע על המחשב שלך (גם אחרי הפעלה מחדש), שומר את כל התיק וההיסטוריה בדיסק המקומי + גיבויים שעתיים, במסד נתונים רלציוני מקומי (SQLite), ותמיד זמין ב-LAN.'),
       h('div', { style: { marginTop: '8px' } },
-        h('div', { class: 'small', text: '1. העתק .env.example ל-.env והזן SUPABASE_ANON_KEY (ואופציונלית CLOUD_API_URL):' }),
+        h('div', { class: 'small', text: '1. העתק .env.example ל-.env (המסד המקומי פעיל עם DB_MODE=local):' }),
         h('pre', { class: 'code', text: 'cp .env.example .env' }),
         h('div', { class: 'small', style: { marginTop: '6px' }, text: '2. התקן כשירות קבוע במערכת ההפעלה (עולה אוטומטית בהפעלת המחשב):' }),
         h('pre', { class: 'code', text: '# macOS:\nbash scripts/install-base-server-macos.sh\n\n# Windows (PowerShell):\npowershell -ExecutionPolicy Bypass -File scripts\\install-base-server-windows.ps1\n\n# Linux:\nbash scripts/install-base-server-linux.sh\n\n# או הרצה ישירה עם auto-restart:\nnpm run base-server' }),
@@ -1294,18 +1260,13 @@ function showConnectionGuideModal(entry) {
 function setupGuideCard() {
   return h('details', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(88, 166, 255, 0.3)' } },
     h('summary', { style: { cursor: 'pointer', padding: '4px 2px', fontWeight: '800', fontSize: '16px' } },
-      '📘 מדריך הקמה מלא (Netlify Environment Variables + Supabase + Cloudflare + AI Pool)',
+      '📘 מדריך הקמה מלא (Netlify Environment Variables + Cloudflare + AI Pool)',
     ),
     h('div', { style: { marginTop: '12px', lineHeight: '1.75' } },
       notice('כדי שהמערכת תרוץ 24/7 ב-Netlify ותאסוף נתונים באופן רציף, הגדר את המשתנים הבאים ב-Netlify Dashboard → Site configuration → Environment variables:', 'blue'),
       h('div', { class: 'grid cols-2', style: { gap: '12px', marginTop: '10px' } },
         h('div', { class: 'card', style: { background: 'rgba(8, 13, 22, 0.85)' } },
-          h('h3', { text: '1. Database (Supabase PostgreSQL)' }),
-          h('div', { class: 'small muted', text: 'Supabase Dashboard → Project Settings → API Keys:' }),
-          h('pre', { class: 'code', style: { marginTop: '6px' }, text: 'SUPABASE_URL=https://lqiakdsdpdvdlobeeovz.supabase.co\nSUPABASE_ANON_KEY=eyJ... (המפתח הציבורי מ-API Keys)' }),
-        ),
-        h('div', { class: 'card', style: { background: 'rgba(8, 13, 22, 0.85)' } },
-          h('h3', { text: '2. Cloudflare Workers & Free AI Pool' }),
+          h('h3', { text: '1. Cloudflare Workers & Free AI Pool' }),
           h('div', { class: 'small muted', text: 'Cloudflare Dashboard / Groq / Gemini / OpenRouter:' }),
           h('pre', { class: 'code', style: { marginTop: '6px' }, text: 'LLM_GATEWAY_URL=https://alta-groq.avivashke95.workers.dev/v1\nCLOUDFLARE_ACCOUNT_ID=...\nCLOUDFLARE_API_TOKEN=...\nGROQ_API_KEY=gsk_...\nGEMINI_API_KEY=AIza...\nOPENROUTER_API_KEY=sk-or-...' }),
         ),

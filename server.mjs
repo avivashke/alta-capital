@@ -67,6 +67,7 @@ const {
   runWhatsAppGroupScan,
   readLatestWhatsAppReport,
   sanitizeWhatsAppReportForSync,
+  WA_QR_PATH,
 } = await import('./scripts/whatsapp-browser-agent.mjs');
 
 const xAgentJob = {
@@ -335,7 +336,7 @@ async function probeLocalAiEngines({ force = false } = {}) {
   const engines = [];
   const tryJson = async (url) => {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 1800);
+    const t = setTimeout(() => ctrl.abort(), 4000);
     try {
       const r = await fetch(url, { signal: ctrl.signal });
       if (!r.ok) return null;
@@ -415,6 +416,21 @@ async function probeLocalAiEngines({ force = false } = {}) {
     }
   }
 
+  // 4. Colibri (JustVugg/colibri) — OpenAI-compatible, default port 8000
+  const colibriHost = (process.env.COLIBRI_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
+  const colibriModels = await tryJson(`${colibriHost}/v1/models`);
+  if (Array.isArray(colibriModels?.data) && colibriModels.data.length) {
+    engines.push({ engine: 'colibri', host: colibriHost, count: colibriModels.data.length });
+    for (const m of colibriModels.data) {
+      if (!m?.id) continue;
+      models.push({
+        engine: 'colibri',
+        model: m.id,
+        sizeGB: null,
+        upstreamBase: `${colibriHost}/v1`,
+      });
+    }
+  }
   const data = {
     ok: models.length > 0,
     hostname: os.hostname(),
@@ -554,11 +570,28 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const upstreamUrl = `${matched.upstreamBase}/chat/completions`;
-      const upstreamRes = await fetch(upstreamUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...parsed, model: matched.model, stream: false }),
+      const upstreamCtrl = new AbortController();
+      const upstreamTimer = setTimeout(() => upstreamCtrl.abort(), 90_000);
+      req.on('close', () => {
+        if (!res.writableEnded) upstreamCtrl.abort();
       });
+      const safeMaxTokens = Math.max(32, Math.min(Number(parsed.max_tokens) || 400, 450));
+      let upstreamRes;
+      try {
+        upstreamRes = await fetch(upstreamUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: upstreamCtrl.signal,
+          body: JSON.stringify({
+            ...parsed,
+            model: matched.model,
+            max_tokens: safeMaxTokens,
+            stream: false,
+          }),
+        });
+      } finally {
+        clearTimeout(upstreamTimer);
+      }
       const txt = await upstreamRes.text();
       res.writeHead(upstreamRes.status, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
       res.end(txt);
@@ -720,6 +753,27 @@ const server = http.createServer(async (req, res) => {
       xAgentJob.busy = false;
       xAgentJob.mode = null;
       xAgentJob.startedAt = null;
+    }
+    return;
+  }
+
+  if (pathname === '/api/whatsapp-agent/qr') {
+    try {
+      if (!fs.existsSync(WA_QR_PATH)) {
+        res.writeHead(404, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ ok: false, error: 'QR not ready yet' }));
+        return;
+      }
+      const png = fs.readFileSync(WA_QR_PATH);
+      res.writeHead(200, {
+        ...CORS_HEADERS,
+        'Content-Type': 'image/png',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      });
+      res.end(png);
+    } catch (err) {
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
     }
     return;
   }
@@ -912,6 +966,10 @@ server.listen(PORT, HOST, () => {
     .then((r) => console.log(`[Base Server] Startup sync: ${r.providers?.join(' + ') || 'Local DB only'}${r.error ? ' (' + r.error + ')' : ''}`))
     .catch(() => {});
 });
+
+// Keep the local-AI status fresh so /api/health always reflects Ollama / LM Studio reality
+probeLocalAiEngines({ force: true }).catch(() => {});
+setInterval(() => { probeLocalAiEngines({ force: true }).catch(() => {}); }, 30_000);
 
 const syncTimer = setInterval(() => {
   syncBaseServerWithCloud().catch(() => {});

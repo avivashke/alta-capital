@@ -202,7 +202,7 @@ async function callEntry(entry, opts) {
     const urlsToTry = entry.provider === 'gateway' ? gatewayCandidateUrls(url) : [url];
 
     for (const targetUrl of urlsToTry) {
-      const isLocal = entry.provider === 'ollama' || /\/api\/local-ai|127\.0\.0\.1:11434|localhost:11434|127\.0\.0\.1:11435|localhost:11435/i.test(targetUrl || '');
+      const isLocal = entry.provider === 'ollama' || /\/api\/local-ai|127\.0\.0\.1:11434|localhost:11434|127\.0\.0\.1:11435|localhost:11435|127\.0\.0\.1:8000|localhost:8000/i.test(targetUrl || '');
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), isLocal ? LOCAL_TIMEOUT_MS : TIMEOUT_MS);
       try {
@@ -448,13 +448,14 @@ export async function chatDetailed({ system, messages, maxTokens = 1200 }) {
   const temperature = Number(state.settings?.llm?.temperature ?? 0.4);
   const list = candidates(state);
   // Pick at most ONE fast local model (prefer 3B qwen2.5/llama3 via Base Server proxy to avoid VRAM swapping)
-  const localAll = list.filter((e) => e.provider === 'ollama' || /\/api\/local-ai|127\.0\.0\.1:11434|localhost:11434/i.test(e.baseUrl || ''));
+  const localAll = list.filter((e) => e.provider === 'ollama' || /\/api\/local-ai|127\.0\.0\.1:11434|localhost:11434|127\.0\.0\.1:8000|localhost:8000/i.test(e.baseUrl || ''));
   const localFast = localAll.find((e) => /\/api\/local-ai/i.test(e.baseUrl || '') && /qwen2\.5:3b/i.test(e.model || ''))
     || localAll.find((e) => /qwen2\.5:3b/i.test(e.model || ''))
     || localAll.find((e) => /llama3\.2:3b/i.test(e.model || ''))
     || localAll[0];
   const cloudRest = list.filter((e) => !localAll.includes(e));
-  const queue = [...(localFast ? [localFast] : []), ...cloudRest.slice(0, 6)];
+  const colibriEntry = localAll.find((e) => e !== localFast && /:8000\b/.test(e.baseUrl || ''));
+  const queue = [...(localFast ? [localFast] : []), ...(colibriEntry ? [colibriEntry] : []), ...cloudRest.slice(0, 6)];
   // Keyless web/proxy entries are always in the queue, even when the pool is full.
   for (const entry of freeZeroKeyEntries()) {
     if (!queue.some((q) => q.provider === entry.provider && q.model === entry.model)) queue.push(entry);

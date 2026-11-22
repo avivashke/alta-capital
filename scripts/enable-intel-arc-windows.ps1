@@ -33,9 +33,10 @@ $envMap = @{
   "OLLAMA_VULKAN"          = "1"
   "OLLAMA_FLASH_ATTENTION" = "1"
   "OLLAMA_KV_CACHE_TYPE"   = "q8_0"
-  "OLLAMA_KEEP_ALIVE"      = "15m"
-  "OLLAMA_NUM_PARALLEL"    = "2"
-  "OLLAMA_ORIGINS"         = "*"
+  "OLLAMA_KEEP_ALIVE"        = "15m"
+  "OLLAMA_MAX_LOADED_MODELS" = "1"
+  "OLLAMA_NUM_PARALLEL"      = "1"
+  "OLLAMA_ORIGINS"           = "*"
   "OLLAMA_HOST"            = "0.0.0.0:11434"
 }
 
