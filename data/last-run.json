@@ -1,5 +1,5 @@
 {
- "at": "2026-11-22T01:09:24.102Z",
+ "at": "2026-11-22T08:04:37.831Z",
  "summary": [
   {
    "desk": "desk_5m",
@@ -7,64 +7,64 @@
    "ok": true,
    "published": false,
    "version": null,
-   "oos": -2.03,
-   "robustness": 26
+   "oos": 5.21,
+   "robustness": 45
   },
   {
-   "desk": "desk_1w",
-   "timeframe": "1w",
-   "ok": true,
-   "published": true,
-   "version": "v1.11",
-   "oos": 22.64,
-   "robustness": 77
-  },
-  {
-   "desk": "desk_nvda",
+   "desk": "yt_bot_poc_point_of_control_structure_pullba",
    "timeframe": "1h",
    "ok": true,
-   "published": true,
-   "version": "v1.6",
-   "oos": 33.89,
-   "robustness": 80
+   "published": false,
+   "version": null,
+   "oos": 8.27,
+   "robustness": 45
   },
   {
-   "desk": "desk_spy",
-   "timeframe": "1d",
+   "desk": "yt_bot_matt_schoeneberger_structure_pullback",
+   "timeframe": "1h",
    "ok": true,
    "published": false,
-   "version": "v1.5",
-   "oos": 21.22,
-   "robustness": 85
+   "version": null,
+   "oos": 8.8,
+   "robustness": 47
   },
   {
-   "desk": "desk_aapl",
-   "timeframe": "1d",
+   "desk": "desk_5m",
+   "timeframe": "5m",
    "ok": true,
    "published": false,
-   "version": "v1.5",
-   "oos": 15.49,
-   "robustness": 82
+   "version": null,
+   "oos": 6.01,
+   "robustness": 75
+  },
+  {
+   "desk": "desk_15m",
+   "timeframe": "15m",
+   "ok": true,
+   "published": false,
+   "version": "v1.3",
+   "oos": 2.39,
+   "robustness": 51
   }
  ],
  "stats": {
-  "cycles": 129,
-  "backtests": 27800,
+  "cycles": 134,
+  "backtests": 29156,
   "deployments": 55,
-  "scans": 124,
+  "scans": 132,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 54768,
+  "durationMs": 72518,
   "node": "v20.20.2"
  },
  "ai": {
   "source": "model",
   "focusDesk": "desk_5m",
   "strategyId": "rsi_reversion",
-  "rationale": "הדסק 5m הוא החזקת החולשה עם חוסן נמוך ו-OOS שלילי; התאמת פרמטרים במגבלת ה‑range של rsi_reversion תורמת לשיפור ה‑robustness וה‑profit factor תוך שמירה על סיכון ניהולי.",
+  "rationale": "desk_5m הוא השולחן החלש ביותר עם OOS שלילי ו-robustness נמוך; חיזוק הפרמטרים בתוך הטווחים המותרים יכול לשפר את ביצועי הרווח והיציבות.",
   "provider": "pollinations",
   "model": "openai-fast",
   "accountId": null,
