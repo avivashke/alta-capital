@@ -6,7 +6,7 @@
 # OOS: 8.43% · Sharpe 1.61
 # Params: {"emaP":14,"atrP":19,"mult":2.7,"erP":16,"erMin":0.5,"atrStop":2.5,"rr":2.9}
 # Target platform: Freqtrade
-# Generated: 2026-11-23T02:34:30.372Z
+# Generated: 2026-11-23T11:21:14.516Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:

@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-23T02:34:30.384Z",
+ "generatedAt": "2026-11-23T11:21:14.533Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -104,7 +104,7 @@
    "label": "תוך־יומי · 15 דקות",
    "timeframe": "15m",
    "symbol": "ETHUSDT",
-   "status": "optimizing",
+   "status": "dry-run",
    "version": "v1.3",
    "strategyId": "rsi_reversion",
    "params": {
@@ -711,52 +711,57 @@
    "timeframe": "1d",
    "symbol": "BTCUSDT",
    "status": "live",
-   "version": "v1.1",
+   "version": "v1.2",
    "strategyId": "structure_pullback",
    "params": {
     "fast": 14,
     "slow": 45,
-    "pullbackBars": 4,
+    "pullbackBars": 3,
     "rsiMid": 52,
-    "atrStop": 2.4,
+    "atrStop": 2.1,
     "rr": 2.9
    },
    "metrics": {
-    "returnPct": 90.95,
-    "maxDrawdownPct": 7.66,
-    "sharpe": 1.19,
-    "profitFactor": 1.96,
-    "winRate": 47,
-    "trades": 149,
-    "avgR": 0.3,
-    "expectancy": 12.2,
-    "exposurePct": 74.4,
-    "bestTradePct": 7.844,
-    "worstTradePct": -2.587,
-    "finalEquity": 3818.96,
+    "returnPct": 92.71,
+    "maxDrawdownPct": 8.27,
+    "sharpe": 1.13,
+    "profitFactor": 1.85,
+    "winRate": 52.5,
+    "trades": 162,
+    "avgR": 0.281,
+    "expectancy": 11.44,
+    "exposurePct": 72.5,
+    "bestTradePct": 7.878,
+    "worstTradePct": -2.759,
+    "finalEquity": 3854.16,
     "curvePoints": 2880,
-    "totalFees": 130.6492,
-    "barsInMarket": 2143
+    "totalFees": 163.4972,
+    "barsInMarket": 2087
    },
    "oos": {
-    "returnPct": 20.67,
-    "maxDrawdownPct": 6.38,
-    "sharpe": 1.16,
-    "profitFactor": 1.91,
-    "winRate": 50,
-    "trades": 50,
-    "avgR": 0.261,
-    "expectancy": 8.26,
-    "exposurePct": 75.2,
-    "bestTradePct": 4.95,
-    "worstTradePct": -1.633,
-    "finalEquity": 2413.34,
+    "returnPct": 20.95,
+    "maxDrawdownPct": 6,
+    "sharpe": 1.08,
+    "profitFactor": 1.89,
+    "winRate": 56.6,
+    "trades": 53,
+    "avgR": 0.249,
+    "expectancy": 7.9,
+    "exposurePct": 73.6,
+    "bestTradePct": 4.945,
+    "worstTradePct": -1.732,
+    "finalEquity": 2419,
     "curvePoints": 900,
-    "totalFees": 36.1118,
-    "barsInMarket": 677
+    "totalFees": 43.1726,
+    "barsInMarket": 662
    },
-   "bestReturn": 20.67,
+   "bestReturn": 20.95,
    "versions": [
+    {
+     "version": "v1.2",
+     "at": 1795432793238,
+     "oos": 20.95
+    },
     {
      "version": "v1.1",
      "at": 1795274109244,
@@ -778,45 +783,45 @@
    "strategyId": "structure_pullback",
    "params": {
     "fast": 18,
-    "slow": 78,
+    "slow": 73,
     "pullbackBars": 2,
     "rsiMid": 54,
     "atrStop": 2,
     "rr": 2.7
    },
    "metrics": {
-    "returnPct": -13.29,
-    "maxDrawdownPct": 26.17,
-    "sharpe": -1.04,
-    "profitFactor": 0.85,
-    "winRate": 28.6,
-    "trades": 206,
-    "avgR": -0.041,
-    "expectancy": -1.29,
-    "exposurePct": 72.2,
-    "bestTradePct": 3.452,
-    "worstTradePct": -1.639,
-    "finalEquity": 1734.25,
+    "returnPct": -8.64,
+    "maxDrawdownPct": 22.25,
+    "sharpe": -0.62,
+    "profitFactor": 0.9,
+    "winRate": 29.1,
+    "trades": 203,
+    "avgR": -0.025,
+    "expectancy": -0.86,
+    "exposurePct": 71.9,
+    "bestTradePct": 3.64,
+    "worstTradePct": -1.618,
+    "finalEquity": 1827.22,
     "curvePoints": 3880,
-    "totalFees": 603.1537,
-    "barsInMarket": 2803
+    "totalFees": 624.9035,
+    "barsInMarket": 2789
    },
    "oos": {
-    "returnPct": 8.52,
-    "maxDrawdownPct": 8.15,
-    "sharpe": 2.36,
-    "profitFactor": 1.34,
-    "winRate": 37.3,
-    "trades": 59,
-    "avgR": 0.098,
-    "expectancy": 2.89,
-    "exposurePct": 72.8,
-    "bestTradePct": 4.149,
-    "worstTradePct": -1.75,
-    "finalEquity": 2170.39,
+    "returnPct": 7.05,
+    "maxDrawdownPct": 8.01,
+    "sharpe": 1.98,
+    "profitFactor": 1.27,
+    "winRate": 36.2,
+    "trades": 58,
+    "avgR": 0.083,
+    "expectancy": 2.4,
+    "exposurePct": 70.8,
+    "bestTradePct": 4.143,
+    "worstTradePct": -1.747,
+    "finalEquity": 2140.97,
     "curvePoints": 1200,
-    "totalFees": 193.3878,
-    "barsInMarket": 873
+    "totalFees": 189.7037,
+    "barsInMarket": 850
    },
    "versions": []
   },
@@ -836,43 +841,106 @@
     "rr": 2.5
    },
    "metrics": {
-    "returnPct": -11.25,
-    "maxDrawdownPct": 22.55,
-    "sharpe": -0.87,
-    "profitFactor": 0.87,
-    "winRate": 33,
-    "trades": 191,
-    "avgR": -0.036,
-    "expectancy": -1.18,
+    "returnPct": -10.17,
+    "maxDrawdownPct": 22.62,
+    "sharpe": -0.76,
+    "profitFactor": 0.89,
+    "winRate": 33.2,
+    "trades": 193,
+    "avgR": -0.032,
+    "expectancy": -1.06,
     "exposurePct": 75.2,
-    "bestTradePct": 3.328,
-    "worstTradePct": -1.641,
-    "finalEquity": 1775.09,
+    "bestTradePct": 3.408,
+    "worstTradePct": -1.68,
+    "finalEquity": 1796.64,
     "curvePoints": 3880,
-    "totalFees": 562.6674,
+    "totalFees": 581.7251,
     "barsInMarket": 2919
    },
    "oos": {
-    "returnPct": 9.14,
+    "returnPct": 7.53,
     "maxDrawdownPct": 7.74,
-    "sharpe": 2.56,
-    "profitFactor": 1.37,
-    "winRate": 43.9,
-    "trades": 57,
-    "avgR": 0.108,
-    "expectancy": 3.21,
-    "exposurePct": 72.1,
-    "bestTradePct": 3.878,
-    "worstTradePct": -1.755,
-    "finalEquity": 2182.83,
+    "sharpe": 2.13,
+    "profitFactor": 1.28,
+    "winRate": 41.4,
+    "trades": 58,
+    "avgR": 0.088,
+    "expectancy": 2.57,
+    "exposurePct": 71.9,
+    "bestTradePct": 3.865,
+    "worstTradePct": -1.749,
+    "finalEquity": 2150.6,
     "curvePoints": 1200,
-    "totalFees": 186.8894,
-    "barsInMarket": 865
+    "totalFees": 189.8529,
+    "barsInMarket": 863
    },
    "versions": []
   }
  ],
  "ideas": [
+  {
+   "title": "Your backtest is probably lying to you. Strangers on Reddit showed me 7 ways it does - Reddit",
+   "source": "Reddit (Indexed)",
+   "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPMmNvMnFkWDhNazItYkFvZHRKLS1pVG1YdE5RYk9wa2lPRDhBRzlHUzVwLXUtYWR2RG5BOVdYeGNfS1J0M1NFVUx2WUlXVDA3SEhsd2JhRzNRRzVNbmZ3YVJWam9GTGx1UDJzVFhWY3hCck9ZZDlYeDgydEFOM1ZLb2k1c1NiaXBGY3VvblJMOHlyVUtUMmhtUjVETmctWjRDR2gyMlZn?oc=5",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "[arXiv] Trust and Lottery-Related Anomalies",
+   "source": "arXiv q-fin",
+   "url": "https://arxiv.org/abs/2611.27020",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "[arXiv] The Rural Margin of Territorial Peace: Within-Municipality Evidence from Colombia",
+   "source": "arXiv q-fin",
+   "url": "https://arxiv.org/abs/2611.26882",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "[arXiv] Are Calibrated Decision Models Calibrated on Markets? Geolocated News, Markov Switching and a System One Model",
+   "source": "arXiv q-fin",
+   "url": "https://arxiv.org/abs/2611.26716",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "[arXiv] Held-to-Maturity Accounting: Hidden Losses and Systemic Fragility",
+   "source": "arXiv q-fin",
+   "url": "https://arxiv.org/abs/2611.26700",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "[arXiv] Error analysis for the numerical approximation of the quantile hedging problem",
+   "source": "arXiv q-fin",
+   "url": "https://arxiv.org/abs/2611.26673",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "[arXiv] A Solvency II-Based Framework for Pricing Structural Longevity Risk under an Affine Mortality Model",
+   "source": "arXiv q-fin",
+   "url": "https://arxiv.org/abs/2611.26670",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "[arXiv] Distributional Deep Hedging",
+   "source": "arXiv q-fin",
+   "url": "https://arxiv.org/abs/2611.26652",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "[arXiv] VerifiQuant: Governance-by-Execution for Financial LLM Workflows",
+   "source": "arXiv q-fin",
+   "url": "https://arxiv.org/abs/2611.26649",
+   "strategy": null,
+   "tested": false
+  },
   {
    "title": "PropFirmTrader: The SIMPLE Trading Strategy Behind $1,000,000+ In Profits (3 Steps)",
    "source": "YouTube · יונתן",
@@ -1015,68 +1083,10 @@
    "url": "https://github.com/krishyaa06/prism-backtest",
    "strategy": "rsi_reversion",
    "tested": false
-  },
-  {
-   "title": "galafis/quantitative-trading-engine",
-   "source": "GitHub",
-   "url": "https://github.com/galafis/quantitative-trading-engine",
-   "strategy": "rsi_reversion",
-   "tested": false
-  },
-  {
-   "title": "Michael Jenkins: Michael S Jenkins Explains Gann's Time and Price Squared",
-   "source": "YouTube · יונתן",
-   "url": "https://www.youtube.com/watch?v=oyhAPUkjqc0",
-   "tested": false
-  },
-  {
-   "title": "TradeForward: Daytrading works with Square of 9 Michael S. Jenkins / Gann!",
-   "source": "YouTube · יונתן",
-   "url": "https://www.youtube.com/watch?v=ugjJjn9ACwU",
-   "tested": false
-  },
-  {
-   "title": "Wd Gann Trader: Gann Cosmogram | The only true method that will change the way you d",
-   "source": "YouTube · יונתן",
-   "url": "https://www.youtube.com/watch?v=5BfcictWOc8",
-   "tested": false
-  },
-  {
-   "title": "Wd Gann Trader: Gann Cosmogram Nifty analysis using Jupiter-Jupiter Opposition",
-   "source": "YouTube · יונתן",
-   "url": "https://www.youtube.com/watch?v=vFc029nk_8Q",
-   "tested": false
-  },
-  {
-   "title": "Silvia Rumer: Learn How To Grow Your Portfolio With Silvia Rumer",
-   "source": "YouTube · יונתן",
-   "url": "https://www.youtube.com/watch?v=3_0yQCaVICw",
-   "tested": false
-  },
-  {
-   "title": "rahul-singh-ai/TriSignal-NeuralFusion-Trader",
-   "source": "GitHub",
-   "url": "https://github.com/rahul-singh-ai/TriSignal-NeuralFusion-Trader",
-   "strategy": "rsi_reversion",
-   "tested": false
-  },
-  {
-   "title": "officiallyutso/stockmarket",
-   "source": "GitHub",
-   "url": "https://github.com/officiallyutso/stockmarket",
-   "strategy": "ema_trend",
-   "tested": false
-  },
-  {
-   "title": "AkashSasikumar47/pine-strategy-indicators-v5",
-   "source": "GitHub",
-   "url": "https://github.com/AkashSasikumar47/pine-strategy-indicators-v5",
-   "strategy": "ema_trend",
-   "tested": false
   }
  ],
  "sentiment": {
-  "updatedAt": 1795401269283,
+  "updatedAt": 1795432873709,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 11,
@@ -1101,88 +1111,519 @@
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.59,
-    "bias": "דובי",
-    "technical": -0.7,
+    "score": -0.03,
+    "bias": "ניטרלי",
+    "technical": 0.7,
     "news": -0.18,
     "drivers": [
-     "Bitcoin Core CVE-2026-117348: Node stall through duplicate orphan announcements",
-     "Gemini 4 Neon solves Bitcoin puzzle from 2024",
-     "Bitcoin falls to its lowest in two years"
+     "Bitcoin ETFs shed $1.8B in third-largest weekly outflow",
+     "Here’s what happened in crypto today",
+     "Bitcoin Rebounds to $61K After Weekend Plunge to Two-Year Low"
     ],
-    "price": 60788
+    "price": 61358.2
    },
    "ETHUSDT": {
-    "score": -0.84,
-    "bias": "דובי",
-    "technical": -0.7,
-    "news": -1,
-    "drivers": [
-     "South Korean exchanges halt CYBER transfers amid suspected bridge exploit"
-    ],
-    "price": 1706.52
+    "score": 0.22,
+    "bias": "שורי",
+    "technical": 0.7,
+    "news": 0,
+    "drivers": [],
+    "price": 1724.55
    },
    "NVDA": {
-    "score": -0.18,
-    "bias": "דובי",
+    "score": -0.15,
+    "bias": "ניטרלי",
     "technical": -0.5,
-    "news": 0.24,
+    "news": 0.37,
     "drivers": [
-     "U.S. Tracked Alice Huang's Contacts with China Spy Agency During Nvidia Affair",
-     "Why Nvidia Must Fall: The End of the GPU Monopoly Era",
-     "China's Spies Set Sights on A.I. Chips Years Before Nvidia Scandal"
+     "If Nvidia matched the forward PE of Costco, Nvidia would have a market cap of $16T - Reddit",
+     "NVIDIA Announces Financial Results for Third Quarter Fiscal 2027 - Reddit",
+     "Trump’s accounts traded up to $97.5 million in Nvidia as Huang gained White House access - Reddit"
     ],
     "price": 125.53
    },
    "SPY": {
-    "score": -0.23,
+    "score": -0.55,
     "bias": "דובי",
     "technical": -0.5,
-    "news": 0.09,
+    "news": -0.3,
     "drivers": [
-     "U.S. Tracked Alice Huang's Contacts with China Spy Agency During Nvidia Affair",
-     "Federal Reserve announces College Fed Challenge winners",
-     "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances"
+     "Fed’s Waller says central bank may need to ‘shock people’ with half-point rate hike - Reddit",
+     "Prediction markets outlook for stocks in 2026 dims amid AI sell-off",
+     "Warsh wants Fed officials to talk less. Instead, they’re talking more"
     ],
     "price": 689.81
    },
    "AAPL": {
-    "score": -0.36,
-    "bias": "דובי",
+    "score": -0.11,
+    "bias": "ניטרלי",
     "technical": -0.5,
-    "news": 0,
+    "news": 0.5,
     "drivers": [
-     "What Is Apple (AAPL) Planning With Its New Autonomous AI Agent?"
+     "What iShares S&P 500 Value ETF (IVE) Bought: Apple Leads on Nov. 19",
+     "‘MoldyRoost’ ads can steal crypto wallet recovery phrases from iPhones"
     ],
     "price": 342.56
    }
   },
   "headlines": [
    {
-    "title": "Show HN: Biohacking in Chess – can coffee make you a better player?",
-    "url": "https://plantsresearch.pro/chess-lab",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795397919000,
-    "score": -1
+    "title": "Why This Market Pullback Is a Gift for Buying Google Alphabet (GOOGL) - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNc2haZHRxVlNNZE0tVF9fZnhlWFBXcXdDOXhxcGticnB2NnZ3SGdhd1lGN2ZIMEFCWHJobEo5VGgydmdqUUNWSnRfODA5anVCZF9mb0FmNEJSMjhCVFZodk1JWE1uU0dRdngxVWlJWmpFb2ptNWtkNHdnU1hUUnJjMTcwY0JTdHdLcFlSY2NTcDY1M1EwR1UydFVLWQ?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Why This Market Pullback Is a Gift for Buying Google Alphabet (GOOGL) &nbsp;&nbsp; Reddit",
+    "at": 1795380405000,
+    "score": 1
    },
    {
-    "title": "Show HN: I used Fable to make an open source 80s-style Skyrim browser game",
-    "url": "https://thanes-quest.daventry.io/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795396559000,
+    "title": "Relax and Buy the Dip - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE9HY0thaHRwbExQWjl0SGJpcG1tcmM2YUxKUThEbE1xX2pqUGZGbXhfQ2dFWlVUQWF2YVBLVkkzbFE4QkEzRjJmeExyMV90RUE1dFhENmUwR084TnJhVkNWOGg3N3dXMUowYVF3MWlDLUZyOWx1UkJWbHA2UQ?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Relax and Buy the Dip &nbsp;&nbsp; Reddit",
+    "at": 1795024517000,
+    "score": 1
+   },
+   {
+    "title": "Fed’s Waller says central bank may need to ‘shock people’ with half-point rate hike - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxQYWNCa3liRGRZRHVjbkpfS1lUSFU4Q1NSeXVuMjVUbnVMWC1FVDd0TmdFY1Q5dzE2Zk5Hanl3VXZFaGRqdHJvUF9UdkxsSGFuYmYtSExPLTlZdGRNMjBiRUdzaThvX1BxYkZDcDd2aFk2YXNYbG5XOFlPbFZoVmNEODhCZFhEZmpkd1JJVkpKSmhlNmZYcE1UVGg0dnNpdw?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Fed’s Waller says central bank may need to ‘shock people’ with half-point rate hike &nbsp;&nbsp; Reddit",
+    "at": 1795008623000,
+    "score": -1.414213562373095
+   },
+   {
+    "title": "Jensen Huang breaks his silence on X. Released Statement that he'd be honored to return as CEO. - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxOYTlsQzdiR3Jja2JnMmJaWGpmN21obTJjQURmOGtyMkYtYmM1WXhwNlpyMkhsVW5jY21DQllsMVpFcjN3dWZ4MExKc1pqZVJmejVPYm1zMmFNOXpxVmxnMWFCUUVQUHVJZ3g1cTNuc29GMUZkQ3Y3dzJiTUJ3cFJnY3pkdTlQVDNXSkFiZkg5MXdUSUFMYVUyc05vcw?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Jensen Huang breaks his silence on X. Released Statement that he'd be honored to return as CEO. &nbsp;&nbsp; Reddit",
+    "at": 1794932943000,
     "score": 0
    },
    {
-    "title": "Cyberpunk Reading Map",
-    "url": "https://loreful.app/vault/cyberpunk",
+    "title": "If Nvidia matched the forward PE of Costco, Nvidia would have a market cap of $16T - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxQZXB0VGtIdms4VHlON2MyMWF2Y0NoVGd3eURuYUZuUWxsOWJhVnVvc25PNmJZLUttUFJ6blVycGxIZ2tTZFV5U1F2bXpSdnVaQS1uU1FEeVRRcXpqa2RJUFZHT29hYnlJN1lVYUZGUktrODZOdDBpWlc5TVJoVy1YQWhxSnp3TC1YcXMwX3kyTVdRZVFQVVRQNGgtYjJiWE9Y?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "If Nvidia matched the forward PE of Costco, Nvidia would have a market cap of $16T &nbsp;&nbsp; Reddit",
+    "at": 1794956955000,
+    "score": 0
+   },
+   {
+    "title": "NVIDIA Announces Financial Results for Third Quarter Fiscal 2027 - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOWWRDUmZUZDBRdEFtM2hwNWU0Q0NaTVFoUTVMZWdGVkNxeTg1QzdZYi1uNW9seFNDWGtISnNmd05jSTFMajNQSUphQlNnR0tkTnBRQVlpRmJNWlYtVmd5NFM0VmRhZkJ4UnRNQWxLQTcxMmthc2FQamFISVF6UjdUSk1ELV8xaDVuZzJnYlZZWDN5ekk0ZDgwcUl3?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "NVIDIA Announces Financial Results for Third Quarter Fiscal 2027 &nbsp;&nbsp; Reddit",
+    "at": 1794950657000,
+    "score": 0
+   },
+   {
+    "title": "Relief Rally, then bottom below 6300, then ATH. AI bubble is NOT OVER. - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxOVkhRcnhqcVd3Y21yczdTMEV1eXREc3hnYUgtUlVaSkxkVGllUWRiOG05Z1QxRVdyNlNmS1h4LVN3QkxOaVN3eWFXOWlDWHNmaVZtTW5GWm9TTjB3UllLOUVtVUYyR0JIWDI3NFZNcFhJWGlENEtNTk1YUTVfWFdWeXcxdXRLNmgwQThQZkdTem1DVHpuTzRBUWVwN0VPZ3Y1OEE?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Relief Rally, then bottom below 6300, then ATH. AI bubble is NOT OVER. &nbsp;&nbsp; Reddit",
+    "at": 1795406165000,
+    "score": 1
+   },
+   {
+    "title": "Anthropic was supposed to save the AI trade. What went wrong? - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPZDliMm05NHIwMGd1YVZqSk5WY0tnc0dKeDZnNVI5RktIaGpzS3pMOXA5dURLVHJON2ZqTU9FTDZ0dEtuTzJBc29mQ2I3VVNEdm9sOEE4X1c0UVpkQk14cVlMZFN1Zk9yUk1SZ3Q1eExfWUl1bWsxaWl1MDJsRXQzZllSSngyY3pSS29BR0gwVmwtTUZGTFI1bFpiR0p4bGM?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Anthropic was supposed to save the AI trade. What went wrong? &nbsp;&nbsp; Reddit",
+    "at": 1795142888000,
+    "score": 0
+   },
+   {
+    "title": "Your backtest is probably lying to you. Strangers on Reddit showed me 7 ways it does - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPMmNvMnFkWDhNazItYkFvZHRKLS1pVG1YdE5RYk9wa2lPRDhBRzlHUzVwLXUtYWR2RG5BOVdYeGNfS1J0M1NFVUx2WUlXVDA3SEhsd2JhRzNRRzVNbmZ3YVJWam9GTGx1UDJzVFhWY3hCck9ZZDlYeDgydEFOM1ZLb2k1c1NiaXBGY3VvblJMOHlyVUtUMmhtUjVETmctWjRDR2gyMlZn?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Your backtest is probably lying to you. Strangers on Reddit showed me 7 ways it does &nbsp;&nbsp; Reddit",
+    "at": 1795179415000,
+    "score": 0
+   },
+   {
+    "title": "Trump’s accounts traded up to $97.5 million in Nvidia as Huang gained White House access - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxQWlpmelA3dFk2ZXFmVjR6a2w1N0E0UkRNUXJ5QmxseDVxZGlTRjl2NWUzN2NTTVc2N0NBUjJGQVY3Zno0d1pJd3Rzb3lKRE44UVRtQ1JoOEE0Rm5Nc3ZOU1FzRjlyRTBSQThqQTNzN2xHNGh0UUpBQjBoblBoaFpEdlBEUS13OVYtSXExbDdJSDJZNzM4SFFyOQ?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Trump’s accounts traded up to $97.5 million in Nvidia as Huang gained White House access &nbsp;&nbsp; Reddit",
+    "at": 1794922573000,
+    "score": 1
+   },
+   {
+    "title": "Crash was said to be imminent. Is this it? Or are we just in a correction? - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxQWm1pa3JKSDJhejM1d1VwSXFvN3NTQ0w2b3JadnFURkprWkRfVW41SjcwZDhBMXl6VVBsUWhnZUV6VUFwYzRfZkxoMHRlQS1kRG1TRlFkZlk5V0xOZ3QyVUtiOW1zTHBvMmpPUkpIZkdZTFRrcUxJZ3lwbVA1bG0wYmU5NzJWSEV4TURRRnFWb1pIckI3c3M2dEdMZk10RTh6b3c?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Crash was said to be imminent. Is this it? Or are we just in a correction? &nbsp;&nbsp; Reddit",
+    "at": 1795251467000,
+    "score": -1
+   },
+   {
+    "title": "Reminder that if you get high on bull markets and get frightened on bear markets you have no business in the stock market. - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNc20yNXZsRTNVckg4Ym80ZTI5UmFMdERlMXFwS0hnSnItMnRCTndWdU9ZTmhaNVgxU0VOaThjUlNEUUFvemtpTFhBSGkxX1J6LWFrTWRnWFBVbjlDb0FYcnVSRUx2VUdMenlsODd5REFoVDREZGRySzhwS3lhcXY4X3hEN0lrQWFLaXJGNExLZ0lmMTJzZlp5S21lU3l3LWtL?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Reminder that if you get high on bull markets and get frightened on bear markets you have no business in the stock market. &nbsp;&nbsp; Reddit",
+    "at": 1795129418000,
+    "score": 0
+   },
+   {
+    "title": "The circular financing argument against Nvidia makes no sense to me - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPMkQwOGVxLThVWTktMUgwMDBIaGRrRGpzbV82ODZScUpValZhX2VBMWF1N0djRGJlS0FXN25MaTBPaU9MeUdYTjBySF9LbVFxbzZoWmdHR0FGMWY5RThnQzF6RHVkLUNDeThyNm9GQjd3NEd0eUQtaGlPWXVULXJ5dmg4aVFwV3NnQUM0WVczZ3Z1WlppRmFEcjA0UGE?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "The circular financing argument against Nvidia makes no sense to me &nbsp;&nbsp; Reddit",
+    "at": 1795206654000,
+    "score": 1
+   },
+   {
+    "title": "Beyond the immediate sell-off: What are the 2nd and 3rd order effects of Jensen Huang’s exit on AI capex, chip pricing, and ecosystem valuations? - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxQSTFzWndpYXNlcjlFNzJwMVlRX24tN1AwQkZnWlhtNFl5a1V4QmNHMzBVeHM1WTUyVVVkcG51eE5YR0RYdTZ3eDNJTG9RSEg2MXYyZkJ1OVVqanNXWFlFbEJSc09oVW5RSkdvM2pOVnBlclVZR0xDbTVKXzJacWhKbHU4RjVPajQyT1lKbl94dDA5UFpLMzNiZzVoS3ZzaU14enM5QQ?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Beyond the immediate sell-off: What are the 2nd and 3rd order effects of Jensen Huang’s exit on AI capex, chip pricing, and ecosystem valuations? &nbsp;&nbsp; Reddit",
+    "at": 1795369547000,
+    "score": -1
+   },
+   {
+    "title": "Is it a gamble? - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE9vNFI5VEx2VFhpRWp6V3hUa1M5U0FSM0pfNGJPbk9FWG9PVVBXNWlJR2ZDSldqbmthaE1NQmZTOVN5dzhxZThPOXV0T2JoOHZGTEpvVjV3NFJZcy1nbXZvTEZGRmg4S1YweXJMWEJfajFrU3gzNmpKXw?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "Is it a gamble? &nbsp;&nbsp; Reddit",
+    "at": 1795339332000,
+    "score": 0
+   },
+   {
+    "title": "How's everyone's algo doing lately? - Reddit",
+    "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOXzh0cWJHd2U4eDRoNHBWQXd5dk9JTnp3c0h3LVUtSV9FZGYwa3pGVnljRloxVGpid0kzMEM1bXg2anhSa1YtLWoyOFprR3doNmtmWnljclNmaW9FeWViVjBOZ3l3WVZpVWgteEZGdVB4eVBqdjl0MUVHMUdjMDBtMlJOSlZHdXZiMklqVTVwSWc?oc=5",
+    "source": "Reddit (Indexed)",
+    "channelKind": "reddit",
+    "body": "How's everyone's algo doing lately? &nbsp;&nbsp; Reddit",
+    "at": 1795203029000,
+    "score": 0
+   },
+   {
+    "title": "Employees at Eric Trump-backed robot startup lose health benefits as company's cash crunch deepens",
+    "url": "https://www.cnbc.com/2026/11/22/foundation-future-industries-health-benefits-payroll-base-group.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Foundation is pursuing an emergency bridge loan and has been in talks with VC firms as it waits for a $150 million investment from South Korea's Base Group.",
+    "at": 1795373705000,
+    "score": 0
+   },
+   {
+    "title": "How China is using summits to expand its global influence",
+    "url": "https://www.cnbc.com/2026/11/21/china-xi-trump-putin-global-diplomacy-shenzhen.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Chinese President Xi Jinping has helped coordinate yet another photo-op of global significance.",
+    "at": 1795240802000,
+    "score": 0
+   },
+   {
+    "title": "Prediction markets outlook for stocks in 2026 dims amid AI sell-off",
+    "url": "https://www.cnbc.com/2026/11/20/sp-500-8000-kalshi-odds-ai-selloff.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Odds that the S&P 500 will cross 8,000, which were once north of 70%, are extremely low on platform Kalshi.",
+    "at": 1795204743000,
+    "score": -1
+   },
+   {
+    "title": "Warsh wants Fed officials to talk less. Instead, they’re talking more",
+    "url": "https://www.cnbc.com/2026/11/20/warsh-fed-forward-guidance-rate-hikes.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Fed officials have been rushing to the microphones lately while the Fed chairman stays on the sidelines.",
+    "at": 1795209048000,
+    "score": 0
+   },
+   {
+    "title": "I&#x2019;ve been married for 58 years. It&#x2019;s &#x2018;our&#x2019; money, not &#x2018;his&#x2019; and &#x2018;hers.&#x2019; Why don&#x2019;t others feel the same?",
+    "url": "https://www.marketwatch.com/story/ive-been-married-for-58-years-its-our-money-not-his-and-hers-why-dont-others-feel-the-same-c5745889?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "&#x201c;My wife stopped working outside the home in 1970.&#x201d;",
+    "at": 1795432500000,
+    "score": 0
+   },
+   {
+    "title": "The U.S. may enter a recession if the Fed raises rates, hedge-fund manager Bill Ackman says",
+    "url": "https://www.marketwatch.com/story/the-u-s-may-enter-a-recession-if-the-fed-raises-rates-hedge-fund-manager-bill-ackman-says-16738971?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "The Pershing Square Capital Management CEO wrote in a post on X that he thinks financial conditions have already considerably tightened.",
+    "at": 1795431420000,
+    "score": -1
+   },
+   {
+    "title": "Nvidia stock bounces as Trump administration pushes for rehiring of Jensen Huang",
+    "url": "https://www.marketwatch.com/story/nvidia-stock-bounces-as-trump-administration-pushes-for-rehiring-of-jensen-huang-08057c29?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "Shares in Nvidia rose on Monday after a weekend of more developments, including the Trump administration pushing for the reinstatement of Jensen Huang to lead the company.",
+    "at": 1795431360000,
+    "score": 0
+   },
+   {
+    "title": "A 66-year-old nurse faces retirement with just $500 saved. Who&#x2019;s to blame?",
+    "url": "https://www.marketwatch.com/story/a-66-year-old-nurse-faces-retirement-with-just-500-saved-whos-to-blame-4249a0fd?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "&#x201c;Retirement is a financial status, not an age.&#x201d;",
+    "at": 1795428900000,
+    "score": 0
+   },
+   {
+    "title": "Federal Reserve announces College Fed Challenge winners",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120b.htm",
+    "source": "Federal Reserve",
+    "channelKind": "news",
+    "body": "Federal Reserve announces College Fed Challenge winners",
+    "at": 1795209300000,
+    "score": 0
+   },
+   {
+    "title": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120a.htm",
+    "source": "Federal Reserve",
+    "channelKind": "news",
+    "body": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
+    "at": 1795186800000,
+    "score": -1
+   },
+   {
+    "title": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/enforcement20261119a.htm",
+    "source": "Federal Reserve",
+    "channelKind": "news",
+    "body": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
+    "at": 1795104000000,
+    "score": -1
+   },
+   {
+    "title": "Stocks struggle to recover from tech-led rout",
+    "url": "https://finance.yahoo.com/markets/world-indices/articles/asian-tech-back-firing-line-024445930.html?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "Stock markets struggled to recover Monday from fears surrounding the massive AI investment spree that triggered a global selloff last week, led by the technology sector.\"It looks like investors have taken a moment to catch their breath after last week's global",
+    "at": 1795432318000,
+    "score": -1.414213562373095
+   },
+   {
+    "title": "Big Tech Rebound on Wall Street Pre-Bell; Asia Off, Europe Up",
+    "url": "https://finance.yahoo.com/markets/stocks/articles/big-tech-rebound-wall-street-111142735.html?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "Wall Street futures pointed sharply higher pre-bell Monday, as traders looked for relative bargains",
+    "at": 1795432302000,
+    "score": 1
+   },
+   {
+    "title": "US Equity Investors to Focus on AI Trade Rebound Amid Fed's Preferred Inflation Data, Retailers' Quarterly Results This Week",
+    "url": "https://finance.yahoo.com/markets/stocks/articles/us-equity-investors-focus-ai-110901621.html?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "US equity investors will gauge the sustainability of the AI trade rebound during this holiday-shorte",
+    "at": 1795432141000,
+    "score": 0
+   },
+   {
+    "title": "What iShares S&P 500 Value ETF (IVE) Bought: Apple Leads on Nov. 19",
+    "url": "https://finance.yahoo.com/markets/stocks/articles/ishares-p-500-value-etf-110537209.html?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "The fund added $241.6 million in new buying across 429 positions, led by a $21.0 million purchase of Apple.",
+    "at": 1795431937000,
+    "score": 1
+   },
+   {
+    "title": "‘MoldyRoost’ ads can steal crypto wallet recovery phrases from iPhones",
+    "url": "https://cointelegraph.com/news/moldyroost-malware-drain-iphone-wallets-one-tap?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "The campaign used at least 480 ad domains to target users in more than 47 countries and could infect a vulnerable iPhone with a single tap.",
+    "at": 1795424744000,
+    "score": 0
+   },
+   {
+    "title": "Bitcoin ETFs shed $1.8B in third-largest weekly outflow",
+    "url": "https://cointelegraph.com/markets/bitcoin-etfs-third-largest-weekly-outflows-1-8-billion?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "Bitcoin ETF outflows reached $4.14 billion in November through Friday, nearing June’s $4.51 billion total.",
+    "at": 1795421332000,
+    "score": -1
+   },
+   {
+    "title": "Here’s what happened in crypto today",
+    "url": "https://cointelegraph.com/news/what-happened-in-crypto-today?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "Need to know what happened in crypto today? Here is the latest news on daily trends and events impacting Bitcoin price, blockchain, DeFi, Web3 and crypto regulation.",
+    "at": 1795413600000,
+    "score": 0
+   },
+   {
+    "title": "Trump renews call for Nvidia to rehire Jensen Huang as CEO",
+    "url": "https://cointelegraph.com/news/trump-renews-call-for-nvidia-to-rehire-jensen-huang-as-ceo?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "In a Truth Social post on Monday, Trump said rehiring Jensen Huang would benefit both Nvidia and the US.",
+    "at": 1795405040000,
+    "score": 0
+   },
+   {
+    "title": "Bitcoin Rebounds to $61K After Weekend Plunge to Two-Year Low",
+    "url": "https://decrypt.co/383758/bitcoin-rebounds-to-61k-after-weekend-plunge-to-two-year-low",
+    "source": "Decrypt",
+    "channelKind": "news",
+    "body": "Bitcoin swung by more than $6,000 over the weekend as tech stocks slid and spot ETFs logged their biggest daily outflow since June.",
+    "at": 1795432462000,
+    "score": -1.414213562373095
+   },
+   {
+    "title": "Google's Quantum Chip Beats Classical Limits in 'Impossible' Game",
+    "url": "https://decrypt.co/383743/googles-quantum-chip-beats-classical-limits-in-impossible-game-tests-105-qubits",
+    "source": "Decrypt",
+    "channelKind": "news",
+    "body": "Google’s Willow quantum processor beat the classical ceiling in a four-qubit coordination game, revealing a promising hardware test rather than commercial quantum computing.",
+    "at": 1795356062000,
+    "score": 1
+   },
+   {
+    "title": "GTA 6 Leaker Dangles a PC Port Behind a $15 Million Crypto Pump",
+    "url": "https://decrypt.co/383756/gta-6-leaker-dangles-pc-port-15-million-crypto-pump",
+    "source": "Decrypt",
+    "channelKind": "news",
+    "body": "The anonymous leaker, Cyberleek, released a 209 GB Xbox build but is withholding the executable that could enable a PC port until its CYBERLEEK token hits $15 million.",
+    "at": 1795284062000,
+    "score": 0
+   },
+   {
+    "title": "TH International reports Q3 results",
+    "url": "https://seekingalpha.com/news/4675486-th-international-reports-q3-results?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795432121000,
+    "score": 0
+   },
+   {
+    "title": "LASE reports $5M order backlog supported by demand for pharmaceutical lasers",
+    "url": "https://seekingalpha.com/news/4675483-lase-reports-5m-order-backlog-supported-by-demand-for-pharmaceutical-lasers?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795431951000,
+    "score": 0
+   },
+   {
+    "title": "These stocks are rapidly gaining hedge-fund fans - Goldman",
+    "url": "https://seekingalpha.com/news/4675485-these-stocks-are-rapidly-gaining-hedge-fund-fans---goldman?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795431525000,
+    "score": 1
+   },
+   {
+    "title": "South Korea to expand cryptocurrency account freezes and curb illicit transfers abroad",
+    "url": "https://www.coindesk.com/policy/2026/11/23/south-korea-to-expand-cryptocurrency-account-freezes-and-curb-illicit-transfers-abroad",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "The proposed measures would also expand a June phishing-account suspension system, which has already frozen more than 11,500 accounts, to cover other serious financial crimes.",
+    "at": 1795431199000,
+    "score": 0
+   },
+   {
+    "title": "Bitcoin breaks a record streak of 'lower highs.' Here's what it means",
+    "url": "https://www.coindesk.com/markets/2026/11/23/bitcoin-breaks-a-record-streak-of-lower-highs-here-s-what-it-means",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "Bitcoin rose above the previous day’s peak on Sunday, an early sign that selling pressure may be easing even as the cryptocurrency remains down 21% in November.",
+    "at": 1795429862000,
+    "score": 1
+   },
+   {
+    "title": "U.S. inflation, Thanksgiving trading: Crypto Week Ahead",
+    "url": "https://www.coindesk.com/markets/2026/11/23/u-s-inflation-thanksgiving-trading-crypto-week-ahead",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "Your look at what’s coming in the week starting Nov. 23.",
+    "at": 1795426825000,
+    "score": 0
+   },
+   {
+    "title": "Training a Misaligned Reward Seeker",
+    "url": "https://alignment.anthropic.com/2026/reward-seeker/",
     "source": "Hacker News",
     "channelKind": "hackernews",
     "body": "HN Points: 2 · Comments: 0",
-    "at": 1795395675000,
+    "at": 1795430489000,
+    "score": 0
+   },
+   {
+    "title": "The training FLOPs of GPT-4",
+    "url": "https://ridgerzhu.com/gpt4-scaling-ladder/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795429912000,
+    "score": 0
+   },
+   {
+    "title": "NASA's new Moon plan is taking shape, but some big questions remain",
+    "url": "https://arstechnica.com/space/2026/11/nasas-new-moon-plan-is-taking-shape-but-some-big-questions-remain/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795428776000,
+    "score": 0
+   },
+   {
+    "title": "Project Tapestry – consortium frontier foundation model training and sovereignty",
+    "url": "https://thealliance.ai/projects/tapestry",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795420969000,
+    "score": 0
+   },
+   {
+    "title": "17-year-old Windows 7 gets unofficial DirectX 12 and Vulkan 1.4 support",
+    "url": "https://www.tomshardware.com/software/windows/17-year-old-windows-7-gets-unofficial-directx-12-and-vulkan-1-4-support-enthusiasts-bring-nvidia-rtx-50-amd-rx-9000-and-intel-arc-gpus-to-the-aging-os",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795419846000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: KradleBench – Multi-agent AI evals in Minecraft",
+    "url": "https://www.kradle.ai?1",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795419544000,
+    "score": 0
+   },
+   {
+    "title": "Ask HN: Cybersecurity risk of taking personal devices on business trip to China",
+    "url": "https://news.ycombinator.com/item?id=50608585",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 1",
+    "at": 1795419324000,
     "score": 0
    },
    {
@@ -1190,35 +1631,8 @@
     "url": "https://www.nytimes.com/2026/11/22/us/politics/alice-huang-china-spy-agency-nvidia.html",
     "source": "Hacker News",
     "channelKind": "hackernews",
-    "body": "HN Points: 10 · Comments: 0",
+    "body": "HN Points: 12 · Comments: 0",
     "at": 1795395171000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: Lexis World – a word game for kids who don't need to know any words yet",
-    "url": "https://lexisworld.org",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795391551000,
-    "score": 0
-   },
-   {
-    "title": "Pre-training is (still) not plateauing",
-    "url": "https://sebastianraschka.com/blog/2026/pretraining-is-still-not-plateauing.html",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795390980000,
-    "score": 0
-   },
-   {
-    "title": "Etsy sellers are closing their stores because of its the new AI training policy",
-    "url": "https://www.pcgamer.com/software/ai/etsy-sellers-are-closing-their-stores-in-response-to-the-platforms-new-ai-training-policy/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 5 · Comments: 0",
-    "at": 1795388682000,
     "score": 0
    },
    {
@@ -1267,15 +1681,6 @@
     "score": 1
    },
    {
-    "title": "Show HN: Codeint – Measure duplication and complexity drift in AI-written code",
-    "url": "https://github.com/avidianity/codeint",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795348684000,
-    "score": 0
-   },
-   {
     "title": "Gemini 4 Neon solves Bitcoin puzzle from 2024",
     "url": "https://echo.ls/zden-level-halv/",
     "source": "Hacker News",
@@ -1294,291 +1699,48 @@
     "score": 0
    },
    {
-    "title": "Corporate America hunts for &#x2018;generational&#x2019; growth in AI, trading cards and the L.A. airport",
-    "url": "https://www.marketwatch.com/story/corporate-america-hunts-for-generational-growth-in-ai-trading-cards-and-the-l-a-airport-3072eb1a?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "There&#x2019;s been no shortage of trends deemed once-in-a-generation by executives on earnings calls.",
-    "at": 1795384260000,
-    "score": 0
-   },
-   {
-    "title": "Ron Johnson&#x2019;s Social Security gaffe buried important news",
-    "url": "https://www.marketwatch.com/story/ron-johnsons-social-security-gaffe-buried-important-news-b96e0ce8?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "The Wisconsin Republican&#x2019;s remarks overshadowed what might have been a useful Senate committee hearing about fixing Social Security.",
-    "at": 1795382880000,
-    "score": 0
-   },
-   {
-    "title": "Social Security should be shut down, this Republican senator says",
-    "url": "https://www.marketwatch.com/story/social-security-should-be-shut-down-this-republican-senator-says-8f7fef81?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "The program&#x2019;s trust funds are forecast to run out of money in the next six years.",
-    "at": 1795379160000,
-    "score": 0
-   },
-   {
-    "title": "Medicare beneficiaries could skip the nursing home for cheaper care at home under new bill",
-    "url": "https://www.marketwatch.com/story/medicare-beneficiaries-could-skip-the-nursing-home-for-cheaper-care-at-home-under-new-bill-e289c8d0?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "The plan would free up hospital and nursing-home beds &#x2014; and lower costs.",
-    "at": 1795375440000,
-    "score": 0
-   },
-   {
-    "title": "Federal Reserve announces College Fed Challenge winners",
-    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120b.htm",
-    "source": "Federal Reserve",
-    "channelKind": "news",
-    "body": "Federal Reserve announces College Fed Challenge winners",
-    "at": 1795209300000,
-    "score": 0
-   },
-   {
-    "title": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
-    "url": "https://www.federalreserve.gov/newsevents/pressreleases/other20261120a.htm",
-    "source": "Federal Reserve",
-    "channelKind": "news",
-    "body": "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances",
-    "at": 1795186800000,
-    "score": -1
-   },
-   {
-    "title": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
-    "url": "https://www.federalreserve.gov/newsevents/pressreleases/enforcement20261119a.htm",
-    "source": "Federal Reserve",
-    "channelKind": "news",
-    "body": "Federal Reserve Board issues enforcement action with former employee of First Security Bancorp",
-    "at": 1795104000000,
-    "score": -1
-   },
-   {
-    "title": "Half of wallets on Trump’s dinner list got tokens from non-US exchanges",
-    "url": "https://cointelegraph.com/news/half-wallets-trumps-dinner-list-got-tokens-from-non-us-exchanges?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "Public Citizen traced 66 of 130 qualifying wallets to exchanges that restrict US users, raising questions over who is attending Trump’s memecoin dinner on Sunday.",
-    "at": 1795395229000,
-    "score": 0
-   },
-   {
-    "title": "Will Bitcoin’s big rebound hold? More tampered Ledgers found: Hodler’s Digest",
-    "url": "https://cointelegraph.com/magazine/will-bitcoins-big-rebound-hold-more-tampered-ledgers-found-hodlers-digest?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "Bitcoin rebounds sharply from its new cycle low, but is $55,111 really the bottom? Ledger investigates new reports of tampered devices in Berlin and the UAE.",
-    "at": 1795387629000,
-    "score": 0
-   },
-   {
-    "title": "The future of onchain FX could start with users, not institutional liquidity",
-    "url": "https://cointelegraph.com/opinion/future-onchain-fx-could-start-with-users-not-institutional-liquidity?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "Onchain FX does not need to recreate the trillion-dollar institutional market to become useful. Real demand can make smaller markets work first.",
-    "at": 1795357800000,
-    "score": 0
-   },
-   {
-    "title": "Here’s what happened in crypto today",
-    "url": "https://cointelegraph.com/news/what-happened-in-crypto-today?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "Need to know what happened in crypto today? Here is the latest news on daily trends and events impacting Bitcoin price, blockchain, DeFi, Web3 and crypto regulation.",
-    "at": 1795346727000,
-    "score": 0
-   },
-   {
-    "title": "Employees at Eric Trump-backed robot startup lose health benefits as company's cash crunch deepens",
-    "url": "https://www.cnbc.com/2026/11/22/foundation-future-industries-health-benefits-payroll-base-group.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Foundation is pursuing an emergency bridge loan and has been in talks with VC firms as it waits for a $150 million investment from South Korea's Base Group.",
-    "at": 1795373705000,
-    "score": 0
-   },
-   {
-    "title": "How China is using summits to expand its global influence",
-    "url": "https://www.cnbc.com/2026/11/21/china-xi-trump-putin-global-diplomacy-shenzhen.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Chinese President Xi Jinping has helped coordinate yet another photo-op of global significance.",
-    "at": 1795240802000,
-    "score": 0
-   },
-   {
-    "title": "Prediction markets outlook for stocks in 2026 dims amid AI sell-off",
-    "url": "https://www.cnbc.com/2026/11/20/sp-500-8000-kalshi-odds-ai-selloff.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Odds that the S&P 500 will cross 8,000, which were once north of 70%, are extremely low on platform Kalshi.",
-    "at": 1795204743000,
-    "score": -1
-   },
-   {
-    "title": "Warsh wants Fed officials to talk less. Instead, they’re talking more",
-    "url": "https://www.cnbc.com/2026/11/20/warsh-fed-forward-guidance-rate-hikes.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Fed officials have been rushing to the microphones lately while the Fed chairman stays on the sidelines.",
-    "at": 1795209048000,
-    "score": 0
-   },
-   {
-    "title": "Clariant, CD&R in talks to acquire chemicals firm Ashland - Bloomberg",
-    "url": "https://seekingalpha.com/news/4675417-clariant-cd-and-r-in-talks-to-acquire-chemicals-firm-ashland-bloomberg?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
-    "source": "SeekingAlpha",
-    "channelKind": "news",
-    "body": "",
-    "at": 1795391596000,
-    "score": 0
-   },
-   {
-    "title": "Stock index futures rebound after AI wipeout",
-    "url": "https://seekingalpha.com/news/4675416-sp-500-dow-nasdaq-stock-market?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
-    "source": "SeekingAlpha",
-    "channelKind": "news",
-    "body": "",
-    "at": 1795388620000,
-    "score": 0
-   },
-   {
-    "title": "IQVIA nears $1.1B acquisition of UK's Quotient Sciences - Bloomberg",
-    "url": "https://seekingalpha.com/news/4675415-iqvia-nears-1_1b-acquisition-of-uks-quotient-sciences-bloomberg?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
-    "source": "SeekingAlpha",
-    "channelKind": "news",
-    "body": "",
-    "at": 1795387200000,
-    "score": 0
-   },
-   {
-    "title": "Google's Quantum Chip Beats Classical Limits in 'Impossible' Game",
-    "url": "https://decrypt.co/383743/googles-quantum-chip-beats-classical-limits-in-impossible-game-tests-105-qubits",
-    "source": "Decrypt",
-    "channelKind": "news",
-    "body": "Google’s Willow quantum processor beat the classical ceiling in a four-qubit coordination game, revealing a promising hardware test rather than commercial quantum computing.",
-    "at": 1795356062000,
+    "title": "📺 Europe's Cold Snap Threatens Natural Gas Inventories",
+    "url": "https://www.youtube.com/watch?v=Bogzlaup3do",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "European natural gas prices jumped after temperature forecasts shifted sharply lower, adding pressure on inventories strained by export disruptions due to the war in the Middle East. Global gas supplies remain tight with Norway, Europe’s biggest pipeline suppl",
+    "at": 1795426576000,
     "score": 1
    },
    {
-    "title": "GTA 6 Leaker Dangles a PC Port Behind a $15 Million Crypto Pump",
-    "url": "https://decrypt.co/383756/gta-6-leaker-dangles-pc-port-15-million-crypto-pump",
-    "source": "Decrypt",
-    "channelKind": "news",
-    "body": "The anonymous leaker, Cyberleek, released a 209 GB Xbox build but is withholding the executable that could enable a PC port until its CYBERLEEK token hits $15 million.",
-    "at": 1795284062000,
+    "title": "📺 Stock Rotation Will Go International: Market Analysis",
+    "url": "https://www.youtube.com/watch?v=01f1ppEJqkI",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Anna Edwards, Guy Johnson and Mark Cudmore break down today's key themes for analysts and investors on \"Bloomberg: The Opening Trade.\"&#13; --------&#13; More on Bloomberg Television and Markets&#13; &#13; Like this video? Subscribe and turn on notifications s",
+    "at": 1795423766000,
     "score": 0
    },
    {
-    "title": "Fraudsters Used Fake Crypto Exchanges to Steal $37 Million, SEC Alleges",
-    "url": "https://decrypt.co/383752/fraudsters-fake-crypto-exchanges-steal-37-million-sec",
-    "source": "Decrypt",
-    "channelKind": "news",
-    "body": "The agency says eight Colorado-registered entities, likely run from overseas, posed as legitimate advisers and crypto platforms—even faking SEC certificates and filings—to defraud U.S. investors of more than $37 million.",
-    "at": 1795280462000,
+    "title": "📺 US Stocks Set to Rebound After AI Selloff",
+    "url": "https://www.youtube.com/watch?v=DeiqiwVsFgY",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Bloomberg Daybreak Europe is your essential morning viewing to stay ahead. Live from Brussels, we set the agenda for your day, catching you up with overnight markets news from the US and Asia. And we'll tell you what matters for investors in Europe, giving you",
+    "at": 1795420838000,
     "score": -1
    },
    {
-    "title": "Elon Musk Could Use His Nvidia Chip Orders to Push for Jensen Huang’s Return, Analyst Says",
-    "url": "https://finance.yahoo.com/technology/ai/articles/elon-musk-could-nvidia-chip-003007166.html?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "Elon Musk wants Jensen Huang back at Nvidia Corp., and Musk’s chip orders could give him a way to pressure the board, Seaport Research Partners analyst Jay Goldberg told Benzinga. \"Elon could almost single-handedly force a change,\" Goldberg said. He...",
-    "at": 1795393807000,
+    "title": "📺 Home Sales Hit 16 Year Low 11/23/26",
+    "url": "https://www.youtube.com/watch?v=AdJPYPyYwbA",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "Your 60-second money minute. Today’s topic: Home Sales Hit 16 Year Low For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC TV: https://cnb.cx/SubscribeCNBCtelevision » Subscribe to CNBC: https://cn",
+    "at": 1795420813000,
     "score": 0
    },
    {
-    "title": "Nvidia Just Lost Nearly Half Its Value. A 62-Year-Old With $1 Million in an S&P 500 Index Fund Owns About $50,000 of It Without Buying a Share",
-    "url": "https://247wallst.com/investing/2026/11/22/nvidia-just-lost-nearly-half-its-value-a-62-year-old-with-1-million-in-an-sp-500-index-fund-owns-about-50000-of-it-without-buying-a-share/?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "Nvidia has lost nearly half its value since Oct. 6. Here is how much of it sits in a $1 million 401(k): about $50,000 in an S&P 500 index fund and roughly $14,000 in a 2030 target-date fund.",
-    "at": 1795390980000,
-    "score": 1
-   },
-   {
-    "title": "Bessent Softens on Jensen Huang. Can Nvidia Stock Finally Catch a Break?",
-    "url": "https://beincrypto.com/bessent-jensen-huang-nvidia-stock-outlook/?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "Bessent no longer rules out Jensen Huang's return. Can Nvidia stock rebound as the board and a Nov. 25 deadline loom?",
-    "at": 1795387500000,
-    "score": 0
-   },
-   {
-    "title": "3 AI Hardware Stocks Down More Than 30% From Their Records to Buy Now and Hold Through 2030",
-    "url": "https://www.fool.com/investing/2026/11/22/3-ai-hardware-stocks-down-more-than-30-from-their-records-to-buy-now-and-hold-through-2030/?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "Each of these AI suppliers sits well below its record close. Has data center demand actually cooled that much?",
-    "at": 1795384982000,
-    "score": 1.414213562373095
-   },
-   {
-    "title": "More on the pending oversight hearings: State of Crypto",
-    "url": "https://www.coindesk.com/",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "New letters show the widening range of Congressional committees that will be probing the presidential administration — and the crypto collateral that may be swept up.",
-    "at": 1795375800000,
-    "score": 0
-   },
-   {
-    "title": "Bitcoin's quantum security challenge extends to bridges, custodians and millions of coins",
-    "url": "https://www.coindesk.com/tech/2026/11/22/bitcoin-s-quantum-security-challenge-extends-to-bridges-custodians-and-millions-of-coins",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "Quantum computers can’t break Bitcoin network’s security yet, but Leo Fan warns that upgrading it and moving funds could take longer than expected.",
-    "at": 1795356000000,
-    "score": 0
-   },
-   {
-    "title": "Bitcoin rebounds above $60,000 after $1.8 billion crypto liquidation wave",
-    "url": "https://www.coindesk.com/markets/2026/11/21/bitcoin-bounces-9-from-two-year-low-to-retake-usd60-000-as-traders-eye-monday-s-stock-open",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "The selloff wiped out $1.8 billion in leveraged crypto positions, mostly from bullish bets on rising prices.",
-    "at": 1795283400000,
-    "score": -0.5773502691896258
-   },
-   {
-    "title": "📺 Market Anxiety Over Tech Trade, Governors Release AI Framework, Game On for the Holidays",
-    "url": "https://www.youtube.com/watch?v=3GHg0maol8U",
+    "title": "📺 Iran Targets Bahrain as US-Iran Tensions Escalate Over Fresh Strikes",
+    "url": "https://www.youtube.com/watch?v=oxofrcnqCxo",
     "source": "YouTube · Bloomberg Television",
     "channelKind": "youtube",
-    "body": "The news doesn’t stop when markets close. Hosts David Gura, Christina Ruffini and Lisa Mateo bring clarity, context and a bit of humor to the weekend’s biggest headlines, LIVE from New York. Joined by ABC News State Department Reporter Shannon Kingston, Maryla",
-    "at": 1795368563000,
-    "score": 0
-   },
-   {
-    "title": "📺 Bookmarked: News Stories On Our Reading List",
-    "url": "https://www.youtube.com/watch?v=1H7YDhwpkuM",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Bigfoot leaves a paper-trail, the gas prices in GTA VI, splitting the Bloomin Onion bill on a date, the board games people cheat at the most, and evidence of cheating on our very show: Join hosts David Gura, Christina Ruffini and Lisa Mateo on Bloomberg This W",
-    "at": 1795365799000,
-    "score": 0
-   },
-   {
-    "title": "📺 By The Way: Headlines You May Have Missed",
-    "url": "https://www.youtube.com/watch?v=T54mL9ReWCk",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "A gift of GTA VI coming with a contract, what that SNL ‘Sister’ sketch says about American healthcare, Robert Pattinson as Bond, and the F1 aspirations of children: Join Lisa Mateo, David Gura and Christina Ruffini for a roundup of headlines you may have misse",
-    "at": 1795364346000,
-    "score": -1
-   },
-   {
-    "title": "📺 Democrats, Republicans Eye the 2028 Field",
-    "url": "https://www.youtube.com/watch?v=fc3HyxQUVeU",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Democratic strategist Ravi Gupta and Republican strategist Leslie Shedd tell Bloomberg This Weekend that the 2028 presidential race remains wide open as both parties assess the lessons of the midterms and potential candidates begin defining their messages. Gup",
-    "at": 1795363102000,
+    "body": "US-Iran tensions escalate as Iran targets Bahrain, including a US radar site. Trump says Tehran has launched its heaviest barrage of drones and missiles in more than a year as regional security risks remain elevated. Markets are also under pressure. The VIX cl",
+    "at": 1795419893000,
     "score": 0
    },
    {
@@ -1636,7 +1798,7 @@
     "score": 0
    },
    {
-    "title": "📺 Carta CEO Henry Ward: Who Actually Wins When the AI Trade Cracks?",
+    "title": "📺 Who Actually Wins When the AI Trade Cracks?",
     "url": "https://www.youtube.com/watch?v=gBKxEjna78c",
     "source": "YouTube · Yahoo Finance",
     "channelKind": "youtube",
@@ -1645,250 +1807,102 @@
     "score": 1.414213562373095
    },
    {
-    "title": "📺 Joking about Theranos is a bold move when you’re building a blood test.",
-    "url": "https://www.youtube.com/shorts/4HUyZThOJAw",
-    "source": "YouTube · Yahoo Finance",
-    "channelKind": "youtube",
-    "body": "What’s the best way to answer Theranos comparisons? Helios went with jokes. Helios came out of stealth this week. The startup says its at-home test measures more than 1,000 proteins. You collect the sample with its proprietary device, then get insights from th",
-    "at": 1795224672000,
-    "score": 0
-   },
-   {
-    "title": "Bitcoin briefly drops to $17K on Kraken, exchange upholds trades",
-    "url": "https://cointelegraph.com/news/bitcoin-17k-kraken-canadian-dollar-market-trades-stand?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "Kraken said all orders were processed correctly and found no evidence of a security breach or compromised accounts.",
-    "at": 1795339986000,
-    "score": -1
-   },
-   {
-    "title": "South Korean exchanges halt CYBER transfers amid suspected bridge exploit",
-    "url": "https://cointelegraph.com/news/upbit-bithumb-suspend-cyber-transfers-bridge-exploit?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "Cyber reported unexpected minting of CYBER tokens on Solana, followed by tokens moving out of its Ethereum bridge lockbox, prompting an investigation.",
-    "at": 1795332245000,
-    "score": -1
-   },
-   {
-    "title": "Bears will be yelling fire in crowded theater - Dan Ives",
-    "url": "https://seekingalpha.com/news/4675414-bears-will-be-yelling-fire-in-crowded-theater-dan-ives?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
-    "source": "SeekingAlpha",
-    "channelKind": "news",
-    "body": "",
-    "at": 1795379922000,
-    "score": 0
-   },
-   {
-    "title": "'Hunger Games' helps box office rebound amid GTA 6 fever",
-    "url": "https://seekingalpha.com/news/4675413-hunger-games-helps-box-office-rebound-amid-gta-6-fever?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
-    "source": "SeekingAlpha",
-    "channelKind": "news",
-    "body": "",
-    "at": 1795378259000,
-    "score": 0
-   },
-   {
-    "title": "Goldman watching for 3 conditions that could support a stock correction bottom",
-    "url": "https://seekingalpha.com/news/4675412-goldman-watching-for-3-conditions-that-could-support-a-stock-correction-bottom?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
-    "source": "SeekingAlpha",
-    "channelKind": "news",
-    "body": "",
-    "at": 1795376283000,
-    "score": 0
-   },
-   {
-    "title": "Cross-chain protocol Chainflip's FLIP tanks 30% after suspected $4.86 million vault drain",
-    "url": "https://www.coindesk.com/business/2026/11/21/cross-chain-protocol-chainflip-s-flip-tanks-30-after-suspected-usd4-86-million-vault-drain",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "The withdrawal carried a valid signature, which Onchain Lens said points to a possible compromise of the key validators use to approve vault payouts.",
-    "at": 1795279260000,
-    "score": 0
-   },
-   {
-    "title": "U.S. Treasury Secretary Scott Bessent Just Delivered Great News to Former Nvidia CEO Jensen Huang. Should You Buy Nvidia Stock Before Nov. 25?",
-    "url": "https://www.fool.com/investing/2026/11/22/u-s-treasury-secretary-scott-bessent-just-delivered-great-news-to-former-nvidia-ceo-jensen-huang-should-you-buy-nvidia-stock-before-nov-25/?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "On CBS's Face the Nation, U.S. Treasury Secretary Scott Bessent seemed to change his tone regarding a potential return of Jensen Huang to Nvidia.",
-    "at": 1795381684000,
-    "score": 1
-   },
-   {
-    "title": "Jeff Bezos sends a strong signal to Nvidia stock investors as CEO search heats up",
-    "url": "https://www.thestreet.com/investing/jeff-bezos-sends-a-strong-signal-to-nvidia-stock-investors-as-ceo-search-heats-up?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "The Amazon founder has a warning for Nvidia’s board as it weighs who should replace Jensen Huang.",
-    "at": 1795381620000,
-    "score": 0
-   },
-   {
-    "title": "What Is Apple (AAPL) Planning With Its New Autonomous AI Agent?",
-    "url": "https://finance.yahoo.com/technology/ai/articles/apple-aapl-planning-autonomous-ai-200614575.html?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "Apple (NasdaqGS:AAPL) is building an autonomous AI agent designed to handle complex, multistep tasks for everyday users. Job postings point to a large scale buildout of AI engineering and product roles tied directly to this new assistant effort. Internal plann",
-    "at": 1795377974000,
-    "score": 0
-   },
-   {
-    "title": "Agent swarm trying to solve P vs. NP",
-    "url": "https://pequalnp.com/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795384425000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: I wrote FlightTrack twice",
-    "url": "https://apps.apple.com/us/app/flighttrack-flight-tracker/id6788552553",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795382382000,
-    "score": 0
-   },
-   {
-    "title": "AirMark – A Flight Tracking App",
-    "url": "https://markair.eu/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795381922000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: I've made a CVE auto pentest app",
-    "url": "https://keybrum.com",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795379664000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: Rico: Rich Markdown Reviews for GitHub PRs",
-    "url": "https://ricorico.dev/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795378745000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: Taskless, turn AGENTS.md and PR comments into runnable checks",
-    "url": "https://www.taskless.io/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 1",
-    "at": 1795378272000,
-    "score": 0
-   },
-   {
-    "title": "Volta-Forever Brings CUDA 13 Support to Nvidia V100",
-    "url": "https://www.gizmoweek.com/cuda-13-support-nvidia-v100/",
+    "title": "Show HN: Biohacking in Chess – can coffee make you a better player?",
+    "url": "https://plantsresearch.pro/chess-lab",
     "source": "Hacker News",
     "channelKind": "hackernews",
     "body": "HN Points: 2 · Comments: 0",
-    "at": 1795337027000,
-    "score": 0
-   },
-   {
-    "title": "Inkling 2 Small on Nvidia B300: 5.1x to 7.5x faster expert GEMMs, same bits",
-    "url": "https://www.rightnowai.co/blog/bit-identical-fp4-moe-kernels-on-blackwell",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795332811000,
-    "score": 0
-   },
-   {
-    "title": "Writing the Report Is Important, Reading It Often Is Not",
-    "url": "https://dimitriborisevich.substack.com/p/writing-the-report-is-important",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795354536000,
-    "score": 0
-   },
-   {
-    "title": "Ukraine Is Racing to Keep Its Booming Defense Industry from Stalling",
-    "url": "https://www.wsj.com/world/ukraine-is-racing-to-keep-its-booming-defense-industry-from-stalling-7e8f4b8c",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795354146000,
-    "score": 0
-   },
-   {
-    "title": "Indian mathematician cracks 70-year-old maths problem earns spot on TIME100 Next",
-    "url": "https://indianexpress.com/article/trending/trending-in-india/indian-mathematician-neena-gupta-cracks-70-year-old-maths-problem-earns-spot-on-time100-next-list-10973465/lite/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795348214000,
-    "score": 0
-   },
-   {
-    "title": "Harsher on Male? Evaluating LLMs on Gender-Asymmetric Moral Framing in Conflicts",
-    "url": "https://arxiv.org/abs/2606.14068",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 86 · Comments: 73",
-    "at": 1795339116000,
-    "score": 0
-   },
-   {
-    "title": "California train burglars carefully executed heists for 'staggering' $22M haul",
-    "url": "https://www.theguardian.com/us-news/2026/nov/21/california-arrests-train-heists",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795331656000,
-    "score": 0
-   },
-   {
-    "title": "California Nvidia Probe Covers Potential Criminal Law Violations",
-    "url": "https://www.bloomberg.com/news/articles/2026-11-21/california-nvidia-probe-covers-potential-criminal-law-violations",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 6 · Comments: 0",
-    "at": 1795325177000,
+    "at": 1795397919000,
     "score": -1
    },
    {
-    "title": "The Biggest Lie in the Jensen Huang Story",
-    "url": "https://www.theringer.com/2026/11/18/tech/jensen-huang-nvidia-china-chips-ai-race",
+    "title": "Show HN: I used Fable to make an open source 80s-style Skyrim browser game",
+    "url": "https://thanes-quest.daventry.io/",
     "source": "Hacker News",
     "channelKind": "hackernews",
-    "body": "HN Points: 11 · Comments: 0",
-    "at": 1795309414000,
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795396559000,
     "score": 0
    },
    {
-    "title": "Open-source harness and MCP dataset for options trading with AI agents",
-    "url": "https://github.com/DevDizzle/gammarips-harness",
+    "title": "Cyberpunk Reading Map",
+    "url": "https://loreful.app/vault/cyberpunk",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795395675000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: Lexis World – a word game for kids who don't need to know any words yet",
+    "url": "https://lexisworld.org",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795391551000,
+    "score": 0
+   },
+   {
+    "title": "Pre-training is (still) not plateauing",
+    "url": "https://sebastianraschka.com/blog/2026/pretraining-is-still-not-plateauing.html",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 3 · Comments: 0",
+    "at": 1795390980000,
+    "score": 0
+   },
+   {
+    "title": "Etsy sellers are closing their stores because of its the new AI training policy",
+    "url": "https://www.pcgamer.com/software/ai/etsy-sellers-are-closing-their-stores-in-response-to-the-platforms-new-ai-training-policy/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 5 · Comments: 0",
+    "at": 1795388682000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: Codeint – Measure duplication and complexity drift in AI-written code",
+    "url": "https://github.com/avidianity/codeint",
     "source": "Hacker News",
     "channelKind": "hackernews",
     "body": "HN Points: 1 · Comments: 0",
-    "at": 1795303248000,
+    "at": 1795348684000,
+    "score": 0
+   },
+   {
+    "title": "Corporate America hunts for &#x2018;generational&#x2019; growth in AI, trading cards and the L.A. airport",
+    "url": "https://www.marketwatch.com/story/corporate-america-hunts-for-generational-growth-in-ai-trading-cards-and-the-l-a-airport-3072eb1a?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "There&#x2019;s been no shortage of trends deemed once-in-a-generation by executives on earnings calls.",
+    "at": 1795384260000,
+    "score": 0
+   },
+   {
+    "title": "Ron Johnson&#x2019;s Social Security gaffe buried important news",
+    "url": "https://www.marketwatch.com/story/ron-johnsons-social-security-gaffe-buried-important-news-b96e0ce8?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "The Wisconsin Republican&#x2019;s remarks overshadowed what might have been a useful Senate committee hearing about fixing Social Security.",
+    "at": 1795382880000,
     "score": 0
    }
   ],
   "trending": [
    {
-    "name": "Venice Token",
-    "symbol": "VVV",
-    "rank": 59
+    "name": "Minelius",
+    "symbol": "MINELIUS",
+    "rank": 951
+   },
+   {
+    "name": "Cool Dog",
+    "symbol": "LOOSY",
+    "rank": 895
    },
    {
     "name": "Pearl",
     "symbol": "PEARL",
-    "rank": 77
+    "rank": 71
    },
    {
     "name": "Bitcoin",
@@ -1896,19 +1910,14 @@
     "rank": 1
    },
    {
-    "name": "Hyperliquid",
-    "symbol": "HYPE",
-    "rank": 10
+    "name": "Dogecoin",
+    "symbol": "DOGE",
+    "rank": 13
    },
    {
     "name": "Pudgy Penguins",
     "symbol": "PENGU",
-    "rank": 131
-   },
-   {
-    "name": "Sui",
-    "symbol": "SUI",
-    "rank": 32
+    "rank": 128
    },
    {
     "name": "Solana",
@@ -1916,192 +1925,204 @@
     "rank": 7
    },
    {
-    "name": "XRP",
-    "symbol": "XRP",
-    "rank": 6
+    "name": "Derive",
+    "symbol": "DRV",
+    "rank": 111
    },
    {
-    "name": "Ondo",
-    "symbol": "ONDO",
-    "rank": 54
+    "name": "Hyperliquid",
+    "symbol": "HYPE",
+    "rank": 10
    },
    {
-    "name": "ORE",
-    "symbol": "ORE",
-    "rank": 433
+    "name": "Pump.fun",
+    "symbol": "PUMP",
+    "rank": 72
    }
   ],
-  "newsScore": -0.03,
+  "newsScore": 0,
   "arxivPapers": [
    {
-    "title": "A joint framework for SPX, VIX and VXX",
-    "url": "https://arxiv.org/abs/2611.25047",
-    "summary": "arXiv:2611.25047v1 Announce Type: new Abstract: Options on VXX bring the dynamics of the VIX futures curve into the joint SPX-VIX calibration problem. We construct a common model by specifying the VIX and then recovering instantaneous SPX variance from the req",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
+    "title": "VerifiQuant: Governance-by-Execution for Financial LLM Workflows",
+    "url": "https://arxiv.org/abs/2611.26649",
+    "summary": "arXiv:2611.26649v1 Announce Type: new Abstract: Large language models embedded in financial workflows fail most dangerously by emitting confident, well-formatted but wrong numbers with no signal distinguishing them from correct ones. We argue that the central ",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
     "strategy": null
    },
    {
-    "title": "Quantum Calibration of Local-Volatility Surfaces from Sparse Option Quotes",
-    "url": "https://arxiv.org/abs/2611.25344",
-    "summary": "arXiv:2611.25344v1 Announce Type: new Abstract: Calibrating a volatility surface from sparse option prices requires repeated solutions of a pricing equation as the volatility parameters change. We implement a hybrid quantum and classical method for this invers",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
+    "title": "Distributional Deep Hedging",
+    "url": "https://arxiv.org/abs/2611.26652",
+    "summary": "arXiv:2611.26652v1 Announce Type: new Abstract: Deep hedging learns a hedging strategy by optimising a risk preference over a neural-network policy. The preference is fixed before training, so each new preference requires a new policy and, in actor-critic meth",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
     "strategy": null
    },
    {
-    "title": "Auto-Alpha: A Framework for Autonomous Factor Research",
-    "url": "https://arxiv.org/abs/2611.25732",
-    "summary": "arXiv:2611.25732v1 Announce Type: new Abstract: Autonomous factor research requires generating economic hypotheses as well as implementing and testing them. We present Auto-Alpha, a framework that connects report-guided initialization to self-directed research",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
+    "title": "A Solvency II-Based Framework for Pricing Structural Longevity Risk under an Affine Mortality Model",
+    "url": "https://arxiv.org/abs/2611.26670",
+    "summary": "arXiv:2611.26670v1 Announce Type: new Abstract: This paper develops a Solvency II-based pricing framework for structural longevity risk in incomplete longevity markets. The valuation scheme relies on the Cost-of-Capital principle underlying the Risk Margin and",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
     "strategy": null
    },
    {
-    "title": "Trading Before a Committed Rebalance",
-    "url": "https://arxiv.org/abs/2611.25762",
-    "summary": "arXiv:2611.25762v1 Announce Type: new Abstract: An institution must complete a portfolio adjustment, but traders who prepare inventory for it can choose whether to participate. We study how public forecasts affect the institution's cost in a Bayesian execution",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
+    "title": "Error analysis for the numerical approximation of the quantile hedging problem",
+    "url": "https://arxiv.org/abs/2611.26673",
+    "summary": "arXiv:2611.26673v1 Announce Type: new Abstract: We analyse numerical approximations of quantile hedging in complete linear markets with Markovian diffusion dynamics. The problem is formulated as stochastic control for an augmented state $(X,P)$, where the prob",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
     "strategy": null
    },
    {
-    "title": "Neckpinches in a Positively Curved Market: Ricci Flow with Surgery on the Nikkei-225",
-    "url": "https://arxiv.org/abs/2611.25860",
-    "summary": "arXiv:2611.25860v1 Announce Type: new Abstract: We study the intrinsic geometry of the Nikkei-225 through the discrete Ollivier-Ricci curvature (ORC) of its empirical correlation graph, using the graph Ricci flow and surgery methodology of arXiv:2510.15942. Th",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
+    "title": "Held-to-Maturity Accounting: Hidden Losses and Systemic Fragility",
+    "url": "https://arxiv.org/abs/2611.26700",
+    "summary": "arXiv:2611.26700v1 Announce Type: new Abstract: This paper studies how accounting-induced opacity affects systemic risk in the banking system. Motivated by the buildup of unrealized losses during recent monetary tightening episodes, we develop a model in which",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
     "strategy": null
    },
    {
-    "title": "Persistence and Change in National Production Networks",
-    "url": "https://arxiv.org/abs/2611.25869",
-    "summary": "arXiv:2611.25869v1 Announce Type: new Abstract: Many country-years in multi-country input-output databases have no national table. We study the kernel of domestic intermediate transactions, the part that rescaling to new industry totals cannot update. Among 25",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
+    "title": "Are Calibrated Decision Models Calibrated on Markets? Geolocated News, Markov Switching and a System One Model for Nasdaq-100 Allocation",
+    "url": "https://arxiv.org/abs/2611.26716",
+    "summary": "arXiv:2611.26716v1 Announce Type: new Abstract: Portfolio allocation is driven by probabilities of losses, not only by forecasts of the direction (up/down) of the market. A decision model such as Jev returns a probability for a yes/no question and has been rep",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
+    "strategy": null
+   },
+   {
+    "title": "The Rural Margin of Territorial Peace: Within-Municipality Evidence from Colombia",
+    "url": "https://arxiv.org/abs/2611.26882",
+    "summary": "arXiv:2611.26882v1 Announce Type: new Abstract: Colombia's peace agreement introduced participatory development programs and congressional constituencies reserved for conflict victims with a rural electorate. I use repeated waves of the Social Capital Baromete",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
+    "strategy": null
+   },
+   {
+    "title": "Trust and Lottery-Related Anomalies",
+    "url": "https://arxiv.org/abs/2611.27020",
+    "summary": "arXiv:2611.27020v1 Announce Type: new Abstract: We examine whether social trust shapes the pricing of lottery-like stocks by influencing investors' beliefs regarding optimistic information associated with extreme future payoffs. We argue that higher social tru",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
+    "strategy": null
+   },
+   {
+    "title": "The Rise of Agents and the Human Labor Market",
+    "url": "https://arxiv.org/abs/2611.27210",
+    "summary": "arXiv:2611.27210v1 Announce Type: new Abstract: We provide the first economy-wide and cross-AI model evidence on the effects of agentic AI on labor demand. We combine proprietary OpenRouter data covering about two quadrillion tokens of realized AI consumption ",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
+    "strategy": null
+   },
+   {
+    "title": "Nonlinear Shrinkage for Higher Moments Estimation in Large Portfolios",
+    "url": "https://arxiv.org/abs/2611.27274",
+    "summary": "arXiv:2611.27274v1 Announce Type: new Abstract: Portfolio risk is not limited to the variance of returns. The moments of portfolio returns depend directly on the covariance matrix and higher-order co-dependences (coskewness, cokurtosis, etc.). In practice, how",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
+    "strategy": null
+   },
+   {
+    "title": "Risk sharing for background risk models with infinite mean",
+    "url": "https://arxiv.org/abs/2611.27485",
+    "summary": "arXiv:2611.27485v1 Announce Type: new Abstract: Risk sharing is usually viewed as beneficial for risk-averse agents facing independent risks with finite means, but this situation can be reversed for infinite-mean losses. In this paper, we explore the effects o",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
     "strategy": "rsi_reversion"
    },
    {
-    "title": "Statistical moments, risk weighting and percentiles of a loss distribution of a finite homogeneous credit portfolio; extending the Vasicek distribution",
-    "url": "https://arxiv.org/abs/2611.25881",
-    "summary": "arXiv:2611.25881v1 Announce Type: new Abstract: The Vasicek distribution assumes an infinite portfolio of identical obligors and forms the basis of the Basel III/IV Risk Weighted Assets (RWA) calculation. We derive the central moments of the loss distribution ",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
+    "title": "Accountable AI Delegation in Banking: Identity, Commitment Controls, Decision Evidence and Recovery",
+    "url": "https://arxiv.org/abs/2611.27505",
+    "summary": "arXiv:2611.27505v1 Announce Type: new Abstract: An AI-assisted payment can pass assessment and lose release authority before commitment. We specify a banking delegation contract that checks current authority, the shared payment cap and the capacity of eligible",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
     "strategy": null
    },
    {
-    "title": "Feasible sub-replicating portfolios for basket options via the block rearrangement algorithm",
-    "url": "https://arxiv.org/abs/2611.26119",
-    "summary": "arXiv:2611.26119v1 Announce Type: new Abstract: We construct sub-replicating portfolios of vanilla options for a basket call when the marginal distributions of the underlying assets are known and their dependence is not. To do so, we reduce the n-asset problem",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
+    "title": "Do Econophysics-Inspired Inputs Improve Neural Covariance Forecasting? A Leakage-Free Walk-Forward Study of Intraday DJIA Data",
+    "url": "https://arxiv.org/abs/2611.27616",
+    "summary": "arXiv:2611.27616v1 Announce Type: new Abstract: Tools from econophysics, including Random Matrix Theory (RMT), Tsallis q-Gaussian tails, Hawkes self-excitation and diffusion-inspired regularization, are often proposed as ingredients for financial risk models, ",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
     "strategy": null
    },
    {
-    "title": "Globally promoting legumes by production or use subsidies",
-    "url": "https://arxiv.org/abs/2611.26168",
-    "summary": "arXiv:2611.26168v1 Announce Type: new Abstract: Despite consensus on the positive economic, environmental, and health effects of expanding legume production and consumption, the share of cropland devoted to them remains relatively small, and their share of hum",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
+    "title": "Reconstructing risk preferences from data",
+    "url": "https://arxiv.org/abs/2611.27692",
+    "summary": "arXiv:2611.27692v1 Announce Type: new Abstract: We consider the problem of reconstructing risk preferences from data. Specifically, for a finite dataset consisting of contingent claims and their evaluations, we aim at reconstructing a risk measure that is fini",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
     "strategy": null
    },
    {
-    "title": "Stablecoin Runs as Safe-Asset Stress Signals: Episode-Level Evidence for Central Bank Surveillance",
-    "url": "https://arxiv.org/abs/2611.26180",
-    "summary": "arXiv:2611.26180v1 Announce Type: new Abstract: This paper asks whether stablecoin runs carry information about U.S. Treasury yields. Using daily data on USDT, USDC and BUSD from 2021 to 2025 and five stress episodes, it measures flows from changes in token un",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
-    "strategy": null
-   },
-   {
-    "title": "Equity and Aggregate Ambiguity",
-    "url": "https://arxiv.org/abs/2611.26197",
-    "summary": "arXiv:2611.26197v1 Announce Type: new Abstract: Equitable resource allocations in the context of symmetric risk exposures are intuitively desirable and sometimes even expected in public planning. However, public planners generally are also concerned with mitig",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
-    "strategy": null
-   },
-   {
-    "title": "A Three-Factor Hull-White Scenario Generator for Macro-Financial Stress Forecasting",
-    "url": "https://arxiv.org/abs/2611.26200",
-    "summary": "arXiv:2611.26200v1 Announce Type: new Abstract: This paper builds a scenario engine that maps a yield-curve path into a distribution of macro-financial outcomes. A three-factor Hull-White model generates arbitrage-free curves whose factors are simulated under ",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
-    "strategy": null
-   },
-   {
-    "title": "Structural economic change under the digital transformation",
-    "url": "https://arxiv.org/abs/2611.26338",
-    "summary": "arXiv:2611.26338v1 Announce Type: new Abstract: Productivity improvements in digital industries could massively reshape the structure of production networks and drive significant labour reallocation across sectors. We examine these adjustments using a calibrat",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
-    "strategy": null
-   },
-   {
-    "title": "Bond yield dynamics: a multi-country multi-horizon string model",
-    "url": "https://arxiv.org/abs/2611.26466",
-    "summary": "arXiv:2611.26466v1 Announce Type: new Abstract: This article extends the forward rate curve model of Baaquie and Bouchaud (2004) and Le Coz and Bouchaud (2024) to the multi-country setting of government bond markets. Cross-country blocks of correlation matrice",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
-    "strategy": null
-   },
-   {
-    "title": "Optimal Control in Pairs Trading with Negative-Power Utility",
-    "url": "https://arxiv.org/abs/2611.26568",
-    "summary": "arXiv:2611.26568v1 Announce Type: new Abstract: We solve a finite-horizon consumption and investment problem in a pairs trading model with an Ornstein-Uhlenbeck spread and utility $U(x)=-x^{-\\gamma}$, $\\gamma>0$. Linearizing the Hamilton-Jacobi-Bellman equatio",
-    "pubDate": "Fri, 20 Nov 2026 00:00:00 -0500",
-    "at": 1795150800000,
+    "title": "Bottlenecked: The Capital Cost of Protected DeFi Lending",
+    "url": "https://arxiv.org/abs/2611.26948",
+    "summary": "arXiv:2611.26948v1 Announce Type: cross Abstract: Securing hundreds of billions of dollars in decentralized finance (DeFi) requires both cryptographically secured collateral and economic capital to absorb losses that collateral alone cannot cover. Composabilit",
+    "pubDate": "Mon, 23 Nov 2026 00:00:00 -0500",
+    "at": 1795410000000,
     "strategy": null
    }
   ],
-  "arxivUpdatedAt": 1795218902260,
+  "arxivUpdatedAt": 1795432871670,
   "youtubeVideos": [
    {
-    "title": "Market Anxiety Over Tech Trade, Governors Release AI Framework, Game On for the Holidays",
-    "url": "https://www.youtube.com/watch?v=3GHg0maol8U",
-    "videoId": "3GHg0maol8U",
-    "thumbnail": "https://i4.ytimg.com/vi/3GHg0maol8U/hqdefault.jpg",
+    "title": "Europe's Cold Snap Threatens Natural Gas Inventories",
+    "url": "https://www.youtube.com/watch?v=Bogzlaup3do",
+    "videoId": "Bogzlaup3do",
+    "thumbnail": "https://i3.ytimg.com/vi/Bogzlaup3do/hqdefault.jpg",
     "channel": "Bloomberg Television",
     "category": "מאקרו ושווקים גלובליים",
-    "summary": "The news doesn’t stop when markets close. Hosts David Gura, Christina Ruffini and Lisa Mateo bring clarity, context and a bit of humor to the weekend’s biggest headlines, LIVE from New York. Joined by ABC News State Department Reporter Shannon Kingston, Maryla",
-    "pubDate": "2026-11-22T17:29:23+00:00",
-    "at": 1795368563000,
+    "summary": "European natural gas prices jumped after temperature forecasts shifted sharply lower, adding pressure on inventories strained by export disruptions due to the war in the Middle East. Global gas supplies remain tight with Norway, Europe’s biggest pipeline suppl",
+    "pubDate": "2026-11-23T09:36:16+00:00",
+    "at": 1795426576000,
+    "score": 1
+   },
+   {
+    "title": "Stock Rotation Will Go International: Market Analysis",
+    "url": "https://www.youtube.com/watch?v=01f1ppEJqkI",
+    "videoId": "01f1ppEJqkI",
+    "thumbnail": "https://i1.ytimg.com/vi/01f1ppEJqkI/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "Anna Edwards, Guy Johnson and Mark Cudmore break down today's key themes for analysts and investors on \"Bloomberg: The Opening Trade.\"&#13; --------&#13; More on Bloomberg Television and Markets&#13; &#13; Like this video? Subscribe and turn on notifications s",
+    "pubDate": "2026-11-23T08:49:26+00:00",
+    "at": 1795423766000,
     "score": 0
    },
    {
-    "title": "Bookmarked: News Stories On Our Reading List",
-    "url": "https://www.youtube.com/watch?v=1H7YDhwpkuM",
-    "videoId": "1H7YDhwpkuM",
-    "thumbnail": "https://i2.ytimg.com/vi/1H7YDhwpkuM/hqdefault.jpg",
+    "title": "US Stocks Set to Rebound After AI Selloff",
+    "url": "https://www.youtube.com/watch?v=DeiqiwVsFgY",
+    "videoId": "DeiqiwVsFgY",
+    "thumbnail": "https://i1.ytimg.com/vi/DeiqiwVsFgY/hqdefault.jpg",
     "channel": "Bloomberg Television",
     "category": "מאקרו ושווקים גלובליים",
-    "summary": "Bigfoot leaves a paper-trail, the gas prices in GTA VI, splitting the Bloomin Onion bill on a date, the board games people cheat at the most, and evidence of cheating on our very show: Join hosts David Gura, Christina Ruffini and Lisa Mateo on Bloomberg This W",
-    "pubDate": "2026-11-22T16:43:19+00:00",
-    "at": 1795365799000,
-    "score": 0
-   },
-   {
-    "title": "By The Way: Headlines You May Have Missed",
-    "url": "https://www.youtube.com/watch?v=T54mL9ReWCk",
-    "videoId": "T54mL9ReWCk",
-    "thumbnail": "https://i1.ytimg.com/vi/T54mL9ReWCk/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "A gift of GTA VI coming with a contract, what that SNL ‘Sister’ sketch says about American healthcare, Robert Pattinson as Bond, and the F1 aspirations of children: Join Lisa Mateo, David Gura and Christina Ruffini for a roundup of headlines you may have misse",
-    "pubDate": "2026-11-22T16:19:06+00:00",
-    "at": 1795364346000,
+    "summary": "Bloomberg Daybreak Europe is your essential morning viewing to stay ahead. Live from Brussels, we set the agenda for your day, catching you up with overnight markets news from the US and Asia. And we'll tell you what matters for investors in Europe, giving you",
+    "pubDate": "2026-11-23T08:00:38+00:00",
+    "at": 1795420838000,
     "score": -1
    },
    {
-    "title": "Democrats, Republicans Eye the 2028 Field",
-    "url": "https://www.youtube.com/watch?v=fc3HyxQUVeU",
-    "videoId": "fc3HyxQUVeU",
-    "thumbnail": "https://i3.ytimg.com/vi/fc3HyxQUVeU/hqdefault.jpg",
+    "title": "Home Sales Hit 16 Year Low 11/23/26",
+    "url": "https://www.youtube.com/watch?v=AdJPYPyYwbA",
+    "videoId": "AdJPYPyYwbA",
+    "thumbnail": "https://i2.ytimg.com/vi/AdJPYPyYwbA/hqdefault.jpg",
+    "channel": "CNBC Television",
+    "category": "חדשות שוק ומניות",
+    "summary": "Your 60-second money minute. Today’s topic: Home Sales Hit 16 Year Low For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC TV: https://cnb.cx/SubscribeCNBCtelevision » Subscribe to CNBC: https://cn",
+    "pubDate": "2026-11-23T08:00:13+00:00",
+    "at": 1795420813000,
+    "score": 0
+   },
+   {
+    "title": "Iran Targets Bahrain as US-Iran Tensions Escalate Over Fresh Strikes",
+    "url": "https://www.youtube.com/watch?v=oxofrcnqCxo",
+    "videoId": "oxofrcnqCxo",
+    "thumbnail": "https://i4.ytimg.com/vi/oxofrcnqCxo/hqdefault.jpg",
     "channel": "Bloomberg Television",
     "category": "מאקרו ושווקים גלובליים",
-    "summary": "Democratic strategist Ravi Gupta and Republican strategist Leslie Shedd tell Bloomberg This Weekend that the 2028 presidential race remains wide open as both parties assess the lessons of the midterms and potential candidates begin defining their messages. Gup",
-    "pubDate": "2026-11-22T15:58:22+00:00",
-    "at": 1795363102000,
+    "summary": "US-Iran tensions escalate as Iran targets Bahrain, including a US radar site. Trump says Tehran has launched its heaviest barrage of drones and missiles in more than a year as regional security risks remain elevated. Markets are also under pressure. The VIX cl",
+    "pubDate": "2026-11-23T07:44:53+00:00",
+    "at": 1795419893000,
     "score": 0
    },
    {
@@ -2177,7 +2198,7 @@
     "score": 0
    },
    {
-    "title": "Carta CEO Henry Ward: Who Actually Wins When the AI Trade Cracks?",
+    "title": "Who Actually Wins When the AI Trade Cracks?",
     "url": "https://www.youtube.com/watch?v=gBKxEjna78c",
     "videoId": "gBKxEjna78c",
     "thumbnail": "https://i4.ytimg.com/vi/gBKxEjna78c/hqdefault.jpg",
@@ -2222,18 +2243,6 @@
     "summary": "Tech stocks got crushed as the AI trade unraveled, and Dan Niles of Niles Investment Management tells Deirdre Bosa whether this looks more like the dot-com crash or 1997. He walks through the rallies investors saw on the way down from 2000 to 2002, why compani",
     "pubDate": "2026-11-21T00:00:06+00:00",
     "at": 1795219206000,
-    "score": -1
-   },
-   {
-    "title": "Market Close: Ugly Wall Street Fall, Major Averages in Correction, Anthropic Drops • 11/20/26",
-    "url": "https://www.youtube.com/watch?v=PUZSFuGDkEo",
-    "videoId": "PUZSFuGDkEo",
-    "thumbnail": "https://i1.ytimg.com/vi/PUZSFuGDkEo/hqdefault.jpg",
-    "channel": "CNBC Television",
-    "category": "חדשות שוק ומניות",
-    "summary": "CNBC Business News Update with Jessica Ettinger - Markets & Business News With Expert Analysis From Top Business Names. Visit CNBC.com For More. For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC ",
-    "pubDate": "2026-11-20T22:04:38+00:00",
-    "at": 1795212278000,
     "score": -1
    },
    {
@@ -2297,7 +2306,7 @@
     "score": 0
    }
   ],
-  "youtubeUpdatedAt": 1795401267269
+  "youtubeUpdatedAt": 1795432871674
  },
  "lessons": [
   "יוטיוב גאן (Wd Gann Trader): דיוק רמות תמיכה/התנגדות Sq9 (45°/90°/180°) עם שבירת סווינג וסטופ מובנה — \"Gann Cosmogram Nifty analysis using Jupiter-Jupiter Opposition\"",
