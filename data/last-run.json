@@ -1,6 +1,15 @@
 {
- "at": "2026-11-23T11:21:14.522Z",
+ "at": "2026-11-23T22:53:54.367Z",
  "summary": [
+  {
+   "desk": "desk_1w",
+   "timeframe": "1w",
+   "ok": true,
+   "published": false,
+   "version": "v1.11",
+   "oos": 22.64,
+   "robustness": 78
+  },
   {
    "desk": "desk_15m",
    "timeframe": "15m",
@@ -8,63 +17,54 @@
    "published": false,
    "version": "v1.3",
    "oos": 2.39,
-   "robustness": 78
+   "robustness": 54
   },
   {
-   "desk": "desk_aapl",
+   "desk": "desk_1h",
+   "timeframe": "1h",
+   "ok": true,
+   "published": false,
+   "version": "v1.3",
+   "oos": 8.43,
+   "robustness": 72
+  },
+  {
+   "desk": "desk_1d",
    "timeframe": "1d",
    "ok": true,
    "published": false,
    "version": "v1.5",
-   "oos": 15.49,
-   "robustness": 81
+   "oos": 19.63,
+   "robustness": 84
   },
   {
-   "desk": "yt_bot_silvia_rumer_structure_pullback_BTCUS",
-   "timeframe": "1d",
-   "ok": true,
-   "published": true,
-   "version": "v1.2",
-   "oos": 20.95,
-   "robustness": 79
-  },
-  {
-   "desk": "yt_bot_poc_point_of_control_structure_pullba",
-   "timeframe": "1h",
+   "desk": "desk_1w",
+   "timeframe": "1w",
    "ok": true,
    "published": false,
-   "version": null,
-   "oos": 7.05,
-   "robustness": 44
-  },
-  {
-   "desk": "yt_bot_matt_schoeneberger_structure_pullback",
-   "timeframe": "1h",
-   "ok": true,
-   "published": false,
-   "version": null,
-   "oos": 7.53,
-   "robustness": 45
+   "version": "v1.11",
+   "oos": 22.64,
+   "robustness": 78
   }
  ],
  "stats": {
-  "cycles": 154,
-  "backtests": 33820,
+  "cycles": 159,
+  "backtests": 34752,
   "deployments": 60,
-  "scans": 164,
+  "scans": 172,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 105096,
+  "durationMs": 72279,
   "node": "v20.20.2"
  },
  "ai": {
   "source": "model",
-  "focusDesk": "desk_15m",
-  "strategyId": "rsi_reversion",
-  "rationale": "שולחן 15m עם ביצועים חלשים, רווחי OOS נמוכים, מתאים ל‑RSI‑Reversion עם פרמטרים מצומצמים",
+  "focusDesk": "desk_1w",
+  "strategyId": "mean_reversion_z",
+  "rationale": "שולחן חלש עם OOS גבוה, נרצה לשפר עם פרמטרים צרים",
   "provider": "pollinations",
   "model": "openai-fast",
   "accountId": null,
