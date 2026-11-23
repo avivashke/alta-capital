@@ -1,5 +1,5 @@
 {
- "at": "2026-11-22T21:58:26.348Z",
+ "at": "2026-11-23T02:34:30.377Z",
  "summary": [
   {
    "desk": "desk_15m",
@@ -8,63 +8,63 @@
    "published": false,
    "version": "v1.3",
    "oos": 2.39,
-   "robustness": 50
+   "robustness": 42
   },
   {
-   "desk": "yt_bot_silvia_rumer_structure_pullback_BTCUS",
+   "desk": "desk_1h",
+   "timeframe": "1h",
+   "ok": true,
+   "published": true,
+   "version": "v1.3",
+   "oos": 8.43,
+   "robustness": 76
+  },
+  {
+   "desk": "desk_1d",
    "timeframe": "1d",
    "ok": true,
-   "published": false,
-   "version": "v1.1",
-   "oos": 20.67,
+   "published": true,
+   "version": "v1.5",
+   "oos": 19.63,
    "robustness": 85
   },
   {
-   "desk": "yt_bot_poc_point_of_control_structure_pullba",
+   "desk": "desk_1w",
+   "timeframe": "1w",
+   "ok": true,
+   "published": false,
+   "version": "v1.11",
+   "oos": 22.64,
+   "robustness": 78
+  },
+  {
+   "desk": "desk_nvda",
    "timeframe": "1h",
    "ok": true,
    "published": false,
-   "version": null,
-   "oos": 8.52,
-   "robustness": 43
-  },
-  {
-   "desk": "yt_bot_matt_schoeneberger_structure_pullback",
-   "timeframe": "1h",
-   "ok": true,
-   "published": false,
-   "version": null,
-   "oos": 9.14,
-   "robustness": 46
-  },
-  {
-   "desk": "desk_5m",
-   "timeframe": "5m",
-   "ok": true,
-   "published": true,
-   "version": "v1.0",
-   "oos": 1.05,
-   "robustness": 82
+   "version": "v1.7",
+   "oos": 37.9,
+   "robustness": 78
   }
  ],
  "stats": {
-  "cycles": 144,
-  "backtests": 31484,
-  "deployments": 57,
-  "scans": 148,
+  "cycles": 149,
+  "backtests": 32700,
+  "deployments": 59,
+  "scans": 156,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 28540,
+  "durationMs": 126976,
   "node": "v20.20.2"
  },
  "ai": {
   "source": "model",
   "focusDesk": "desk_15m",
   "strategyId": "rsi_reversion",
-  "rationale": "שולחן 15m עם ביצועים נמוכים, נבחר רגישות מתונה במאפייני RSI",
+  "rationale": "שולחן 15m עם OOS נמוך ו-IS חיובי, מתאים ל‑RSI‑Reversion עם פרמטרים צרים",
   "provider": "pollinations",
   "model": "openai-fast",
   "accountId": null,
