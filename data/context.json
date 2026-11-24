@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-23T22:53:54.376Z",
+ "generatedAt": "2026-11-24T06:54:51.062Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -104,52 +104,57 @@
    "label": "תוך־יומי · 15 דקות",
    "timeframe": "15m",
    "symbol": "ETHUSDT",
-   "status": "optimizing",
-   "version": "v1.3",
+   "status": "dry-run",
+   "version": "v1.4",
    "strategyId": "rsi_reversion",
    "params": {
-    "period": 12,
+    "period": 17,
     "oversold": 18,
-    "overbought": 74,
-    "atrStop": 2.5,
+    "overbought": 72,
+    "atrStop": 2.2,
     "rr": 3
    },
    "metrics": {
-    "returnPct": 1.67,
-    "maxDrawdownPct": 5.99,
-    "sharpe": 0.95,
-    "profitFactor": 1.11,
-    "winRate": 64.7,
-    "trades": 34,
-    "avgR": 0.037,
-    "expectancy": 2.45,
-    "exposurePct": 19.5,
-    "bestTradePct": 2.737,
-    "worstTradePct": -1.679,
-    "finalEquity": 5083.38,
+    "returnPct": 2.33,
+    "maxDrawdownPct": 3.41,
+    "sharpe": 1.77,
+    "profitFactor": 1.59,
+    "winRate": 71.4,
+    "trades": 14,
+    "avgR": 0.113,
+    "expectancy": 8.31,
+    "exposurePct": 12.9,
+    "bestTradePct": 2.119,
+    "worstTradePct": -1.696,
+    "finalEquity": 5116.3,
     "curvePoints": 2900,
-    "totalFees": 260.535,
-    "barsInMarket": 565
+    "totalFees": 110.1462,
+    "barsInMarket": 375
    },
    "oos": {
-    "returnPct": 2.39,
-    "maxDrawdownPct": 3.86,
-    "sharpe": 3.27,
-    "profitFactor": 1.49,
-    "winRate": 70,
-    "trades": 10,
-    "avgR": 0.164,
-    "expectancy": 11.94,
-    "exposurePct": 17,
-    "bestTradePct": 2.739,
-    "worstTradePct": -1.631,
-    "finalEquity": 5119.38,
+    "returnPct": 0.78,
+    "maxDrawdownPct": 2.4,
+    "sharpe": 1.89,
+    "profitFactor": 1.43,
+    "winRate": 50,
+    "trades": 4,
+    "avgR": 0.136,
+    "expectancy": 9.72,
+    "exposurePct": 12.3,
+    "bestTradePct": 2.087,
+    "worstTradePct": -1.67,
+    "finalEquity": 5038.9,
     "curvePoints": 900,
-    "totalFees": 65.7195,
-    "barsInMarket": 153
+    "totalFees": 29.9879,
+    "barsInMarket": 111
    },
-   "bestReturn": 2.39,
+   "bestReturn": 0.78,
    "versions": [
+    {
+     "version": "v1.4",
+     "at": 1795503225809,
+     "oos": 0.78
+    },
     {
      "version": "v1.3",
      "at": 1795243807086,
@@ -542,7 +547,7 @@
    "label": "מדדים · S&P 500 (יומי)",
    "timeframe": "1d",
    "symbol": "SPY",
-   "status": "live",
+   "status": "optimizing",
    "version": "v1.5",
    "strategyId": "vol_breakout",
    "params": {
@@ -567,7 +572,7 @@
     "bestTradePct": 3.485,
     "worstTradePct": -2.314,
     "finalEquity": 4127.88,
-    "curvePoints": 2414,
+    "curvePoints": 2412,
     "totalFees": 436.5436,
     "barsInMarket": 740
    },
@@ -638,21 +643,21 @@
     "rr": 1.7
    },
    "metrics": {
-    "returnPct": 27.66,
-    "maxDrawdownPct": 4.42,
-    "sharpe": 1,
-    "profitFactor": 3.18,
+    "returnPct": 27.61,
+    "maxDrawdownPct": 4.2,
+    "sharpe": 1.02,
+    "profitFactor": 3.17,
     "winRate": 70.4,
     "trades": 27,
-    "avgR": 0.616,
-    "expectancy": 30.74,
-    "exposurePct": 5.9,
-    "bestTradePct": 3.062,
+    "avgR": 0.615,
+    "expectancy": 30.68,
+    "exposurePct": 5.8,
+    "bestTradePct": 3.061,
     "worstTradePct": -1.848,
-    "finalEquity": 3829.9,
-    "curvePoints": 2414,
-    "totalFees": 85.245,
-    "barsInMarket": 143
+    "finalEquity": 3828.37,
+    "curvePoints": 2412,
+    "totalFees": 85.2131,
+    "barsInMarket": 140
    },
    "oos": {
     "returnPct": 15.49,
@@ -722,20 +727,20 @@
     "rr": 2.9
    },
    "metrics": {
-    "returnPct": 92.71,
+    "returnPct": 93.69,
     "maxDrawdownPct": 8.27,
-    "sharpe": 1.13,
-    "profitFactor": 1.85,
-    "winRate": 52.5,
+    "sharpe": 1.14,
+    "profitFactor": 1.86,
+    "winRate": 53.1,
     "trades": 162,
-    "avgR": 0.281,
-    "expectancy": 11.44,
+    "avgR": 0.283,
+    "expectancy": 11.56,
     "exposurePct": 72.5,
     "bestTradePct": 7.878,
     "worstTradePct": -2.759,
-    "finalEquity": 3854.16,
+    "finalEquity": 3873.74,
     "curvePoints": 2880,
-    "totalFees": 163.4972,
+    "totalFees": 163.474,
     "barsInMarket": 2087
    },
    "oos": {
@@ -790,38 +795,38 @@
     "rr": 2.7
    },
    "metrics": {
-    "returnPct": -8.64,
+    "returnPct": -10.85,
     "maxDrawdownPct": 22.25,
-    "sharpe": -0.62,
-    "profitFactor": 0.9,
-    "winRate": 29.1,
+    "sharpe": -0.8,
+    "profitFactor": 0.88,
+    "winRate": 28.6,
     "trades": 203,
-    "avgR": -0.025,
-    "expectancy": -0.86,
-    "exposurePct": 71.9,
-    "bestTradePct": 3.64,
-    "worstTradePct": -1.618,
-    "finalEquity": 1827.22,
+    "avgR": -0.033,
+    "expectancy": -1.07,
+    "exposurePct": 71.8,
+    "bestTradePct": 3.53,
+    "worstTradePct": -1.569,
+    "finalEquity": 1782.91,
     "curvePoints": 3880,
-    "totalFees": 624.9035,
-    "barsInMarket": 2789
+    "totalFees": 602.9817,
+    "barsInMarket": 2784
    },
    "oos": {
-    "returnPct": 7.05,
+    "returnPct": 6.79,
     "maxDrawdownPct": 8.01,
-    "sharpe": 1.98,
-    "profitFactor": 1.27,
+    "sharpe": 1.79,
+    "profitFactor": 1.24,
     "winRate": 36.2,
     "trades": 58,
-    "avgR": 0.083,
-    "expectancy": 2.4,
-    "exposurePct": 70.8,
-    "bestTradePct": 4.143,
-    "worstTradePct": -1.747,
-    "finalEquity": 2140.97,
+    "avgR": 0.082,
+    "expectancy": 2.34,
+    "exposurePct": 70.4,
+    "bestTradePct": 4.108,
+    "worstTradePct": -1.743,
+    "finalEquity": 2135.71,
     "curvePoints": 1200,
-    "totalFees": 189.7037,
-    "barsInMarket": 850
+    "totalFees": 185.6273,
+    "barsInMarket": 845
    },
    "versions": []
   },
@@ -878,6 +883,76 @@
   }
  ],
  "ideas": [
+  {
+   "title": "Infinity-Articls/Ultimate-Volumetric-Price-Action-Dashboard-Smart-Order-Blocks-Trend-Pulse-Order-Flow",
+   "source": "GitHub",
+   "url": "https://github.com/Infinity-Articls/Ultimate-Volumetric-Price-Action-Dashboard-Smart-Order-Blocks-Trend-Pulse-Order-Flow",
+   "strategy": "ema_trend",
+   "tested": false
+  },
+  {
+   "title": "anhnguyen123312/EA-claw",
+   "source": "GitHub",
+   "url": "https://github.com/anhnguyen123312/EA-claw",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "Mmadrb/Volume-Profile-Order-Flow-Analysis-VPOFA",
+   "source": "GitHub",
+   "url": "https://github.com/Mmadrb/Volume-Profile-Order-Flow-Analysis-VPOFA",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "gregorian-09/mqt-microstructure",
+   "source": "GitHub",
+   "url": "https://github.com/gregorian-09/mqt-microstructure",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "mahmoud20138/IFC-Trading-System",
+   "source": "GitHub",
+   "url": "https://github.com/mahmoud20138/IFC-Trading-System",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "ModdySwag/ModFlow-OrderFlow-Analysis-Suite",
+   "source": "GitHub",
+   "url": "https://github.com/ModdySwag/ModFlow-OrderFlow-Analysis-Suite",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "WilliamYi951208/trading-assistant",
+   "source": "GitHub",
+   "url": "https://github.com/WilliamYi951208/trading-assistant",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "mahmoud20138/OrderFlow-Analysis-Pro",
+   "source": "GitHub",
+   "url": "https://github.com/mahmoud20138/OrderFlow-Analysis-Pro",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "srlcarlg/srl-ctrader-indicators",
+   "source": "GitHub",
+   "url": "https://github.com/srlcarlg/srl-ctrader-indicators",
+   "strategy": null,
+   "tested": false
+  },
+  {
+   "title": "Azhagesan-dev/OrderFlowMap",
+   "source": "GitHub",
+   "url": "https://github.com/Azhagesan-dev/OrderFlowMap",
+   "strategy": null,
+   "tested": false
+  },
   {
    "title": "Your backtest is probably lying to you. Strangers on Reddit showed me 7 ways it does - Reddit",
    "source": "Reddit (Indexed)",
@@ -1016,84 +1091,16 @@
    "url": "https://github.com/fasiondog/hikyuu",
    "strategy": null,
    "tested": false
-  },
-  {
-   "title": "BACKTEST THE HYPE: I Backtested 3 Viral Trading Strategies (Women’s Division)",
-   "source": "YouTube · יונתן",
-   "url": "https://www.youtube.com/watch?v=tNMruPw5NNc",
-   "tested": false
-  },
-  {
-   "title": "Matt Schoeneberger: The Rumers' Opening Range Reversal - Back Tested over 9 Years (Skept",
-   "source": "YouTube · יונתן",
-   "url": "https://www.youtube.com/watch?v=Mbhb7V8GQrw",
-   "tested": false
-  },
-  {
-   "title": "POC · Point of Control: His Channel Is Gone. We Tested His \"$10K a Month\" Strategy Anyway",
-   "source": "YouTube · יונתן",
-   "url": "https://www.youtube.com/watch?v=6xeh5R0pt08",
-   "tested": false
-  },
-  {
-   "title": "batramayank106/commodity-futures-quant-risk-engine",
-   "source": "GitHub",
-   "url": "https://github.com/batramayank106/commodity-futures-quant-risk-engine",
-   "strategy": "rsi_reversion",
-   "tested": false
-  },
-  {
-   "title": "ShubhamSingh0710/commodity-futures-quant-risk-engine",
-   "source": "GitHub",
-   "url": "https://github.com/ShubhamSingh0710/commodity-futures-quant-risk-engine",
-   "strategy": "rsi_reversion",
-   "tested": false
-  },
-  {
-   "title": "b2devv/backtest-overfitting-detector",
-   "source": "GitHub",
-   "url": "https://github.com/b2devv/backtest-overfitting-detector",
-   "strategy": "rsi_reversion",
-   "tested": false
-  },
-  {
-   "title": "arin-deshpande/quant-strat-backtester",
-   "source": "GitHub",
-   "url": "https://github.com/arin-deshpande/quant-strat-backtester",
-   "strategy": "rsi_reversion",
-   "tested": false
-  },
-  {
-   "title": "denesh05/Multi-Strategy-Trading-Engine",
-   "source": "GitHub",
-   "url": "https://github.com/denesh05/Multi-Strategy-Trading-Engine",
-   "strategy": "rsi_reversion",
-   "tested": false
-  },
-  {
-   "title": "walke715-del/Quantitative-Trading-Signal-Backtester",
-   "source": "GitHub",
-   "url": "https://github.com/walke715-del/Quantitative-Trading-Signal-Backtester",
-   "strategy": "rsi_reversion",
-   "tested": false
-  },
-  {
-   "title": "krishyaa06/prism-backtest",
-   "source": "GitHub",
-   "url": "https://github.com/krishyaa06/prism-backtest",
-   "strategy": "rsi_reversion",
-   "tested": false
   }
  ],
  "sentiment": {
-  "updatedAt": 1795474433319,
+  "updatedAt": 1795503289822,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
    "value": 11,
    "label": "Extreme Fear",
-   "at": 1795392000000,
+   "at": 1795478400000,
    "history": [
-    32,
     29,
     28,
     20,
@@ -1106,101 +1113,228 @@
     12,
     12,
     11,
+    11,
     11
    ]
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.45,
+    "score": -0.41,
     "bias": "דובי",
     "technical": 0,
-    "news": -0.65,
+    "news": -0.51,
     "drivers": [
-     "North Korea Moves $247 Million of Binance Hack Loot Through Bitcoin Mixers",
+     "Bitcoin Core CVE-2026-117348: Node stall through duplicate orphan announcements",
      "Here’s what happened in crypto today",
-     "US seeks to recover $1.1B in crypto stolen in North Korea-linked Binance hack"
+     "Why 42 Macro says it’s waiting to buy the Bitcoin dip"
     ],
-    "price": 61193.5
+    "price": 60508.8
    },
    "ETHUSDT": {
-    "score": 0.01,
-    "bias": "ניטרלי",
+    "score": -0.16,
+    "bias": "דובי",
     "technical": 0,
-    "news": 0.21,
+    "news": 0,
     "drivers": [
-     "BTCS offloads $44M in ETH to reduce DeFi debt amid market downturn",
-     "📺 Why Paltrow and Mahdara are bullish on consumer"
+     "Ethereum Foundation doubles protocol security team ahead of overhaul",
+     "BTCS offloads $44M in ETH to reduce DeFi debt amid market downturn"
     ],
-    "price": 1709.86
+    "price": 1701.1
    },
    "NVDA": {
-    "score": 0.01,
+    "score": 0,
     "bias": "ניטרלי",
     "technical": 0,
-    "news": 0.23,
+    "news": 0.19,
     "drivers": [
-     "‘This establishes a bottom’: Jensen Huang’s return seen as likely to stop market sell-off, for now",
-     "Nvidia&#x2019;s stock is surging again. What to know before chasing the AI rally.",
-     "U.S. stocks see best day in more than a year, as return of Jensen Huang revives AI enthusiasm"
+     "Trump made up to $15M on Nvidia shares after Huang's return",
+     "Short Nvidia Fund Halted After 91% Wipeout",
+     "Nvidia&#x2019;s stock is surging again. What to know before chasing the AI rally."
     ],
     "price": 165.05
    },
    "SPY": {
-    "score": -0.34,
+    "score": -0.16,
     "bias": "דובי",
     "technical": 0,
-    "news": -0.28,
+    "news": 0,
     "drivers": [
-     "Fed's John Williams indicates higher interest rates likely 'over time' to address inflation",
-     "‘This establishes a bottom’: Jensen Huang’s return seen as likely to stop market sell-off, for now",
-     "U.S. stocks see best day in more than a year, as return of Jensen Huang revives AI enthusiasm"
+     "The newest addition to the S&P 500 is a maker of viral ice-cream machines",
+     "Federal Reserve announces College Fed Challenge winners",
+     "Federal Reserve Board releases results from survey of senior financial officers at banks about their strategies and practices for managing reserve balances"
     ],
     "price": 722.29
    },
    "AAPL": {
-    "score": -0.26,
-    "bias": "דובי",
+    "score": -0.04,
+    "bias": "ניטרלי",
     "technical": 0,
-    "news": -0.03,
+    "news": 0.05,
     "drivers": [],
     "price": 349.08
    }
   },
   "headlines": [
    {
-    "title": "Fed's John Williams indicates higher interest rates likely 'over time' to address inflation",
-    "url": "https://www.cnbc.com/2026/11/23/john-williams-fed-inflation-rate-hikes.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "The influential central banker expressed confidence that inflation will get closer to the Fed's 2% target in 2027.",
-    "at": 1795467737000,
-    "score": -1
-   },
-   {
-    "title": "‘This establishes a bottom’: Jensen Huang’s return seen as likely to stop market sell-off, for now",
-    "url": "https://www.cnbc.com/2026/11/23/nvidia-jensen-huang-ceo-market-rally.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Wall Street strategists say Jensen Huang’s return to Nvidia could steady the AI trade, though spending and data-center risks remain.",
-    "at": 1795456847000,
-    "score": -1
-   },
-   {
-    "title": "Employees at Eric Trump-backed robot startup lose health benefits as company's cash crunch deepens",
-    "url": "https://www.cnbc.com/2026/11/22/foundation-future-industries-health-benefits-payroll-base-group.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Foundation is pursuing an emergency bridge loan and has been in talks with VC firms as it waits for a $150 million investment from South Korea's Base Group.",
-    "at": 1795373705000,
+    "title": "The Frantic White House Push to Get Jensen Huang Back",
+    "url": "https://www.wsj.com/business/nvidia-jensen-huang-white-house-9ad03961",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795502396000,
     "score": 0
    },
    {
-    "title": "How China is using summits to expand its global influence",
-    "url": "https://www.cnbc.com/2026/11/21/china-xi-trump-putin-global-diplomacy-shenzhen.html",
-    "source": "CNBC Finance",
+    "title": "CVE-2026-96805: Unauthorized Control of Trailer Braking System / CVSS 9.6",
+    "url": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-323-02",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 1",
+    "at": 1795500849000,
+    "score": 0
+   },
+   {
+    "title": "What a CEO, a war and a video game taught me about reading power",
+    "url": "https://sidelinesnews.github.io/reading-power.html",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795499511000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: DossierQL, a Game for Learning GraphQL",
+    "url": "https://virissimo.info/dossierql/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795498043000,
+    "score": 0
+   },
+   {
+    "title": "Trading System – tests trading rules against no-information baselines",
+    "url": "https://ultimate-trading-system.com/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795489240000,
+    "score": 1
+   },
+   {
+    "title": "Trump made up to $15M on Nvidia shares after Huang's return",
+    "url": "https://www.ft.com/content/67b0a070-c2a9-4229-885a-383cca657763",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 19 · Comments: 3",
+    "at": 1795489004000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: A narrated map tour of the events leading up to the Texas Revolution",
+    "url": "https://whistlestop.guide/features/texas-revolution",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 3 · Comments: 2",
+    "at": 1795488929000,
+    "score": 0
+   },
+   {
+    "title": "US adds Megaspeed to trade blacklist",
+    "url": "https://www.theguardian.com/us-news/2026/nov/23/megaspeed-us-trade-blacklist-nvidia",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 3",
+    "at": 1795488178000,
+    "score": 0
+   },
+   {
+    "title": "Trump Posts AI Meme of Jensen Huang Holding Up a Bra",
+    "url": "https://variety.com/2026/digital/news/trump-ai-meme-jensen-huang-bra-nvidia-reinstates-ceo-1236956004/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 3 · Comments: 0",
+    "at": 1795487167000,
+    "score": 0
+   },
+   {
+    "title": "WSJ Editorial: Restoring Huang as CEO will have major NatSec and political costs",
+    "url": "https://www.wsj.com/opinion/nvidia-jensen-huang-donald-trump-130e644c",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 43 · Comments: 17",
+    "at": 1795486312000,
+    "score": 0
+   },
+   {
+    "title": "Training on Documents About Monitoring Leads to Cot Obfuscation",
+    "url": "https://arxiv.org/abs/2605.15257",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795479590000,
+    "score": 0
+   },
+   {
+    "title": "Short Nvidia Fund Halted After 91% Wipeout",
+    "url": "https://www.wsj.com/livecoverage/stock-market-today-dow-sp-500-nasdaq-11-23-2026/card/short-nvidia-fund-halted-after-91-wipeout-myoKEHNFkGcseucDUC48",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 29 · Comments: 5",
+    "at": 1795476986000,
+    "score": 0
+   },
+   {
+    "title": "LLPE: A partial evaluator for LLVM bitcode",
+    "url": "http://www.llpe.org/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795450433000,
+    "score": 0
+   },
+   {
+    "title": "Gnomon: Git for Postgres Data",
+    "url": "https://gnomon.bitsinfra.com/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 4 · Comments: 0",
+    "at": 1795442618000,
+    "score": 0
+   },
+   {
+    "title": "Bitcoin Core CVE-2026-117348: Node stall through duplicate orphan announcements",
+    "url": "https://bitcoincore.org/en/2026/11/20/disclose-orphan-inv-stall/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795355736000,
+    "score": 0
+   },
+   {
+    "title": "I&#x2019;ve been married for 58 years. It&#x2019;s &#x2018;our&#x2019; money, not &#x2018;his&#x2019; and &#x2018;hers.&#x2019; Why do so many couples keep their finances separate?",
+    "url": "https://www.marketwatch.com/story/ive-been-married-for-58-years-its-our-money-not-his-and-hers-why-dont-others-feel-the-same-c5745889?mod=mw_rss_topstories",
+    "source": "MarketWatch",
     "channelKind": "news",
-    "body": "Chinese President Xi Jinping has helped coordinate yet another photo-op of global significance.",
-    "at": 1795240802000,
+    "body": "&#x201c;My wife stopped working outside the home in 1970.&#x201d;",
+    "at": 1795482060000,
+    "score": 0
+   },
+   {
+    "title": "HPE just posted its strongest growth ever &#x2014; but its stock is sinking",
+    "url": "https://www.marketwatch.com/story/hpe-just-posted-its-strongest-growth-ever-and-its-stock-is-tacking-on-more-big-gains-4421cebb?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "HPE boosted its financial forecast on Monday in the face of strong AI demand.",
+    "at": 1795482060000,
+    "score": 1
+   },
+   {
+    "title": "The newest addition to the S&P 500 is a maker of viral ice-cream machines",
+    "url": "https://www.marketwatch.com/story/the-newest-addition-to-the-s-p-500-is-a-maker-of-viral-ice-cream-machines-5c6e209a?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "SharkNinja will join the S&P 500, replacing AES.",
+    "at": 1795475880000,
     "score": 0
    },
    {
@@ -1211,33 +1345,6 @@
     "body": "Jensen Huang&#x2019;s return to Nvidia was the good news that the AI trade needed, but investors should prepare for more volatility",
     "at": 1795471440000,
     "score": 1.414213562373095
-   },
-   {
-    "title": "U.S. stocks see best day in more than a year, as return of Jensen Huang revives AI enthusiasm",
-    "url": "https://www.marketwatch.com/story/u-s-stocks-see-best-day-in-more-than-a-year-as-return-of-jensen-huang-revives-ai-enthusiasm-c3b9d274?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "Jensen Huang&#x2019;s return as CEO of Nvidia powered a massive bounce in the U.S. stock market on Monday by helping to restore faith in the artificial-intelligence trade.",
-    "at": 1795470660000,
-    "score": 0
-   },
-   {
-    "title": "Consumer stocks, seen as safe bet amid cracks in AI trade, were among the S&P 500&#x2019;s biggest losers Monday",
-    "url": "https://www.marketwatch.com/story/consumer-stocks-seen-as-safe-bet-amid-cracks-in-ai-trade-are-among-the-s-p-500s-biggest-losers-monday-80cf8f81?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "Shares of Kroger and Tyson Foods fall, as Nvidia storms higher",
-    "at": 1795470300000,
-    "score": 0
-   },
-   {
-    "title": "These stocks are the biggest gainers after Jensen Huang&#x2019;s return to Nvidia",
-    "url": "https://www.marketwatch.com/story/these-stocks-are-the-biggest-gainers-after-jensen-huangs-return-to-nvidia-bb886140?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "Huang&#x2019;s comeback offers relief to the battered AI trade and drives major boosts across the tech sector.",
-    "at": 1795469760000,
-    "score": 1
    },
    {
     "title": "Federal Reserve announces College Fed Challenge winners",
@@ -1267,6 +1374,78 @@
     "score": -1
    },
    {
+    "title": "China warns Jensen Huang Nvidia comeback won't end 'malicious' US risks",
+    "url": "https://seekingalpha.com/news/4675985-china-warns-jensen-huang-nvidia-comeback-wont-end-malicious-us-risks?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795502847000,
+    "score": 0
+   },
+   {
+    "title": "South Korea&#x2019;s central bank seen extending rate hikes as inflation and chip exports remain strong",
+    "url": "https://seekingalpha.com/news/4675982-south-koreas-central-bank-seen-extending-rate-hikes-as-inflation-and-chip-exports-remain-strong?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795502831000,
+    "score": -0.5773502691896258
+   },
+   {
+    "title": "Cmb.Tech announces $0.21 interim dividend and $0.44 share premium distribution",
+    "url": "https://seekingalpha.com/news/4675988-cmbtech-announces-021-interim-dividend-and-044-share-premium-distribution?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795502786000,
+    "score": 0
+   },
+   {
+    "title": "Fed's John Williams indicates higher interest rates likely 'over time' to address inflation",
+    "url": "https://www.cnbc.com/2026/11/23/john-williams-fed-inflation-rate-hikes.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "The influential central banker expressed confidence that inflation will get closer to the Fed's 2% target in 2027.",
+    "at": 1795467737000,
+    "score": -1
+   },
+   {
+    "title": "‘This establishes a bottom’: Jensen Huang’s return seen as likely to stop market sell-off, for now",
+    "url": "https://www.cnbc.com/2026/11/23/nvidia-jensen-huang-ceo-market-rally.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Wall Street strategists say Jensen Huang’s return to Nvidia could steady the AI trade, though spending and data-center risks remain.",
+    "at": 1795456847000,
+    "score": -1
+   },
+   {
+    "title": "Employees at Eric Trump-backed robot startup lose health benefits as company's cash crunch deepens",
+    "url": "https://www.cnbc.com/2026/11/22/foundation-future-industries-health-benefits-payroll-base-group.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Foundation is pursuing an emergency bridge loan and has been in talks with VC firms as it waits for a $150 million investment from South Korea's Base Group.",
+    "at": 1795476499000,
+    "score": 0
+   },
+   {
+    "title": "How China is using summits to expand its global influence",
+    "url": "https://www.cnbc.com/2026/11/21/china-xi-trump-putin-global-diplomacy-shenzhen.html",
+    "source": "CNBC Finance",
+    "channelKind": "news",
+    "body": "Chinese President Xi Jinping has helped coordinate yet another photo-op of global significance.",
+    "at": 1795240802000,
+    "score": 0
+   },
+   {
+    "title": "China's Z.ai Says Its New AI Model Can Think Like One Four Times Its Size",
+    "url": "https://decrypt.co/383851/chinas-zai-new-ai-model-glm-think-like-four-times-size",
+    "source": "Decrypt",
+    "channelKind": "news",
+    "body": "GLM-5.4 uses a looping architecture to squeeze more reasoning power from fewer parameters, challenging the expensive approach favored by American AI giants.",
+    "at": 1795475162000,
+    "score": 0
+   },
+   {
     "title": "OpenAI Will Pay You Up to $8K to Preach the AI Gospel to Small Businesses",
     "url": "https://decrypt.co/383848/openai-will-pay-8k-preach-ai-gospel-small-businesses",
     "source": "Decrypt",
@@ -1285,6 +1464,240 @@
     "score": -1
    },
    {
+    "title": "Here’s what happened in crypto today",
+    "url": "https://cointelegraph.com/news/what-happened-in-crypto-today?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "Need to know what happened in crypto today? Here is the latest news on daily trends and events impacting Bitcoin price, blockchain, DeFi, Web3 and crypto regulation.",
+    "at": 1795500000000,
+    "score": 0
+   },
+   {
+    "title": "Why 42 Macro says it’s waiting to buy the Bitcoin dip",
+    "url": "https://cointelegraph.com/markets/why-42-macro-says-its-waiting-to-buy-the-bitcoin-dip?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "The independent macro research company warns the Bitcoin sell-off may not have yet run its course.",
+    "at": 1795496850000,
+    "score": 0
+   },
+   {
+    "title": "Google wants to make you the star of your own AI slop movies",
+    "url": "https://cointelegraph.com/news/google-wants-make-you-star-your-own-ai-slop-movies?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "Viewers could find their AI-doppelgangers inserted into the crowd during the Cricket World Cup, or take a leading role in their very own romantic comedy.",
+    "at": 1795490002000,
+    "score": 0
+   },
+   {
+    "title": "Ethereum Foundation doubles protocol security team ahead of overhaul",
+    "url": "https://cointelegraph.com/news/ethereum-foundation-doubles-protocol-security-team-amid-ai-quantum-overhaul?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
+    "source": "Cointelegraph",
+    "channelKind": "news",
+    "body": "The foundation said its next upgrade will be harder than the Merge, and the required pace of development will make it easier to ship bugs.",
+    "at": 1795480586000,
+    "score": 1
+   },
+   {
+    "title": "Stock Market: Will S&P 500 Open Up or Down Today?",
+    "url": "https://www.benzinga.com/markets/prediction-markets/26/11/63568369/stock-market-will-sp-500-open-up-or-down-today-84?utm_source=yahooFinance&utm_campaign=partner_feed&utm_medium=referral&.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "U.S. stock futures are edging higher early Tuesday as Wall Street builds on a historic tech-led relief rally triggered by Jensen Huang’s stunning return as CEO of Nvidia Corp. (NASDAQ:NVDA), alongside a sharp rebound across Asian markets. The Polymarket trader",
+    "at": 1795500637000,
+    "score": 1
+   },
+   {
+    "title": "Nvidia Stock Just Had Its Best Day in Over a Decade. I'd Still Buy It Now.",
+    "url": "https://www.fool.com/investing/2026/11/24/nvidia-stock-just-had-its-best-day-in-over-a-decade-i-d-still-buy-it-now/?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "The AI chip giant's shares climbed around a third in one session. Is it still a bargain?",
+    "at": 1795500182000,
+    "score": 1.414213562373095
+   },
+   {
+    "title": "Jensen Huang is back at Nvidia. What does it mean for Europe's AI stocks?",
+    "url": "https://www.euronews.com/2026/11/24/jensen-huang-is-back-at-nvidia-what-does-it-mean-for-europes-ai-stocks?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "Europe's chip stocks rallied after Nvidia reinstated Jensen Huang as CEO, with Donald Trump cheering the board's decision. But Nokia, ASML and other AI names have only recovered part of what they lost during his absence.View on euronews",
+    "at": 1795499570000,
+    "score": 0
+   },
+   {
+    "title": "Not Starlink. Not Starship. This SpaceX Business Could Be Worth $80 Billion on Its Own.",
+    "url": "https://www.fool.com/investing/2026/11/24/not-starlink-not-starship-this-spacex-business-could-be-worth-usd80-billion-on-its-own/?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "Space Exploration Technologies' fastest-growing business doesn't fly, orbit, or beam internet, and it might be worth $80 billion on its own.",
+    "at": 1795499402000,
+    "score": 0
+   },
+   {
+    "title": "U.S. CFTC sets policies on event contract data, using crypto to check financial boxes",
+    "url": "https://www.coindesk.com/policy/2026/11/23/u-s-cftc-sets-policies-on-event-contract-data-using-crypto-to-check-financial-boxes",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "The derivatives regulator issues a rule on data reporting for event contracts and new guidance for how crypto assets can be used to meet regulatory requirements.",
+    "at": 1795479904000,
+    "score": 0
+   },
+   {
+    "title": "New York judge declines to block Kalshi from operating in the state for now",
+    "url": "https://www.coindesk.com/policy/2026/11/23/new-york-judge-declines-to-block-kalshi-from-operating-in-the-state-for-now",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "Judge Melissa Crane did not shut down Kalshi's operations in a hearing Monday, but did say she wanted both parties to present their full arguments in an expedited fashion.",
+    "at": 1795458123000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia's Jensen Huang faces Senate scrutiny despite Trump-backed return as CEO",
+    "url": "https://www.coindesk.com/business/2026/11/23/nvidia-s-jensen-huang-faces-senate-scrutiny-despite-trump-backed-return-as-ceo",
+    "source": "CoinDesk",
+    "channelKind": "news",
+    "body": "Congressional scrutiny will continue even as CEO returns to lead the company after his affair scandal and its national-security implications.",
+    "at": 1795457525000,
+    "score": 0
+   },
+   {
+    "title": "📺 Asia Stocks Jump as Huang’s Return Lifts AI Trade",
+    "url": "https://www.youtube.com/watch?v=tNtiAdt02nE",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "\"Bloomberg: The Asia Trade\" brings you everything you need to know to get ahead as the trading day begins in Asia. Bloomberg TV is live from Sydney and Singapore with Haidi Stroud-Watts and Avril Hong, getting insight and analysis from newsmakers and industry ",
+    "at": 1795496193000,
+    "score": 1
+   },
+   {
+    "title": "📺 Jensen Huang returns as Nvidia CEO after board reversal",
+    "url": "https://www.youtube.com/watch?v=ZmkSZtN_ieM",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "Jensen Huang has returned as Nvidia CEO after a scandal that sent the entire stock market tumbling, amid questions about three alleged affairs and how restricted AI chips got to China. President Donald Trump told CNBC he helped persuade Nvidia’s board to reins",
+    "at": 1795487724000,
+    "score": 0
+   },
+   {
+    "title": "📺 Why Jensen Huang's Return Won't Solve Nvidia's Biggest Problems",
+    "url": "https://www.youtube.com/watch?v=HDNsi5IyoEE",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "Jensen Huang is back at Nvidia, but General Catalyst's Madhu Namburi, who spent 25 years advising tech boards at J.P. Morgan, says his return doesn't solve the company's biggest challenges. He explains the competition from custom chips and CUDA alternatives, w",
+    "at": 1795485406000,
+    "score": 0
+   },
+   {
+    "title": "📺 Jim Cramer talks where Nvidia could be headed following Jensen Huang's return",
+    "url": "https://www.youtube.com/watch?v=cCVEZgLzqB4",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "'Mad Money' host Jim Cramer shares his thoughts on Jensen Huang returning as CEO of Nvidia.",
+    "at": 1795483111000,
+    "score": 0
+   },
+   {
+    "title": "📺 Nvidia's tech still beats rivals despite selloff, says Deepwater's Gene Munster",
+    "url": "https://www.youtube.com/watch?v=VlMhS7HlD1I",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "Gene Munster, Deepwater Asset Management, joins 'Fast Money' with reaction to Jensen Huang returning as Nvidia CEO.",
+    "at": 1795482878000,
+    "score": 0
+   },
+   {
+    "title": "📺 CrowdStrike CEO on deal to buy Zscaler",
+    "url": "https://www.youtube.com/watch?v=cEnIJdtfYAY",
+    "source": "YouTube · CNBC Television",
+    "channelKind": "youtube",
+    "body": "CrowdStrike Co-founder and CEO George Kurtz joins 'Mad Money' host Jim Cramer to talk its deal to buy Zscaler, the state of the cybersecurity trade, AI agents, and more.",
+    "at": 1795482653000,
+    "score": 1
+   },
+   {
+    "title": "📺 Big Take: Jensen Huang Is Back",
+    "url": "https://www.youtube.com/shorts/vngnXK7TF24",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "On this episode of the Big Take podcast, Sarah Holder sits down with Odd Lots’ co-host Joe Weisenthal and AI policy editor Michael Shepard on US President Donald Trump’s stunning intervention.&#13; --------&#13; More on Bloomberg Television and Markets&#13; &#",
+    "at": 1795481107000,
+    "score": 0
+   },
+   {
+    "title": "📺 Nvidia Board Faces Questions After Huang Reinstatement",
+    "url": "https://www.youtube.com/watch?v=evperxY0l20",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "\"Balance of Power\" focuses on the intersection of politics and global business. On today's show, Rep. Madeleine Dean, a member of the House Foreign Affairs Committee that will question Jensen Huang behind closed doors on Dec. 1, says his return to Nvidia raise",
+    "at": 1795477940000,
+    "score": 0
+   },
+   {
+    "title": "📺 Naveen Rao: Jensen Huang's Return \"Doesn't Look Great\" for Nvidia's Board",
+    "url": "https://www.youtube.com/watch?v=LlybdOdq7D8",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "Jensen Huang is back as CEO of Nvidia, and Unconventional AI CEO Naveen Rao tells Deirdre Bosa the reversal doesn't look great for Nvidia's board. He explains why Jensen, who owns a small slice of the company, may reshape the board around him, why he sees Wash",
+    "at": 1795476907000,
+    "score": 0
+   },
+   {
+    "title": "📺 Haines: Nvidia Board Better ‘Lawyer Up’",
+    "url": "https://www.youtube.com/watch?v=TELDnrsqoCU",
+    "source": "YouTube · Bloomberg Television",
+    "channelKind": "youtube",
+    "body": "Terry Haines, founder of Pangaea Policy, says Nvidia and its board face potentially prolonged scrutiny over Jensen Huang. Haines, who helped run congressional investigations into Enron and WorldCom, expects board members to be called to testify “repeatedly” as",
+    "at": 1795476623000,
+    "score": 0
+   },
+   {
+    "title": "📺 Wall Street is going wild after Jensen Huang returns to Nvidia as CEO.",
+    "url": "https://www.youtube.com/shorts/l9KhINUgukE",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "Wall Street is going wild after Jensen Huang returns to Nvidia as CEO. Brooke DiPalma breaks down the market recap. 🔁",
+    "at": 1795475930000,
+    "score": 0
+   },
+   {
+    "title": "📺 Elon Musk stood by Jensen Huang when the chips were down",
+    "url": "https://www.youtube.com/shorts/rXgmrc56PFQ",
+    "source": "YouTube · Yahoo Finance",
+    "channelKind": "youtube",
+    "body": "Elon Musk’s support of Jensen Huang continues. Nvidia’s board voted unanimously on Monday to bring Huang back as CEO, and the stock closed up 31%.",
+    "at": 1795472831000,
+    "score": 0
+   },
+   {
+    "title": "U.S. stocks see best day in more than a year, as return of Jensen Huang revives AI enthusiasm",
+    "url": "https://www.marketwatch.com/story/u-s-stocks-see-best-day-in-more-than-a-year-as-return-of-jensen-huang-revives-ai-enthusiasm-c3b9d274?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "Jensen Huang&#x2019;s return as CEO of Nvidia powered a massive bounce in the U.S. stock market on Monday by helping to restore faith in the artificial-intelligence trade.",
+    "at": 1795470660000,
+    "score": 0
+   },
+   {
+    "title": "Consumer stocks, seen as safe bet amid cracks in AI trade, were among the S&P 500&#x2019;s biggest losers Monday",
+    "url": "https://www.marketwatch.com/story/consumer-stocks-seen-as-safe-bet-amid-cracks-in-ai-trade-are-among-the-s-p-500s-biggest-losers-monday-80cf8f81?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "Shares of Kroger and Tyson Foods fall, as Nvidia storms higher",
+    "at": 1795470300000,
+    "score": 0
+   },
+   {
+    "title": "These stocks are the biggest gainers after Jensen Huang&#x2019;s return to Nvidia",
+    "url": "https://www.marketwatch.com/story/these-stocks-are-the-biggest-gainers-after-jensen-huangs-return-to-nvidia-bb886140?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "Huang&#x2019;s comeback offers relief to the battered AI trade and drives major boosts across the tech sector.",
+    "at": 1795469760000,
+    "score": 1
+   },
+   {
     "title": "North Korea Moves $247 Million of Binance Hack Loot Through Bitcoin Mixers",
     "url": "https://decrypt.co/383844/north-korea-247-million-binance-hack-bitcoin-mixers",
     "source": "Decrypt",
@@ -1292,15 +1705,6 @@
     "body": "Roughly a month after the $6.4 billion hack, Elliptic says nearly all of the coinjoin mixing was coordinated by one person who “refuses to block funds such as these.&#34;",
     "at": 1795466162000,
     "score": -1
-   },
-   {
-    "title": "Here’s what happened in crypto today",
-    "url": "https://cointelegraph.com/news/what-happened-in-crypto-today?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "Need to know what happened in crypto today? Here is the latest news on daily trends and events impacting Bitcoin price, blockchain, DeFi, Web3 and crypto regulation.",
-    "at": 1795470044000,
-    "score": 0
    },
    {
     "title": "US seeks to recover $1.1B in crypto stolen in North Korea-linked Binance hack",
@@ -1354,24 +1758,6 @@
     "channelKind": "news",
     "body": "",
     "at": 1795473348000,
-    "score": 0
-   },
-   {
-    "title": "New York judge declines to block Kalshi from operating in the state for now",
-    "url": "https://www.coindesk.com/policy/2026/11/23/new-york-judge-declines-to-block-kalshi-from-operating-in-the-state-for-now",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "Judge Melissa Crane did not shut down Kalshi's operations in a hearing Monday, but did say she wanted both parties to present their full arguments in an expedited fashion.",
-    "at": 1795458123000,
-    "score": 0
-   },
-   {
-    "title": "Nvidia's Jensen Huang faces Senate scrutiny despite Trump-backed return as CEO",
-    "url": "https://www.coindesk.com/business/2026/11/23/nvidia-s-jensen-huang-faces-senate-scrutiny-despite-trump-backed-return-as-ceo",
-    "source": "CoinDesk",
-    "channelKind": "news",
-    "body": "Congressional scrutiny will continue even as CEO returns to lead the company after his affair scandal and its national-security implications.",
-    "at": 1795457525000,
     "score": 0
    },
    {
@@ -1508,406 +1894,13 @@
     "body": "HN Points: 9 · Comments: 0",
     "at": 1795468933000,
     "score": 0
-   },
-   {
-    "title": "Thoughts on Nvidia from a Investors Perspective",
-    "url": "https://news.ycombinator.com/item?id=50619492",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 2",
-    "at": 1795468868000,
-    "score": 0
-   },
-   {
-    "title": "LiteLLM Lens: OSS tracing that integrates with your gateway",
-    "url": "https://github.com/BerriAI/lens",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 1",
-    "at": 1795468008000,
-    "score": 0
-   },
-   {
-    "title": "LLPE: A partial evaluator for LLVM bitcode",
-    "url": "http://www.llpe.org/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795450433000,
-    "score": 0
-   },
-   {
-    "title": "Gnomon: Git for Postgres Data",
-    "url": "https://gnomon.bitsinfra.com/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795442618000,
-    "score": 0
-   },
-   {
-    "title": "Bitcoin Core CVE-2026-117348: Node stall through duplicate orphan announcements",
-    "url": "https://bitcoincore.org/en/2026/11/20/disclose-orphan-inv-stall/",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795355736000,
-    "score": 0
-   },
-   {
-    "title": "📺 Megaspeed to be added to Commerce's trade blacklist: Source",
-    "url": "https://www.youtube.com/shorts/cqEyLPWOW8A",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "The Commerce Department will add Megaspeed to its trade blacklist, according to a person familiar with the matter. CNBC’s Megan Cassella has the latest.",
-    "at": 1795473920000,
-    "score": 0
-   },
-   {
-    "title": "📺 President Trump delivers remarks at the Department of Justice — 11/23/2026",
-    "url": "https://www.youtube.com/watch?v=zbHk7OIfrtw",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "President Donald Trump on Monday delivers remarks at the Department of Justice on protecting American families. For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC TV: https://cnb.cx/SubscribeCNBCt",
-    "at": 1795473150000,
-    "score": 0
-   },
-   {
-    "title": "📺 Nasdaq surges in its best day since April 2025 as Jensen Huang returns to Nvidia",
-    "url": "https://www.youtube.com/shorts/KhSvhUOyUcs",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "U.S. equities surged on Monday after Nvidia reinstated Jensen Huang as CEO, reviving the artificial intelligence trade and pushing major indexes higher after all three major market averages ended Friday in a correction.",
-    "at": 1795472936000,
-    "score": 1
-   },
-   {
-    "title": "📺 Elon Musk stood by Jensen Huang when the chips were down",
-    "url": "https://www.youtube.com/shorts/rXgmrc56PFQ",
-    "source": "YouTube · Yahoo Finance",
-    "channelKind": "youtube",
-    "body": "Elon Musk’s support of Jensen Huang continues. Nvidia’s board voted unanimously on Monday to bring Huang back as CEO, and the stock closed up 31%.",
-    "at": 1795472831000,
-    "score": 0
-   },
-   {
-    "title": "📺 Reinstating Nvidia's Huang Is a Terrible Mistake, Says Elson",
-    "url": "https://www.youtube.com/watch?v=l3ZF8JpZimY",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Charles Elson, University of Delaware founding director of the Weinburg center for corporate governance, says it was a \"terrible mistake\" for Nvidia to bring back Jensen Huang as ceo and president. He speaks on \"Bloomberg The Close.\"&#13; --------&#13; More on",
-    "at": 1795472814000,
-    "score": 0
-   },
-   {
-    "title": "📺 John Belton: This Volatility Isn’t Healthy for the Market",
-    "url": "https://www.youtube.com/watch?v=8A0ncHRY5u8",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "John Belton, Gabelli Funds Portfolio Manager, Growth Portfolios MD, discusses a sharp reversal in markets after last week’s broad selloff: Nvidia added about $950 billion in market value, the largest one-day increase for any stock, while the Philadelphia Semic",
-    "at": 1795472804000,
-    "score": -1
-   },
-   {
-    "title": "📺 Why Paltrow and Mahdara are bullish on consumer",
-    "url": "https://www.youtube.com/shorts/6r73nraZG2E",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "As venture capital pours into AI, Gwyneth Paltrow and Moj Mahdara are looking at what comes next. The Kinship Ventures co-founders say they’re bullish on consumer businesses with strong teams, defensible moats and room to scale, with opportunities spanning foo",
-    "at": 1795471780000,
-    "score": 1.414213562373095
-   },
-   {
-    "title": "📺 Jensen Huang Is Back. Washington Just Changed the Rules | Deirdre Bosa Live",
-    "url": "https://www.youtube.com/watch?v=LA7bT16wB64",
-    "source": "YouTube · Yahoo Finance",
-    "channelKind": "youtube",
-    "body": "Jensen Huang is back as CEO of Nvidia, and Deirdre Bosa argues the rules for how Big Tech and Washington work just changed. General Catalyst's Madhu Namburi on what Jensen faces now, from competition to Nvidia's margins. In an exclusive, OpenAI president Greg ",
-    "at": 1795471429000,
-    "score": 0
-   },
-   {
-    "title": "📺 Putin Basks in Spotlight With Trump, Xi as War in Ukraine Grinds On",
-    "url": "https://www.youtube.com/shorts/RDSSRN_EHf4",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Vladimir Putin was honored with a seat at the top table alongside Donald Trump and Xi Jinping — but their unprecedented meeting delivered more style than substance. Anthony Halpin explains why this is not Yalta 2.0.&#13; --------&#13; More on Bloomberg Televis",
-    "at": 1795471424000,
-    "score": 0
-   },
-   {
-    "title": "📺 Market Close: Stocks Rally as Jensen Huang Returns as Nvidia CEO • 11/23/26",
-    "url": "https://www.youtube.com/watch?v=Wc2krdjZBBw",
-    "source": "YouTube · CNBC Television",
-    "channelKind": "youtube",
-    "body": "CNBC Business News Update with Jessica Ettinger - Markets & Business News With Expert Analysis From Top Business Names. Visit CNBC.com For More. For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC ",
-    "at": 1795470584000,
-    "score": 1
-   },
-   {
-    "title": "📺 Who Caused Bitcoin's $17,000 Flash Crash?",
-    "url": "https://www.youtube.com/shorts/ZC6oMrR7zJE",
-    "source": "YouTube · Coin Bureau",
-    "channelKind": "youtube",
-    "body": "♣️ Join the Coin Bureau Club 👉 https://go.coinbureau.com/cbc-cb-des 🛒 Get The Hottest Crypto Deals 👉 https://www.coinbureau.com/deals/ Crypto Exchanges: 📊TOOBIT: Deposit, Trade & Win Up to 60,000 USDT👉 https://go.coinbureau.com/toobit 📈BINANCE: https://g",
-    "at": 1795467613000,
-    "score": -1
-   },
-   {
-    "title": "📺 Why Washington Wanted Jensen Huang Back at Nvidia",
-    "url": "https://www.youtube.com/watch?v=gISD1K_qPFs",
-    "source": "YouTube · Yahoo Finance",
-    "channelKind": "youtube",
-    "body": "Nvidia's board reinstated Jensen Huang as CEO, and President Trump says he intervened. The market hang panel debates why Washington wanted him back and what it says about the AI trade. Gil argues the administration saw the cost of disruption to the economy as ",
-    "at": 1795464550000,
-    "score": 0
-   },
-   {
-    "title": "Why This Market Pullback Is a Gift for Buying Google Alphabet (GOOGL) - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNc2haZHRxVlNNZE0tVF9fZnhlWFBXcXdDOXhxcGticnB2NnZ3SGdhd1lGN2ZIMEFCWHJobEo5VGgydmdqUUNWSnRfODA5anVCZF9mb0FmNEJSMjhCVFZodk1JWE1uU0dRdngxVWlJWmpFb2ptNWtkNHdnU1hUUnJjMTcwY0JTdHdLcFlSY2NTcDY1M1EwR1UydFVLWQ?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Why This Market Pullback Is a Gift for Buying Google Alphabet (GOOGL) &nbsp;&nbsp; Reddit",
-    "at": 1795380405000,
-    "score": 1
-   },
-   {
-    "title": "Relax and Buy the Dip - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE9HY0thaHRwbExQWjl0SGJpcG1tcmM2YUxKUThEbE1xX2pqUGZGbXhfQ2dFWlVUQWF2YVBLVkkzbFE4QkEzRjJmeExyMV90RUE1dFhENmUwR084TnJhVkNWOGg3N3dXMUowYVF3MWlDLUZyOWx1UkJWbHA2UQ?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Relax and Buy the Dip &nbsp;&nbsp; Reddit",
-    "at": 1795024517000,
-    "score": 1
-   },
-   {
-    "title": "Fed’s Waller says central bank may need to ‘shock people’ with half-point rate hike - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxQYWNCa3liRGRZRHVjbkpfS1lUSFU4Q1NSeXVuMjVUbnVMWC1FVDd0TmdFY1Q5dzE2Zk5Hanl3VXZFaGRqdHJvUF9UdkxsSGFuYmYtSExPLTlZdGRNMjBiRUdzaThvX1BxYkZDcDd2aFk2YXNYbG5XOFlPbFZoVmNEODhCZFhEZmpkd1JJVkpKSmhlNmZYcE1UVGg0dnNpdw?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Fed’s Waller says central bank may need to ‘shock people’ with half-point rate hike &nbsp;&nbsp; Reddit",
-    "at": 1795008623000,
-    "score": -1.414213562373095
-   },
-   {
-    "title": "Jensen Huang breaks his silence on X. Released Statement that he'd be honored to return as CEO. - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxOYTlsQzdiR3Jja2JnMmJaWGpmN21obTJjQURmOGtyMkYtYmM1WXhwNlpyMkhsVW5jY21DQllsMVpFcjN3dWZ4MExKc1pqZVJmejVPYm1zMmFNOXpxVmxnMWFCUUVQUHVJZ3g1cTNuc29GMUZkQ3Y3dzJiTUJ3cFJnY3pkdTlQVDNXSkFiZkg5MXdUSUFMYVUyc05vcw?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Jensen Huang breaks his silence on X. Released Statement that he'd be honored to return as CEO. &nbsp;&nbsp; Reddit",
-    "at": 1794932943000,
-    "score": 0
-   },
-   {
-    "title": "If Nvidia matched the forward PE of Costco, Nvidia would have a market cap of $16T - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxQZXB0VGtIdms4VHlON2MyMWF2Y0NoVGd3eURuYUZuUWxsOWJhVnVvc25PNmJZLUttUFJ6blVycGxIZ2tTZFV5U1F2bXpSdnVaQS1uU1FEeVRRcXpqa2RJUFZHT29hYnlJN1lVYUZGUktrODZOdDBpWlc5TVJoVy1YQWhxSnp3TC1YcXMwX3kyTVdRZVFQVVRQNGgtYjJiWE9Y?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "If Nvidia matched the forward PE of Costco, Nvidia would have a market cap of $16T &nbsp;&nbsp; Reddit",
-    "at": 1794956955000,
-    "score": 0
-   },
-   {
-    "title": "NVIDIA Announces Financial Results for Third Quarter Fiscal 2027 - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOWWRDUmZUZDBRdEFtM2hwNWU0Q0NaTVFoUTVMZWdGVkNxeTg1QzdZYi1uNW9seFNDWGtISnNmd05jSTFMajNQSUphQlNnR0tkTnBRQVlpRmJNWlYtVmd5NFM0VmRhZkJ4UnRNQWxLQTcxMmthc2FQamFISVF6UjdUSk1ELV8xaDVuZzJnYlZZWDN5ekk0ZDgwcUl3?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "NVIDIA Announces Financial Results for Third Quarter Fiscal 2027 &nbsp;&nbsp; Reddit",
-    "at": 1794950657000,
-    "score": 0
-   },
-   {
-    "title": "Relief Rally, then bottom below 6300, then ATH. AI bubble is NOT OVER. - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxOVkhRcnhqcVd3Y21yczdTMEV1eXREc3hnYUgtUlVaSkxkVGllUWRiOG05Z1QxRVdyNlNmS1h4LVN3QkxOaVN3eWFXOWlDWHNmaVZtTW5GWm9TTjB3UllLOUVtVUYyR0JIWDI3NFZNcFhJWGlENEtNTk1YUTVfWFdWeXcxdXRLNmgwQThQZkdTem1DVHpuTzRBUWVwN0VPZ3Y1OEE?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Relief Rally, then bottom below 6300, then ATH. AI bubble is NOT OVER. &nbsp;&nbsp; Reddit",
-    "at": 1795406165000,
-    "score": 1
-   },
-   {
-    "title": "Anthropic was supposed to save the AI trade. What went wrong? - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPZDliMm05NHIwMGd1YVZqSk5WY0tnc0dKeDZnNVI5RktIaGpzS3pMOXA5dURLVHJON2ZqTU9FTDZ0dEtuTzJBc29mQ2I3VVNEdm9sOEE4X1c0UVpkQk14cVlMZFN1Zk9yUk1SZ3Q1eExfWUl1bWsxaWl1MDJsRXQzZllSSngyY3pSS29BR0gwVmwtTUZGTFI1bFpiR0p4bGM?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Anthropic was supposed to save the AI trade. What went wrong? &nbsp;&nbsp; Reddit",
-    "at": 1795142888000,
-    "score": 0
-   },
-   {
-    "title": "Your backtest is probably lying to you. Strangers on Reddit showed me 7 ways it does - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPMmNvMnFkWDhNazItYkFvZHRKLS1pVG1YdE5RYk9wa2lPRDhBRzlHUzVwLXUtYWR2RG5BOVdYeGNfS1J0M1NFVUx2WUlXVDA3SEhsd2JhRzNRRzVNbmZ3YVJWam9GTGx1UDJzVFhWY3hCck9ZZDlYeDgydEFOM1ZLb2k1c1NiaXBGY3VvblJMOHlyVUtUMmhtUjVETmctWjRDR2gyMlZn?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Your backtest is probably lying to you. Strangers on Reddit showed me 7 ways it does &nbsp;&nbsp; Reddit",
-    "at": 1795179415000,
-    "score": 0
-   },
-   {
-    "title": "Trump’s accounts traded up to $97.5 million in Nvidia as Huang gained White House access - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxQWlpmelA3dFk2ZXFmVjR6a2w1N0E0UkRNUXJ5QmxseDVxZGlTRjl2NWUzN2NTTVc2N0NBUjJGQVY3Zno0d1pJd3Rzb3lKRE44UVRtQ1JoOEE0Rm5Nc3ZOU1FzRjlyRTBSQThqQTNzN2xHNGh0UUpBQjBoblBoaFpEdlBEUS13OVYtSXExbDdJSDJZNzM4SFFyOQ?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Trump’s accounts traded up to $97.5 million in Nvidia as Huang gained White House access &nbsp;&nbsp; Reddit",
-    "at": 1794922573000,
-    "score": 1
-   },
-   {
-    "title": "Crash was said to be imminent. Is this it? Or are we just in a correction? - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxQWm1pa3JKSDJhejM1d1VwSXFvN3NTQ0w2b3JadnFURkprWkRfVW41SjcwZDhBMXl6VVBsUWhnZUV6VUFwYzRfZkxoMHRlQS1kRG1TRlFkZlk5V0xOZ3QyVUtiOW1zTHBvMmpPUkpIZkdZTFRrcUxJZ3lwbVA1bG0wYmU5NzJWSEV4TURRRnFWb1pIckI3c3M2dEdMZk10RTh6b3c?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Crash was said to be imminent. Is this it? Or are we just in a correction? &nbsp;&nbsp; Reddit",
-    "at": 1795251467000,
-    "score": -1
-   },
-   {
-    "title": "Reminder that if you get high on bull markets and get frightened on bear markets you have no business in the stock market. - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNc20yNXZsRTNVckg4Ym80ZTI5UmFMdERlMXFwS0hnSnItMnRCTndWdU9ZTmhaNVgxU0VOaThjUlNEUUFvemtpTFhBSGkxX1J6LWFrTWRnWFBVbjlDb0FYcnVSRUx2VUdMenlsODd5REFoVDREZGRySzhwS3lhcXY4X3hEN0lrQWFLaXJGNExLZ0lmMTJzZlp5S21lU3l3LWtL?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Reminder that if you get high on bull markets and get frightened on bear markets you have no business in the stock market. &nbsp;&nbsp; Reddit",
-    "at": 1795129418000,
-    "score": 0
-   },
-   {
-    "title": "The circular financing argument against Nvidia makes no sense to me - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPMkQwOGVxLThVWTktMUgwMDBIaGRrRGpzbV82ODZScUpValZhX2VBMWF1N0djRGJlS0FXN25MaTBPaU9MeUdYTjBySF9LbVFxbzZoWmdHR0FGMWY5RThnQzF6RHVkLUNDeThyNm9GQjd3NEd0eUQtaGlPWXVULXJ5dmg4aVFwV3NnQUM0WVczZ3Z1WlppRmFEcjA0UGE?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "The circular financing argument against Nvidia makes no sense to me &nbsp;&nbsp; Reddit",
-    "at": 1795206654000,
-    "score": 1
-   },
-   {
-    "title": "Beyond the immediate sell-off: What are the 2nd and 3rd order effects of Jensen Huang’s exit on AI capex, chip pricing, and ecosystem valuations? - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxQSTFzWndpYXNlcjlFNzJwMVlRX24tN1AwQkZnWlhtNFl5a1V4QmNHMzBVeHM1WTUyVVVkcG51eE5YR0RYdTZ3eDNJTG9RSEg2MXYyZkJ1OVVqanNXWFlFbEJSc09oVW5RSkdvM2pOVnBlclVZR0xDbTVKXzJacWhKbHU4RjVPajQyT1lKbl94dDA5UFpLMzNiZzVoS3ZzaU14enM5QQ?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Beyond the immediate sell-off: What are the 2nd and 3rd order effects of Jensen Huang’s exit on AI capex, chip pricing, and ecosystem valuations? &nbsp;&nbsp; Reddit",
-    "at": 1795369547000,
-    "score": -1
-   },
-   {
-    "title": "Is it a gamble? - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE9vNFI5VEx2VFhpRWp6V3hUa1M5U0FSM0pfNGJPbk9FWG9PVVBXNWlJR2ZDSldqbmthaE1NQmZTOVN5dzhxZThPOXV0T2JoOHZGTEpvVjV3NFJZcy1nbXZvTEZGRmg4S1YweXJMWEJfajFrU3gzNmpKXw?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "Is it a gamble? &nbsp;&nbsp; Reddit",
-    "at": 1795339332000,
-    "score": 0
-   },
-   {
-    "title": "How's everyone's algo doing lately? - Reddit",
-    "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOXzh0cWJHd2U4eDRoNHBWQXd5dk9JTnp3c0h3LVUtSV9FZGYwa3pGVnljRloxVGpid0kzMEM1bXg2anhSa1YtLWoyOFprR3doNmtmWnljclNmaW9FeWViVjBOZ3l3WVZpVWgteEZGdVB4eVBqdjl0MUVHMUdjMDBtMlJOSlZHdXZiMklqVTVwSWc?oc=5",
-    "source": "Reddit (Indexed)",
-    "channelKind": "reddit",
-    "body": "How's everyone's algo doing lately? &nbsp;&nbsp; Reddit",
-    "at": 1795203029000,
-    "score": 0
-   },
-   {
-    "title": "Prediction markets outlook for stocks in 2026 dims amid AI sell-off",
-    "url": "https://www.cnbc.com/2026/11/20/sp-500-8000-kalshi-odds-ai-selloff.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Odds that the S&P 500 will cross 8,000, which were once north of 70%, are extremely low on platform Kalshi.",
-    "at": 1795204743000,
-    "score": -1
-   },
-   {
-    "title": "Warsh wants Fed officials to talk less. Instead, they’re talking more",
-    "url": "https://www.cnbc.com/2026/11/20/warsh-fed-forward-guidance-rate-hikes.html",
-    "source": "CNBC Finance",
-    "channelKind": "news",
-    "body": "Fed officials have been rushing to the microphones lately while the Fed chairman stays on the sidelines.",
-    "at": 1795209048000,
-    "score": 0
-   },
-   {
-    "title": "I&#x2019;ve been married for 58 years. It&#x2019;s &#x2018;our&#x2019; money, not &#x2018;his&#x2019; and &#x2018;hers.&#x2019; Why don&#x2019;t others feel the same?",
-    "url": "https://www.marketwatch.com/story/ive-been-married-for-58-years-its-our-money-not-his-and-hers-why-dont-others-feel-the-same-c5745889?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "&#x201c;My wife stopped working outside the home in 1970.&#x201d;",
-    "at": 1795432500000,
-    "score": 0
-   },
-   {
-    "title": "The U.S. may enter a recession if the Fed raises rates, hedge-fund manager Bill Ackman says",
-    "url": "https://www.marketwatch.com/story/the-u-s-may-enter-a-recession-if-the-fed-raises-rates-hedge-fund-manager-bill-ackman-says-16738971?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "The Pershing Square Capital Management CEO wrote in a post on X that he thinks financial conditions have already considerably tightened.",
-    "at": 1795431420000,
-    "score": -1
-   },
-   {
-    "title": "Nvidia stock bounces as Trump administration pushes for rehiring of Jensen Huang",
-    "url": "https://www.marketwatch.com/story/nvidia-stock-bounces-as-trump-administration-pushes-for-rehiring-of-jensen-huang-08057c29?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "Shares in Nvidia rose on Monday after a weekend of more developments, including the Trump administration pushing for the reinstatement of Jensen Huang to lead the company.",
-    "at": 1795431360000,
-    "score": 0
-   },
-   {
-    "title": "A 66-year-old nurse faces retirement with just $500 saved. Who&#x2019;s to blame?",
-    "url": "https://www.marketwatch.com/story/a-66-year-old-nurse-faces-retirement-with-just-500-saved-whos-to-blame-4249a0fd?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "&#x201c;Retirement is a financial status, not an age.&#x201d;",
-    "at": 1795428900000,
-    "score": 0
-   },
-   {
-    "title": "Stocks struggle to recover from tech-led rout",
-    "url": "https://finance.yahoo.com/markets/world-indices/articles/asian-tech-back-firing-line-024445930.html?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "Stock markets struggled to recover Monday from fears surrounding the massive AI investment spree that triggered a global selloff last week, led by the technology sector.\"It looks like investors have taken a moment to catch their breath after last week's global",
-    "at": 1795432318000,
-    "score": -1.414213562373095
-   },
-   {
-    "title": "Big Tech Rebound on Wall Street Pre-Bell; Asia Off, Europe Up",
-    "url": "https://finance.yahoo.com/markets/stocks/articles/big-tech-rebound-wall-street-111142735.html?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "Wall Street futures pointed sharply higher pre-bell Monday, as traders looked for relative bargains",
-    "at": 1795432302000,
-    "score": 1
-   },
-   {
-    "title": "US Equity Investors to Focus on AI Trade Rebound Amid Fed's Preferred Inflation Data, Retailers' Quarterly Results This Week",
-    "url": "https://finance.yahoo.com/markets/stocks/articles/us-equity-investors-focus-ai-110901621.html?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "US equity investors will gauge the sustainability of the AI trade rebound during this holiday-shorte",
-    "at": 1795432141000,
-    "score": 0
    }
   ],
   "trending": [
    {
-    "name": "Derive",
-    "symbol": "DRV",
-    "rank": 112
-   },
-   {
-    "name": "Cosmos Hub",
-    "symbol": "ATOM",
-    "rank": 86
-   },
-   {
-    "name": "Pearl",
-    "symbol": "PEARL",
-    "rank": 72
-   },
-   {
     "name": "Pudgy Penguins",
     "symbol": "PENGU",
-    "rank": 129
+    "rank": 127
    },
    {
     "name": "Bitcoin",
@@ -1915,9 +1908,14 @@
     "rank": 1
    },
    {
-    "name": "Solana",
-    "symbol": "SOL",
-    "rank": 7
+    "name": "Monad",
+    "symbol": "MON",
+    "rank": 171
+   },
+   {
+    "name": "Pearl",
+    "symbol": "PEARL",
+    "rank": 74
    },
    {
     "name": "Venice Token",
@@ -1925,22 +1923,32 @@
     "rank": 60
    },
    {
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "rank": 2
+   },
+   {
+    "name": "HeyElsa",
+    "symbol": "ELSA",
+    "rank": 543
+   },
+   {
+    "name": "Hyperliquid",
+    "symbol": "HYPE",
+    "rank": 10
+   },
+   {
+    "name": "Uniswap",
+    "symbol": "UNI",
+    "rank": 27
+   },
+   {
     "name": "Zcash",
     "symbol": "ZEC",
     "rank": 11
-   },
-   {
-    "name": "Monad",
-    "symbol": "MON",
-    "rank": 191
-   },
-   {
-    "name": "Aerodrome Finance",
-    "symbol": "AERO",
-    "rank": 242
    }
   ],
-  "newsScore": -0.03,
+  "newsScore": 0.05,
   "arxivPapers": [
    {
     "title": "VerifiQuant: Governance-by-Execution for Financial LLM Workflows",
@@ -2066,40 +2074,136 @@
   "arxivUpdatedAt": 1795474431580,
   "youtubeVideos": [
    {
-    "title": "Megaspeed to be added to Commerce's trade blacklist: Source",
-    "url": "https://www.youtube.com/shorts/cqEyLPWOW8A",
-    "videoId": "cqEyLPWOW8A",
-    "thumbnail": "https://i4.ytimg.com/vi/cqEyLPWOW8A/hqdefault.jpg",
-    "channel": "CNBC Television",
-    "category": "חדשות שוק ומניות",
-    "summary": "The Commerce Department will add Megaspeed to its trade blacklist, according to a person familiar with the matter. CNBC’s Megan Cassella has the latest.",
-    "pubDate": "2026-11-23T22:45:20+00:00",
-    "at": 1795473920000,
-    "score": 0
-   },
-   {
-    "title": "President Trump delivers remarks at the Department of Justice — 11/23/2026",
-    "url": "https://www.youtube.com/watch?v=zbHk7OIfrtw",
-    "videoId": "zbHk7OIfrtw",
-    "thumbnail": "https://i3.ytimg.com/vi/zbHk7OIfrtw/hqdefault.jpg",
-    "channel": "CNBC Television",
-    "category": "חדשות שוק ומניות",
-    "summary": "President Donald Trump on Monday delivers remarks at the Department of Justice on protecting American families. For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC TV: https://cnb.cx/SubscribeCNBCt",
-    "pubDate": "2026-11-23T22:32:30+00:00",
-    "at": 1795473150000,
-    "score": 0
-   },
-   {
-    "title": "Nasdaq surges in its best day since April 2025 as Jensen Huang returns to Nvidia",
-    "url": "https://www.youtube.com/shorts/KhSvhUOyUcs",
-    "videoId": "KhSvhUOyUcs",
-    "thumbnail": "https://i4.ytimg.com/vi/KhSvhUOyUcs/hqdefault.jpg",
-    "channel": "CNBC Television",
-    "category": "חדשות שוק ומניות",
-    "summary": "U.S. equities surged on Monday after Nvidia reinstated Jensen Huang as CEO, reviving the artificial intelligence trade and pushing major indexes higher after all three major market averages ended Friday in a correction.",
-    "pubDate": "2026-11-23T22:28:56+00:00",
-    "at": 1795472936000,
+    "title": "Asia Stocks Jump as Huang’s Return Lifts AI Trade",
+    "url": "https://www.youtube.com/watch?v=tNtiAdt02nE",
+    "videoId": "tNtiAdt02nE",
+    "thumbnail": "https://i1.ytimg.com/vi/tNtiAdt02nE/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "\"Bloomberg: The Asia Trade\" brings you everything you need to know to get ahead as the trading day begins in Asia. Bloomberg TV is live from Sydney and Singapore with Haidi Stroud-Watts and Avril Hong, getting insight and analysis from newsmakers and industry ",
+    "pubDate": "2026-11-24T04:56:33+00:00",
+    "at": 1795496193000,
     "score": 1
+   },
+   {
+    "title": "Jensen Huang returns as Nvidia CEO after board reversal",
+    "url": "https://www.youtube.com/watch?v=ZmkSZtN_ieM",
+    "videoId": "ZmkSZtN_ieM",
+    "thumbnail": "https://i3.ytimg.com/vi/ZmkSZtN_ieM/hqdefault.jpg",
+    "channel": "CNBC Television",
+    "category": "חדשות שוק ומניות",
+    "summary": "Jensen Huang has returned as Nvidia CEO after a scandal that sent the entire stock market tumbling, amid questions about three alleged affairs and how restricted AI chips got to China. President Donald Trump told CNBC he helped persuade Nvidia’s board to reins",
+    "pubDate": "2026-11-24T02:35:24+00:00",
+    "at": 1795487724000,
+    "score": 0
+   },
+   {
+    "title": "Why Jensen Huang's Return Won't Solve Nvidia's Biggest Problems",
+    "url": "https://www.youtube.com/watch?v=HDNsi5IyoEE",
+    "videoId": "HDNsi5IyoEE",
+    "thumbnail": "https://i1.ytimg.com/vi/HDNsi5IyoEE/hqdefault.jpg",
+    "channel": "Yahoo Finance",
+    "category": "דוחות, פד ומניות",
+    "summary": "Jensen Huang is back at Nvidia, but General Catalyst's Madhu Namburi, who spent 25 years advising tech boards at J.P. Morgan, says his return doesn't solve the company's biggest challenges. He explains the competition from custom chips and CUDA alternatives, w",
+    "pubDate": "2026-11-24T01:56:46+00:00",
+    "at": 1795485406000,
+    "score": 0
+   },
+   {
+    "title": "Jim Cramer talks where Nvidia could be headed following Jensen Huang's return",
+    "url": "https://www.youtube.com/watch?v=cCVEZgLzqB4",
+    "videoId": "cCVEZgLzqB4",
+    "thumbnail": "https://i4.ytimg.com/vi/cCVEZgLzqB4/hqdefault.jpg",
+    "channel": "CNBC Television",
+    "category": "חדשות שוק ומניות",
+    "summary": "'Mad Money' host Jim Cramer shares his thoughts on Jensen Huang returning as CEO of Nvidia.",
+    "pubDate": "2026-11-24T01:18:31+00:00",
+    "at": 1795483111000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia's tech still beats rivals despite selloff, says Deepwater's Gene Munster",
+    "url": "https://www.youtube.com/watch?v=VlMhS7HlD1I",
+    "videoId": "VlMhS7HlD1I",
+    "thumbnail": "https://i3.ytimg.com/vi/VlMhS7HlD1I/hqdefault.jpg",
+    "channel": "CNBC Television",
+    "category": "חדשות שוק ומניות",
+    "summary": "Gene Munster, Deepwater Asset Management, joins 'Fast Money' with reaction to Jensen Huang returning as Nvidia CEO.",
+    "pubDate": "2026-11-24T01:14:38+00:00",
+    "at": 1795482878000,
+    "score": 0
+   },
+   {
+    "title": "CrowdStrike CEO on deal to buy Zscaler",
+    "url": "https://www.youtube.com/watch?v=cEnIJdtfYAY",
+    "videoId": "cEnIJdtfYAY",
+    "thumbnail": "https://i4.ytimg.com/vi/cEnIJdtfYAY/hqdefault.jpg",
+    "channel": "CNBC Television",
+    "category": "חדשות שוק ומניות",
+    "summary": "CrowdStrike Co-founder and CEO George Kurtz joins 'Mad Money' host Jim Cramer to talk its deal to buy Zscaler, the state of the cybersecurity trade, AI agents, and more.",
+    "pubDate": "2026-11-24T01:10:53+00:00",
+    "at": 1795482653000,
+    "score": 1
+   },
+   {
+    "title": "Big Take: Jensen Huang Is Back",
+    "url": "https://www.youtube.com/shorts/vngnXK7TF24",
+    "videoId": "vngnXK7TF24",
+    "thumbnail": "https://i3.ytimg.com/vi/vngnXK7TF24/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "On this episode of the Big Take podcast, Sarah Holder sits down with Odd Lots’ co-host Joe Weisenthal and AI policy editor Michael Shepard on US President Donald Trump’s stunning intervention.&#13; --------&#13; More on Bloomberg Television and Markets&#13; &#",
+    "pubDate": "2026-11-24T00:45:07+00:00",
+    "at": 1795481107000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia Board Faces Questions After Huang Reinstatement",
+    "url": "https://www.youtube.com/watch?v=evperxY0l20",
+    "videoId": "evperxY0l20",
+    "thumbnail": "https://i2.ytimg.com/vi/evperxY0l20/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "\"Balance of Power\" focuses on the intersection of politics and global business. On today's show, Rep. Madeleine Dean, a member of the House Foreign Affairs Committee that will question Jensen Huang behind closed doors on Dec. 1, says his return to Nvidia raise",
+    "pubDate": "2026-11-23T23:52:20+00:00",
+    "at": 1795477940000,
+    "score": 0
+   },
+   {
+    "title": "Naveen Rao: Jensen Huang's Return \"Doesn't Look Great\" for Nvidia's Board",
+    "url": "https://www.youtube.com/watch?v=LlybdOdq7D8",
+    "videoId": "LlybdOdq7D8",
+    "thumbnail": "https://i1.ytimg.com/vi/LlybdOdq7D8/hqdefault.jpg",
+    "channel": "Yahoo Finance",
+    "category": "דוחות, פד ומניות",
+    "summary": "Jensen Huang is back as CEO of Nvidia, and Unconventional AI CEO Naveen Rao tells Deirdre Bosa the reversal doesn't look great for Nvidia's board. He explains why Jensen, who owns a small slice of the company, may reshape the board around him, why he sees Wash",
+    "pubDate": "2026-11-23T23:35:07+00:00",
+    "at": 1795476907000,
+    "score": 0
+   },
+   {
+    "title": "Haines: Nvidia Board Better ‘Lawyer Up’",
+    "url": "https://www.youtube.com/watch?v=TELDnrsqoCU",
+    "videoId": "TELDnrsqoCU",
+    "thumbnail": "https://i1.ytimg.com/vi/TELDnrsqoCU/hqdefault.jpg",
+    "channel": "Bloomberg Television",
+    "category": "מאקרו ושווקים גלובליים",
+    "summary": "Terry Haines, founder of Pangaea Policy, says Nvidia and its board face potentially prolonged scrutiny over Jensen Huang. Haines, who helped run congressional investigations into Enron and WorldCom, expects board members to be called to testify “repeatedly” as",
+    "pubDate": "2026-11-23T23:30:23+00:00",
+    "at": 1795476623000,
+    "score": 0
+   },
+   {
+    "title": "Wall Street is going wild after Jensen Huang returns to Nvidia as CEO.",
+    "url": "https://www.youtube.com/shorts/l9KhINUgukE",
+    "videoId": "l9KhINUgukE",
+    "thumbnail": "https://i1.ytimg.com/vi/l9KhINUgukE/hqdefault.jpg",
+    "channel": "Yahoo Finance",
+    "category": "דוחות, פד ומניות",
+    "summary": "Wall Street is going wild after Jensen Huang returns to Nvidia as CEO. Brooke DiPalma breaks down the market recap. 🔁",
+    "pubDate": "2026-11-23T23:18:50+00:00",
+    "at": 1795475930000,
+    "score": 0
    },
    {
     "title": "Elon Musk stood by Jensen Huang when the chips were down",
@@ -2114,78 +2218,6 @@
     "score": 0
    },
    {
-    "title": "Reinstating Nvidia's Huang Is a Terrible Mistake, Says Elson",
-    "url": "https://www.youtube.com/watch?v=l3ZF8JpZimY",
-    "videoId": "l3ZF8JpZimY",
-    "thumbnail": "https://i1.ytimg.com/vi/l3ZF8JpZimY/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "Charles Elson, University of Delaware founding director of the Weinburg center for corporate governance, says it was a \"terrible mistake\" for Nvidia to bring back Jensen Huang as ceo and president. He speaks on \"Bloomberg The Close.\"&#13; --------&#13; More on",
-    "pubDate": "2026-11-23T22:26:54+00:00",
-    "at": 1795472814000,
-    "score": 0
-   },
-   {
-    "title": "John Belton: This Volatility Isn’t Healthy for the Market",
-    "url": "https://www.youtube.com/watch?v=8A0ncHRY5u8",
-    "videoId": "8A0ncHRY5u8",
-    "thumbnail": "https://i1.ytimg.com/vi/8A0ncHRY5u8/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "John Belton, Gabelli Funds Portfolio Manager, Growth Portfolios MD, discusses a sharp reversal in markets after last week’s broad selloff: Nvidia added about $950 billion in market value, the largest one-day increase for any stock, while the Philadelphia Semic",
-    "pubDate": "2026-11-23T22:26:44+00:00",
-    "at": 1795472804000,
-    "score": -1
-   },
-   {
-    "title": "Why Paltrow and Mahdara are bullish on consumer",
-    "url": "https://www.youtube.com/shorts/6r73nraZG2E",
-    "videoId": "6r73nraZG2E",
-    "thumbnail": "https://i3.ytimg.com/vi/6r73nraZG2E/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "As venture capital pours into AI, Gwyneth Paltrow and Moj Mahdara are looking at what comes next. The Kinship Ventures co-founders say they’re bullish on consumer businesses with strong teams, defensible moats and room to scale, with opportunities spanning foo",
-    "pubDate": "2026-11-23T22:09:40+00:00",
-    "at": 1795471780000,
-    "score": 1.414213562373095
-   },
-   {
-    "title": "Jensen Huang Is Back. Washington Just Changed the Rules | Deirdre Bosa Live",
-    "url": "https://www.youtube.com/watch?v=LA7bT16wB64",
-    "videoId": "LA7bT16wB64",
-    "thumbnail": "https://i1.ytimg.com/vi/LA7bT16wB64/hqdefault.jpg",
-    "channel": "Yahoo Finance",
-    "category": "דוחות, פד ומניות",
-    "summary": "Jensen Huang is back as CEO of Nvidia, and Deirdre Bosa argues the rules for how Big Tech and Washington work just changed. General Catalyst's Madhu Namburi on what Jensen faces now, from competition to Nvidia's margins. In an exclusive, OpenAI president Greg ",
-    "pubDate": "2026-11-23T22:03:49+00:00",
-    "at": 1795471429000,
-    "score": 0
-   },
-   {
-    "title": "Putin Basks in Spotlight With Trump, Xi as War in Ukraine Grinds On",
-    "url": "https://www.youtube.com/shorts/RDSSRN_EHf4",
-    "videoId": "RDSSRN_EHf4",
-    "thumbnail": "https://i3.ytimg.com/vi/RDSSRN_EHf4/hqdefault.jpg",
-    "channel": "Bloomberg Television",
-    "category": "מאקרו ושווקים גלובליים",
-    "summary": "Vladimir Putin was honored with a seat at the top table alongside Donald Trump and Xi Jinping — but their unprecedented meeting delivered more style than substance. Anthony Halpin explains why this is not Yalta 2.0.&#13; --------&#13; More on Bloomberg Televis",
-    "pubDate": "2026-11-23T22:03:44+00:00",
-    "at": 1795471424000,
-    "score": 0
-   },
-   {
-    "title": "Market Close: Stocks Rally as Jensen Huang Returns as Nvidia CEO • 11/23/26",
-    "url": "https://www.youtube.com/watch?v=Wc2krdjZBBw",
-    "videoId": "Wc2krdjZBBw",
-    "thumbnail": "https://i4.ytimg.com/vi/Wc2krdjZBBw/hqdefault.jpg",
-    "channel": "CNBC Television",
-    "category": "חדשות שוק ומניות",
-    "summary": "CNBC Business News Update with Jessica Ettinger - Markets & Business News With Expert Analysis From Top Business Names. Visit CNBC.com For More. For access to live and exclusive video from CNBC subscribe to CNBC PRO: https://cnb.cx/42d859g » Subscribe to CNBC ",
-    "pubDate": "2026-11-23T21:49:44+00:00",
-    "at": 1795470584000,
-    "score": 1
-   },
-   {
     "title": "Who Caused Bitcoin's $17,000 Flash Crash?",
     "url": "https://www.youtube.com/shorts/ZC6oMrR7zJE",
     "videoId": "ZC6oMrR7zJE",
@@ -2196,30 +2228,6 @@
     "pubDate": "2026-11-23T21:00:13+00:00",
     "at": 1795467613000,
     "score": -1
-   },
-   {
-    "title": "Why Washington Wanted Jensen Huang Back at Nvidia",
-    "url": "https://www.youtube.com/watch?v=gISD1K_qPFs",
-    "videoId": "gISD1K_qPFs",
-    "thumbnail": "https://i4.ytimg.com/vi/gISD1K_qPFs/hqdefault.jpg",
-    "channel": "Yahoo Finance",
-    "category": "דוחות, פד ומניות",
-    "summary": "Nvidia's board reinstated Jensen Huang as CEO, and President Trump says he intervened. The market hang panel debates why Washington wanted him back and what it says about the AI trade. Gil argues the administration saw the cost of disruption to the economy as ",
-    "pubDate": "2026-11-23T20:09:10+00:00",
-    "at": 1795464550000,
-    "score": 0
-   },
-   {
-    "title": "Jensen Huang is back at Nvidia HQ as CEO.",
-    "url": "https://www.youtube.com/shorts/hUEGmSbt5as",
-    "videoId": "hUEGmSbt5as",
-    "thumbnail": "https://i1.ytimg.com/vi/hUEGmSbt5as/hqdefault.jpg",
-    "channel": "Yahoo Finance",
-    "category": "דוחות, פד ומניות",
-    "summary": "Watch Nvidia employees cheer for Jensen Huang's return as CEO.",
-    "pubDate": "2026-11-23T20:00:07+00:00",
-    "at": 1795464007000,
-    "score": 0
    },
    {
     "title": "Is Bitcoin DEAD?",
@@ -2306,7 +2314,7 @@
     "score": 0
    }
   ],
-  "youtubeUpdatedAt": 1795474431696
+  "youtubeUpdatedAt": 1795503288360
  },
  "lessons": [
   "יוטיוב גאן (Wd Gann Trader): דיוק רמות תמיכה/התנגדות Sq9 (45°/90°/180°) עם שבירת סווינג וסטופ מובנה — \"Gann Cosmogram Nifty analysis using Jupiter-Jupiter Opposition\"",

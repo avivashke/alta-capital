@@ -2,11 +2,11 @@
 # Alta Capital — auto-generated strategy artifact
 # Desk: בוט ייעודי · Doug & Silvia (BTCUSDT 1d) · BTCUSDT · 1d
 # Version: v1.2 · Strategy family: structure_pullback
-# Backtest: return 92.71% · PF 1.85 · DD 8.27% · trades 162
-# OOS: 20.95% · Sharpe 1.13
+# Backtest: return 93.69% · PF 1.86 · DD 8.27% · trades 162
+# OOS: 20.95% · Sharpe 1.14
 # Params: {"fast":14,"slow":45,"pullbackBars":3,"rsiMid":52,"atrStop":2.1,"rr":2.9}
 # Target platform: Freqtrade
-# Generated: 2026-11-23T22:53:54.360Z
+# Generated: 2026-11-24T06:54:51.051Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:
