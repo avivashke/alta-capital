@@ -1,5 +1,5 @@
 {
- "at": "2026-11-25T03:01:03.661Z",
+ "at": "2026-11-25T12:42:04.514Z",
  "summary": [
   {
    "desk": "desk_15m",
@@ -8,63 +8,63 @@
    "published": false,
    "version": "v1.4",
    "oos": 0.78,
-   "robustness": 49
+   "robustness": 58
   },
   {
-   "desk": "desk_nvda",
+   "desk": "yt_bot_matt_schoeneberger_structure_pullback",
    "timeframe": "1h",
    "ok": true,
    "published": false,
-   "version": "v1.7",
-   "oos": 37.9,
-   "robustness": 78
+   "version": null,
+   "oos": 10.24,
+   "robustness": 48
   },
   {
-   "desk": "desk_spy",
-   "timeframe": "1d",
+   "desk": "desk_5m",
+   "timeframe": "5m",
    "ok": true,
    "published": false,
-   "version": "v1.5",
-   "oos": 21.22,
-   "robustness": 91
+   "version": "v1.0",
+   "oos": 1.05,
+   "robustness": 35
   },
   {
-   "desk": "desk_aapl",
-   "timeframe": "1d",
+   "desk": "desk_15m",
+   "timeframe": "15m",
    "ok": true,
    "published": false,
-   "version": "v1.5",
-   "oos": 15.49,
-   "robustness": 82
+   "version": "v1.4",
+   "oos": 0.78,
+   "robustness": 59
   },
   {
-   "desk": "yt_bot_silvia_rumer_structure_pullback_BTCUS",
-   "timeframe": "1d",
+   "desk": "desk_1h",
+   "timeframe": "1h",
    "ok": true,
-   "published": true,
+   "published": false,
    "version": "v1.3",
-   "oos": 22.25,
-   "robustness": 85
+   "oos": 8.43,
+   "robustness": 75
   }
  ],
  "stats": {
-  "cycles": 174,
-  "backtests": 39036,
+  "cycles": 179,
+  "backtests": 41012,
   "deployments": 63,
-  "scans": 196,
+  "scans": 204,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 99780,
+  "durationMs": 118611,
   "node": "v20.20.2"
  },
  "ai": {
   "source": "model",
   "focusDesk": "desk_15m",
   "strategyId": "rsi_reversion",
-  "rationale": "הדסק ה-15m בעל IS% נמוך וה-OOS% חיובי, מתאים להתמקדות",
+  "rationale": "שולחן 15m עם ביצועים נמוכים, רגיש לRSI, נבחר ערכים בינוניים",
   "provider": "pollinations",
   "model": "openai-fast",
   "accountId": null,
