@@ -2,11 +2,11 @@
 # Alta Capital — auto-generated strategy artifact
 # Desk: מניות · NVIDIA (שעתי) · NVDA · 1h
 # Version: v1.7 · Strategy family: ema_trend
-# Backtest: return 34.1% · PF 1.29 · DD 18.88% · trades 185
-# OOS: 37.9% · Sharpe 3.02
+# Backtest: return 37.02% · PF 1.31 · DD 18.88% · trades 182
+# OOS: 37.9% · Sharpe 3.28
 # Params: {"fast":10,"slow":52,"atrStop":1.5,"rr":2.8,"trendFilter":false}
 # Target platform: Freqtrade
-# Generated: 2026-11-24T18:49:08.897Z
+# Generated: 2026-11-25T03:01:03.655Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:

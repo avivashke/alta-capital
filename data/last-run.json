@@ -1,5 +1,5 @@
 {
- "at": "2026-11-24T18:49:08.901Z",
+ "at": "2026-11-25T03:01:03.661Z",
  "summary": [
   {
    "desk": "desk_15m",
@@ -8,63 +8,63 @@
    "published": false,
    "version": "v1.4",
    "oos": 0.78,
-   "robustness": 52
+   "robustness": 49
   },
   {
-   "desk": "desk_5m",
-   "timeframe": "5m",
-   "ok": true,
-   "published": false,
-   "version": "v1.0",
-   "oos": 1.05,
-   "robustness": 45
-  },
-  {
-   "desk": "desk_15m",
-   "timeframe": "15m",
-   "ok": true,
-   "published": false,
-   "version": "v1.4",
-   "oos": 0.78,
-   "robustness": 53
-  },
-  {
-   "desk": "desk_1h",
+   "desk": "desk_nvda",
    "timeframe": "1h",
    "ok": true,
    "published": false,
-   "version": "v1.3",
-   "oos": 8.43,
-   "robustness": 76
+   "version": "v1.7",
+   "oos": 37.9,
+   "robustness": 78
   },
   {
-   "desk": "desk_1d",
+   "desk": "desk_spy",
+   "timeframe": "1d",
+   "ok": true,
+   "published": false,
+   "version": "v1.5",
+   "oos": 21.22,
+   "robustness": 91
+  },
+  {
+   "desk": "desk_aapl",
+   "timeframe": "1d",
+   "ok": true,
+   "published": false,
+   "version": "v1.5",
+   "oos": 15.49,
+   "robustness": 82
+  },
+  {
+   "desk": "yt_bot_silvia_rumer_structure_pullback_BTCUS",
    "timeframe": "1d",
    "ok": true,
    "published": true,
-   "version": "v1.6",
-   "oos": 23.22,
-   "robustness": 83
+   "version": "v1.3",
+   "oos": 22.25,
+   "robustness": 85
   }
  ],
  "stats": {
-  "cycles": 169,
-  "backtests": 37496,
-  "deployments": 62,
-  "scans": 188,
+  "cycles": 174,
+  "backtests": 39036,
+  "deployments": 63,
+  "scans": 196,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 112244,
+  "durationMs": 99780,
   "node": "v20.20.2"
  },
  "ai": {
   "source": "model",
   "focusDesk": "desk_15m",
   "strategyId": "rsi_reversion",
-  "rationale": "שולחן 15m עם ביצועים נמוכים, נבחר רגישות RSI מתאימה",
+  "rationale": "הדסק ה-15m בעל IS% נמוך וה-OOS% חיובי, מתאים להתמקדות",
   "provider": "pollinations",
   "model": "openai-fast",
   "accountId": null,
