@@ -1,73 +1,67 @@
 {
- "at": "2026-11-26T04:08:17.075Z",
+ "at": "2026-11-26T13:58:25.075Z",
  "summary": [
   {
-   "desk": "desk_15m",
-   "timeframe": "15m",
-   "ok": true,
-   "published": false,
-   "version": "v1.4",
-   "oos": 0.78,
-   "robustness": 31
-  },
-  {
-   "desk": "yt_bot_poc_point_of_control_structure_pullba",
+   "desk": "desk_1h",
    "timeframe": "1h",
    "ok": true,
    "published": false,
-   "version": null,
-   "oos": 11.41,
-   "robustness": 48
+   "version": "v1.3",
+   "oos": 8.43,
+   "robustness": 73
   },
   {
-   "desk": "yt_bot_matt_schoeneberger_structure_pullback",
+   "desk": "desk_1d",
+   "timeframe": "1d",
+   "ok": true,
+   "published": false,
+   "version": "v1.6",
+   "oos": 23.22,
+   "robustness": 90
+  },
+  {
+   "desk": "desk_1w",
+   "timeframe": "1w",
+   "ok": true,
+   "published": true,
+   "version": "v1.12",
+   "oos": 10.59,
+   "robustness": 87
+  },
+  {
+   "desk": "desk_nvda",
    "timeframe": "1h",
    "ok": true,
-   "published": false,
-   "version": null,
-   "oos": 11.33,
-   "robustness": 50
+   "published": true,
+   "version": "v1.8",
+   "oos": 42.97,
+   "robustness": 80
   },
   {
-   "desk": "desk_5m",
-   "timeframe": "5m",
+   "desk": "desk_spy",
+   "timeframe": "1d",
    "ok": true,
    "published": false,
-   "version": "v1.0",
-   "oos": 1.05,
-   "robustness": 63
-  },
-  {
-   "desk": "desk_15m",
-   "timeframe": "15m",
-   "ok": true,
-   "published": false,
-   "version": "v1.4",
-   "oos": 0.78,
-   "robustness": 56
+   "version": "v1.5",
+   "oos": 21.22,
+   "robustness": 91
   }
  ],
  "stats": {
-  "cycles": 189,
-  "backtests": 43800,
-  "deployments": 63,
-  "scans": 220,
+  "cycles": 194,
+  "backtests": 44836,
+  "deployments": 65,
+  "scans": 228,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 106553,
+  "durationMs": 58907,
   "node": "v20.20.2"
  },
  "ai": {
-  "source": "model",
-  "focusDesk": "desk_15m",
-  "strategyId": "rsi_reversion",
-  "rationale": "שולחן 15m עם ביצועים נמוכים, רגיש לRSI, נבחר טווחים מצומצמים לשיפור OOS",
-  "provider": "pollinations",
-  "model": "openai-fast",
-  "accountId": null,
-  "fallbacks": []
+  "ok": false,
+  "reason": "כל המודלים והפרוקסים בבריכה נכשלו · Cloudflare Workers AI: HTTP 404 · {\"result\":null,\"success\":false,\"errors\":[{\"code\":7003,\"message\":\"Could not route to /client/v4/accounts/ai/v1/chat/completions, perhaps your object identifier is invalid?\"}],\"messages\":[]} | Pollinations · openai-fast (חינם מהווב): HTTP 413 · {\"status\":413,\"success\":false,\"error\":{\"code\":\"PAYLOAD_TOO_LARGE\",\"message\":\"Prompt too long for the free Classic API: 16,000 characters max (about 4,000 tokens), counting messages and tools. Shorten it, or use long prompts and every model "
  }
 }
