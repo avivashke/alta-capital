@@ -43,6 +43,33 @@ jobs:
       - name: Bundle & Dry-Run verification
         run: npx wrangler deploy --dry-run
 
+      - name: Auto-provision Cloudflare D1 Database
+        if: env.CF_TOKEN != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "Checking / creating Cloudflare D1 database 'alta-db'..."
+          CREATE_OUT=$(npx wrangler d1 create alta-db 2>&1 || true)
+          echo "$CREATE_OUT"
+          UUID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -n 1)
+
+          if [ -z "$UUID" ]; then
+            INFO_OUT=$(npx wrangler d1 info alta-db 2>&1 || true)
+            echo "$INFO_OUT"
+            UUID=$(echo "$INFO_OUT" | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -n 1)
+          fi
+
+          if [ -n "$UUID" ]; then
+            echo "Successfully retrieved D1 database ID: $UUID"
+            sed -i "s/database_id = .*/database_id = \"$UUID\"/" wrangler.toml
+            echo "Initializing D1 schema..."
+            npx wrangler d1 execute alta-db --file=cloudflare/schema.sql --yes || true
+          else
+            echo "D1 database ID not obtained; commenting D1 binding in wrangler.toml to complete deployment"
+            sed -i '/\[\[d1_databases\]\]/,/database_id/s/^/#/' wrangler.toml
+          fi
+
       - name: Deploy to Cloudflare Workers
         if: env.CF_TOKEN != ''
         uses: cloudflare/wrangler-action@v3
