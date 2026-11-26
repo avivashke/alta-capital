@@ -33,6 +33,7 @@ let gannViewState = {
   manualPrice: '',
   manualDate: '',
   calcTab: 'fan', // 'fan' | 'msj_grid' | 'msj_deg' | 'jenkins' | 'eighths' | 'hex'
+  radarTab: 'ladder', // 'ladder' | 'confluences' | 'roadmap'
   calendarTab: 'zodiac12', // 'zodiac12' | 'planetary' | 'squares' | 'seasonal'
   pctTab: 'circles', // 'circles' | 'musical' | 'lookback'
   customCircleInput: '',
@@ -678,6 +679,71 @@ function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG
     svg.appendChild(gFan);
   }
 
+  // Multi-Pivot Dual Fans (Bullish from Major Low & Bearish from Major High) + Cross-Angle Confluences
+  if (cfg.showDualFans && analysis.multiAngles) {
+    const ma = analysis.multiAngles;
+    const gDual = svgEl('g', { 'clip-path': `url(#${clipId})` });
+    const endGlobal = candles.length - 1 + futureBars;
+    const fxEnd = xAtGlobal(endGlobal);
+
+    // Bullish fan rays (from major low)
+    if (ma.bullishFan?.rays?.length) {
+      const bx = xAtGlobal(ma.bullishFan.anchorIdx);
+      const by = yAt(ma.bullishFan.anchorPrice);
+      for (const ray of ma.bullishFan.rays) {
+        if (!['1x1', '2x1', '1x2', '4x1', '1x4'].includes(ray.id)) continue;
+        const fyEnd = yAt(ray.projectedFuture);
+        gDual.appendChild(svgEl('line', {
+          x1: bx, y1: by, x2: fxEnd, y2: fyEnd,
+          stroke: '#10b981',
+          'stroke-opacity': ray.id === '1x1' ? 0.85 : 0.45,
+          'stroke-width': ray.id === '1x1' ? 1.6 : 0.9,
+          'stroke-dasharray': '3,3',
+        }));
+      }
+      gDual.appendChild(svgEl('circle', {
+        cx: bx, cy: by, r: 4.5,
+        fill: '#10b981', stroke: '#070c14', 'stroke-width': 1.5,
+      }));
+    }
+
+    // Bearish fan rays (from major high)
+    if (ma.bearishFan?.rays?.length) {
+      const hx = xAtGlobal(ma.bearishFan.anchorIdx);
+      const hy = yAt(ma.bearishFan.anchorPrice);
+      for (const ray of ma.bearishFan.rays) {
+        if (!['1x1', '2x1', '1x2', '4x1', '1x4'].includes(ray.id)) continue;
+        const fyEnd = yAt(ray.projectedFuture);
+        gDual.appendChild(svgEl('line', {
+          x1: hx, y1: hy, x2: fxEnd, y2: fyEnd,
+          stroke: '#f43f5e',
+          'stroke-opacity': ray.id === '1x1' ? 0.85 : 0.45,
+          'stroke-width': ray.id === '1x1' ? 1.6 : 0.9,
+          'stroke-dasharray': '3,3',
+        }));
+      }
+      gDual.appendChild(svgEl('circle', {
+        cx: hx, cy: hy, r: 4.5,
+        fill: '#f43f5e', stroke: '#070c14', 'stroke-width': 1.5,
+      }));
+    }
+
+    // Cross-angle confluence nodes (diamond markers)
+    for (const c of (ma.crossConfluences || [])) {
+      const cx = xAtGlobal(c.barIdx);
+      const cy = yAt(c.price);
+      if (cx >= padL && cx <= padL + chartW && cy >= padT && cy <= padT + chartH) {
+        gDual.appendChild(svgEl('polygon', {
+          points: `${cx},${cy - 5} ${cx + 5},${cy} ${cx},${cy + 5} ${cx - 5},${cy}`,
+          fill: '#f59e0b',
+          stroke: '#ffffff',
+          'stroke-width': 1.2,
+        }));
+      }
+    }
+    svg.appendChild(gDual);
+  }
+
   // Square of 9 Levels
   for (const lvl of nearbySq9) {
     const y = yAt(lvl.price);
@@ -1279,6 +1345,329 @@ function renderBoxSquareTab(a, cfg, ui) {
   );
 }
 
+function renderProvenLadderTab(a, ui) {
+  const pl = a.provenLevels;
+  if (!pl) return h('div', { class: 'notice muted', text: 'אין נתוני רמות מוכחות' });
+
+  const cur = a.currentPrice || 0;
+  const resList = pl.provenResistances || [];
+  const supList = pl.provenSupports || [];
+
+  const renderTable = (list, title, isRes) => {
+    return h('div', { class: 'card', style: { background: 'rgba(9, 15, 27, 0.85)', padding: '12px', flex: '1', minWidth: '320px' } },
+      h('div', { class: 'row between', style: { marginBottom: '8px' } },
+        h('b', { style: { color: isRes ? '#f87171' : '#4ade80' }, text: `${title} (${list.length})` }),
+        h('span', { class: 'small muted', text: isRes ? 'מעל מחיר שוק' : 'מתחת למחיר שוק' }),
+      ),
+      list.length === 0
+        ? h('div', { class: 'small muted', text: 'לא אותרו רמות מוכחות בטווח' })
+        : h('div', { class: 'table-wrap', style: { maxHeight: '320px', overflowY: 'auto' } },
+            h('table', {},
+              h('thead', {}, h('tr', {},
+                h('th', { text: 'רמה ומקור' }),
+                h('th', { text: 'מחיר' }),
+                h('th', { text: 'מרחק' }),
+                h('th', { text: 'בלימות / נגיעות' }),
+                h('th', { text: 'ציון אמינות' }),
+                h('th', { text: 'בלימה מאומתת אחרונה' }),
+              )),
+              h('tbody', {}, list.slice(0, 10).map((item) => {
+                const distPct = cur > 0 ? ((item.price - cur) / cur) * 100 : 0;
+                const lastBounce = item.confirmedBounces?.[0];
+                return h('tr', {},
+                  h('td', {},
+                    h('div', { style: { fontWeight: '700' }, text: item.label }),
+                    h('div', { class: 'small muted', text: item.source }),
+                  ),
+                  h('td', { class: 'mono', style: { fontWeight: '700' }, text: fmtPriceSmart(item.price) }),
+                  h('td', { class: 'mono ' + (distPct >= 0 ? 'red' : 'green') },
+                    `${distPct >= 0 ? '+' : ''}${distPct.toFixed(2)}%`,
+                  ),
+                  h('td', { class: 'mono' },
+                    h('span', { class: 'green', style: { fontWeight: '700' }, text: String(item.bounceCount) }),
+                    h('span', { class: 'muted', text: ` / ${item.touchCount} (${item.provenRatioPct}%)` }),
+                  ),
+                  h('td', {},
+                    tag(
+                      `${item.score}/100`,
+                      item.score >= 70 ? 'live' : item.score >= 45 ? 'opt' : 'dry',
+                    ),
+                  ),
+                  h('td', { class: 'small' },
+                    lastBounce
+                      ? `${lastBounce.date} (בלימה של ${lastBounce.reversalPct >= 0 ? '+' : ''}${lastBounce.reversalPct}%)`
+                      : '—',
+                  ),
+                );
+              })),
+            ),
+          ),
+    );
+  };
+
+  return h('div', { class: 'row wrap', style: { gap: '12px' } },
+    renderTable(resList, '🔴 התנגדויות שהוכיחו את עצמן היסטורית', true),
+    renderTable(supList, '🟢 תמיכות שהוכיחו את עצמן היסטורית', false),
+  );
+}
+
+function renderCrossConfluenceTab(a, ui) {
+  const ma = a.multiAngles;
+  if (!ma) return h('div', { class: 'notice muted', text: 'אין נתוני זוויות רב-ציריות' });
+
+  const cur = a.currentPrice || 0;
+  const confluences = ma.crossConfluences || [];
+
+  return h('div', {},
+    h('div', { class: 'grid cols-3', style: { gap: '8px', marginBottom: '12px' } },
+      h('div', { class: 'metric' },
+        h('span', { text: 'עוגן שפל ראשי (Bullish Low)' }),
+        h('b', { class: 'green mono', text: ma.majorLow ? `${fmtPriceSmart(ma.majorLow.price)} (${ma.majorLow.date})` : '—' }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: 'עוגן שיא ראשי (Bearish High)' }),
+        h('b', { class: 'red mono', text: ma.majorHigh ? `${fmtPriceSmart(ma.majorHigh.price)} (${ma.majorHigh.date})` : '—' }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: 'צמתי התכנסות זוויות שנמצאו' }),
+        h('b', { class: 'gold mono', text: `${confluences.length} צמתים` }),
+      ),
+    ),
+    h('div', { class: 'card', style: { background: 'rgba(9, 15, 27, 0.85)', padding: '12px' } },
+      h('div', { class: 'row between', style: { marginBottom: '8px' } },
+        h('b', { text: 'צמתי מפגש בין קרני זוויות משפל ומשיא (Cross Confluence Nodes)' }),
+        h('span', { class: 'small muted', text: 'הצטלבות קרני גאן מייצרת ריכוז מומנטום והיפוך שוק' }),
+      ),
+      confluences.length === 0
+        ? h('div', { class: 'small muted', text: 'לא אותרו צמתי מפגש בטווח הנתונים' })
+        : h('div', { class: 'table-wrap', style: { maxHeight: '340px', overflowY: 'auto' } },
+            h('table', {},
+              h('thead', {}, h('tr', {},
+                h('th', { text: 'תאריך צומת' }),
+                h('th', { text: 'זמן מהיום' }),
+                h('th', { text: 'קרן שורית (משפל)' }),
+                h('th', { text: 'קרן דובית (משיא)' }),
+                h('th', { text: 'מחיר מפגש' }),
+                h('th', { text: 'מרחק ממחיר שוק' }),
+                h('th', { text: 'משמעות טכנית' }),
+              )),
+              h('tbody', {}, confluences.slice(0, 15).map((c) => {
+                const distPct = cur > 0 ? ((c.price - cur) / cur) * 100 : 0;
+                const isNear = Math.abs(c.daysAhead) <= 30;
+                return h('tr', {},
+                  h('td', { class: 'mono', style: { fontWeight: isNear ? '700' : '400', color: isNear ? '#fbbf24' : '#e2e8f0' }, text: c.date }),
+                  h('td', { class: 'mono small' },
+                    c.daysAhead > 0 ? `בעוד ${c.daysAhead} ימים` : c.daysAhead === 0 ? 'היום' : `לפני ${Math.abs(c.daysAhead)} ימים`,
+                  ),
+                  h('td', {}, tag(c.rayBull, 'live')),
+                  h('td', {}, tag(c.rayBear, 'red')),
+                  h('td', { class: 'mono', style: { fontWeight: '700' }, text: fmtPriceSmart(c.price) }),
+                  h('td', { class: 'mono ' + (distPct >= 0 ? 'red' : 'green') },
+                    `${distPct >= 0 ? '+' : ''}${distPct.toFixed(2)}%`,
+                  ),
+                  h('td', { class: 'small text-muted' },
+                    (c.rayBull === '1x1' || c.rayBear === '1x1')
+                      ? 'הצטלבות קרן האיזון 1x1 — שיווי משקל דינמי ומומנטום מוגבר'
+                      : 'הצטלבות קרניים משניות — רמת תמיכה/התנגדות טקטית',
+                  ),
+                );
+              })),
+            ),
+          ),
+    ),
+  );
+}
+
+function renderFutureRoadmapTab(a, ui) {
+  const radar = a.realTimeRadar;
+  const sq = radar?.nextSquaring;
+
+  const anchorDateStr = a.anchorPivot?.date;
+  const anchorTime = anchorDateStr ? new Date(anchorDateStr).getTime() : Date.now();
+  const now = Date.now();
+  const DAY_MS = 86400000;
+
+  const cycleDefs = [
+    { days: 30, name: 'מחזור חודשי (30 יום)', desc: 'מעבר שמש 30° במזל', strength: 'בינונית' },
+    { days: 45, name: 'שמינית המעגל (45 יום)', desc: 'זווית 45° חצי-ריבוע (Semi-Square)', strength: 'גבוהה' },
+    { days: 60, name: 'הקסגון (60 יום)', desc: 'זווית 60° (Sextile) משושה הרמוני', strength: 'בינונית' },
+    { days: 90, name: 'ריבוע המעגל (90 יום)', desc: 'רבעון מלא (Square) — שינוי מגמה עונתי', strength: 'קריטית' },
+    { days: 144, name: 'מספר מאסטר (144 יום)', desc: '12×12 ריבוע גאן המרכזי', strength: 'קריטית' },
+    { days: 180, name: 'חצי שנה / ניגוד (180 יום)', desc: 'ניגוד מלא 180° (Opposition) — שיא המחזור', strength: 'קריטית' },
+    { days: 270, name: 'שלושת רבעי שנה (270 יום)', desc: 'זווית 270° — שבירת או סיום גל ארוך', strength: 'גבוהה' },
+    { days: 360, name: 'מעגל שלם (360 יום)', desc: 'סגירת מעגל שנתי מלא של וו.ד. גאן', strength: 'קריטית' },
+  ];
+
+  const cycleRows = cycleDefs.map((cd) => {
+    const targetMs = anchorTime + cd.days * DAY_MS;
+    const targetDate = new Date(targetMs).toISOString().slice(0, 10);
+    const daysAhead = Math.round((targetMs - now) / DAY_MS);
+    return { ...cd, targetDate, daysAhead };
+  }).filter((c) => c.daysAhead >= -10).slice(0, 7);
+
+  return h('div', { class: 'row wrap', style: { gap: '12px' } },
+    h('div', { class: 'card', style: { background: 'rgba(9, 15, 27, 0.85)', padding: '14px', flex: '1', minWidth: '320px' } },
+      h('div', { class: 'row between', style: { marginBottom: '10px' } },
+        h('b', { style: { color: '#fbbf24', fontSize: '14px' }, text: '⏳ חיזוי ריבוע זמן-מחיר הבא (Squaring of Time & Price)' }),
+        tag('Gann 1x1 = Cardinal Sq9', 'live'),
+      ),
+      sq
+        ? h('div', {},
+            h('div', { class: 'notice ok', style: { marginBottom: '10px', fontSize: '12.5px' } },
+              `זווית 1x1 הפעילה צפויה לפגוש את רמת ה-Square of 9 הבאה (${sq.cardinalDeg}°) בתאריך ${sq.targetDate} במחיר ${fmtPriceSmart(sq.targetPrice)} (בעוד ${sq.daysAhead} ימים, מרחק ${sq.distPct}%). בנקודה זו המחיר והזמן מתאפסים (Square-Out).`,
+            ),
+            h('div', { class: 'grid cols-2', style: { gap: '8px' } },
+              h('div', { class: 'metric' }, h('span', { text: 'תאריך התאפסות' }), h('b', { class: 'gold mono', text: sq.targetDate })),
+              h('div', { class: 'metric' }, h('span', { text: 'מחיר יעד בריבוע' }), h('b', { class: 'mono', text: fmtPriceSmart(sq.targetPrice) })),
+              h('div', { class: 'metric' }, h('span', { text: 'ימים שנותרו' }), h('b', { class: 'mono', text: `${sq.daysAhead} ימים` })),
+              h('div', { class: 'metric' }, h('span', { text: 'קצב זווית יומי' }), h('b', { class: 'mono', text: `$${sq.dailyRate}/יום` })),
+            ),
+          )
+        : h('div', { class: 'small muted', text: 'אין נתוני ריבוע פעילים' }),
+    ),
+    h('div', { class: 'card', style: { background: 'rgba(9, 15, 27, 0.85)', padding: '14px', flex: '1.2', minWidth: '340px' } },
+      h('div', { class: 'row between', style: { marginBottom: '10px' } },
+        h('b', { style: { color: '#38bdf8', fontSize: '14px' }, text: '📅 מחזורי זמן עתידיים מובחרים (W.D. Gann Time Cycles)' }),
+        h('span', { class: 'small muted', text: `עוגן: ${anchorDateStr || '—'}` }),
+      ),
+      h('div', { class: 'table-wrap', style: { maxHeight: '280px', overflowY: 'auto' } },
+        h('table', {},
+          h('thead', {}, h('tr', {},
+            h('th', { text: 'מחזור' }),
+            h('th', { text: 'תאריך צפוי' }),
+            h('th', { text: 'זמן שנותר' }),
+            h('th', { text: 'עוצמה' }),
+            h('th', { text: 'משמעות גאן' }),
+          )),
+          h('tbody', {}, cycleRows.map((cr) => {
+            const isImminent = cr.daysAhead >= 0 && cr.daysAhead <= 14;
+            return h('tr', {},
+              h('td', { style: { fontWeight: '700' }, text: cr.name }),
+              h('td', { class: 'mono', style: { fontWeight: isImminent ? '700' : '400', color: isImminent ? '#fbbf24' : '#e2e8f0' }, text: cr.targetDate }),
+              h('td', { class: 'mono small' }, cr.daysAhead > 0 ? `בעוד ${cr.daysAhead} ימים` : cr.daysAhead === 0 ? 'היום' : 'עבר'),
+              h('td', {}, tag(cr.strength, cr.strength === 'קריטית' ? 'live' : cr.strength === 'גבוהה' ? 'opt' : 'dry')),
+              h('td', { class: 'small text-muted', text: cr.desc }),
+            );
+          })),
+        ),
+      ),
+    ),
+  );
+}
+
+export function renderGannRealTimeRadarCard(a, cfg, ui) {
+  const radar = a.realTimeRadar;
+  if (!radar) return null;
+
+  const currentTab = gannViewState.radarTab || 'ladder';
+  const regimeTone = radar.regime && radar.regime.includes('bull') ? 'live' : radar.regime === 'gann_equilibrium' ? 'opt' : 'red';
+
+  return h('div', {
+    class: 'card',
+    style: {
+      marginTop: '14px',
+      borderColor: 'rgba(56, 189, 248, 0.45)',
+      background: 'linear-gradient(180deg, rgba(12, 22, 38, 0.98), rgba(7, 12, 22, 0.98))',
+    },
+  },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: `🎯 מכ"ם גאן בזמן אמת, התנגדויות היסטוריות שהוכחו וחיזוי עתידי · ${gannViewState.symbol}` }),
+        h('div', { class: 'card-sub', text: 'ניתוח זוויות רב-ציריות (משפלי ושיאי עבר) · בדיקת בלימות היסטוריות מדויקות (Tested Bounces) · מפת דרכים לריבוע זמן-מחיר (Squaring)' }),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px' } },
+        gannExplainButton('realtime_radar', a, cfg, gannViewState.symbol),
+        tag(radar.regimeLabel, regimeTone),
+      ),
+    ),
+
+    h('div', {
+      class: 'notice ok',
+      style: {
+        marginBottom: '12px',
+        fontSize: '13px',
+        lineHeight: '1.65',
+        background: 'rgba(15, 27, 46, 0.95)',
+        borderRight: '4px solid #38bdf8',
+        whiteSpace: 'pre-wrap',
+      },
+      text: radar.narrative,
+    }),
+
+    h('div', { class: 'grid cols-4', style: { gap: '8px', marginBottom: '14px' } },
+      h('div', { class: 'metric' },
+        h('span', { text: 'התנגדות מוכחת קרובה' }),
+        h('b', {
+          class: 'red mono',
+          text: radar.nearestProvenResistance ? fmtPriceSmart(radar.nearestProvenResistance.price) : 'אין מעל המחיר',
+        }),
+        h('div', {
+          class: 'small muted',
+          style: { marginTop: '2px' },
+          text: radar.nearestProvenResistance
+            ? `${radar.nearestProvenResistance.source} (${radar.nearestProvenResistance.bounceCount} בלימות)`
+            : '—',
+        }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: 'תמיכה מוכחת קרובה' }),
+        h('b', {
+          class: 'green mono',
+          text: radar.nearestProvenSupport ? fmtPriceSmart(radar.nearestProvenSupport.price) : 'אין מתחת למחיר',
+        }),
+        h('div', {
+          class: 'small muted',
+          style: { marginTop: '2px' },
+          text: radar.nearestProvenSupport
+            ? `${radar.nearestProvenSupport.source} (${radar.nearestProvenSupport.bounceCount} בלימות)`
+            : '—',
+        }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: 'מרחק מקרן 1x1 (איזון)' }),
+        h('b', {
+          class: (radar.distBull1x1Pct >= 0 ? 'green' : 'red') + ' mono',
+          text: radar.distBull1x1Pct != null ? `${Math.abs(radar.distBull1x1Pct)}% ${radar.distBull1x1Pct >= 0 ? 'מעל' : 'מתחת'}` : '—',
+        }),
+        h('div', {
+          class: 'small muted',
+          style: { marginTop: '2px' },
+          text: radar.currentBull1x1 ? `1x1 כרגע ב-${fmtPriceSmart(radar.currentBull1x1)}` : '—',
+        }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: 'ריבוע זמן-מחיר הבא (Squaring)' }),
+        h('b', {
+          class: 'gold mono',
+          text: radar.nextSquaring?.targetDate || '—',
+        }),
+        h('div', {
+          class: 'small muted',
+          style: { marginTop: '2px' },
+          text: radar.nextSquaring ? `יעד: ${fmtPriceSmart(radar.nextSquaring.targetPrice)} (${radar.nextSquaring.daysAhead}d)` : '—',
+        }),
+      ),
+    ),
+
+    h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '12px' } },
+      [
+        ['ladder', '🧱 סולם התנגדויות ותמיכות מוכחות (Proven S/R Ladder)'],
+        ['confluences', '✖️ צמתי הצלבת זוויות רב-ציריות (Multi-Pivot Confluences)'],
+        ['roadmap', '⏳ מפת דרכים לריבוע זמן-מחיר ומחזורים (Forward Roadmap)'],
+      ].map(([id, label]) => h('button', {
+        class: `btn btn-sm ${currentTab === id ? 'btn-primary' : ''}`,
+        onclick: () => { gannViewState.radarTab = id; ui.rerender(); },
+      }, label)),
+    ),
+
+    currentTab === 'ladder'
+      ? renderProvenLadderTab(a, ui)
+      : currentTab === 'confluences'
+        ? renderCrossConfluenceTab(a, ui)
+        : renderFutureRoadmapTab(a, ui),
+  );
+}
+
 export function renderGann(root, ui) {
   const key = `${gannViewState.symbol}|${gannViewState.tf}|${gannViewState.manualPrice}|${gannViewState.manualDate}`;
   if (gannViewState.key !== key && !gannViewState.loading) {
@@ -1588,6 +1977,11 @@ export function renderGann(root, ui) {
           onclick: () => updateGannzillaConfig({ showSubTrendSignals: cfg.showSubTrendSignals === false }, ui),
         }, '▼▲ איתותי תת-מגמה (Top/Bottom)'),
         h('button', {
+          class: `btn btn-sm ${cfg.showDualFans ? 'btn-primary' : ''}`,
+          title: 'הצג מניפות גאן כפולות (עולה משפל ויורדת משיא) + צמתי התכנסות',
+          onclick: () => updateGannzillaConfig({ showDualFans: !cfg.showDualFans }, ui),
+        }, '📐 מניפות רב-ציריות (Dual Fans)'),
+        h('button', {
           class: `btn btn-sm ${cfg.showBoxOnChart ? 'btn-primary' : ''}`,
           onclick: () => updateGannzillaConfig({ showBoxOnChart: !cfg.showBoxOnChart }, ui),
         }, '▦ תיבת גאן (Gann Box)'),
@@ -1701,6 +2095,9 @@ export function renderGann(root, ui) {
         ? h('div', { class: 'small muted', style: { marginTop: '8px' }, text: a.gannFan.ruleOfAllAngles })
         : null,
     ),
+
+    // Real-Time Gann Radar, Proven S/R & Forward Forecast Card
+    renderGannRealTimeRadarCard(a, cfg, ui),
 
     // Gannzilla Pro v8.3 Interactive Wheel (+ Gannzilla.ini Import/Export) + MSJ_GannSQ9 / Gann Fan / Jenkins Suite
     h('div', { class: 'grid cols-2', style: { marginTop: '14px' } },

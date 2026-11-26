@@ -256,7 +256,10 @@ export function buildHexagonVibrationTable(anchorPrice, currentPrice) {
 }
 
 // Michael Jenkins Free Calculators + Excel Sheet 1 ('ריבועים') & Sheets 3-4 ('ריבוע 9' / 'זמנים')
-export function buildJenkinsSuite(swingHigh, swingLow, anchorPrice, anchorTs) {
+export function buildJenkinsSuite(swingHigh, swingLow, anchorPrice, rawAnchorTs) {
+  const anchorTs = Number.isFinite(Number(rawAnchorTs)) && Number(rawAnchorTs) > 0
+    ? Number(rawAnchorTs)
+    : (Date.parse(rawAnchorTs) || Date.now());
   const high = Math.max(swingHigh, swingLow);
   const low = Math.min(swingHigh, swingLow);
   const range = Math.max(1e-6, high - low);
@@ -295,7 +298,7 @@ export function buildJenkinsSuite(swingHigh, swingLow, anchorPrice, anchorTs) {
     { mult: 3.1416, label: 'π × √מחיר (מעגל ג׳נקינס)', days: Math.round(sqrtP * Math.PI) },
     { mult: 1.0, label: '√טווח (Square the Range)', days: Math.round(sqrtRange * 2) },
   ].map((c) => {
-    const d = Math.max(5, c.days);
+    const d = Math.max(5, Number.isFinite(c.days) ? c.days : 10);
     return {
       ...c,
       days: d,
@@ -521,6 +524,401 @@ export function computeGannFan(candles, anchorPivot, { scaleOverride = null, dir
 
 export function computeGannAngles(candles, anchorPivot, opts = {}) {
   return computeGannFan(candles, anchorPivot, opts).rays;
+}
+
+// --- Multi-Pivot Historical Gann Angles & Fans (Master Low + Master High + Recent Swings) ---
+
+export function computeMultiPivotGannAngles(candles, pivots = [], { scaleOverride = null } = {}) {
+  if (!candles?.length) return null;
+  const n = candles.length;
+  const lastIdx = n - 1;
+  const currentPrice = candles[lastIdx].c;
+
+  // Detect Major Low and Major High
+  let majorLowPivot = null;
+  let majorHighPivot = null;
+
+  if (pivots.length >= 2) {
+    const lowPivots = pivots.filter((p) => p.type === 'low').sort((a, b) => a.price - b.price);
+    const highPivots = pivots.filter((p) => p.type === 'high').sort((a, b) => b.price - a.price);
+    majorLowPivot = lowPivots[0] || null;
+    majorHighPivot = highPivots[0] || null;
+  }
+
+  if (!majorLowPivot) {
+    let minIdx = 0;
+    for (let i = 1; i < n; i++) if (candles[i].l < candles[minIdx].l) minIdx = i;
+    majorLowPivot = { idx: minIdx, t: candles[minIdx].t, price: candles[minIdx].l, type: 'low', originLabel: 'שפל ראשי היסטורי' };
+  } else {
+    majorLowPivot.originLabel = 'שפל ראשי היסטורי';
+  }
+
+  if (!majorHighPivot) {
+    let maxIdx = 0;
+    for (let i = 1; i < n; i++) if (candles[i].h > candles[maxIdx].h) maxIdx = i;
+    majorHighPivot = { idx: maxIdx, t: candles[maxIdx].t, price: candles[maxIdx].h, type: 'high', originLabel: 'שיא ראשי היסטורי' };
+  } else {
+    majorHighPivot.originLabel = 'שיא ראשי היסטורי';
+  }
+
+  // Tactical recent pivots (last low and high)
+  const recentLow = [...pivots].reverse().find((p) => p.type === 'low') || majorLowPivot;
+  const recentHigh = [...pivots].reverse().find((p) => p.type === 'high') || majorHighPivot;
+
+  // Fans from Major Low (ascending) and Major High (descending)
+  const bullishFan = computeGannFan(candles, majorLowPivot, { scaleOverride, direction: 'up' });
+  const bearishFan = computeGannFan(candles, majorHighPivot, { scaleOverride, direction: 'down' });
+
+  // Tag origins on rays
+  bullishFan.rays.forEach((r) => { r.originLabel = 'שפל ראשי (עולה)'; r.anchorPrice = majorLowPivot.price; r.anchorIdx = majorLowPivot.idx; });
+  bearishFan.rays.forEach((r) => { r.originLabel = 'שיא ראשי (יורדת)'; r.anchorPrice = majorHighPivot.price; r.anchorIdx = majorHighPivot.idx; });
+
+  const tacticalPivot = recentLow.idx > recentHigh.idx ? recentLow : recentHigh;
+  const tacticalFan = computeGannFan(candles, tacticalPivot, {
+    scaleOverride,
+    direction: recentLow.idx > recentHigh.idx ? 'up' : 'down',
+  });
+  tacticalFan.rays.forEach((r) => { r.originLabel = `ציר קרוב (${tacticalPivot.type === 'low' ? 'שפל' : 'שיא'})`; r.anchorPrice = tacticalPivot.price; r.anchorIdx = tacticalPivot.idx; });
+
+  // Calculate cross intersections between Bullish and Bearish rays (Confluence Nodes)
+  const crossConfluences = [];
+  const bullRays = bullishFan.rays.filter((r) => r.isMain || r.mult === 1 || r.mult === 2 || r.mult === 0.5);
+  const bearRays = bearishFan.rays.filter((r) => r.isMain || r.mult === 1 || r.mult === 2 || r.mult === 0.5);
+
+  const barStepMs = candles[1] ? Math.max(60000, candles[1].t - candles[0].t) : 86400000;
+
+  for (const bRay of bullRays) {
+    for (const dRay of bearRays) {
+      const denom = bRay.slopePerBar - dRay.slopePerBar;
+      if (Math.abs(denom) > 1e-9) {
+        const targetIdx = (majorHighPivot.price - majorLowPivot.price - dRay.slopePerBar * majorHighPivot.idx + bRay.slopePerBar * majorLowPivot.idx) / denom;
+        const targetPrice = majorLowPivot.price + bRay.slopePerBar * (targetIdx - majorLowPivot.idx);
+        const barsFromNow = Math.round(targetIdx - lastIdx);
+        // Only keep intersections near present or foreseeable future (-60 to +180 bars)
+        if (targetIdx >= Math.max(0, lastIdx - 90) && targetIdx <= lastIdx + 180 && targetPrice > 0) {
+          const crossTs = candles[0].t + targetIdx * barStepMs;
+          crossConfluences.push({
+            ray1: bRay.id + ' (עולה)',
+            ray2: dRay.id + ' (יורדת)',
+            idx: Math.round(targetIdx),
+            barsFromNow,
+            price: +targetPrice.toFixed(2),
+            distPct: +(((targetPrice - currentPrice) / currentPrice) * 100).toFixed(2),
+            date: new Date(crossTs).toISOString().slice(0, 10),
+            isFuture: barsFromNow > 0,
+          });
+        }
+      }
+    }
+  }
+
+  crossConfluences.sort((a, b) => Math.abs(a.barsFromNow) - Math.abs(b.barsFromNow));
+
+  return {
+    majorLowPivot,
+    majorHighPivot,
+    recentLow,
+    recentHigh,
+    bullishFan,
+    bearishFan,
+    tacticalFan,
+    crossConfluences: crossConfluences.slice(0, 10),
+  };
+}
+
+// --- Historical Proven Support & Resistance Engine (Testing Angles & Sq9 against Real Candle Reversals) ---
+
+export function computeProvenGannLevels(candles, angleRays = [], sq9Levels = [], { currentPrice = null } = {}) {
+  if (!candles?.length) return { provenResistances: [], provenSupports: [], allResistances: [], allSupports: [] };
+  const n = candles.length;
+  const lastIdx = n - 1;
+  const curP = Number(currentPrice) || candles[lastIdx].c;
+
+  const candidateLevels = [];
+
+  // 1. Process Angle Rays
+  for (const ray of angleRays) {
+    if (!ray || !ray.projectedNow) continue;
+    const anchorIdx = Number.isInteger(ray.anchorIdx) ? ray.anchorIdx : 0;
+    const slope = ray.slopePerBar || 0;
+    const anchorP = ray.anchorPrice || ray.projectedNow;
+
+    let touchCount = 0;
+    let bounceCount = 0;
+    const confirmedBounces = [];
+
+    // Scan historical bars from anchor to current
+    const startScan = Math.max(0, anchorIdx);
+    for (let i = startScan; i < lastIdx; i++) {
+      const c = candles[i];
+      const rayPriceAtBar = anchorP + slope * (i - anchorIdx);
+      if (rayPriceAtBar <= 0) continue;
+
+      const tolerance = rayPriceAtBar * 0.0055; // 0.55% touch buffer
+      const touched = c.h >= (rayPriceAtBar - tolerance) && c.l <= (rayPriceAtBar + tolerance);
+
+      if (touched) {
+        touchCount++;
+        const hitFromBelow = c.o <= rayPriceAtBar + tolerance && c.h >= rayPriceAtBar - tolerance;
+        const hitFromAbove = c.o >= rayPriceAtBar - tolerance && c.l <= rayPriceAtBar + tolerance;
+
+        const futureLook = Math.min(n - 1, i + 3);
+        const nextCloses = candles.slice(i + 1, futureLook + 1).map((x) => x.c);
+        const minNext = nextCloses.length ? Math.min(...nextCloses) : c.c;
+        const maxNext = nextCloses.length ? Math.max(...nextCloses) : c.c;
+
+        if (hitFromBelow && (c.c < rayPriceAtBar || minNext <= rayPriceAtBar * 0.985)) {
+          bounceCount++;
+          confirmedBounces.push({
+            date: new Date(c.t).toISOString().slice(0, 10),
+            barIdx: i,
+            price: +rayPriceAtBar.toFixed(2),
+            type: 'resistance_bounce',
+            label: `בלימת התנגדות ב-${new Date(c.t).toISOString().slice(0, 10)} (נסיגה של ${(((rayPriceAtBar - minNext) / rayPriceAtBar) * 100).toFixed(1)}%)`,
+            movePct: -+(((rayPriceAtBar - minNext) / rayPriceAtBar) * 100).toFixed(1),
+          });
+        } else if (hitFromAbove && (c.c > rayPriceAtBar || maxNext >= rayPriceAtBar * 1.015)) {
+          bounceCount++;
+          confirmedBounces.push({
+            date: new Date(c.t).toISOString().slice(0, 10),
+            barIdx: i,
+            price: +rayPriceAtBar.toFixed(2),
+            type: 'support_bounce',
+            label: `בלימת תמיכה ב-${new Date(c.t).toISOString().slice(0, 10)} (זינוק של ${(((maxNext - rayPriceAtBar) / rayPriceAtBar) * 100).toFixed(1)}%)`,
+            movePct: +(((maxNext - rayPriceAtBar) / rayPriceAtBar) * 100).toFixed(1),
+          });
+        }
+      }
+    }
+
+    const currentRayPrice = ray.projectedNow;
+    const distPct = +(((currentRayPrice - curP) / curP) * 100).toFixed(2);
+    const provenRatioPct = touchCount > 0 ? +((bounceCount / touchCount) * 100).toFixed(1) : 0;
+    const isProven = bounceCount >= 2 && provenRatioPct >= 40;
+
+    const cleanOrigin = (ray.originLabel || '').trim();
+    candidateLevels.push({
+      id: `${ray.id}_${cleanOrigin || 'fan'}`,
+      label: `זווית ${ray.id} (${ray.degLabel || ''})${cleanOrigin ? ` · ${cleanOrigin}` : ''}`,
+      kind: 'angle',
+      price: currentRayPrice,
+      distPct,
+      isAbove: currentRayPrice >= curP,
+      touchCount,
+      bounceCount,
+      provenRatioPct,
+      proven: isProven,
+      score: Math.min(100, Math.round(provenRatioPct * 0.6 + Math.min(4, bounceCount) * 10)),
+      confirmedBounces: confirmedBounces.slice(-4).reverse(),
+      originLabel: cleanOrigin || 'עוגן גאן',
+    });
+  }
+
+  // 2. Process Square of 9 Levels
+  for (const sq of sq9Levels) {
+    if (!sq || !sq.price || sq.price <= 0) continue;
+    const targetPrice = sq.price;
+    let touchCount = 0;
+    let bounceCount = 0;
+    const confirmedBounces = [];
+
+    for (let i = 1; i < lastIdx; i++) {
+      const c = candles[i];
+      const tolerance = targetPrice * 0.005;
+      const touched = c.h >= (targetPrice - tolerance) && c.l <= (targetPrice + tolerance);
+
+      if (touched) {
+        touchCount++;
+        const futureLook = Math.min(n - 1, i + 3);
+        const nextCloses = candles.slice(i + 1, futureLook + 1).map((x) => x.c);
+        const minNext = nextCloses.length ? Math.min(...nextCloses) : c.c;
+        const maxNext = nextCloses.length ? Math.max(...nextCloses) : c.c;
+
+        if (c.o <= targetPrice + tolerance && minNext <= targetPrice * 0.985) {
+          bounceCount++;
+          confirmedBounces.push({
+            date: new Date(c.t).toISOString().slice(0, 10),
+            barIdx: i,
+            price: targetPrice,
+            type: 'resistance_bounce',
+            label: `בלימת התנגדות Sq9 ${sq.degree}° ב-${new Date(c.t).toISOString().slice(0, 10)} (-${(((targetPrice - minNext) / targetPrice) * 100).toFixed(1)}%)`,
+            movePct: -+(((targetPrice - minNext) / targetPrice) * 100).toFixed(1),
+          });
+        } else if (c.o >= targetPrice - tolerance && maxNext >= targetPrice * 1.015) {
+          bounceCount++;
+          confirmedBounces.push({
+            date: new Date(c.t).toISOString().slice(0, 10),
+            barIdx: i,
+            price: targetPrice,
+            type: 'support_bounce',
+            label: `בלימת תמיכה Sq9 ${sq.degree}° ב-${new Date(c.t).toISOString().slice(0, 10)} (+${(((maxNext - targetPrice) / targetPrice) * 100).toFixed(1)}%)`,
+            movePct: +(((maxNext - targetPrice) / targetPrice) * 100).toFixed(1),
+          });
+        }
+      }
+    }
+
+    const distPct = +(((targetPrice - curP) / curP) * 100).toFixed(2);
+    const provenRatioPct = touchCount > 0 ? +((bounceCount / touchCount) * 100).toFixed(1) : 0;
+    const isProven = bounceCount >= 2 && provenRatioPct >= 40;
+
+    const degLabel = sq.degree != null && !isNaN(sq.degree) ? `Sq9 ${sq.degree}°` : (sq.label || 'רמה הרמונית');
+    const displayLabel = sq.label?.startsWith('Square') || sq.label?.startsWith('שמינית') || sq.label?.startsWith('הקסגון')
+      ? sq.label
+      : `Square of 9 · ${sq.degree}° (${sq.label || 'מעלה הרמונית'})`;
+
+    candidateLevels.push({
+      id: sq.id || `sq9_${sq.degree || Math.round(targetPrice)}`,
+      label: displayLabel,
+      kind: sq.kind || 'sq9',
+      price: targetPrice,
+      distPct,
+      isAbove: targetPrice >= curP,
+      touchCount,
+      bounceCount,
+      provenRatioPct,
+      proven: isProven,
+      score: Math.min(100, Math.round(provenRatioPct * 0.6 + Math.min(4, bounceCount) * 10)),
+      confirmedBounces: confirmedBounces.slice(-4).reverse(),
+      originLabel: degLabel,
+    });
+  }
+
+  const validCandidates = candidateLevels.filter((l) => Number.isFinite(l.price) && l.price > 0);
+  const resistances = validCandidates.filter((l) => l.isAbove && l.price > curP && l.price <= curP * 2.5).sort((a, b) => a.price - b.price);
+  const supports = validCandidates.filter((l) => !l.isAbove && l.price < curP && l.price >= curP * 0.15).sort((a, b) => b.price - a.price);
+
+  const provenResistances = resistances.filter((l) => l.proven || l.bounceCount >= 2);
+  const provenSupports = supports.filter((l) => l.proven || l.bounceCount >= 2);
+
+  return {
+    allResistances: resistances,
+    allSupports: supports,
+    provenResistances,
+    provenSupports,
+    nearestProvenResistance: provenResistances[0] || resistances[0] || null,
+    nearestProvenSupport: provenSupports[0] || supports[0] || null,
+    totalProvenCount: provenResistances.length + provenSupports.length,
+  };
+}
+
+// --- Real-Time Market State & Angle Radar (Present Status vs Historical Angles & Future Roadmap) ---
+
+export function computeGannRealTimeRadar(candles, pivots = [], sq9Levels = [], multiAngles = null, provenLevels = null) {
+  if (!candles?.length) return null;
+  const n = candles.length;
+  const lastC = candles[n - 1];
+  const currentPrice = lastC.c;
+
+  const bullFan = multiAngles?.bullishFan;
+  const bearFan = multiAngles?.bearishFan;
+  const bull1x1 = bullFan?.rays?.find((r) => r.mult === 1);
+  const bull2x1 = bullFan?.rays?.find((r) => r.mult === 2);
+  const bear1x1 = bearFan?.rays?.find((r) => r.mult === 1);
+
+  // Position relative to 1x1 Master Angles
+  const distBull1x1Pct = bull1x1 ? +(((currentPrice - bull1x1.projectedNow) / bull1x1.projectedNow) * 100).toFixed(2) : 0;
+  const distBear1x1Pct = bear1x1 ? +(((currentPrice - bear1x1.projectedNow) / bear1x1.projectedNow) * 100).toFixed(2) : 0;
+
+  let regime = 'bullish_trend';
+  let regimeLabel = 'מגמת עלייה מובהקת (מעל 1x1 עולה · קו שיווי משקל נשמר)';
+  let regimeClass = 'live';
+
+  if (bull2x1 && currentPrice >= bull2x1.projectedNow) {
+    regime = 'bullish_acceleration';
+    regimeLabel = 'האצה שורית חזקה (מעל זווית 2x1 · מומנטום אקספוננציאלי)';
+    regimeClass = 'live';
+  } else if (bull1x1 && Math.abs(distBull1x1Pct) <= 0.8) {
+    regime = 'gann_equilibrium';
+    regimeLabel = 'איזון גאן מושלם (בדיוק על זווית המאסטר 1x1 45°)';
+    regimeClass = 'opt';
+  } else if (bull1x1 && currentPrice < bull1x1.projectedNow && bear1x1 && currentPrice > bear1x1.projectedNow) {
+    regime = 'angle_squeeze';
+    regimeLabel = 'דשדוש בתעלת זוויות גאן (בין 1x1 עולה ל-1x1 יורדת)';
+    regimeClass = 'dry';
+  } else if (bull1x1 && currentPrice < bull1x1.projectedNow) {
+    regime = 'bearish_breakdown';
+    regimeLabel = 'שבירה דובית (מתחת לזווית 1x1 עולה)';
+    regimeClass = 'red';
+  }
+
+  const nearestProvenRes = provenLevels?.nearestProvenResistance || null;
+  const nearestProvenSup = provenLevels?.nearestProvenSupport || null;
+
+  // Immediate dynamic resistance & support
+  const immediateRes = provenLevels?.allResistances?.[0] || null;
+  const immediateSup = provenLevels?.allSupports?.[0] || null;
+
+  // Squaring of Price and Time projection:
+  // Find next Cardinal Sq9 above (90° or 180° or 360°)
+  const nextCardinalSq9 = sq9Levels.find((s) => (s.degree === 90 || s.degree === 180 || s.degree === 360) && s.price > currentPrice)
+    || sq9Levels.find((s) => s.price > currentPrice);
+
+  let squaringProjection = null;
+  if (nextCardinalSq9 && bullFan?.unitPerBar > 0) {
+    const priceGap = nextCardinalSq9.price - (multiAngles?.majorLowPivot?.price || currentPrice);
+    const barsNeeded = Math.round(priceGap / bullFan.unitPerBar);
+    const targetIdx = (multiAngles?.majorLowPivot?.idx || 0) + barsNeeded;
+    const barsFromNow = Math.max(1, targetIdx - (n - 1));
+    const barStepMs = candles[1] ? Math.max(60000, candles[1].t - candles[0].t) : 86400000;
+    const targetTs = lastC.t + barsFromNow * barStepMs;
+    squaringProjection = {
+      targetPrice: nextCardinalSq9.price,
+      degree: nextCardinalSq9.degree,
+      barsFromNow,
+      targetDate: new Date(targetTs).toISOString().slice(0, 10),
+      label: `איזון זמן-מחיר ב-${new Date(targetTs).toISOString().slice(0, 10)} (מחיר יעד: ${nextCardinalSq9.price})`,
+    };
+  }
+
+  // Actionable Hebrew Narrative
+  const bull1x1Desc = Math.abs(distBull1x1Pct) <= 0.8
+    ? 'נמצאת בדיוק על קו שיווי המשקל 1x1'
+    : `${Math.abs(distBull1x1Pct)}% ${distBull1x1Pct >= 0 ? 'מעל' : 'מתחת ל'}זווית 1x1 של השפל הראשי`;
+
+  const narrative = [
+    `נכון להיום, המחיר נסחר ברמת $${currentPrice.toLocaleString('en-US')} (${bull1x1Desc}).`,
+    `מצב השוק: ${regimeLabel}.`,
+    immediateRes
+      ? `ההתנגדות הדינמית הקרובה ממוקמת ב-$${immediateRes.price.toLocaleString('en-US')} (+${immediateRes.distPct}% · ${immediateRes.label}).`
+      : 'המחיר נסחר מעל כל הזוויות הקרובות.',
+    nearestProvenRes && nearestProvenRes.bounceCount > 0
+      ? `התנגדות מוכחת היסטורית: רמת $${nearestProvenRes.price.toLocaleString('en-US')} (+${nearestProvenRes.distPct}%) הוכיחה את עצמה בעבר עם ${nearestProvenRes.bounceCount} בלימות מאומתות (ציון מהימנות: ${nearestProvenRes.score}/100${nearestProvenRes.confirmedBounces[0] ? ` · בלימה אחרונה: ${nearestProvenRes.confirmedBounces[0].date}` : ''}).`
+      : '',
+    nearestProvenSup
+      ? `התמיכה המוכחת הקרובה ביותר ממוקמת ב-$${nearestProvenSup.price.toLocaleString('en-US')} (${nearestProvenSup.distPct}%${nearestProvenSup.bounceCount > 0 ? ` · ${nearestProvenSup.bounceCount} בלימות עבר מוכחות` : ''}).`
+      : '',
+    squaringProjection
+      ? `תחזית עתיד (Time & Price Squaring): נקודת האיזון הבאה של גאן צפויה בתאריך ${squaringProjection.targetDate} (בעוד ${squaringProjection.barsFromNow} נרות/ימים) במפגש עם רמת $${squaringProjection.targetPrice.toLocaleString('en-US')}.`
+      : '',
+  ].filter(Boolean).join(' ');
+
+  return {
+    currentPrice,
+    regime,
+    regimeLabel,
+    regimeClass,
+    distBull1x1Pct,
+    distBear1x1Pct,
+    bull1x1Price: bull1x1?.projectedNow,
+    bear1x1Price: bear1x1?.projectedNow,
+    immediateRes,
+    immediateSup,
+    nearestProvenRes,
+    nearestProvenSup,
+    nearestProvenResistance: nearestProvenRes,
+    nearestProvenSupport: nearestProvenSup,
+    squaringProjection,
+    nextSquaring: squaringProjection ? {
+      ...squaringProjection,
+      daysAhead: squaringProjection.barsFromNow,
+      cardinalDeg: squaringProjection.degree,
+      dailyRate: bullFan?.unitPerBar ? +bullFan.unitPerBar.toFixed(2) : 0,
+      distPct: +(((squaringProjection.targetPrice - currentPrice) / currentPrice) * 100).toFixed(2),
+    } : null,
+    crossConfluences: multiAngles?.crossConfluences || [],
+    narrative,
+  };
 }
 
 // --- W.D. Gann Box / Square of Price & Time ---
@@ -998,6 +1396,7 @@ export const DEFAULT_GANNZILLA_CONFIG = {
   swingBarMode: 2,
   fanDirection: 'auto',
   fanScale: '',
+  showDualFans: false,
   iniFileName: '',
 };
 
@@ -1728,11 +2127,15 @@ export function analyzeGannHistoryAndForecast(
   const lastTs = candles[candles.length - 1].t;
 
   // Global Swing High & Low for Eighths / Jenkins Square the Range
-  let swingHigh = candles[0].h;
-  let swingLow = candles[0].l;
+  const firstH = candles[0].h ?? candles[0].high ?? candles[0].c ?? candles[0].close ?? 1;
+  const firstL = candles[0].l ?? candles[0].low ?? candles[0].c ?? candles[0].close ?? 1;
+  let swingHigh = Number(firstH);
+  let swingLow = Number(firstL);
   for (const c of candles) {
-    if (c.h > swingHigh) swingHigh = c.h;
-    if (c.l < swingLow) swingLow = c.l;
+    const ch = Number(c.h ?? c.high ?? c.c ?? c.close);
+    const cl = Number(c.l ?? c.low ?? c.c ?? c.close);
+    if (Number.isFinite(ch) && ch > swingHigh) swingHigh = ch;
+    if (Number.isFinite(cl) && cl < swingLow) swingLow = cl;
   }
 
   // Primary Anchor: Manual override OR most recent major pivot
@@ -1911,6 +2314,27 @@ export function analyzeGannHistoryAndForecast(
     lookbackMultiples: computeLookbackMultiples(candles, pivots),
   };
 
+  // 5c. Multi-Pivot Angles (Master Low + High) & Historical Proven Support/Resistance Engine
+  const multiAngles = computeMultiPivotGannAngles(candles, pivots, {
+    scaleOverride: gzCfg.fanScale ? Number(gzCfg.fanScale) : null,
+  });
+
+  const allAngleRays = [
+    ...(gannFan.rays || []),
+    ...(multiAngles?.bullishFan?.rays || []),
+    ...(multiAngles?.bearishFan?.rays || []),
+    ...(multiAngles?.tacticalFan?.rays || []),
+  ];
+
+  const candidateStaticLevels = [
+    ...sq9Levels,
+    ...hexLevels,
+    ...(jenkins?.eighths || []).map((e, idx) => ({ degree: idx * 45, label: `שמינית גאן ${e.label}`, price: e.price, kind: 'eighth' })),
+  ];
+
+  const provenLevels = computeProvenGannLevels(candles, allAngleRays, candidateStaticLevels, { currentPrice });
+  const realTimeRadar = computeGannRealTimeRadar(candles, pivots, sq9Levels, multiAngles, provenLevels);
+
   const out = {
     ok: true,
     candlesCount: candles.length,
@@ -1926,6 +2350,9 @@ export function analyzeGannHistoryAndForecast(
     calendars,
     cosmogram,
     gannFan,
+    multiAngles,
+    provenLevels,
+    realTimeRadar,
     gannBox,
     swingChart,
     subTrendSignals,

@@ -282,6 +282,28 @@ export const GANN_GUIDE_TOPICS = {
       'רמות ותאריכים שיוזכרו בקבוצה על נכס זה ישוקללו אוטומטית בתחזית העליונה ויושוו ל-Sq9 ולמניפת 1x1.',
     ],
   },
+  realtime_radar: {
+    icon: '🎯',
+    title: 'מכ"ם גאן בזמן אמת, התנגדויות היסטוריות שהוכחו וחיזוי עתידי (Time-Price Squaring)',
+    short: 'ניתוח זוויות רב-ציריות (שפלים ושיאים), סולם התנגדויות מוכחות עם שיעור בלימות, וחיזוי ריבוע זמן-מחיר.',
+    whatItIs:
+      'מערכת זו משכללת את מודל גאן על פי שיטות מודרניות מיוטיוב ומחקר מקצועי: היא מותחת בו-זמנית זוויות גאן משפלי מפתח (מניפה עולה) ומשיאי מפתח (מניפה יורדת), בודקת אימות היסטורי של בלימות נרות אמיתיות מול כל זווית ורמת Square of 9 / הקסגון / שמיניות, ומחשבת את התאריך והמחיר המדויקים שבהם תתרחש התאפסות זמן-מחיר הבאה (Squaring).',
+    legend: [
+      '🧭 משטר שוק נוכחי (Market Regime): האם השוק בתאוצה שורית (>2x1), מגמה בריאה (>1x1), שיווי משקל (Gann Equilibrium), לחץ זוויות (Squeeze) או שבירה דובית (<1x1).',
+      '🧱 סולם רמות מוכחות (Proven S/R Ladder): כל רמה נבדקה מול היסטוריית הנרות — כמה פעמים נגעה ונבלמה בדיוק, מה ציון האמינות (0-100) ורשימת הבלימות המאומתות.',
+      '✖️ צמתי התכנסות זוויות (Cross Confluences): נקודות המפגש במחיר ובזמן שבין קרן עולה (משפל) לקרן יורדת (משיא) — נקודות אלו מייצרות תגובות מחיר אלימות במיוחד.',
+      '⏳ מפת דרכים לריבוע זמן-מחיר (Forward Squaring Roadmap): חישוב מדויק של התאריך והמחיר שבו זווית 1x1 פוגשת את רמת ה-Sq9 הקרדינלית הבאה (90°, 180°, 270°, 360°), לצד מחזורי גאן מובחרים (30, 45, 60, 90, 144, 180, 270, 360 יום).',
+    ],
+    howToUse:
+      'בדוק תחילה את ה-Radar Banner לקבלת תמונת מצב מילולית ברורה. לאחר מכן עיין בסולם ההתנגדויות/תמיכות כדי לראות את הרמה המוכחת הקרובה ביותר עם מספר הבלימות הגבוה ביותר. הצב יעדי זמן סביב תאריכי ה-Squaring של מפת הדרכים.',
+    liveReadout: (a, symbol) => [
+      `משטר שוק: ${a.realTimeRadar?.regimeLabel || '—'} · מחיר חי: ${num(a.currentPrice, 2)}`,
+      `מרחק מקרן 1x1 שורית: ${a.realTimeRadar?.distBull1x1Pct != null ? `${Math.abs(a.realTimeRadar.distBull1x1Pct)}% ${a.realTimeRadar.distBull1x1Pct >= 0 ? 'מעל' : 'מתחת ל'}` : '—'}`,
+      `התנגדות מוכחת קרובה: ${a.realTimeRadar?.nearestProvenResistance ? `${num(a.realTimeRadar.nearestProvenResistance.price, 2)} (${a.realTimeRadar.nearestProvenResistance.source} · ציון ${a.realTimeRadar.nearestProvenResistance.score}/100)` : 'אין'}`,
+      `תמיכה מוכחת קרובה: ${a.realTimeRadar?.nearestProvenSupport ? `${num(a.realTimeRadar.nearestProvenSupport.price, 2)} (${a.realTimeRadar.nearestProvenSupport.source} · ציון ${a.realTimeRadar.nearestProvenSupport.score}/100)` : 'אין'}`,
+      `ריבוע זמן-מחיר הבא: ${a.realTimeRadar?.nextSquaring?.targetDate || '—'} במחיר ${num(a.realTimeRadar?.nextSquaring?.targetPrice, 2)} (${a.realTimeRadar?.nextSquaring?.daysAhead || 0} ימים)`,
+    ],
+  },
 };
 
 function fmtSmart(v) {
