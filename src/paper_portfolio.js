@@ -38,6 +38,42 @@ export class PaperPortfolio {
     this.log(`תיק דמה הופעל: ${reason}`);
   }
 
+  /**
+   * מפקיד מזומן לתיק הכולל (משמש למשיכות נוסטרו שזורמות לתיק הכולל).
+   * רושמת גם רישום עסקה מיוחד מסוג DEPOSIT למעקב אחר מקור הכסף.
+   */
+  deposit(amount, reason = '', source = 'nostro_payout') {
+    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+      return { success: false, error: 'סכום הפקדה אינו תקין' };
+    }
+    const amt = Math.round(Number(amount) * 100) / 100;
+    this.cash = Math.round((this.cash + amt) * 100) / 100;
+    this.totalFeesAccumulated = Math.round((this.totalFeesAccumulated || 0) * 100) / 100;
+    const trade = {
+      id: `dep_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: Date.now(),
+      symbol: 'CASH',
+      dir: 1,
+      side: 'DEPOSIT',
+      price: amt,
+      quantity: 1,
+      notional: amt,
+      fee: 0,
+      realizedPnL: amt,
+      tax: 0,
+      reason,
+      source,
+      cashAfter: this.cash,
+      equityAfter: Math.round(this.getEquity() * 100) / 100,
+    };
+    this.trades.push(trade);
+    if (this.trades.length > 500) this.trades = this.trades.slice(-500);
+    this.totalTradesCount = Math.max(this.totalTradesCount + 1, this.trades.length);
+    this.updatedAt = new Date().toISOString();
+    this.recordEquitySnapshot({}, Date.now());
+    return { success: true, trade };
+  }
+
   deactivate({ reason = 'נעצר' } = {}) {
     this.isActive = false;
     this.updatedAt = new Date().toISOString();

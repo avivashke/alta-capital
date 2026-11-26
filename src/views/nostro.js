@@ -5,6 +5,11 @@ import { h, mount, money, pct, num, tag, chart, notice, empty, toast, timeAgo, o
 import { STRATEGIES, describeParams } from '../strategies.js';
 import { buildArtifact } from '../platforms.js';
 import {
+  ensurePaperPortfolio,
+  savePaperPortfolio,
+  cloneParams,
+} from '../firm.js';
+import {
   DEFAULT_NOSTRO_RULES,
   NOSTRO_BOT_TEMPLATES,
   PROP_FIRM_PROFILES,
@@ -443,6 +448,87 @@ export function openNostroPayoutModal(bot, audit, rules, ui) {
   openModal(`תעודת כשרות ומשיכת רווחים · ${bot.name}`, content, { wide: true });
 }
 
+export function openNostroBotDetailModal(bot, ui, rules) {
+  if (!bot) return;
+  const platform = store.state.settings.platform || 'freqtrade';
+  const buildCode = () => buildArtifact({
+    id: bot.id,
+    label: bot.name,
+    short: bot.symbol,
+    symbol: bot.symbol,
+    tf: bot.tf,
+    version: 'nostro-v1',
+    params: bot.params,
+    strategyId: bot.strategyId,
+    metrics: bot.metrics || { returnPct: bot.totalReturnPct, profitFactor: 0, maxDrawdownPct: bot.maxTotalDdPct, trades: 0 },
+    oosMetrics: { returnPct: bot.totalReturnPct },
+  }, platform);
+
+  const content = h('div', { class: 'stack', style: { gap: '14px' } },
+    h('div', { class: 'row between wrap', style: { gap: '8px' } },
+      h('div', {},
+        h('h3', { style: { margin: 0 }, text: `${bot.name} · ${bot.symbol}` }),
+        h('div', { class: 'tiny muted', text: `${bot.strategyId} · ${bot.tf} · ${bot.dataProvider || 'Live'} ${bot.dataFromDate || ''}–${bot.dataToDate || ''}` }),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px' } },
+        bot.readyFirms?.length ? bot.readyFirms.map((f) => tag(`✓ ${f}`, 'live')) : tag('טרם עבר', 'dry'),
+      ),
+    ),
+    h('div', { class: 'grid cols-3', style: { gap: '8px' } },
+      h('div', { class: 'metric' }, h('span', { text: 'תשואה כוללת' }), h('b', { class: (bot.totalReturnPct >= 0 ? 'green ' : 'red ') + 'mono', text: pct(bot.totalReturnPct) })),
+      h('div', { class: 'metric' }, h('span', { text: 'Max DD כולל' }), h('b', { class: 'mono', text: `${bot.maxTotalDdPct}%` })),
+      h('div', { class: 'metric' }, h('span', { text: 'Profit Factor' }), h('b', { class: 'mono', text: bot.metrics?.profitFactor ?? '—' })),
+      h('div', { class: 'metric' }, h('span', { text: 'עסקאות' }), h('b', { class: 'mono', text: bot.metrics?.trades ?? 0 })),
+      h('div', { class: 'metric' }, h('span', { text: 'הפסד יומי שיא' }), h('b', { class: 'mono', text: `${bot.maxDailyLossPct}%` })),
+      h('div', { class: 'metric' }, h('span', { text: 'משיכה זמינה' }), h('b', { class: 'green mono', text: money(bot.fundedProfitUsd || 0) })),
+    ),
+    bot.curve?.length ? chart(bot.curve, { height: 140, color: bot.totalReturnPct >= 0 ? 'green' : 'red', showZero: false }) : null,
+    h('div', { class: 'tiny muted', text: `פרמטרים: ${describeParams(bot.strategyId, bot.params)}` }),
+    h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '6px' } },
+      h('button', {
+        class: 'btn btn-sm btn-primary',
+        onclick: async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true;
+          btn.textContent = 'ממטב…';
+          try {
+            const updated = await runNostroBot(bot, rules, { doOptimize: true, forceLive: true });
+            const idx = store.state.nostro.bots.findIndex((b) => b.id === bot.id);
+            if (idx >= 0) store.state.nostro.bots[idx] = updated;
+            store.save();
+            toast(`${bot.name}: ${updated.readyFirms?.length ? 'מוכן ל-' + updated.readyFirms.join(', ') : updated.statusLabel}`, updated.readyFirms?.length ? 'ok' : '');
+            ui.rerender();
+          } catch (err) {
+            toast('שגיאה: ' + err.message, 'bad');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = '🔍 בחינה מחדש';
+          }
+        },
+      }, '🔍 בחינה מחדש'),
+      h('button', {
+        class: 'btn btn-sm',
+        onclick: () => {
+          const art = buildCode();
+          const pre = h('pre', { class: 'code', text: art.code });
+          openModal(`${bot.name} · ${art.filename}`,
+            h('div', {},
+              h('div', { class: 'row between', style: { marginBottom: '8px' } },
+                h('span', { class: 'small muted', text: `קוד בוט נוסטרו מופרד (${platform})` }),
+                h('button', { class: 'btn btn-sm btn-primary', onclick: () => downloadFile(art.filename, art.code, 'text/plain') }, 'הורד קובץ'),
+              ),
+              pre,
+            ),
+            { wide: true },
+          );
+        },
+      }, '</> הורד קוד'),
+    ),
+  );
+  openModal(`${bot.name} · פירוט בוט`, content, { wide: true });
+}
+
+
 function renderNostroPassedSignalCard(bots, rules, ui) {
   if (!bots.length) return null;
 
@@ -814,6 +900,64 @@ export function renderNostro(root, ui) {
               onclick: () => openNostroPayoutModal(bot, audit, rules, ui),
             }, `💸 אשר משיכה ($${audit.withdrawableUsd.toLocaleString('en-US')})`)
           : null,
+        isReady
+          ? h('button', {
+              class: 'btn btn-sm btn-primary',
+              style: { background: '#3b82f6', borderColor: '#2563eb', fontWeight: '700' },
+              onclick: async () => {
+                const pf = ensurePaperPortfolio();
+                const deskId = `nostro_live_${String(bot.id).replace(/[^a-z0-9_]/gi, '_')}`;
+                const already = store.state.desks.some((d) => d.id === deskId);
+                if (already) {
+                  toast(`${bot.name} כבר רץ בתיק המסחר הרגיל (שולחן ${deskId})`, 'info');
+                  ui.rerender();
+                  return;
+                }
+                const m = bot.metrics || {};
+                const isCrypto = String(bot.symbol || '').endsWith('USDT');
+                const kind = (bot.tf === '1d' || bot.tf === '1w') ? 'swing' : 'intraday';
+                const risk = Number(bot.riskPerTrade) > 0 ? Math.min(0.01, Number(bot.riskPerTrade)) : 0.005;
+                const desk = {
+                  id: deskId,
+                  label: `${bot.name || bot.id} · מסחר שוטף (מהנוסטרו)`,
+                  short: bot.symbol || bot.id,
+                  tf: bot.tf || '1h',
+                  kind,
+                  symbol: bot.symbol || 'BTCUSDT',
+                  venue: isCrypto ? 'Binance / Kraken' : 'Yahoo Finance',
+                  weight: 0.05,
+                  horizon: kind === 'swing' ? 'סווינג' : 'תוך־יומי',
+                  mandate: `קודם ידנית מהנוסטרו למסחר השוטף אחרי שעבר ${bot.readyFirms.join(', ')} על נתוני אמת: ${m.trades} עסקאות, PF ${m.profitFactor}, DD ${m.maxDrawdownPct}%, תשואה ${bot.totalReturnPct}%. סיכון ${(risk * 100).toFixed(2)}% לעסקה.`,
+                  strategyId: bot.strategyId,
+                  params: cloneParams(bot.params),
+                  lockedStrategy: true,
+                  source: 'nostro_promotion_manual',
+                  nostroBotId: bot.id,
+                  riskPerTrade: risk,
+                  status: 'live',
+                  liveSince: Date.now(),
+                  dryRunCycles: 3,
+                  history: [],
+                  equity: [],
+                  liveTrades: [],
+                  livePnl: 0,
+                  livePeakPnl: 0,
+                  openTrade: null,
+                  ideas: [],
+                  metrics: { ...m },
+                  createdAt: Date.now(),
+                };
+                store.state.desks.push(desk);
+                pf.activate({ reason: `בוט נוסטרו הופעל על התיק הרגיל: ${bot.name}` });
+                savePaperPortfolio();
+                store.save(true);
+                store.emit();
+                scheduleDatabasePush(800);
+                toast(`✅ ${bot.name} הופעל על התיק המסחר הרגיל ויפעל מעכשיו בזמן אמת!`, 'ok');
+                ui.rerender();
+              },
+            }, '🚀 הפעל על התיק הרגיל (Live Desk)')
+          : null,
         isReady && !enrolledAcct
           ? h('button', {
               class: 'btn btn-sm btn-primary',
@@ -878,6 +1022,10 @@ export function renderNostro(root, ui) {
             );
           },
         }, '</> ייצא קוד בוט נוסטרו מופרד'),
+        h('button', {
+          class: 'btn btn-sm',
+          onclick: () => openNostroBotDetailModal(bot, ui, rules),
+        }, '🔎 פירוט בוט'),
       ),
     );
   };

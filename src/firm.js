@@ -49,7 +49,7 @@ const NOSTRO_LIVE_GATES = {
   maxPerCycle: 2,
 };
 
-function cloneParams(params) {
+export function cloneParams(params) {
   try { return JSON.parse(JSON.stringify(params || {})); } catch { return { ...(params || {}) }; }
 }
 

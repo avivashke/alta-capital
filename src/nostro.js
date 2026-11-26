@@ -12,6 +12,7 @@ import { optimize } from './optimizer.js';
 import { atr } from './indicators.js';
 import { STRATEGIES, defaultsFor } from './strategies.js';
 import { scheduleDatabasePush } from './db.js';
+import { createPaperPortfolio } from './paper_portfolio.js';
 
 export const PROP_FIRM_PROFILES = [
   {
@@ -636,6 +637,25 @@ export function executeNostroPayoutWithdrawal(botId, state = store.state) {
   nostro.payoutHistory = nostro.payoutHistory || [];
   nostro.payoutHistory.unshift(record);
   if (nostro.payoutHistory.length > 50) nostro.payoutHistory = nostro.payoutHistory.slice(0, 50);
+
+  // Reflect the withdrawal in the overall paper portfolio (total desk)
+  try {
+    const pf = createPaperPortfolio(store.state.settings || {});
+    if (store.state.paperPortfolio && typeof store.state.paperPortfolio === 'object') {
+      pf.fromJSON(store.state.paperPortfolio);
+    }
+    const dep = pf.deposit(
+      audit.withdrawableUsd,
+      `משיכת נוסטרו מהבוט ${bot.name} (${bot.symbol}) · חלוקת רווח ${audit.profitSplitPct}% · חברות: ${audit.readyFirms.join(', ')}`,
+      'nostro_payout'
+    );
+    store.state.paperPortfolio = pf.toJSON();
+    if (dep && dep.success) {
+      store.log('ok', 'תיק כולל · הפקדת משיכת נוסטרו', `נוסף לתיק הכולל $${audit.withdrawableUsd.toLocaleString('en-US')} ממשיכת נוסטרו ${bot.name}`);
+    }
+  } catch (err) {
+    console.warn('[nostro] Failed to reflect payout in paper portfolio:', err.message);
+  }
 
   store.log('ok', 'משיכת נוסטרו', `בוצעה משיכת רווח בסך $${audit.withdrawableUsd.toLocaleString('en-US')} עבור ${bot.name} (${audit.readyFirms.join(', ')})`);
   store.save(true);
