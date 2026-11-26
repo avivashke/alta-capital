@@ -1,63 +1,63 @@
 {
- "at": "2026-11-26T13:58:25.075Z",
+ "at": "2026-11-26T22:56:13.667Z",
  "summary": [
   {
-   "desk": "desk_1h",
-   "timeframe": "1h",
-   "ok": true,
-   "published": false,
-   "version": "v1.3",
-   "oos": 8.43,
-   "robustness": 73
-  },
-  {
-   "desk": "desk_1d",
-   "timeframe": "1d",
-   "ok": true,
-   "published": false,
-   "version": "v1.6",
-   "oos": 23.22,
-   "robustness": 90
-  },
-  {
-   "desk": "desk_1w",
-   "timeframe": "1w",
-   "ok": true,
-   "published": true,
-   "version": "v1.12",
-   "oos": 10.59,
-   "robustness": 87
-  },
-  {
-   "desk": "desk_nvda",
-   "timeframe": "1h",
-   "ok": true,
-   "published": true,
-   "version": "v1.8",
-   "oos": 42.97,
-   "robustness": 80
-  },
-  {
-   "desk": "desk_spy",
+   "desk": "desk_aapl",
    "timeframe": "1d",
    "ok": true,
    "published": false,
    "version": "v1.5",
-   "oos": 21.22,
-   "robustness": 91
+   "oos": 15.49,
+   "robustness": 82
+  },
+  {
+   "desk": "yt_bot_silvia_rumer_structure_pullback_BTCUS",
+   "timeframe": "1d",
+   "ok": true,
+   "published": true,
+   "version": "v1.4",
+   "oos": 29.31,
+   "robustness": 83
+  },
+  {
+   "desk": "yt_bot_poc_point_of_control_structure_pullba",
+   "timeframe": "1h",
+   "ok": true,
+   "published": false,
+   "version": null,
+   "oos": 9.65,
+   "robustness": 46
+  },
+  {
+   "desk": "yt_bot_matt_schoeneberger_structure_pullback",
+   "timeframe": "1h",
+   "ok": true,
+   "published": false,
+   "version": null,
+   "oos": 8.09,
+   "robustness": 46
+  },
+  {
+   "desk": "desk_5m",
+   "timeframe": "5m",
+   "ok": true,
+   "published": true,
+   "version": "v1.1",
+   "oos": 0.42,
+   "robustness": 81
   }
  ],
  "stats": {
-  "cycles": 194,
-  "backtests": 44836,
-  "deployments": 65,
-  "scans": 228,
+  "cycles": 199,
+  "backtests": 45944,
+  "deployments": 67,
+  "scans": 236,
   "startedAt": 1794473380871
  },
  "runner": {
   "cycles": 5,
   "deep": false,
-  "durationMs": 58907,
+  "durationMs": 63355,
   "node": "v20.20.2"
  },
  "ai": {
