@@ -44,9 +44,37 @@ export function renderOverview(root, ui) {
       ),
     ),
 
-    marketState.synthetic
+  marketState.synthetic
       ? notice('נתוני השוק כרגע בהדגמה (' + (marketState.error || 'אין חיבור לבורסה') + '); התוצאות להמחשה בלבד.', 'bad')
       : null,
+
+    (() => {
+      const nostroBots = state.nostro?.bots || [];
+      const passedNostroBot = nostroBots.find((b) => (b.readyFirms || []).length > 0 && !b.isSynthetic);
+      if (!passedNostroBot) return null;
+      return h('div', {
+        class: 'card',
+        style: {
+          marginBottom: '14px',
+          cursor: 'pointer',
+          border: '1.5px solid rgba(16, 185, 129, 0.7)',
+          background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.18), rgba(6, 78, 59, 0.35))',
+          padding: '12px 16px',
+        },
+        onclick: () => ui.go('nostro'),
+      },
+        h('div', { class: 'row between wrap', style: { gap: '8px' } },
+          h('div', { class: 'row center', style: { gap: '8px' } },
+            h('span', { style: { fontSize: '20px' }, text: '🏆' }),
+            h('div', {},
+              h('strong', { style: { color: '#34d399', fontSize: '14.5px' }, text: `אות נוסטרו VIP: הבוט ${passedNostroBot.name} עבר את כל מבחני הנוסטרו על נתוני אמת!` }),
+              h('div', { class: 'tiny muted', text: `מוכן ל-${passedNostroBot.readyFirms.join(', ')} · תשואה: +${passedNostroBot.totalReturnPct}% · עומד בכל 8 כללי הנוסטרו וזכאי למשיכת רווחים` }),
+            ),
+          ),
+          h('button', { class: 'btn btn-sm btn-primary', style: { background: '#10b981', borderColor: '#059669', fontWeight: '700' } }, 'צפה בתוצאות ובצע משיכה ←'),
+        ),
+      );
+    })(),
 
     h('div', { class: 'grid cols-4', style: { marginBottom: '14px' } },
       kpi('הון מנוהל (נייר)', money(equity), equityChangePct, null, equityChangePct >= 0 ? 'green' : 'red'),

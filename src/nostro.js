@@ -502,6 +502,148 @@ export async function runNostroFleetSimulation(customRules = {}, { doOptimize = 
   return store.state.nostro;
 }
 
+// --- Strict Nostro Prop-Firm Compliance Audit & Withdrawal Engine ----------
+
+export function verifyNostroBotComplianceAndPayout(bot, rules = DEFAULT_NOSTRO_RULES) {
+  if (!bot) return null;
+  const accountSize = Number(rules?.accountSize) || 100000;
+  const isLive = !bot.isSynthetic && !!bot.dataProvider;
+  const tradesCount = Number(bot.metrics?.trades ?? bot.trades?.length ?? 0);
+  const tradingDays = Number(bot.tradingDays || 0);
+  const minDays = Number(rules?.minTradingDays || 4);
+  const minTrades = Number(rules?.minTrades || 8);
+  const maxDailyLoss = Number(bot.maxDailyLossPct || 0);
+  const maxDailyLimit = Number(rules?.maxDailyLossPct || 5);
+  const maxTotalDd = Number(bot.maxTotalDdPct || 0);
+  const maxTotalLimit = Number(rules?.maxTotalDdPct || 10);
+  const returnPct = Number(bot.totalReturnPct || 0);
+  const hasFirmPass = (bot.readyFirms || []).length > 0;
+  const hasOneStepPass = (bot.firmEvaluations || []).some((fe) => fe.passed);
+  const p1Passed = !!bot.phase1Passed;
+  const p2Passed = !!bot.phase2Passed || (Number(rules?.phase2TargetPct) <= 0) || hasOneStepPass;
+  const bestTradeShare = Number(bot.bestTradeSharePct || 0);
+  const consistencyOk = bestTradeShare <= 45;
+
+  const passedDaily = maxDailyLoss < maxDailyLimit;
+  const passedTotalDd = maxTotalDd < maxTotalLimit;
+  const passedDays = tradingDays >= minDays;
+  const passedTrades = tradesCount >= minTrades;
+  const passedTargets = (p1Passed && p2Passed) || hasFirmPass;
+  const isFunded = (bot.status === 'funded' || passedTargets) && !bot.breached && hasFirmPass;
+
+  const profitSplitPct = Number(rules?.profitSplitPct) || 80;
+  const grossProfitUsd = bot.finalEquity ? Math.max(0, bot.finalEquity - accountSize) : Math.max(0, Math.round(accountSize * (returnPct / 100)));
+  const withdrawableUsd = isFunded && grossProfitUsd > 0
+    ? Math.round(grossProfitUsd * (profitSplitPct / 100))
+    : (bot.fundedProfitUsd || 0);
+
+  const canWithdraw = isFunded && isLive && passedDaily && passedTotalDd && consistencyOk && withdrawableUsd > 0;
+
+  const checklist = [
+    {
+      id: 'live_data',
+      label: 'נתוני שוק אמת (Real Exchange Data)',
+      passed: isLive,
+      detail: isLive ? `מאומת: ${bot.dataProvider} (${bot.candlesCount || 0} נרות אמת)` : 'נתוני הדגמה בלבד',
+    },
+    {
+      id: 'profit_target',
+      label: 'עמידה ביעדי רווח שלב 1 ושלב 2',
+      passed: passedTargets,
+      detail: passedTargets ? `שלב 1 (${bot.phase1PassedDate || 'עבר'}) + שלב 2 (${bot.phase2PassedDate || 'עבר'}) · סה"כ ${returnPct}%` : `טרם הושלמו יעדי הרווח (+${rules.phase1TargetPct}% / +${rules.phase2TargetPct || 0}%)`,
+    },
+    {
+      id: 'daily_loss',
+      label: `מגבלת הפסד יומי מקסימלי (<${maxDailyLimit}%)`,
+      passed: passedDaily,
+      detail: passedDaily ? `הפסד יומי מרבי: ${maxDailyLoss}% (מרווח ביטחון: ${(maxDailyLimit - maxDailyLoss).toFixed(2)}%)` : `חריגה יומית: ${maxDailyLoss}%`,
+    },
+    {
+      id: 'total_dd',
+      label: `מגבלת Drawdown כולל (<${maxTotalLimit}%)`,
+      passed: passedTotalDd,
+      detail: passedTotalDd ? `Drawdown שיא: ${maxTotalDd}% (מרווח ביטחון: ${(maxTotalLimit - maxTotalDd).toFixed(2)}%)` : `חריגת Drawdown: ${maxTotalDd}%`,
+    },
+    {
+      id: 'trading_days',
+      label: `מינימום ימי מסחר (${minDays} ימים)`,
+      passed: passedDays,
+      detail: `${tradingDays} ימי מסחר בפועל (נדרש לפחות ${minDays})`,
+    },
+    {
+      id: 'consistency',
+      label: 'חוק העקביות (Consistency <= 45%)',
+      passed: consistencyOk,
+      detail: `עסקה בודדת מקס׳: ${bestTradeShare}% מסך הרווח (תקרת חוק עקביות: 45%)`,
+    },
+    {
+      id: 'trades_count',
+      label: `מדגם עסקאות מינימלי (${minTrades} עסקאות)`,
+      passed: passedTrades,
+      detail: `${tradesCount} עסקאות שבוצעו במבחן`,
+    },
+    {
+      id: 'withdrawal',
+      label: 'זכאות למשיכת רווחי נוסטרו (Funded Payout)',
+      passed: canWithdraw,
+      detail: canWithdraw
+        ? `זכאי למשיכה: $${withdrawableUsd.toLocaleString('en-US')} (${profitSplitPct}% חלוקת רווחים) כל ${rules.payoutCycleDays || 14} יום`
+        : 'טרם צבר רווח זכאי למשיכה בסטטוס Funded',
+    },
+  ];
+
+  const allRulesPassed = checklist.every((c) => c.passed);
+
+  return {
+    fullyCompliant: allRulesPassed,
+    canWithdraw,
+    withdrawableUsd,
+    grossProfitUsd,
+    profitSplitPct,
+    payoutCycleDays: rules?.payoutCycleDays || 14,
+    readyFirms: bot.readyFirms || [],
+    firmCount: (bot.readyFirms || []).length,
+    checklist,
+  };
+}
+
+export function executeNostroPayoutWithdrawal(botId, state = store.state) {
+  const nostro = state.nostro;
+  if (!nostro?.bots) return { ok: false, error: 'אין בוטים זמינים' };
+  const bot = nostro.bots.find((b) => b.id === botId);
+  if (!bot) return { ok: false, error: 'הבוט לא נמצא' };
+  const rules = { ...DEFAULT_NOSTRO_RULES, ...(nostro.rules || {}) };
+  const audit = verifyNostroBotComplianceAndPayout(bot, rules);
+  if (!audit?.canWithdraw) {
+    return { ok: false, error: 'הבוט אינו עומד בכל תנאי המשיכה כרגע' };
+  }
+  const payoutId = `PAYOUT_${Date.now()}_${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const record = {
+    id: payoutId,
+    at: Date.now(),
+    date: new Date().toISOString().slice(0, 10),
+    botId: bot.id,
+    botName: bot.name,
+    symbol: bot.symbol,
+    accountSize: rules.accountSize,
+    grossProfitUsd: audit.grossProfitUsd,
+    profitSplitPct: audit.profitSplitPct,
+    withdrawableUsd: audit.withdrawableUsd,
+    readyFirms: audit.readyFirms,
+    status: 'approved_cleared',
+    statusLabel: 'אושר ונמשך בהצלחה (Cleared & Paid)',
+  };
+  nostro.payoutHistory = nostro.payoutHistory || [];
+  nostro.payoutHistory.unshift(record);
+  if (nostro.payoutHistory.length > 50) nostro.payoutHistory = nostro.payoutHistory.slice(0, 50);
+
+  store.log('ok', 'משיכת נוסטרו', `בוצעה משיכת רווח בסך $${audit.withdrawableUsd.toLocaleString('en-US')} עבור ${bot.name} (${audit.readyFirms.join(', ')})`);
+  store.save(true);
+  store.emit();
+  scheduleDatabasePush(1000);
+  return { ok: true, payout: record };
+}
+
 // --- Live Nostro Prop-Firm Paper Trading Room (Real Market Data) -----------
 
 const DAY_MS = 86_400_000;
