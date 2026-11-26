@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "include": [
+    "/api/*",
+    "/.netlify/functions/*"
+  ],
+  "exclude": [
+    "/assets/*",
+    "/data/*",
+    "/src/*",
+    "/favicon.ico"
+  ]
+}

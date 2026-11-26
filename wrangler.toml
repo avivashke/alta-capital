@@ -1,0 +1,44 @@
+# Alta Capital — Cloudflare Worker & Static Assets Configuration
+#
+# Deploy instantly to Cloudflare:
+#   npm run cf:deploy (or npx wrangler deploy)
+#
+# Local edge development:
+#   npm run cf:dev (or npx wrangler dev)
+
+name = "alta-capital"
+main = "cloudflare/worker.js"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Static Assets (serves frontend SPA, strategies, state, and assets)
+[assets]
+directory = "."
+binding = "ASSETS"
+
+# Autonomous 24/7 firm trading & walk-forward optimization cron trigger (every 15 min)
+[triggers]
+crons = ["*/15 * * * *"]
+
+# Native Cloudflare Workers AI binding (Edge GPU inference, zero external API keys needed)
+[ai]
+binding = "AI"
+
+# Internal Cloudflare D1 SQL Database:
+# To enable persistent internal SQL at the edge:
+#   1. Run: npx wrangler d1 create alta-db
+#   2. Uncomment the block below and paste your database_id
+#   3. Run: npm run cf:d1:init
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "alta-db"
+# database_id = "paste-your-d1-database-id-here"
+
+# Optional Cloudflare KV Namespace:
+# [[kv_namespaces]]
+# binding = "STATE_KV"
+# id = "paste-your-kv-namespace-id-here"
+
+[vars]
+ALLOWED_ORIGINS = "*"
+SUPABASE_URL = "https://lqiakdsdpdvdlobeeovz.supabase.co"

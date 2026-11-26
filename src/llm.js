@@ -439,11 +439,11 @@ async function callServerEnvChat({ system, messages, maxTokens = 1200, temperatu
   if (!data?.ok || !data?.text) throw new LlmError(data?.error || 'env_chat failed', res.status);
   return {
     text: data.text,
-    entryId: 'netlify-env',
-    provider: data.provider || 'nvidia',
-    model: data.model || 'nvidia/nemotron-3-ultra-550b-a55b',
+    entryId: data.provider === 'cloudflare_workers_ai' ? 'cloudflare-ai' : 'server-env',
+    provider: data.provider || 'cloud',
+    model: data.model || 'default',
     accountId: null,
-    label: data.label || 'Netlify AI (NVIDIA Env)',
+    label: data.label || (data.provider === 'cloudflare_workers_ai' ? 'Cloudflare Workers AI' : 'Cloud Server AI (Env)'),
     attempts: [],
   };
 }
@@ -570,19 +570,19 @@ export async function chatDetailed({ system, messages, maxTokens = 1200, preferC
     }
   }
 
-  // Fallback 1: server-side Netlify Env AI (/api/llm env_chat, e.g. NVIDIA_API_KEY)
+  // Fallback 1: server-side Cloudflare / Netlify Env AI (/api/llm env_chat, e.g. Workers AI, NVIDIA, Groq)
   if (typeof window !== 'undefined') {
     try {
       const envRes = await callServerEnvChat({ system, messages, maxTokens, temperature });
       return { ...envRes, attempts };
     } catch (err) {
-      attempts.push({ provider: 'Netlify Env AI', model: 'env_chat', error: err.message, status: err.status || 0 });
+      attempts.push({ provider: 'Server Env / Cloudflare AI', model: 'env_chat', error: err.message, status: err.status || 0 });
     }
   }
 
   store.save();
   if (!attempts.length) {
-    throw new LlmError('אין מודל או פרוקסי זמין בבריכה. הוסף מפתח בהגדרות או הגדר NVIDIA_API_KEY ב-Netlify.', 0);
+    throw new LlmError('אין מודל או פרוקסי זמין בבריכה. הוסף מפתח בהגדרות או הגדר משתני AI ב-Cloudflare.', 0);
   }
   throw new LlmError('כל המודלים והפרוקסים בבריכה נכשלו · ' + attempts.map((a) => `${a.provider}: ${a.error}`).join(' | '));
 }

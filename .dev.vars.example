@@ -1,0 +1,40 @@
+# Alta Capital — Cloudflare Environment Variables & Secrets (.dev.vars)
+# Copy this file to .dev.vars for local testing with `npx wrangler dev`:
+#   cp .dev.vars.example .dev.vars
+#
+# For production Cloudflare deployment, add these in Cloudflare Dashboard:
+#   Workers & Pages -> alta-capital -> Settings -> Variables and Secrets
+# Or via CLI:
+#   npx wrangler secret put GROQ_API_KEY
+#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler secret put SUPABASE_ANON_KEY
+
+# Cloud Database (Supabase PostgreSQL / Cloudflare D1)
+SUPABASE_URL=https://lqiakdsdpdvdlobeeovz.supabase.co
+SUPABASE_ANON_KEY=
+# SUPABASE_SERVICE_ROLE_KEY=
+
+# Multi-Provider AI Model Pool Keys (all keys join the pool automatically)
+# GROQ_API_KEY=
+# GEMINI_API_KEY=
+# OPENROUTER_API_KEY=
+# NVIDIA_API_KEY=
+# ANTHROPIC_API_KEY=
+# OPENAI_API_KEY=
+# ZAI_API_KEY=
+# MISTRAL_API_KEY=
+# COHERE_API_KEY=
+# XAI_API_KEY=
+# DEEPSEEK_API_KEY=
+# TOGETHER_API_KEY=
+
+# Optional Cloudflare Account AI credentials (if calling Workers AI via external REST instead of binding)
+# CLOUDFLARE_ACCOUNT_ID=
+# CLOUDFLARE_API_TOKEN=
+
+# Optional: Cloudflare Worker AI proxies
+# CLOUDFLARE_WORKER_URLS=https://alta-ai-proxy.example.workers.dev/v1,gpt-oss-120b,,Alta Proxy
+
+# Base Server sync (optional)
+# BASE_SERVER_URL=
+# BASE_SERVER_TOKEN=

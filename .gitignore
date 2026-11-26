@@ -4,6 +4,10 @@ node_modules/
 .freebuff/
 .env
 .env.local
+.dev.vars
+.dev.vars.local
+.wrangler/
+.cloudflare/
 data/.localstorage.json
 data/db.json
 data/alta.db

@@ -20,7 +20,14 @@
     "wa-agent:login": "node scripts/whatsapp-browser-agent.mjs --login",
     "wa-agent:scan": "node scripts/whatsapp-browser-agent.mjs --scan",
     "firm": "node runner/run.mjs --cycles=5",
-    "firm:deep": "node runner/run.mjs --cycles=5 --deep"
+    "firm:deep": "node runner/run.mjs --cycles=5 --deep",
+    "cf:dev": "npx wrangler dev",
+    "cf:deploy": "npx wrangler deploy",
+    "cf:d1:init": "npx wrangler d1 execute alta-db --file=cloudflare/schema.sql",
+    "cf:pages:deploy": "npx wrangler pages deploy . --project-name=alta-capital"
+  },
+  "devDependencies": {
+    "wrangler": "^4.168.0"
   },
   "engines": {
     "node": ">=20"

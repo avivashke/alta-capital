@@ -27,18 +27,49 @@
 
 ---
 
-## הרצה מקומית (macOS)
+## הרצה מקומית (macOS / Linux / Windows)
 
-אין צורך ב־Node או ב־npm. צריך רק שרת סטטי, כי מודולי ES לא נטענים מ־`file://`.
-
+אין צורך ב־Node או ב־npm עבור ממשק ה-Web הבסיסי:
 ```bash
-cd ~/path/to/alta-capital
-ruby -run -e httpd . -p 8080
-open http://localhost:8080
+python3 -m http.server 8080
+# או הרצה עם Base Server:
+npm run base-server
 ```
 
-Ruby מותקן בכל מקבוק, ולכן זו הפקודה הבטוחה. חלופה: `python3 -m http.server 8080` (דורש `xcode-select --install`),
-או Live Server בתוך VS Code.
+---
+
+## ☁️ פריסה מלאה לקלאודפלייר (Cloudflare Workers & Pages)
+
+הפרויקט עבר מיגרציה מלאה לקלאודפלייר עם ארכיטקטורת Serverless Edge מודרנית (Cloudflare Workers + Static Assets ו-Cloudflare Pages Functions), הכוללת בינה מלאכותית ודאטה-בייס פנימיים:
+
+### 1. מה מוגדר פנימית בקלאודפלייר
+* **דאטה בייס פנימי (Cloudflare D1 & KV)**: מסד נתונים SQL מובנה בקלאודפלייר (`firm_state`, `firm_versions`, `firm_trades`, `firm_cycles`). אין צורך בשירות חיצוני — הכל נשמר וממוזג מונוטונית בקצה (Edge). בנוסף יש סנכרון דו-כיווני מול Supabase אם הוגדרו המפתחות.
+* **בינה מלאכותית פנימית (Cloudflare Workers AI)**: מודלי קצה מתקדמים (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`, `@cf/meta/llama-3.1-8b-instruct`, `@cf/deepseek-ai/deepseek-r1-distill-qwen-32b`) הפועלים ישירות על גבי מעבדי ה-GPU של Cloudflare ללא צורך במפתח API חיצוני!
+* **מנוע אוטונומי 24/7 (Cron Triggers)**: הרצה מתוזמנת של מחזורי מסחר ואופטימיזציה כל 15 דקות ישירות ב-Worker (`crons = ["*/15 * * * *"]`), ללא תלות ב-Netlify או במחשב דלוק.
+* **כל נתיבי ה-API פועלים בקצה**: `/api/db`, `/api/llm`, `/api/market`, `/api/firm-cron`, `/api/health`.
+
+### 2. פקודות פריסה והרצה
+```bash
+# הרצה מקומית עם סימולציית Cloudflare Edge:
+npm run cf:dev
+
+# פריסה ישירה ל-Cloudflare Workers (קוד + ממשק משתמש + Cron):
+npm run cf:deploy
+
+# יצירת דאטה-בייס D1 פנימי (חד-פעמי):
+npx wrangler d1 create alta-db
+npm run cf:d1:init
+```
+
+### 3. משתני סביבה בקלאודפלייר (Environment Variables & Secrets)
+הגדר ב-Cloudflare Dashboard (תחת **Workers & Pages → alta-capital → Settings → Variables and Secrets**) או בקובץ `.dev.vars` מקומית:
+* `SUPABASE_URL` / `SUPABASE_ANON_KEY` — סנכרון מול מסד הנתונים בענן (אופציונלי אם משתמשים ב-D1 פנימי).
+* `GROQ_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `NVIDIA_API_KEY` — מפתחות ספקי AI (כל מפתח מצטרף אוטומטית לבריכת המודלים לצד Cloudflare Workers AI).
+* `CLOUDFLARE_API_TOKEN` & `CLOUDFLARE_ACCOUNT_ID` — ל-CI/CD ב-GitHub Actions.
+
+### 4. פריסה אוטומטית ב-GitHub Actions
+הפרויקט כולל workflow מוכן: `.github/workflows/cloudflare.yml`.
+בכל `git push` לענף `main`, הפרויקט נבדק סינטקטית ומפורסם אוטומטית ל-Cloudflare Workers.
 
 ---
 

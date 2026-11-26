@@ -909,7 +909,7 @@ function poolCard(ui) {
     rows.length ? h('div', { style: { marginTop: '8px' } }, rows) : h('div', { class: 'small muted', style: { marginTop: '10px' }, text: 'הבריכה ריקה. הוסף מפתח אחד ומעלה — Groq ו-Gemini הם ההתחלה המומלצת.' }),
     h('div', { style: { marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' } },
       h('div', { class: 'row between wrap', style: { gap: '8px', marginBottom: '6px' } },
-        h('b', { style: { fontSize: '14px' }, text: 'ספקי AI מוגדרים בשרת Netlify (Environment Variables)' }),
+        h('b', { style: { fontSize: '14px' }, text: 'ספקי AI בענן Cloudflare / Netlify (Workers AI & Environment Variables)' }),
         h('button', {
           class: 'btn btn-sm btn-ghost',
           onclick: () => { envPoolCache.loaded = false; refreshEnvPool(ui); },
@@ -921,7 +921,7 @@ function poolCard(ui) {
           return h('div', { class: 'card', style: { padding: '10px 12px', background: 'rgba(8, 13, 22, 0.85)' } },
             h('div', { class: 'row between wrap', style: { gap: '6px' } },
               h('b', { style: { fontSize: '13px' }, text: item.label || item.provider }),
-              t ? tag(t.ok ? `🟢 פעיל · ${t.ms}ms` : '🔴 נכשל', t.ok ? 'live' : 'red') : tag('🟢 מוגדר ב-Netlify Env', 'live'),
+              t ? tag(t.ok ? `🟢 פעיל · ${t.ms}ms` : '🔴 נכשל', t.ok ? 'live' : 'red') : tag(item.native ? '🟢 פעיל (Workers AI GPU)' : '🟢 מוגדר ב-Cloudflare Env', 'live'),
             ),
             h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: `מודל: ${item.model || '—'}` }),
             t && !t.ok ? h('div', { class: 'tiny red', style: { marginTop: '4px' }, text: t.error }) : null,
@@ -952,9 +952,9 @@ function poolCard(ui) {
             ),
           );
         }))
-        : h('div', { class: 'small muted', text: 'לא זוהו עדיין משתני סביבה בשרת זה (או שהשרת המקומי רץ ללא ENV). ב-Netlify הוסף NVIDIA_API_KEY / GROQ_API_KEY וכו׳ ובצע Trigger deploy.' }),
+        : h('div', { class: 'small muted', text: 'לא זוהו עדיין משתני סביבה בשרת זה. ב-Cloudflare Workers AI הוא פעיל אוטומטית, או הוסף GROQ_API_KEY / GEMINI_API_KEY וכו׳ ב-Cloudflare Dashboard / .dev.vars.' }),
     ),
-    notice('בדפדפן המפתחות נשמרים מקומית בלבד. כדי שהסוכנים בענן ישתמשו בהם, הוסף אותם כסודות ב-Netlify Environment Variables — הבריכה נבנית מהם אוטומטית.', 'blue'),
+    notice('בדפדפן המפתחות נשמרים מקומית בלבד. כדי שהסוכנים בענן ישתמשו בהם, הוסף אותם כסודות ב-Cloudflare / GitHub Environment Variables — הבריכה נבנית מהם אוטומטית.', 'blue'),
   );
 }
 
@@ -1018,15 +1018,15 @@ function helpBlock(providerSel) {
 function dbCard(ui) {
   const dbCfg = store.state.settings.db || {};
   const modeSel = h('select', {}, [
-    ['auto', 'אוטומטי (מסד מקומי SQLite + שרת בסיס)'],
-    ['netlify', 'Netlify / Base Server API (/api/db)'],
-    ['worker', 'Cloudflare Worker D1 / KV'],
+    ['auto', 'אוטומטי (Cloudflare D1 / שרת בסיס SQLite)'],
+    ['worker', 'Cloudflare Worker (D1 SQL / KV / Edge)'],
+    ['netlify', 'Cloud API / Netlify (/api/db)'],
   ].map(([val, label]) => h('option', { value: val, selected: (dbCfg.mode || 'auto') === val }, label)));
 
   const cloudApiUrl = h('input', {
     type: 'url',
     value: dbCfg.cloudApiUrl || '',
-    placeholder: 'https://your-site.netlify.app/api/db (אופציונלי — לגישור מול ענן Netlify)',
+    placeholder: 'https://your-site.pages.dev/api/db (אופציונלי — לגישור ענן Cloudflare / Netlify)',
     dir: 'ltr',
   });
   const baseServerUrl = h('input', {
