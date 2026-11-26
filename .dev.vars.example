@@ -9,7 +9,12 @@
 #   npx wrangler secret put GEMINI_API_KEY
 #   npx wrangler secret put SUPABASE_ANON_KEY
 
-# Cloud Database (Supabase PostgreSQL / Cloudflare D1)
+# Internal Cloudflare Database & AI Settings
+DB_MODE=d1
+CF_AI_BUILTIN=true
+CF_AI_MODEL=@cf/meta/llama-3.3-70b-instruct-fp8-fast
+
+# External Cloud Database (Supabase PostgreSQL mirror)
 SUPABASE_URL=https://lqiakdsdpdvdlobeeovz.supabase.co
 SUPABASE_ANON_KEY=
 # SUPABASE_SERVICE_ROLE_KEY=

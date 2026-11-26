@@ -298,6 +298,19 @@ export function buildPoolFromEnv(env = {}, now = Date.now()) {
     });
   }
 
+  // Built-in Cloudflare Workers AI (Edge GPU intelligence, zero key needed)
+  if (env.CF_AI_BUILTIN === 'true' || env.CLOUDFLARE_WORKERS_AI === 'true' || env.AI) {
+    add({
+      provider: 'server-proxy',
+      baseUrl: '/api/llm',
+      model: env.CF_AI_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      label: 'Cloudflare Workers AI (Edge GPU · מובנה)',
+      weight: 3,
+      enabled: true,
+      key: '',
+    });
+  }
+
   // A local model has no key and no quota, which is the only way to get a truly
   // unlimited 24/7 loop: point the runner at Ollama (or any local server).
   const ollamaUrl = String(env.OLLAMA_BASE_URL || '').trim();

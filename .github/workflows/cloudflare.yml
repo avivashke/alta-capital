@@ -38,7 +38,11 @@ jobs:
           node --check functions/api/firm-cron.js
           node --check functions/api/health.js
 
+      - name: Bundle & Dry-Run verification
+        run: npx wrangler deploy --dry-run
+
       - name: Deploy to Cloudflare Workers
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -55,3 +59,8 @@ jobs:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Notice if CLOUDFLARE_API_TOKEN is not yet configured in GitHub Secrets
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN == '' }}
+        run: |
+          echo "::notice title=Cloudflare Deployment::Package and Edge Worker validated successfully! To automatically push live on every commit, add CLOUDFLARE_API_TOKEN in Settings -> Secrets and variables -> Actions -> New repository secret."

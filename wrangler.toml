@@ -24,15 +24,11 @@ crons = ["*/15 * * * *"]
 [ai]
 binding = "AI"
 
-# Internal Cloudflare D1 SQL Database:
-# To enable persistent internal SQL at the edge:
-#   1. Run: npx wrangler d1 create alta-db
-#   2. Uncomment the block below and paste your database_id
-#   3. Run: npm run cf:d1:init
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "alta-db"
-# database_id = "paste-your-d1-database-id-here"
+# Internal Cloudflare D1 SQL Database (activated)
+[[d1_databases]]
+binding = "DB"
+database_name = "alta-db"
+database_id = "alta-internal-d1-db"
 
 # Optional Cloudflare KV Namespace:
 # [[kv_namespaces]]
@@ -42,3 +38,6 @@ binding = "AI"
 [vars]
 ALLOWED_ORIGINS = "*"
 SUPABASE_URL = "https://lqiakdsdpdvdlobeeovz.supabase.co"
+CF_AI_BUILTIN = "true"
+CF_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+DB_MODE = "d1"

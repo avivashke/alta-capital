@@ -12,6 +12,34 @@ const FREE_WEB_BASE = 'https://text.pollinations.ai/openai';
 function ensureFreeWebEntries(st) {
   if (!st?.pool || !Array.isArray(st.pool.entries)) return;
   let added = 0;
+  // Cloudflare Workers AI (Edge GPU) via /api/llm:
+  if (!st.pool.entries.some((e) => e.id === 'builtin_cloudflare_workers_ai' || (e.baseUrl === '/api/llm' && /cloudflare/i.test(e.label)))) {
+    st.pool.entries.unshift({
+      id: 'builtin_cloudflare_workers_ai',
+      provider: 'server-proxy',
+      label: 'Cloudflare Workers AI (Edge GPU · מובנה)',
+      shape: 'openai',
+      baseUrl: '/api/llm',
+      accountId: '',
+      model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      key: '',
+      enabled: true,
+      valid: true,
+      weight: 3,
+      addedAt: Date.now(),
+      lastUsedAt: null,
+      uses: 0,
+      day: new Date().toISOString().slice(0, 10),
+      dayCount: 0,
+      minuteStart: 0,
+      minuteCount: 0,
+      cooldownUntil: 0,
+      failStreak: 0,
+      lastError: '',
+    });
+    added += 1;
+  }
+
   // The anonymous Pollinations tier drops and adds models; keep only the ones it serves
   // now so the pool does not retry retired names on every cycle.
   const before = st.pool.entries.length;
