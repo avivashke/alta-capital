@@ -58,6 +58,10 @@ function getGannzillaConfig() {
 }
 
 function updateGannzillaConfig(patch, ui, { reloadAnalysis = false } = {}) {
+  const scrollY = window.scrollY || window.pageYOffset || (document.documentElement ? document.documentElement.scrollTop : 0) || (document.body ? document.body.scrollTop : 0) || 0;
+  const mainEl = document.querySelector('main');
+  const mainTop = mainEl ? mainEl.scrollTop : 0;
+
   store.state.gannConfig = {
     ...getGannzillaConfig(),
     ...patch,
@@ -77,6 +81,18 @@ function updateGannzillaConfig(patch, ui, { reloadAnalysis = false } = {}) {
     if (analysis.ok) gannViewState.analysis = analysis;
   }
   ui.rerender();
+
+  const restorePos = () => {
+    if (mainEl && mainTop) mainEl.scrollTop = mainTop;
+    if (scrollY > 0) {
+      window.scrollTo({ top: scrollY, behavior: 'instant' });
+      if (document.documentElement) document.documentElement.scrollTop = scrollY;
+      if (document.body) document.body.scrollTop = scrollY;
+    }
+  };
+  restorePos();
+  requestAnimationFrame(restorePos);
+  setTimeout(restorePos, 40);
 }
 
 async function askAiForGannProposal(a, ui) {
@@ -323,7 +339,7 @@ function applyPivotAction(pivot, action, ui) {
   const typeLabel = pivot.type === 'low' ? 'שפל' : 'שיא';
   gannViewState.manualPrice = String(+fmtPriceSmart(pivot.price));
   gannViewState.manualDate = date;
-  gannViewState.key = null;
+  gannViewState.key = `${gannViewState.symbol}|${gannViewState.tf}|${gannViewState.manualPrice}|${gannViewState.manualDate}`;
 
   if (action === 'fan') {
     updateGannzillaConfig({
@@ -406,9 +422,12 @@ async function loadGannData(ui, { force = false } = {}) {
   const key = `${gannViewState.symbol}|${gannViewState.tf}|${gannViewState.manualPrice}|${gannViewState.manualDate}`;
   if (gannViewState.loading && gannViewState.key === key) return;
   gannViewState.key = key;
-  gannViewState.loading = true;
-  gannViewState.error = null;
-  ui.rerender();
+  const hasCandles = Array.isArray(gannViewState.candles) && gannViewState.candles.length > 0;
+  if (!hasCandles || force) {
+    gannViewState.loading = true;
+    gannViewState.error = null;
+    ui.rerender();
+  }
   try {
     const candles = await getCandles(gannViewState.symbol, gannViewState.tf, { limit: 700, force });
     const lookback = gannViewState.tf === '1w' ? 5 : 10;
@@ -576,19 +595,49 @@ function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG
     const gBox = svgEl('g', { 'clip-path': `url(#${clipId})` });
     gBox.appendChild(svgEl('rect', {
       x: bx1, y: by1, width: Math.max(4, bx2 - bx1), height: Math.max(4, by2 - by1),
-      fill: 'rgba(56, 189, 248, 0.05)', stroke: 'rgba(56, 189, 248, 0.55)', 'stroke-width': 1.2,
+      fill: 'rgba(56, 189, 248, 0.05)', stroke: 'rgba(56, 189, 248, 0.65)', 'stroke-width': 1.4,
     }));
+    // Range mode and points tag
+    gBox.appendChild(svgEl('text', {
+      x: bx1 + 6, y: by1 + 13, fill: '#7dd3fc', 'font-size': '9', 'font-weight': '700',
+    }, `${box.rangeModeLabel || 'ריבוע גאן'} · טווח: ${fmtPriceSmart(box.range)} (${box.rangePct || 0}%)`));
+
     // 1x1 box diagonals
-    gBox.appendChild(svgEl('line', { x1: bx1, y1: by2, x2: bx2, y2: by1, stroke: 'rgba(46, 204, 113, 0.45)', 'stroke-dasharray': '4,3', 'stroke-width': 1 }));
-    gBox.appendChild(svgEl('line', { x1: bx1, y1: by1, x2: bx2, y2: by2, stroke: 'rgba(240, 91, 91, 0.45)', 'stroke-dasharray': '4,3', 'stroke-width': 1 }));
-    for (const pl of box.priceLines.filter((p) => p.ratio === 0.25 || p.ratio === 0.5 || p.ratio === 0.75)) {
-      const py = yAt(pl.price);
-      gBox.appendChild(svgEl('line', { x1: bx1, x2: bx2, y1: py, y2: py, stroke: pl.ratio === 0.5 ? 'rgba(242, 204, 96, 0.65)' : 'rgba(56, 189, 248, 0.3)', 'stroke-dasharray': '3,3', 'stroke-width': pl.ratio === 0.5 ? 1.3 : 0.9 }));
+    if (cfg.boxDiagonals !== false) {
+      gBox.appendChild(svgEl('line', { x1: bx1, y1: by2, x2: bx2, y2: by1, stroke: 'rgba(46, 204, 113, 0.45)', 'stroke-dasharray': '4,3', 'stroke-width': 1 }));
+      gBox.appendChild(svgEl('line', { x1: bx1, y1: by1, x2: bx2, y2: by2, stroke: 'rgba(240, 91, 91, 0.45)', 'stroke-dasharray': '4,3', 'stroke-width': 1 }));
     }
-    for (const tl of box.timeLines) {
+    for (const pl of box.priceLines || []) {
+      if (pl.ratio === 0 || pl.ratio === 1) continue;
+      const py = yAt(pl.price);
+      if (py >= padT && py <= padT + chartH) {
+        gBox.appendChild(svgEl('line', {
+          x1: bx1, x2: bx2, y1: py, y2: py,
+          stroke: pl.ratio === 0.5 ? 'rgba(242, 204, 96, 0.75)' : pl.isThird ? 'rgba(192, 132, 252, 0.45)' : 'rgba(56, 189, 248, 0.35)',
+          'stroke-dasharray': pl.ratio === 0.5 ? '0' : '3,3',
+          'stroke-width': pl.ratio === 0.5 ? 1.4 : 0.9,
+        }));
+        gBox.appendChild(svgEl('text', {
+          x: bx2 - 44, y: py - 3,
+          fill: pl.ratio === 0.5 ? '#f2cc60' : pl.isThird ? '#c084fc' : '#7dd3fc',
+          'font-size': '8', 'font-weight': pl.strong ? '700' : '400',
+        }, `${pl.label} ${fmtPriceSmart(pl.price)}`));
+      }
+    }
+    for (const tl of box.timeLines || []) {
       const tx = xAtGlobal(tl.idx);
       if (tx > bx1 && tx < bx2) {
-        gBox.appendChild(svgEl('line', { x1: tx, x2: tx, y1: by1, y2: by2, stroke: 'rgba(56, 189, 248, 0.25)', 'stroke-dasharray': '2,4', 'stroke-width': 0.9 }));
+        gBox.appendChild(svgEl('line', {
+          x1: tx, x2: tx, y1: by1, y2: by2,
+          stroke: tl.strong ? 'rgba(242, 204, 96, 0.5)' : 'rgba(56, 189, 248, 0.28)',
+          'stroke-dasharray': '2,4',
+          'stroke-width': tl.strong ? 1.2 : 0.9,
+        }));
+        gBox.appendChild(svgEl('text', {
+          x: tx - 10, y: by2 - 4,
+          fill: tl.strong ? '#f2cc60' : '#7dd3fc',
+          'font-size': '8',
+        }, tl.label));
       }
     }
     svg.appendChild(gBox);
@@ -714,6 +763,7 @@ function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG
         });
         bg.addEventListener('click', (ev) => {
           ev.stopPropagation();
+          ev.preventDefault();
           handlers.onPivotAction?.(p, action);
         });
         hoverLayer.appendChild(bg);
@@ -724,9 +774,106 @@ function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG
     };
 
     hit.addEventListener('mouseenter', showSuggestions);
-    hit.addEventListener('click', () => handlers.onPivotAction?.(p, 'fan'));
+    hit.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      ev.preventDefault();
+      handlers.onPivotAction?.(p, 'fan');
+    });
     svg.appendChild(pivotGroup);
   }
+
+  // W.D. Gann Sub-Trend Signals on Chart (Signal Top ▼ / Signal Bottom ▲)
+  if (cfg.showSubTrendSignals !== false && analysis.subTrendSignals?.signals?.length) {
+    const gSignals = svgEl('g', {});
+    for (const st of analysis.subTrendSignals.signals) {
+      const rel = st.idx - offset;
+      if (rel < 0 || rel >= show) continue;
+      const cx = xAt(rel);
+      const isTop = st.type === 'top';
+      const cy = yAt(st.price);
+      const sigGroup = svgEl('g', { style: 'cursor:pointer' });
+      const col = isTop ? '#f87171' : '#34d399';
+      const bgCol = isTop ? 'rgba(239, 68, 68, 0.22)' : 'rgba(16, 185, 129, 0.22)';
+
+      if (isTop) {
+        sigGroup.appendChild(svgEl('path', {
+          d: `M ${cx - 4} ${cy - 8} L ${cx + 4} ${cy - 8} L ${cx} ${cy - 3} Z`,
+          fill: col,
+        }));
+        sigGroup.appendChild(svgEl('rect', {
+          x: cx - 9, y: cy - 20, width: 18, height: 11, rx: 3,
+          fill: bgCol, stroke: col, 'stroke-width': 0.8,
+        }));
+        sigGroup.appendChild(svgEl('text', {
+          x: cx, y: cy - 12, fill: col, 'font-size': '7.5', 'font-weight': '700', 'text-anchor': 'middle',
+        }, 'ST'));
+      } else {
+        sigGroup.appendChild(svgEl('path', {
+          d: `M ${cx - 4} ${cy + 8} L ${cx + 4} ${cy + 8} L ${cx} ${cy + 3} Z`,
+          fill: col,
+        }));
+        sigGroup.appendChild(svgEl('rect', {
+          x: cx - 9, y: cy + 9, width: 18, height: 11, rx: 3,
+          fill: bgCol, stroke: col, 'stroke-width': 0.8,
+        }));
+        sigGroup.appendChild(svgEl('text', {
+          x: cx, y: cy + 18, fill: col, 'font-size': '7.5', 'font-weight': '700', 'text-anchor': 'middle',
+        }, 'SB'));
+      }
+
+      const hit = svgEl('circle', { cx, cy: isTop ? cy - 12 : cy + 12, r: 14, fill: 'transparent' });
+      sigGroup.appendChild(hit);
+
+      const showSubTrendTooltip = () => {
+        hoverLayer.textContent = '';
+        const w = 210;
+        const h = 76;
+        const tx = Math.min(Math.max(padL, cx - w / 2), width - padR - w);
+        const ty = isTop ? (cy > padT + h + 24 ? cy - h - 22 : cy + 15) : (cy < padT + chartH - h - 24 ? cy + 22 : cy - h - 15);
+        hoverLayer.appendChild(svgEl('rect', {
+          x: tx, y: ty, width: w, height: h, rx: 6,
+          fill: 'rgba(8, 15, 26, 0.98)', stroke: isTop ? '#f87171' : '#34d399', 'stroke-width': 1.2,
+        }));
+        hoverLayer.appendChild(svgEl('text', {
+          x: tx + 8, y: ty + 14, fill: isTop ? '#fca5a5' : '#86efac', 'font-size': '9.5', 'font-weight': '700',
+        }, `${isTop ? '🔻 Signal Top' : '🟢 Signal Bottom'} · ${fmtPriceSmart(st.price)} (${st.date})`));
+        hoverLayer.appendChild(svgEl('text', {
+          x: tx + 8, y: ty + 26, fill: '#cbd5e1', 'font-size': '8',
+        }, isTop ? 'שינוי תת-מגמה לירידה · רמת התנגדות' : 'שינוי תת-מגמה לעלייה · רמת תמיכה'));
+
+        const rows = [
+          ['↗ פרוס מניפה מנר איתות זה', 'fan', '#7dd3fc'],
+          ['▦ פתח ריבוע מנר איתות זה', 'box', '#f2cc60'],
+        ];
+        rows.forEach(([label, action, color], idx) => {
+          const rowY = ty + 40 + idx * 16;
+          const bg = svgEl('rect', {
+            x: tx + 6, y: rowY - 10, width: w - 12, height: 14, rx: 3,
+            fill: 'rgba(56, 189, 248, 0.12)', style: 'cursor:pointer', 'pointer-events': 'all',
+          });
+          bg.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            ev.preventDefault();
+            handlers.onPivotAction?.({ t: st.t, price: st.price, type: isTop ? 'high' : 'low' }, action);
+          });
+          hoverLayer.appendChild(bg);
+          hoverLayer.appendChild(svgEl('text', {
+            x: tx + 10, y: rowY + 1, fill: color, 'font-size': '9', 'pointer-events': 'none',
+          }, label));
+        });
+      };
+
+      hit.addEventListener('mouseenter', showSubTrendTooltip);
+      hit.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        handlers.onPivotAction?.({ t: st.t, price: st.price, type: isTop ? 'high' : 'low' }, 'fan');
+      });
+      gSignals.appendChild(sigGroup);
+    }
+    svg.appendChild(gSignals);
+  }
+
   svg.appendChild(hoverLayer);
 
   // Future Projected Time Lines
@@ -952,6 +1099,186 @@ function renderMsjSq9Matrix(msj, onSelectCell, selectedCell) {
   );
 }
 
+function renderSubTrendTab(a, ui) {
+  const sigs = a.subTrendSignals;
+  if (!sigs) return empty('אין נתוני איתותי תת-מגמה');
+  const isBull = sigs.currentSubTrend === 'bullish';
+  const isBear = sigs.currentSubTrend === 'bearish';
+
+  return h('div', {},
+    // KPI Strip
+    h('div', { class: 'grid cols-3', style: { gap: '8px', marginBottom: '12px' } },
+      h('div', { class: 'card flush', style: { padding: '12px', background: isBull ? 'rgba(16, 185, 129, 0.08)' : isBear ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255,255,255,0.02)' } },
+        h('div', { class: 'tiny muted', text: 'כיוון תת-מגמה נוכחית' }),
+        h('b', { style: { fontSize: '15px', color: isBull ? '#34d399' : isBear ? '#f87171' : '#94a3b8' }, text: isBull ? '▲ עולה (Bullish)' : isBear ? '▼ יורדת (Bearish)' : '— ניטרלית' }),
+        h('div', { class: 'small muted', text: `${sigs.barsInSubTrend} נרות מאז האיתות האחרון` }),
+      ),
+      h('div', { class: 'card flush', style: { padding: '12px' } },
+        h('div', { class: 'tiny muted', text: 'שיא איתות אחרון (Signal Top)' }),
+        sigs.lastSignalTop
+          ? h('div', {},
+              h('b', { class: 'red mono', text: fmtPriceSmart(sigs.lastSignalTop.price) }),
+              h('div', { class: 'small muted', text: `${sigs.lastSignalTop.date} (${sigs.lastSignalTop.barsAgo} נרות אחורה)` }),
+              h('div', { class: 'tiny gold', text: 'התנגדות תת-מגמה' }),
+            )
+          : h('span', { class: 'muted', text: 'לא זוהה לאחרונה' }),
+      ),
+      h('div', { class: 'card flush', style: { padding: '12px' } },
+        h('div', { class: 'tiny muted', text: 'שפל איתות אחרון (Signal Bottom)' }),
+        sigs.lastSignalBottom
+          ? h('div', {},
+              h('b', { class: 'green mono', text: fmtPriceSmart(sigs.lastSignalBottom.price) }),
+              h('div', { class: 'small muted', text: `${sigs.lastSignalBottom.date} (${sigs.lastSignalBottom.barsAgo} נרות אחורה)` }),
+              h('div', { class: 'tiny green', text: 'תמיכת תת-מגמה' }),
+            )
+          : h('span', { class: 'muted', text: 'לא זוהה לאחרונה' }),
+      ),
+    ),
+    // Educational Gann rule notice
+    h('div', { class: 'notice', style: { marginBottom: '10px' } },
+      h('span', { style: { fontWeight: '700', color: '#facc15' }, text: '💡 כללי וו.ד. גאן לתתי-מגמה: ' }),
+      h('span', { class: 'small', text: 'לפי חוקי המסחר של גאן (Mechanical Method and Trend Indicator), שינוי תת-מגמה מקדים את היפוך הסווינג הראשי. נר Signal Top (שיא עולה וסגירה מתחת לשפל הקודם) מתריע על סיום הדחף השורי, בעוד נר Signal Bottom (שפל יורד וסגירה מעל השיא הקודם) מתריע על מיצוי המוכרים.' }),
+    ),
+    // Interactive Signals Table
+    h('div', { class: 'table-wrap', style: { maxHeight: '280px', overflowY: 'auto' } },
+      h('table', {},
+        h('thead', {}, h('tr', {},
+          h('th', { text: 'תאריך' }),
+          h('th', { text: 'איתות' }),
+          h('th', { text: 'מחיר נר' }),
+          h('th', { text: 'סגירה' }),
+          h('th', { text: 'טווח' }),
+          h('th', { text: 'עוצמה' }),
+          h('th', { text: 'תפקיד' }),
+          h('th', { text: 'פעולות גאן' }),
+        )),
+        h('tbody', {}, (sigs.recentSignals || []).map((s) => {
+          const isTop = s.type === 'top';
+          return h('tr', {},
+            h('td', { class: 'mono small', text: s.date }),
+            h('td', {}, tag(isTop ? '🔻 Signal Top' : '🟢 Signal Bottom', isTop ? 'red' : 'live')),
+            h('td', { class: 'mono', style: { fontWeight: '700', color: isTop ? '#fca5a5' : '#86efac' }, text: fmtPriceSmart(s.price) }),
+            h('td', { class: 'mono small', text: fmtPriceSmart(s.close) }),
+            h('td', { class: 'mono small', text: s.range }),
+            h('td', { class: 'small', text: s.isOutside ? 'חזק (Outside Reversal)' : 'רגיל' }),
+            h('td', { class: 'small', text: s.levelRole }),
+            h('td', { class: 'row', style: { gap: '4px' } },
+              h('button', {
+                class: 'btn btn-xs',
+                title: 'פרוס מניפת גאן מנר איתות זה',
+                onclick: () => applyPivotAction({ price: s.price, t: s.t, type: isTop ? 'high' : 'low' }, 'fan', ui),
+              }, '↗ מניפה'),
+              h('button', {
+                class: 'btn btn-xs',
+                title: 'פתח ריבוע גאן מנר איתות זה',
+                onclick: () => applyPivotAction({ price: s.price, t: s.t, type: isTop ? 'high' : 'low' }, 'box', ui),
+              }, '▦ ריבוע'),
+            ),
+          );
+        })),
+      ),
+    ),
+  );
+}
+
+function renderBoxSquareTab(a, cfg, ui) {
+  const box = a.gannBox;
+  if (!box) return empty('אין נתוני ריבוע גאן פעילים');
+
+  return h('div', {},
+    // Settings Strip
+    h('div', { class: 'row wrap', style: { gap: '8px', marginBottom: '10px', alignItems: 'center' } },
+      h('span', { class: 'small muted', text: 'מצב טווח ריבוע:' }),
+      h('select', {
+        class: 'input',
+        style: { width: '155px' },
+        value: cfg.boxRangeMode || 'swing',
+        onchange: (e) => updateGannzillaConfig({ boxRangeMode: e.target.value, showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+      }, [
+        ['swing', 'סווינג נוכחי (Swing Range)'],
+        ['lookback', 'חלון נרות אחרונים'],
+        ['square_out', 'Square-Out (איזון זמן=מחיר)'],
+        ['high', 'ריבוע השיא (Square of High)'],
+        ['low', 'ריבוע השפל (Square of Low)'],
+        ['custom', 'מותאם אישית (Custom High/Low)'],
+      ].map(([v, l]) => h('option', { value: v, selected: (cfg.boxRangeMode || 'swing') === v }, l))),
+      (cfg.boxRangeMode === 'lookback')
+        ? h('select', {
+            class: 'input',
+            style: { width: '105px' },
+            value: String(cfg.boxLookbackBars || 60),
+            onchange: (e) => updateGannzillaConfig({ boxLookbackBars: Number(e.target.value) || 60, showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+          }, [['30', '30 נרות'], ['60', '60 נרות'], ['90', '90 נרות'], ['120', '120 נרות'], ['180', '180 נרות'], ['360', '360 נרות']].map(([v, l]) =>
+            h('option', { value: v, selected: String(cfg.boxLookbackBars || 60) === v }, l)
+          ))
+        : null,
+      (cfg.boxRangeMode === 'custom')
+        ? h('div', { class: 'row', style: { gap: '4px' } },
+            h('input', {
+              class: 'input',
+              type: 'number',
+              step: 'any',
+              placeholder: `שיא (${a.swingHigh ? num(a.swingHigh, 2) : 'High'})`,
+              style: { width: '95px' },
+              value: cfg.boxCustomHigh || '',
+              onchange: (e) => updateGannzillaConfig({ boxCustomHigh: e.target.value.trim(), showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+            }),
+            h('input', {
+              class: 'input',
+              type: 'number',
+              step: 'any',
+              placeholder: `שפל (${a.swingLow ? num(a.swingLow, 2) : 'Low'})`,
+              style: { width: '95px' },
+              value: cfg.boxCustomLow || '',
+              onchange: (e) => updateGannzillaConfig({ boxCustomLow: e.target.value.trim(), showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+            }),
+          )
+        : null,
+      h('select', {
+        class: 'input',
+        style: { width: '135px' },
+        value: cfg.boxDivisions || 'eighths',
+        onchange: (e) => updateGannzillaConfig({ boxDivisions: e.target.value, showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+      }, [
+        ['eighths', 'שמיניות (1/8–8/8)'],
+        ['thirds', 'שלישים (1/3, 2/3)'],
+        ['both', 'שמיניות + שלישים'],
+      ].map(([v, l]) => h('option', { value: v, selected: (cfg.boxDivisions || 'eighths') === v }, l))),
+      h('button', {
+        class: `btn btn-sm ${cfg.showBoxOnChart ? 'btn-primary' : ''}`,
+        onclick: () => updateGannzillaConfig({ showBoxOnChart: !cfg.showBoxOnChart }, ui),
+      }, cfg.showBoxOnChart ? '✓ ריבוע מוצג על הגרף' : 'הצג ריבוע על הגרף'),
+    ),
+    // Box Key Properties
+    h('div', { class: 'grid cols-4', style: { gap: '8px', marginBottom: '12px' } },
+      h('div', { class: 'metric' }, h('span', { text: 'טווח הריבוע (Range)' }), h('b', { class: 'mono gold', text: `${fmtPriceSmart(box.range)} (${box.rangePct}%)` })),
+      h('div', { class: 'metric' }, h('span', { text: 'גבול עליון (High)' }), h('b', { class: 'mono red', text: fmtPriceSmart(box.high) })),
+      h('div', { class: 'metric' }, h('span', { text: 'גבול תחתון (Low)' }), h('b', { class: 'mono green', text: fmtPriceSmart(box.low) })),
+      h('div', { class: 'metric' }, h('span', { text: 'מרכז הריבוע (50%)' }), h('b', { class: 'mono', text: fmtPriceSmart(box.mid50) })),
+    ),
+    // Division Table
+    h('div', { class: 'table-wrap', style: { maxHeight: '240px', overflowY: 'auto' } },
+      h('table', {},
+        h('thead', {}, h('tr', {},
+          h('th', { text: 'יחס חלוקה' }),
+          h('th', { text: 'מחיר יעד' }),
+          h('th', { text: 'מרחק ממחיר שוק' }),
+          h('th', { text: 'חשיבות גאן' }),
+        )),
+        h('tbody', {}, (box.priceLines || []).map((pl) => {
+          const distPct = +(((pl.price - a.currentPrice) / a.currentPrice) * 100).toFixed(2);
+          return h('tr', {},
+            h('td', { class: 'small mono', style: { fontWeight: pl.strong ? '700' : '400' }, text: pl.label }),
+            h('td', { class: 'mono', style: { fontWeight: '700' }, text: fmtPriceSmart(pl.price) }),
+            h('td', { class: 'mono ' + (distPct >= 0 ? 'green' : 'red'), text: pct(distPct) }),
+            h('td', {}, tag(pl.ratio === 0.5 ? 'מרכז 50% (איזון)' : pl.strong ? 'רמת מפתח (רבעון)' : pl.isThird ? 'שליש הרמוני' : 'שמינית משנית', pl.ratio === 0.5 ? 'live' : pl.strong ? 'opt' : 'dry')),
+          );
+        })),
+      ),
+    ),
+  );
+}
+
 export function renderGann(root, ui) {
   const key = `${gannViewState.symbol}|${gannViewState.tf}|${gannViewState.manualPrice}|${gannViewState.manualDate}`;
   if (gannViewState.key !== key && !gannViewState.loading) {
@@ -1134,7 +1461,7 @@ export function renderGann(root, ui) {
     );
   }
 
-  if (gannViewState.loading) {
+  if (gannViewState.loading && !gannViewState.analysis) {
     mount(root, h('div', { class: 'card', style: { marginTop: '14px', padding: '40px', textAlign: 'center' } },
       h('div', { text: `⏳ טוען היסטוריית ${gannViewState.symbol}, מחשב Square of 9, הקסגון, נוסחאות מייקל ג׳נקינס ומאמת מול אירועים פונדמנטליסטיים…` }),
     ));
@@ -1232,7 +1559,7 @@ export function renderGann(root, ui) {
           tag(`עוגן: ${num(a.anchorPivot.price, 2)} (${a.anchorPivot.manual ? 'ידני' : a.anchorPivot.type === 'low' ? 'שפל' : 'שיא'})`, 'live'),
         ),
       ),
-      h('div', { class: 'row wrap', style: { gap: '8px', marginBottom: '10px', alignItems: 'center' } },
+      h('div', { class: 'row wrap', style: { gap: '8px', marginBottom: '8px', alignItems: 'center' } },
         h('button', {
           class: `btn btn-sm ${cfg.showFanOnChart !== false ? 'btn-primary' : ''}`,
           onclick: () => updateGannzillaConfig({ showFanOnChart: cfg.showFanOnChart === false }, ui),
@@ -1251,21 +1578,86 @@ export function renderGann(root, ui) {
           step: 'any',
           placeholder: `יחידה/נר (${a.gannFan?.autoUnit || 'אוטו'})`,
           title: 'יחידת מחיר לנר עבור זווית 1x1 (השאר ריק לאוטומטי)',
-          style: { width: '150px' },
+          style: { width: '135px' },
           value: cfg.fanScale || '',
           onchange: (e) => updateGannzillaConfig({ fanScale: e.target.value.trim() }, ui, { reloadAnalysis: true }),
         }),
+        h('button', {
+          class: `btn btn-sm ${cfg.showSubTrendSignals !== false ? 'btn-primary' : ''}`,
+          title: 'הצג/הסתר נרות איתות Signal Top ו-Signal Bottom המעידים על שינויי תתי-מגמה',
+          onclick: () => updateGannzillaConfig({ showSubTrendSignals: cfg.showSubTrendSignals === false }, ui),
+        }, '▼▲ איתותי תת-מגמה (Top/Bottom)'),
         h('button', {
           class: `btn btn-sm ${cfg.showBoxOnChart ? 'btn-primary' : ''}`,
           onclick: () => updateGannzillaConfig({ showBoxOnChart: !cfg.showBoxOnChart }, ui),
         }, '▦ תיבת גאן (Gann Box)'),
         h('select', {
           class: 'input',
-          style: { width: '148px' },
+          style: { width: '150px' },
+          title: 'קביעת טווח יצירת הריבוע (Gann Squaring Range)',
+          value: cfg.boxRangeMode || 'swing',
+          onchange: (e) => updateGannzillaConfig({ boxRangeMode: e.target.value, showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+        }, [
+          ['swing', 'טווח: סווינג נוכחי'],
+          ['lookback', 'טווח: נרות אחרונים'],
+          ['square_out', 'טווח: Square-Out (זמן=מחיר)'],
+          ['high', 'טווח: ריבוע השיא (High)'],
+          ['low', 'טווח: ריבוע השפל (Low)'],
+          ['custom', 'טווח: מותאם אישית'],
+        ].map(([v, l]) => h('option', { value: v, selected: (cfg.boxRangeMode || 'swing') === v }, l))),
+        (cfg.boxRangeMode === 'lookback')
+          ? h('select', {
+              class: 'input',
+              style: { width: '105px' },
+              title: 'מספר נרות לחישוב טווח הריבוע',
+              value: String(cfg.boxLookbackBars || 60),
+              onchange: (e) => updateGannzillaConfig({ boxLookbackBars: Number(e.target.value) || 60, showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+            }, [['30', '30 נרות'], ['60', '60 נרות'], ['90', '90 נרות'], ['120', '120 נרות'], ['180', '180 נרות'], ['360', '360 נרות']].map(([v, l]) =>
+              h('option', { value: v, selected: String(cfg.boxLookbackBars || 60) === v }, l)
+            ))
+          : null,
+        (cfg.boxRangeMode === 'custom')
+          ? h('div', { class: 'row', style: { gap: '4px' } },
+              h('input', {
+                class: 'input',
+                type: 'number',
+                step: 'any',
+                placeholder: `שיא (${a.swingHigh ? num(a.swingHigh, 2) : 'High'})`,
+                title: 'מחיר עליון לטווח הריבוע',
+                style: { width: '95px' },
+                value: cfg.boxCustomHigh || '',
+                onchange: (e) => updateGannzillaConfig({ boxCustomHigh: e.target.value.trim(), showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+              }),
+              h('input', {
+                class: 'input',
+                type: 'number',
+                step: 'any',
+                placeholder: `שפל (${a.swingLow ? num(a.swingLow, 2) : 'Low'})`,
+                title: 'מחיר תחתון לטווח הריבוע',
+                style: { width: '95px' },
+                value: cfg.boxCustomLow || '',
+                onchange: (e) => updateGannzillaConfig({ boxCustomLow: e.target.value.trim(), showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+              }),
+            )
+          : null,
+        h('select', {
+          class: 'input',
+          style: { width: '135px' },
+          title: 'חלוקות ריבוע פנימיות',
+          value: cfg.boxDivisions || 'eighths',
+          onchange: (e) => updateGannzillaConfig({ boxDivisions: e.target.value, showBoxOnChart: true }, ui, { reloadAnalysis: true }),
+        }, [
+          ['eighths', 'חלוקה: שמיניות (1/8)'],
+          ['thirds', 'חלוקה: שלישים (1/3)'],
+          ['both', 'חלוקה: שמיניות + שלישים'],
+        ].map(([v, l]) => h('option', { value: v, selected: (cfg.boxDivisions || 'eighths') === v }, l))),
+        h('select', {
+          class: 'input',
+          style: { width: '135px' },
           title: 'רוחב ריבוע גאן בברים (0 = אוטומטי)',
           value: String(cfg.boxBars || 0),
           onchange: (e) => updateGannzillaConfig({ boxBars: Number(e.target.value) || 0, showBoxOnChart: true }, ui, { reloadAnalysis: true }),
-        }, [['0', 'ריבוע: אוטומטי'], ['36', 'ריבוע 36 נרות'], ['72', 'ריבוע 72 נרות'], ['90', 'ריבוע 90 נרות'], ['144', 'ריבוע 144 נרות'], ['180', 'ריבוע 180 נרות'], ['360', 'ריבוע 360 נרות']].map(([v, l]) =>
+        }, [['0', 'רוחב: אוטומטי'], ['36', '36 נרות'], ['72', '72 נרות'], ['90', '90 נרות'], ['144', '144 נרות'], ['180', '180 נרות'], ['360', '360 נרות']].map(([v, l]) =>
           h('option', { value: v, selected: String(cfg.boxBars || 0) === v }, l)
         )),
         h('button', {
@@ -1285,6 +1677,22 @@ export function renderGann(root, ui) {
           h('option', { value: v, selected: String(cfg.swingBarMode || 2) === v }, l)
         )),
       ),
+      a.subTrendSignals?.summary
+        ? h('div', {
+            class: 'notice',
+            style: {
+              marginBottom: '10px',
+              background: a.subTrendSignals.currentSubTrend === 'bullish' ? 'rgba(16, 185, 129, 0.1)' : a.subTrendSignals.currentSubTrend === 'bearish' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${a.subTrendSignals.currentSubTrend === 'bullish' ? 'rgba(16, 185, 129, 0.3)' : a.subTrendSignals.currentSubTrend === 'bearish' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255,255,255,0.1)'}`,
+            },
+          },
+            h('span', {
+              style: { fontWeight: '700', color: a.subTrendSignals.currentSubTrend === 'bullish' ? '#34d399' : '#f87171' },
+              text: a.subTrendSignals.currentSubTrend === 'bullish' ? '▲ תת-מגמה עולה (Bullish):' : '▼ תת-מגמה יורדת (Bearish):',
+            }),
+            h('span', { class: 'small', style: { color: '#e2e8f0' }, text: a.subTrendSignals.summary }),
+          )
+        : null,
       renderGannForecastSvg(gannViewState.candles, a, cfg, {
         boxBars: Number(cfg.boxBars) || 0,
         onPivotAction: (pivot, action) => applyPivotAction(pivot, action, ui),
@@ -1409,6 +1817,8 @@ export function renderGann(root, ui) {
         h('div', { class: 'row', style: { gap: '6px', marginBottom: '10px', flexWrap: 'wrap' } },
           [
             ['fan', 'מניפת גאן (9 זוויות)'],
+            ['subtrend', '🎯 תתי-מגמה (Top/Bottom)'],
+            ['box_square', '▦ גמישות ריבועים וטווח'],
             ['msj_grid', 'מטריצת MSJ_GannSQ9'],
             ['msj_deg', 'מעלות וזמני MSJ'],
             ['jenkins', '√Price + ספירלה'],
@@ -1443,7 +1853,11 @@ export function renderGann(root, ui) {
             ),
             h('div', { class: 'tiny muted', style: { marginTop: '8px' }, text: `קנה מידה פעיל: ${a.gannFan?.unitPerBar} ליחידה לנר · ${a.gannFan?.barsElapsed} נרות מהעוגן (${a.gannFan?.dir > 0 ? 'מניפה עולה מהשפל' : 'מניפה יורדת מהשיא'})` }),
           )
-          : gannViewState.calcTab === 'msj_grid'
+          : gannViewState.calcTab === 'subtrend'
+            ? renderSubTrendTab(a, ui)
+            : gannViewState.calcTab === 'box_square'
+              ? renderBoxSquareTab(a, cfg, ui)
+              : gannViewState.calcTab === 'msj_grid'
             ? h('div', {},
               h('div', { class: 'row wrap', style: { gap: '6px', marginBottom: '8px', alignItems: 'center' } },
                 h('input', {

@@ -173,9 +173,11 @@ function captureViewUiState(view) {
   const scrollables = [...(view?.querySelectorAll('.table-wrap, .chat, .edu-chat-scroll, .card-body') || [])]
     .map((el) => ({ top: el.scrollTop, left: el.scrollLeft }));
   const detailsOpen = [...(view?.querySelectorAll('details') || [])].map((el) => !!el.open);
+  const winX = window.scrollX || window.pageXOffset || (document.documentElement ? document.documentElement.scrollLeft : 0) || (document.body ? document.body.scrollLeft : 0) || 0;
+  const winY = window.scrollY || window.pageYOffset || (document.documentElement ? document.documentElement.scrollTop : 0) || (document.body ? document.body.scrollTop : 0) || 0;
   return {
-    winX: window.scrollX || 0,
-    winY: window.scrollY || 0,
+    winX,
+    winY,
     mainTop: mainEl ? mainEl.scrollTop : 0,
     viewTop: view ? view.scrollTop : 0,
     scrollables,
@@ -197,11 +199,24 @@ function restoreViewUiState(view, snap) {
     }
   });
   const mainEl = view.closest('main') || document.querySelector('main');
-  if (mainEl && snap.mainTop) mainEl.scrollTop = snap.mainTop;
-  if (snap.viewTop) view.scrollTop = snap.viewTop;
-  if (snap.winY || snap.winX) {
-    window.scrollTo({ top: snap.winY, left: snap.winX, behavior: 'instant' });
-  }
+  const applyScroll = () => {
+    if (mainEl && snap.mainTop) mainEl.scrollTop = snap.mainTop;
+    if (snap.viewTop) view.scrollTop = snap.viewTop;
+    if (snap.winY || snap.winX) {
+      window.scrollTo({ top: snap.winY, left: snap.winX, behavior: 'instant' });
+      if (document.documentElement) {
+        document.documentElement.scrollTop = snap.winY;
+        document.documentElement.scrollLeft = snap.winX;
+      }
+      if (document.body) {
+        document.body.scrollTop = snap.winY;
+        document.body.scrollLeft = snap.winX;
+      }
+    }
+  };
+  applyScroll();
+  requestAnimationFrame(applyScroll);
+  setTimeout(applyScroll, 40);
 }
 
 function render({ force = false, resetScroll = false } = {}) {

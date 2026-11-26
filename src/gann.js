@@ -531,38 +531,90 @@ export function computeGannBox(candles, anchorPivot, swingHigh, swingLow, opts =
   const startIdx = Math.max(0, Math.min(n - 10,
     Number.isInteger(opts.anchorIdx) ? opts.anchorIdx : (anchorPivot.idx ?? Math.max(0, n - 90))));
   const elapsed = Math.max(10, n - 1 - startIdx);
-  const naturalWidths = [36, 45, 52, 72, 90, 120, 144, 180, 240];
-  // A chosen square width wins over the natural one, so the same pivot can be opened
-  // as a 90, 144, 180 or 360-bar square of price and time.
-  const forcedWidth = Number(opts.widthBars) || 0;
-  const widthBars = forcedWidth > 0
-    ? Math.max(20, Math.min(720, Math.round(forcedWidth)))
-    : (naturalWidths.find((w) => w >= elapsed) || 144);
-  const endIdx = startIdx + widthBars;
-  const high = Number(opts.priceHigh) || Math.max(swingHigh, swingLow);
-  const low = Number(opts.priceLow) || Math.min(swingHigh, swingLow);
-  const range = Math.max(1e-6, high - low);
+  const naturalWidths = [36, 45, 52, 72, 90, 120, 144, 180, 240, 360];
 
-  const priceRatios = [0, 0.125, 0.25, 0.3333, 0.5, 0.6667, 0.75, 0.875, 1];
+  const rangeMode = opts.rangeMode || 'swing'; // 'swing' | 'lookback' | 'square_out' | 'high' | 'low' | 'custom'
+  let high = Math.max(swingHigh, swingLow);
+  let low = Math.min(swingHigh, swingLow);
+  let rangeModeLabel = 'סווינג נוכחי (Swing Range)';
+
+  if (rangeMode === 'custom' && Number(opts.customHigh) > 0 && Number(opts.customLow) > 0) {
+    high = Math.max(Number(opts.customHigh), Number(opts.customLow));
+    low = Math.min(Number(opts.customHigh), Number(opts.customLow));
+    rangeModeLabel = `טווח מותאם אישית (${low.toFixed(2)} - ${high.toFixed(2)})`;
+  } else if (rangeMode === 'lookback') {
+    const lb = Math.max(10, Math.min(n, Number(opts.lookbackBars) || 60));
+    const slice = candles.slice(-lb);
+    high = Math.max(...slice.map((c) => c.h));
+    low = Math.min(...slice.map((c) => c.l));
+    rangeModeLabel = `טווח ${lb} נרות אחרונים`;
+  } else if (rangeMode === 'high') {
+    high = Math.max(swingHigh, swingLow, Number(anchorPivot.price) || 0);
+    low = Math.max(1e-4, Number(anchorPivot.price) || (high * 0.5));
+    rangeModeLabel = 'ריבוע השיא (Square of High)';
+  } else if (rangeMode === 'low') {
+    low = Math.min(swingHigh, swingLow, Number(anchorPivot.price) || 0);
+    high = low * 1.5;
+    rangeModeLabel = 'ריבוע השפל (Square of Low)';
+  } else if (rangeMode === 'square_out') {
+    rangeModeLabel = 'איזון זמן-מחיר (Gann Square-Out)';
+  }
+
+  const range = Math.max(1e-6, high - low);
+  const scale = Number(opts.fanScale) || (range / 90);
+
+  // Time squaring: if forcedWidth specified, use it. Otherwise, if square_out, bars = range / scale.
+  const forcedWidth = Number(opts.widthBars) || 0;
+  let widthBars = forcedWidth > 0
+    ? Math.max(10, Math.min(720, Math.round(forcedWidth)))
+    : (rangeMode === 'square_out' && scale > 0
+        ? Math.max(20, Math.min(360, Math.round(range / scale)))
+        : (naturalWidths.find((w) => w >= elapsed) || 144));
+
+  const endIdx = startIdx + widthBars;
+
+  const divMode = opts.divisions || 'eighths'; // 'eighths' | 'thirds' | 'both'
+  const eighthRatios = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
+  const thirdRatios = [0.3333, 0.6667];
+  const allRatios = divMode === 'thirds'
+    ? [0, 0.3333, 0.5, 0.6667, 1]
+    : divMode === 'both'
+      ? [...new Set([...eighthRatios, ...thirdRatios])].sort((a, b) => a - b)
+      : eighthRatios;
+
   const timeRatios = [0.25, 0.3333, 0.5, 0.6667, 0.75, 1];
 
   return {
     startIdx,
     endIdx,
     widthBars,
-    high,
-    low,
+    rangeMode,
+    rangeModeLabel,
+    high: +high.toFixed(4),
+    low: +low.toFixed(4),
+    range: +range.toFixed(4),
+    rangePct: +((range / (low || 1)) * 100).toFixed(2),
     mid50: +(low + range * 0.5).toFixed(4),
-    priceLines: priceRatios.map((r) => ({
-      ratio: r,
-      label: r === 0.3333 ? '1/3' : r === 0.6667 ? '2/3' : `${Math.round(r * 8)}/8`,
-      price: +(low + range * r).toFixed(4),
-      strong: r === 0 || r === 0.25 || r === 0.5 || r === 0.75 || r === 1,
-    })),
+    priceLines: allRatios.map((r) => {
+      const isThird = Math.abs(r - 0.3333) < 0.01 || Math.abs(r - 0.6667) < 0.01;
+      const isQuarter = r === 0 || r === 0.25 || r === 0.5 || r === 0.75 || r === 1;
+      let label = `${Math.round(r * 8)}/8`;
+      if (Math.abs(r - 0.3333) < 0.01) label = '1/3';
+      else if (Math.abs(r - 0.6667) < 0.01) label = '2/3';
+      else if (r === 0.5) label = '4/8 (50%)';
+      return {
+        ratio: r,
+        label,
+        price: +(low + range * r).toFixed(4),
+        strong: isQuarter,
+        isThird,
+      };
+    }),
     timeLines: timeRatios.map((r) => ({
       ratio: r,
       label: r === 0.3333 ? '1/3T' : r === 0.6667 ? '2/3T' : `${Math.round(r * 4)}/4T`,
       idx: Math.round(startIdx + widthBars * r),
+      strong: r === 0.5 || r === 1,
     })),
   };
 }
@@ -654,6 +706,116 @@ export function computeGannSwingChart(candles, { barMode = 2 } = {}) {
     midpoint50,
     above50: midpoint50 != null ? lastClose >= midpoint50 : null,
     rule3BarSignal,
+  };
+}
+
+// --- W.D. Gann Sub-Trend Signals: Signal Top & Signal Bottom (שינויי תתי מגמה) ---
+// Identifies minor-trend (sub-trend) reversal candles according to W.D. Gann's Swing Rules:
+// 1. Signal Top: Candle with higher high than previous bar, but closing below previous bar's low (or outside bearish reversal).
+// 2. Signal Bottom: Candle with lower low than previous bar, but closing above previous bar's high (or outside bullish reversal).
+export function computeGannSubTrendSignals(candles) {
+  if (!Array.isArray(candles) || candles.length < 5) {
+    return {
+      signals: [],
+      recentSignals: [],
+      currentSubTrend: 'neutral',
+      barsInSubTrend: 0,
+      lastSignalTop: null,
+      lastSignalBottom: null,
+      lastSignal: null,
+      summary: 'לא זוהו מספיק נרות לצורך איתותי תת-מגמה',
+    };
+  }
+
+  const signals = [];
+  let currentSubTrend = 'neutral'; // 'bullish' | 'bearish'
+
+  for (let i = 1; i < candles.length; i++) {
+    const prev = candles[i - 1];
+    const c = candles[i];
+    const higherHigh = c.h > prev.h;
+    const lowerLow = c.l < prev.l;
+    const isOutside = higherHigh && lowerLow;
+    const barRange = Math.max(1e-6, c.h - c.l);
+
+    let signalType = null;
+    let strength = 'normal';
+    let reason = '';
+
+    // 1. Gann Signal Top (שיא איתות - היפוך תת-מגמה לירידה)
+    if (higherHigh && c.c < prev.l) {
+      signalType = 'top';
+      strength = isOutside ? 'strong' : 'normal';
+      reason = isOutside
+        ? `Outside Reversal: שיא גבוה (${c.h.toFixed(2)}) וסגירה מתחת לשפל הקודם (${prev.l.toFixed(2)})`
+        : `Gann Signal Top: שיא עולה (${c.h.toFixed(2)}) וסגירה מתחת לשפל הקודם (${prev.l.toFixed(2)}) — תת-מגמה עברה לירידה`;
+    } else if (higherHigh && isOutside && (c.c - c.l) / barRange <= 0.3) {
+      signalType = 'top';
+      strength = 'strong';
+      reason = `Bearish Outside Bar: נר חיצוני שורי שהתרסק ונסגר בשליש התחתון (${c.c.toFixed(2)})`;
+    }
+    // 2. Gann Signal Bottom (שפל איתות - היפוך תת-מגמה לעלייה)
+    else if (lowerLow && c.c > prev.h) {
+      signalType = 'bottom';
+      strength = isOutside ? 'strong' : 'normal';
+      reason = isOutside
+        ? `Outside Reversal: שפל נמוך (${c.l.toFixed(2)}) וסגירה מעל השיא הקודם (${prev.h.toFixed(2)})`
+        : `Gann Signal Bottom: שפל יורד (${c.l.toFixed(2)}) וסגירה מעל השיא הקודם (${prev.h.toFixed(2)}) — תת-מגמה עברה לעלייה`;
+    } else if (lowerLow && isOutside && (c.h - c.c) / barRange <= 0.3) {
+      signalType = 'bottom';
+      strength = 'strong';
+      reason = `Bullish Outside Bar: נר חיצוני דובי שביצע פולבק אלים ונסגר בשליש העליון (${c.c.toFixed(2)})`;
+    }
+
+    if (signalType) {
+      const isTop = signalType === 'top';
+      currentSubTrend = isTop ? 'bearish' : 'bullish';
+      signals.push({
+        idx: i,
+        t: c.t,
+        date: new Date(c.t).toISOString().slice(0, 10),
+        type: signalType,
+        subTrend: currentSubTrend,
+        price: isTop ? c.h : c.l,
+        close: c.c,
+        open: c.o,
+        prevPrice: isTop ? prev.h : prev.l,
+        range: +(c.h - c.l).toFixed(4),
+        strength,
+        isOutside,
+        reason,
+        barsAgo: candles.length - 1 - i,
+        levelRole: isTop ? 'התנגדות תת-מגמה' : 'תמיכת תת-מגמה',
+        labelHe: isTop ? 'Signal Top (שיא איתות)' : 'Signal Bottom (שפל איתות)',
+      });
+    }
+  }
+
+  const lastSignal = signals[signals.length - 1] || null;
+  const tops = signals.filter((s) => s.type === 'top');
+  const bottoms = signals.filter((s) => s.type === 'bottom');
+  const lastSignalTop = tops[tops.length - 1] || null;
+  const lastSignalBottom = bottoms[bottoms.length - 1] || null;
+  const barsInSubTrend = lastSignal ? candles.length - 1 - lastSignal.idx : 0;
+
+  let summary = '';
+  if (currentSubTrend === 'bullish') {
+    summary = `תת-מגמה עולה (Bullish Sub-Trend): אותת לאחרונה ע"י Signal Bottom ב-${lastSignalBottom ? lastSignalBottom.price.toFixed(2) : '—'} (${lastSignalBottom?.date || ''}) לפני ${barsInSubTrend} נרות. תמיכת תת-מגמה ב-${lastSignalBottom ? lastSignalBottom.price.toFixed(2) : '—'}.`;
+  } else if (currentSubTrend === 'bearish') {
+    summary = `תת-מגמה יורדת (Bearish Sub-Trend): אותת לאחרונה ע"י Signal Top ב-${lastSignalTop ? lastSignalTop.price.toFixed(2) : '—'} (${lastSignalTop?.date || ''}) לפני ${barsInSubTrend} נרות. התנגדות תת-מגמה ב-${lastSignalTop ? lastSignalTop.price.toFixed(2) : '—'}.`;
+  } else {
+    summary = 'תת-מגמה ניטרלית (ללא איתות היפוך מובהק בנרות האחרונים).';
+  }
+
+  return {
+    signals,
+    recentSignals: signals.slice(-20).reverse(),
+    currentSubTrend,
+    barsInSubTrend,
+    lastSignal,
+    lastSignalTop,
+    lastSignalBottom,
+    summary,
   };
 }
 
@@ -826,6 +988,13 @@ export const DEFAULT_GANNZILLA_CONFIG = {
   showSwingOnChart: false,
   showEighthsOnChart: true,
   boxBars: 0,
+  boxRangeMode: 'swing', // 'swing' | 'lookback' | 'square_out' | 'high' | 'low' | 'custom'
+  boxLookbackBars: 60,
+  boxCustomHigh: '',
+  boxCustomLow: '',
+  boxDivisions: 'eighths', // 'eighths' | 'thirds' | 'both'
+  boxDiagonals: true,
+  showSubTrendSignals: true,
   swingBarMode: 2,
   fanDirection: 'auto',
   fanScale: '',
@@ -1662,8 +1831,15 @@ export function analyzeGannHistoryAndForecast(
   const gannBox = computeGannBox(candles, anchorPivot, swingHigh, swingLow, {
     widthBars: Number(gzCfg.boxBars) || 0,
     anchorIdx: anchorPivot.idx,
+    rangeMode: gzCfg.boxRangeMode || 'swing',
+    lookbackBars: Number(gzCfg.boxLookbackBars) || 60,
+    customHigh: gzCfg.boxCustomHigh,
+    customLow: gzCfg.boxCustomLow,
+    divisions: gzCfg.boxDivisions || 'eighths',
+    fanScale: gzCfg.fanScale ? Number(gzCfg.fanScale) : (gannFan.unitPerBar || null),
   });
   const swingChart = computeGannSwingChart(candles, { barMode: gzCfg.swingBarMode || 2 });
+  const subTrendSignals = computeGannSubTrendSignals(candles);
 
   // 5b. MSJ_GannSQ9 Spiral Matrix & Degree/Time Calculator
   const effScale = gzCfg.scale === 'auto' || !Number(gzCfg.scale)
@@ -1752,6 +1928,7 @@ export function analyzeGannHistoryAndForecast(
     gannFan,
     gannBox,
     swingChart,
+    subTrendSignals,
     msjSq9,
     priceTimeInfo,
     priceChartingTool,
