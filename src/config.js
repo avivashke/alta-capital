@@ -211,7 +211,7 @@ export const NAV = [
   { id: 'research', label: 'מחקר וסריקה', icon: '⌁' },
   { id: 'sentiment', label: 'סנטימנט וחדשות', icon: '◉' },
   { id: 'portfolio', label: 'תיק מסחר', icon: '💼' },
-  { id: 'charts', label: 'גרפים ואינדיקטורים', icon: '📈' },
+  { id: 'charts', label: 'גרפי TradingView ואינדיקטורים', icon: '📈' },
   { id: 'gann', label: 'מחקר וחיזויי גאן', icon: '◬' },
   { id: 'fundamentals', label: 'ניתוח פונדמנטלי', icon: '🏛' },
   { id: 'nostro', label: 'מבחני נוסטרו', icon: '🏆' },
