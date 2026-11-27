@@ -5,8 +5,10 @@ export const BARS_PER_YEAR = { '5m': 105120, '15m': 35040, '1h': 8760, '4h': 219
 // How deep each backtest looks, in bars. 1d ≈ 10+ years, 1w ≈ 10 years, 1h ≈ a year.
 // Providers page back as far as they allow and the rest is sliced to these limits.
 // Deeper history = a more meaningful dry-run / walk-forward verdict (5m ~28d, 15m ~94d, 1h ~500d, 1d ~8y).
-// The deep window runs on the Base Server (Node, no UI thread). The browser keeps the light window so the page never freezes.
-export const BACKTEST_HISTORY = typeof window === 'undefined'
+// The deep window runs ONLY on the local Base Server (its cycles run in a worker thread). The browser, Cloudflare Workers
+// and GitHub Actions keep the light window so pages never freeze and edge CPU/time limits are respected.
+const IS_LOCAL_BASE_SERVER = typeof process !== 'undefined' && process.env?.ALTA_BASE_SERVER === '1';
+export const BACKTEST_HISTORY = IS_LOCAL_BASE_SERVER
   ? { '5m': 8000, '15m': 9000, '1h': 12000, '1d': 3000, '1w': 800 }
   : { '5m': 2000, '15m': 3000, '1h': 4000, '1d': 3000, '1w': 800 };
 

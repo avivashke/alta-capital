@@ -960,8 +960,8 @@ function renderAiResearchCard(ui) {
   return h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(56, 189, 248, 0.45)' } },
     h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
       h('div', {},
-        h('h2', { text: '🧪 אנליסט מחקר AI — כוח המחשוב של Ollama עובד בשבילכם' }),
-        h('div', { class: 'card-sub', text: `מנתח את שולחנות המסחר והתיק כל ${d?.intervalMin || 10} דקות עם ${d?.model || 'המודל המקומי'} ומציע שיפורי רווחיות וסיכון (הניתוח באנגלית כדי לשמור על דיוק במודל המקומי). ללא עלות וללא מכסות.` })),
+        h('h2', { text: '🧪 אנליסט מחקר AI — ניתוח אוטומטי של השולחנות והתיק' }),
+        h('div', { class: 'card-sub', text: `מנתח את השולחנות והתיק כל ${d?.intervalMin || 10} דקות עם ${d?.model || 'מודל ה-AI'} ומציע שיפורי רווחיות וסיכון.` })),
       h('button', { class: 'btn btn-sm btn-primary', disabled: researchUi.loading, onclick: () => loadResearch(ui, { run: true }) }, researchUi.loading ? '⏳ מנתח…' : '⚡ הרץ ניתוח עכשיו')),
     !d ? h('div', { class: 'small muted', text: 'טוען…' })
       : !d.ok ? h('div', { class: 'small muted', text: `האנליסט לא פעיל: ${d.reason || 'שגיאה'}` })

@@ -1,0 +1,23 @@
+# Files that must never be published as static assets of the Cloudflare Worker
+# (local secrets, local databases, browser profiles and server-only code).
+.env
+.env.*
+!.env.example
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/db.json
+data/backups
+data/x-browser-profile
+data/whatsapp-browser-profile
+data/whatsapp-agent-config.json
+data/x-agent-config.json
+*.log
+node_modules
+Dockerfile
+docker-compose.yml
+.dockerignore
+server.mjs
+cron_worker.mjs
+ai_research.mjs
+scripts

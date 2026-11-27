@@ -33,3 +33,10 @@ CREATE TABLE IF NOT EXISTS firm_cycles (
 CREATE INDEX IF NOT EXISTS idx_firm_versions_created ON firm_versions(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_firm_trades_created ON firm_trades(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_firm_cycles_created ON firm_cycles(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS ai_research (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL,
+  model TEXT,
+  data TEXT NOT NULL
+);

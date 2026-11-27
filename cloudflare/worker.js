@@ -12,6 +12,7 @@ import { handleCloudflareDbRequest } from './db.js';
 import { handleCloudflareLlmRequest } from './llm.js';
 import { handleMarketRequest } from './market.js';
 import { runFirmCronJob } from './cron.js';
+import { runResearchPassCf, getResearchNotesCf } from './research.js';
 
 function corsHeaders(origin = '*') {
   return {
@@ -115,6 +116,17 @@ export default {
       }
     }
 
+    // AI Research Analyst (Workers AI + D1): /api/ai-research, /api/ai-research/run
+    if (pathname === '/api/ai-research') {
+      try {
+        return jsonResponse(await getResearchNotesCf(env, Number(url.searchParams.get('limit')) || 10));
+      } catch (err) {
+        return jsonResponse({ ok: false, reason: err.message, notes: [] }, 500);
+      }
+    }
+    if (pathname === '/api/ai-research/run' && request.method === 'POST') {
+      return jsonResponse(await runResearchPassCf(env));
+    }
     // Static Assets (Cloudflare Workers Assets or Pages)
     if (env.ASSETS) {
       try {
@@ -149,5 +161,9 @@ export default {
           console.error(`[cloudflare-cron] Failed:`, err);
         }),
     );
+    // The AI research analyst runs once an hour (first trigger of each hour)
+    if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() < 15) {
+      ctx.waitUntil(runResearchPassCf(env).then((r) => console.log(`[cloudflare-research] `+ (r.ok ? 'ok' : r.reason))).catch(() => {}));
+    }
   },
 };
