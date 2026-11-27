@@ -175,6 +175,12 @@ export function mergeRemote(state, remote) {
   if (merged.truthAudit && typeof merged.truthAudit === 'object') {
     state.truthAudit = merged.truthAudit;
   }
+  if (merged.whatsappGann && typeof merged.whatsappGann === 'object') {
+    state.whatsappGann = merged.whatsappGann;
+  }
+  if (merged.vault && typeof merged.vault === 'object') {
+    state.vault = merged.vault;
+  }
 
   state.updatedAt = merged.updatedAt || remote.updatedAt || new Date().toISOString();
   state.lastTickAt = merged.lastTickAt || Date.parse(state.updatedAt) || Date.now();

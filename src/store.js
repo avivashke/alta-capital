@@ -147,6 +147,7 @@ export function defaults() {
     whatsappGann: null,
     youtubeScout: null,
     advisor: { messages: [] },
+    vault: { balance: 0, totalWithdrawn: 0, lastWithdrawalAt: null, withdrawals: [] },
     remote: null,
     stats: { cycles: 0, backtests: 0, deployments: 0, scans: 0, startedAt: Date.now() },
   };

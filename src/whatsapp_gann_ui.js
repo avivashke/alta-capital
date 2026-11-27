@@ -12,6 +12,8 @@ import {
   saveWhatsAppConfig,
   runWhatsAppScan,
   openWhatsAppSourceModal,
+  openWhatsAppImportModal,
+  getSeedWhatsAppReport,
 } from './whatsapp_agent.js';
 
 const waUiState = {
@@ -89,7 +91,10 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
   ensureStatusLoaded(ui);
 
   const st = waUiState.status;
-  const report = store.state.whatsappGann || st?.latestReport || null;
+  if (!store.state.whatsappGann || !store.state.whatsappGann.insights?.length) {
+    store.state.whatsappGann = getSeedWhatsAppReport();
+  }
+  const report = store.state.whatsappGann || st?.latestReport || getSeedWhatsAppReport();
   const connected = !!st?.connected;
   const loggedIn = !!st?.loggedIn;
   const discoveredGroups = Array.isArray(st?.discoveredGroups) ? st.discoveredGroups : [];
@@ -262,14 +267,29 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
               ui?.rerender?.();
             },
           }, waUiState.scanning ? '⏳ סורק קבוצת וואטסאפ…' : '🔍 סרוק קבוצה ושלב בגאן'),
+          h('button', {
+            class: 'btn btn-sm btn-ghost',
+            onclick: () => openWhatsAppImportModal(ui),
+          }, '📝 עדכן / הוסף הודעות'),
         )
       : h('div', {
           class: 'notice',
           style: { marginBottom: '12px', fontSize: '12.5px' },
-          text: report
-            ? `☁️ צופה בנתונים מסונכרנים מקבוצת "${report.groupName}" (${report.relevantInsightsCount} תובנות). כדי לבצע סריקה חיה חדשה של WhatsApp Web, פתח את Alta Capital במחשב שבו Base Server פעיל.`
-            : 'כדי לחבר קבוצת וואטסאפ (WhatsApp Web, סריקת QR חד-פעמית), פתח את הדשבורד במחשב שלך (http://localhost:8181/#/gann). לאחר סריקה אחת, כל התובנות, שמות הכותבים והודעות המקור מסתנכרנים אוטומטית גם לטלפון ולענן.',
-        }),
+        },
+          h('div', { class: 'row between wrap', style: { gap: '8px', alignItems: 'center' } },
+            h('span', {
+              style: { flex: '1', minWidth: '220px' },
+              text: report
+                ? `☁️ צופה בנתונים מסונכרנים מקבוצת "${report.groupName}" (${report.relevantInsightsCount} תובנות פעילות · ${report.totalMessagesRead || 0} הודעות נקראו ועובדו, כולל סמכויות יגאל ושמחה).`
+                : 'מודיעין קבוצת הוואטסאפ פעיל ומסנכרן תובנות.',
+            }),
+            h('button', {
+              class: 'btn btn-sm btn-primary',
+              style: { background: '#16a34a', borderColor: '#22c55e' },
+              onclick: () => openWhatsAppImportModal(ui),
+            }, '📝 עדכן / הוסף הודעות מהקבוצה (יגאל & שמחה)'),
+          ),
+        ),
 
     // Live inline QR Code box while waiting for phone scan (works even if Chrome popup is behind/hidden)
     (waUiState.loggingIn || (st?.job?.busy && st?.job?.mode === 'login'))
@@ -324,6 +344,80 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
           ),
         )
       : null,
+
+    // VIP Authorities Banner — Yigal & Simcha (הסמכויות האמינות ביותר בקבוצה)
+    (() => {
+      const vipInsights = allInsights.filter((ins) => ins.authorIsVip || /יגאל|שמחה/i.test(ins.author || ''));
+      if (!vipInsights.length) return null;
+      return h('div', {
+        class: 'card',
+        style: {
+          marginBottom: '12px',
+          background: 'linear-gradient(135deg, rgba(45, 27, 3, 0.95), rgba(18, 14, 28, 0.96))',
+          borderColor: 'rgba(245, 158, 11, 0.65)',
+          boxShadow: '0 0 16px rgba(245, 158, 11, 0.18)',
+          padding: '12px 14px',
+        },
+      },
+        h('div', { class: 'row between wrap', style: { gap: '8px', marginBottom: '8px', alignItems: 'center' } },
+          h('div', {},
+            h('div', { style: { fontWeight: '800', fontSize: '14.5px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' } },
+              '👑 תובנות ורמות מפתח מפי יגאל ושמחה (הסמכויות האמינות ביותר בקבוצה)'
+            ),
+            h('div', { class: 'tiny muted', text: 'הודעות, זוויות גאן ורמות מחיר מפי יגאל ושמחה מקבלות עדיפות עליונה (משקל פי 4.5) בשקלול התחזית והעוגנים.' }),
+          ),
+          h('div', { class: 'row wrap', style: { gap: '6px' } },
+            tag(`⭐ ${vipInsights.length} תובנות VIP מאומתות`, 'live'),
+            h('button', {
+              class: 'btn btn-sm',
+              style: { borderColor: '#f59e0b', color: '#fbbf24', background: 'rgba(245, 158, 11, 0.12)' },
+              onclick: () => openWhatsAppImportModal(ui),
+            }, '📝 עדכן הודעות מהקבוצה'),
+          ),
+        ),
+        h('div', { class: 'grid cols-2', style: { gap: '8px' } },
+          ...vipInsights.slice(0, 4).map((ins) => {
+            const isYigal = /יגאל/i.test(ins.author);
+            const authorLabel = isYigal ? '👑 יגאל (סמכות עליונה)' : '👑 שמחה (סמכות עליונה)';
+            const primarySym = (ins.symbols || []).find((s) => s !== 'MACRO') || null;
+            return h('div', {
+              class: 'card',
+              style: {
+                background: 'rgba(10, 15, 26, 0.92)',
+                borderColor: 'rgba(245, 158, 11, 0.45)',
+                padding: '8px 10px',
+              },
+            },
+              h('div', { class: 'row between wrap', style: { gap: '4px', marginBottom: '4px', alignItems: 'center' } },
+                h('strong', { style: { color: '#fbbf24', fontSize: '12px' }, text: authorLabel }),
+                h('div', { class: 'row wrap', style: { gap: '4px' } },
+                  ...(ins.symbols || []).map((s) => tag(s, s === symbol ? 'live' : 'dry')),
+                  ins.bias === 'bullish' ? tag('🟢 שורי', 'live') : ins.bias === 'bearish' ? tag('🔴 דובי', 'red') : null,
+                ),
+              ),
+              h('div', { class: 'small', style: { fontSize: '12px', lineHeight: '1.45', color: '#f1f5f9' }, text: ins.summary }),
+              h('div', { class: 'row between wrap', style: { gap: '4px', marginTop: '6px', alignItems: 'center' } },
+                h('span', { class: 'tiny muted mono', text: ins.timestampRaw || '' }),
+                h('div', { class: 'row wrap', style: { gap: '4px' } },
+                  primarySym && primarySym !== symbol && typeof onSelectAsset === 'function'
+                    ? h('button', {
+                        class: 'btn btn-sm btn-ghost',
+                        style: { fontSize: '11px', padding: '2px 6px' },
+                        onclick: () => onSelectAsset(primarySym),
+                      }, `נתח ${primarySym}`)
+                    : null,
+                  h('button', {
+                    class: 'btn btn-sm btn-ghost',
+                    style: { fontSize: '11px', padding: '2px 6px', color: '#fbbf24' },
+                    onclick: () => openWhatsAppSourceModal(ins, report?.groupName || 'קבוצת וואטסאפ'),
+                  }, '💬 הודעת מקור'),
+                ),
+              ),
+            );
+          }),
+        ),
+      );
+    })(),
 
     // Active Asset Matched Gann Overlay (if current symbol appears in group)
     assetSig
@@ -412,21 +506,29 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
             ? h('div', { style: { display: 'grid', gap: '8px', maxHeight: '390px', overflowY: 'auto', paddingLeft: '2px' } },
                 filteredInsights.slice(0, 25).map((ins) => {
                   const primarySym = (ins.symbols || []).find((s) => s !== 'MACRO') || null;
+                  const isVip = ins.authorIsVip || /יגאל|שמחה/i.test(ins.author || '');
+                  const vipName = isVip ? (/יגאל/i.test(ins.author) ? '👑 יגאל (סמכות עליונה)' : '👑 שמחה (סמכות עליונה)') : null;
                   return h('div', {
                     class: 'card',
                     style: {
                       background: 'rgba(10, 17, 30, 0.9)',
                       padding: '10px 12px',
-                      borderColor: ins.bias === 'bullish'
-                        ? 'rgba(46, 204, 113, 0.32)'
-                        : ins.bias === 'bearish'
-                          ? 'rgba(240, 91, 91, 0.32)'
-                          : 'rgba(148, 163, 184, 0.22)',
+                      borderColor: isVip
+                        ? 'rgba(245, 158, 11, 0.65)'
+                        : ins.bias === 'bullish'
+                          ? 'rgba(46, 204, 113, 0.32)'
+                          : ins.bias === 'bearish'
+                            ? 'rgba(240, 91, 91, 0.32)'
+                            : 'rgba(148, 163, 184, 0.22)',
+                      boxShadow: isVip ? '0 0 10px rgba(245, 158, 11, 0.15)' : undefined,
                     },
                   },
                     h('div', { class: 'row between wrap', style: { gap: '6px', marginBottom: '6px', alignItems: 'center' } },
                       h('div', { class: 'row wrap', style: { gap: '6px', alignItems: 'center' } },
-                        h('strong', { style: { fontSize: '12.5px', color: '#86efac' }, text: `✍️ ${ins.author || 'חבר קבוצה'}` }),
+                        h('strong', {
+                          style: { fontSize: '12.5px', color: isVip ? '#fbbf24' : '#86efac' },
+                          text: isVip ? vipName : `✍️ ${ins.author || 'חבר קבוצה'}`,
+                        }),
                         h('span', { class: 'tiny mono muted', text: ins.timestampRaw || '' }),
                         ...(ins.symbols || []).map((s) => tag(s, s === symbol ? 'live' : 'dry')),
                         ...(ins.categories || []).map((c) => tag(CAT_HE[c] || c, 'opt')),
@@ -441,7 +543,7 @@ export function renderWhatsAppGannCard(a, cfg, symbol, ui, { onApplyAnchor, onSe
                           : null,
                         h('button', {
                           class: 'btn btn-sm',
-                          style: { borderColor: 'rgba(37, 211, 102, 0.5)', color: '#86efac' },
+                          style: { borderColor: isVip ? 'rgba(245, 158, 11, 0.6)' : 'rgba(37, 211, 102, 0.5)', color: isVip ? '#fbbf24' : '#86efac' },
                           onclick: () => openWhatsAppSourceModal(ins, report.groupName),
                         }, `💬 הודעת מקור + קונטקסט (${(ins.contextBefore?.length || 0) + (ins.contextAfter?.length || 0) + 1})`),
                       ),

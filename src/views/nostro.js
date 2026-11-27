@@ -364,6 +364,107 @@ function downloadExcelReport(nostroState) {
   toast('הדוח המפורט יוצא לאקסל בהצלחה!', 'ok');
 }
 
+function showWithdrawalSuccessModal(payout, vault, ui) {
+  const content = h('div', { class: 'stack', style: { gap: '14px', textAlign: 'center', padding: '10px 4px' } },
+    h('div', { style: { fontSize: '48px', lineHeight: 1 } }, '🎉 🏦 💸'),
+    h('div', {},
+      h('h2', { style: { color: '#10b981', margin: '0 0 6px 0', fontSize: '20px' }, text: 'המשיכה בוצעה בהצלחה והכסף הועבר לקופה הצדדית!' }),
+      h('div', { class: 'muted', style: { fontSize: '13px' }, text: 'הרווחים נמשכו מתיק הנוסטרו וננעלו בכספת רווחים מאובטחת ללא סיכוני מסחר.' }),
+    ),
+    h('div', {
+      style: {
+        background: 'rgba(16, 185, 129, 0.12)',
+        border: '1px solid rgba(16, 185, 129, 0.35)',
+        borderRadius: '12px',
+        padding: '16px',
+      },
+    },
+      h('div', { style: { fontSize: '13px', color: '#94a3b8' }, text: 'סכום שנמשך והועבר:' }),
+      h('div', { style: { fontSize: '32px', fontWeight: '800', color: '#34d399', fontFamily: 'monospace' }, text: `+$${payout.withdrawableUsd.toLocaleString('en-US')}` }),
+      h('div', { class: 'row center wrap', style: { gap: '6px', marginTop: '8px', justifyContent: 'center' } },
+        tag(`מזהה אישור: ${payout.id}`, 'live'),
+        tag('כספת מוגנת · רווח מסולק', 'opt'),
+      ),
+    ),
+    h('div', { class: 'card', style: { background: 'rgba(15, 23, 42, 0.85)', padding: '12px 14px', textAlign: 'right' } },
+      h('div', { class: 'row between', style: { fontSize: '13px', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' } },
+        h('span', { class: 'muted', text: '🏦 יתרת קופה צדדית חדשה (יתרה מוגנת):' }),
+        h('strong', { class: 'mono', style: { color: '#34d399', fontSize: '14.5px' }, text: `$${(vault?.balance || 0).toLocaleString('en-US')}` }),
+      ),
+      h('div', { class: 'row between', style: { fontSize: '13px', paddingBottom: '6px', paddingTop: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' } },
+        h('span', { class: 'muted', text: '📊 סך משיכות מצטבר לקופה הצדדית:' }),
+        h('span', { class: 'mono', style: { color: '#f1f5f9' }, text: `$${(vault?.totalWithdrawn || 0).toLocaleString('en-US')}` }),
+      ),
+      h('div', { class: 'row between', style: { fontSize: '13px', paddingBottom: '6px', paddingTop: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' } },
+        h('span', { class: 'muted', text: '🤖 בוט מייצר הרווח:' }),
+        h('span', { text: `${payout.botName} (${payout.symbol})` }),
+      ),
+      h('div', { class: 'row between', style: { fontSize: '13px', paddingTop: '6px' } },
+        h('span', { class: 'muted', text: '🏆 חברות נוסטרו מאומתות:' }),
+        h('span', { text: (payout.readyFirms || []).join(', ') }),
+      ),
+    ),
+    h('div', { class: 'row center', style: { gap: '10px' } },
+      h('button', {
+        class: 'btn btn-primary grow',
+        style: { background: '#10b981', borderColor: '#059669', padding: '10px 16px', fontWeight: '700' },
+        onclick: () => {
+          ui.rerender();
+        },
+      }, '✓ צפה בקופה הצדדית ובדשבורד הנוסטרו'),
+    ),
+  );
+  openModal('אישור משיכה והעברה לקופה צדדית', content, { wide: false });
+}
+
+function renderVaultSection(vault) {
+  const v = vault || { balance: 0, totalWithdrawn: 0, lastWithdrawalAt: null, withdrawals: [] };
+  const withdrawals = v.withdrawals || [];
+  return h('div', {
+    class: 'card',
+    style: {
+      marginTop: '16px',
+      borderColor: 'rgba(16, 185, 129, 0.45)',
+      background: 'linear-gradient(180deg, rgba(6, 38, 25, 0.95), rgba(9, 14, 24, 0.96))',
+    },
+  },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: '🏦 קופה צדדית — כספת רווחים מובטחת (Protected Vault)' }),
+        h('div', { class: 'card-sub', text: 'כספים שנמשכו מחברות הנוסטרו מועברים וננעלים כאן ישירות מחוץ לסיכוני השוק והמסחר, ומסונכרנים לצפייה מכל מכשיר.' }),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px', alignItems: 'center' } },
+        tag('🛡️ מוגן מחוץ לסיכון שוק', 'live'),
+        v.balance > 0 ? tag(`יתרה: $${v.balance.toLocaleString('en-US')}`, 'live') : tag('יתרה: $0', 'dry'),
+      ),
+    ),
+    h('div', { class: 'grid cols-4', style: { gap: '8px', marginBottom: '12px' } },
+      h('div', { class: 'metric' }, h('span', { text: 'יתרת קופה צדדית מוגנת' }), h('b', { class: 'green mono', style: { fontSize: '18px' }, text: `$${(v.balance || 0).toLocaleString('en-US')}` })),
+      h('div', { class: 'metric' }, h('span', { text: 'סך רווחים שנמשכו סה״כ' }), h('b', { class: 'green mono', style: { fontSize: '18px' }, text: `$${(v.totalWithdrawn || 0).toLocaleString('en-US')}` })),
+      h('div', { class: 'metric' }, h('span', { text: 'משיכה אחרונה' }), h('b', { class: 'small mono', text: v.lastWithdrawalAt ? timeAgo(v.lastWithdrawalAt) : 'טרם בוצעה משיכה' })),
+      h('div', { class: 'metric' }, h('span', { text: 'מספר העברות לכספת' }), h('b', { class: 'mono', text: `${withdrawals.length} העברות מאושרות` })),
+    ),
+    withdrawals.length
+      ? h('div', { style: { marginTop: '8px' } },
+          h('div', { class: 'tiny muted', style: { fontWeight: '700', marginBottom: '6px' }, text: `פירוט העברות אחרונות לקופה הצדדית (${withdrawals.length}):` }),
+          h('div', { class: 'stack', style: { gap: '6px', maxHeight: '150px', overflowY: 'auto' } },
+            withdrawals.slice(0, 10).map((w) => h('div', {
+              class: 'row between wrap',
+              style: { background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', fontSize: '12px', borderLeft: '3px solid #10b981' },
+            },
+              h('div', { class: 'row wrap', style: { gap: '8px', alignItems: 'center' } },
+                h('strong', { class: 'mono green', text: `+$${Number(w.amount).toLocaleString('en-US')}` }),
+                h('span', { text: `${w.botName || 'בוט נוסטרו'} · ${w.date || ''}` }),
+                h('span', { class: 'tiny muted mono', text: `[${w.id}]` }),
+              ),
+              tag('✓ הועבר לקופה צדדית', 'live'),
+            )),
+          ),
+        )
+      : null,
+  );
+}
+
 let selectedPassedBotId = null;
 
 export function openNostroPayoutModal(bot, audit, rules, ui) {
@@ -421,13 +522,13 @@ export function openNostroPayoutModal(bot, audit, rules, ui) {
         onclick: () => {
           const res = executeNostroPayoutWithdrawal(bot.id);
           if (res.ok) {
-            toast(`משיכת נוסטרו בסך $${audit.withdrawableUsd.toLocaleString('en-US')} בוצעה ואושרה בהצלחה! מזהה: ${res.payout.id}`, 'ok');
-            ui.rerender();
+            toast(`משיכת נוסטרו בסך $${audit.withdrawableUsd.toLocaleString('en-US')} הועברה לקופה הצדדית! מזהה: ${res.payout.id}`, 'ok');
+            showWithdrawalSuccessModal(res.payout, res.vault || store.state.vault, ui);
           } else {
             toast(res.error || 'שגיאה בביצוע משיכה', 'bad');
           }
         },
-      }, `💸 אשר ובצע משיכת $${audit.withdrawableUsd.toLocaleString('en-US')} (Execute Simulated Payout)`),
+      }, `💸 אשר ובצע משיכת $${audit.withdrawableUsd.toLocaleString('en-US')} (העבר לקופה צדדית מובטחת)`),
     ),
 
     // Previous payouts history
@@ -439,7 +540,7 @@ export function openNostroPayoutModal(bot, audit, rules, ui) {
           style: { background: 'rgba(255,255,255,0.03)', padding: '5px 8px', borderRadius: '4px', fontSize: '11px' },
         },
           h('span', { text: `💸 משיכה של $${p.withdrawableUsd.toLocaleString('en-US')} · ${p.botName} · ${p.date}` }),
-          tag('אושר ושולם', 'live'),
+          tag('הועבר לקופה צדדית', 'live'),
         )),
       ),
     ) : null,
@@ -826,6 +927,9 @@ export function renderNostro(root, ui) {
 
   // LIVE NOSTRO PROP-FIRM PAPER TRADING ROOM (prominent above exam fleet!)
   mount(root, renderNostroTradingRoomSection(nostro, rules, ui));
+
+  // Protected Vault / Side Fund (קופה צדדית מובטחת)
+  mount(root, renderVaultSection(store.state.vault));
 
   // Toggleable Infographic Panel (opens and closes via the button!)
   if (showInfographic && bots.length) {

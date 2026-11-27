@@ -9,7 +9,7 @@ import { auditDeskPromotion, auditSystemTruth } from './auditor.js';
 import { runBacktest, passesGates } from './backtest.js';
 import { scanUniverse } from './universe.js';
 import { buildArtifact } from './platforms.js';
-import { atr } from './indicators.js';
+import { atr, ema, rsi } from './indicators.js';
 import { assessStrategy } from './stats.js';
 import { analyze } from './ta.js';
 import { scanIfDue, refreshSentiment } from './research.js';
@@ -48,6 +48,18 @@ const NOSTRO_LIVE_GATES = {
   minCandles: 600,
   maxPerCycle: 2,
 };
+
+export function tfToMs(tf = '1h') {
+  const m = String(tf).match(/^(\d+)([mhdwn])$/);
+  if (!m) return 3600 * 1000;
+  const val = Number(m[1]) || 1;
+  const unit = m[2];
+  if (unit === 'm') return val * 60 * 1000;
+  if (unit === 'h') return val * 3600 * 1000;
+  if (unit === 'd') return val * 86400 * 1000;
+  if (unit === 'w') return val * 7 * 86400 * 1000;
+  return 3600 * 1000;
+}
 
 export function cloneParams(params) {
   try { return JSON.parse(JSON.stringify(params || {})); } catch { return { ...(params || {}) }; }
@@ -217,6 +229,7 @@ export function ensureDeskFields() {
     desk.ideas = desk.ideas || [];
     desk.livePnl = Number(desk.livePnl) || 0;
     desk.livePeakPnl = Math.max(Number(desk.livePeakPnl) || 0, desk.livePnl);
+    desk.cooldownUntil = desk.cooldownUntil || 0;
   }
 }
 
@@ -695,6 +708,13 @@ async function closePaperTrade(desk, price, reason) {
     }
   }
 
+  if (sized < 0 || reason === 'stop') {
+    const tfMs = tfToMs(desk.tf);
+    desk.cooldownUntil = Date.now() + Math.max(tfMs * 2, 45 * 60 * 1000);
+    store.log('warn', 'דניאל · סיכונים',
+      `${desk.label}: נכנס לצינון לאחר הפסד (${sized.toFixed(2)}%) למניעת שחיקת עמלות וכניסות כפולות`);
+  }
+
   store.log(sized >= 0 ? 'ok' : 'warn', 'תמר · ביצוע',
     `${desk.label}: סגירת פוזיציית נייר ${t.dir > 0 ? 'לונג' : 'שורט'} · ${sized.toFixed(2)}% (${reason})`);
   recordTradeInDb({
@@ -810,13 +830,23 @@ export async function tickLive() {
         const t = desk.openTrade;
         const hitStop = t.dir > 0 ? price <= t.stop : price >= t.stop;
         const hitTarget = t.dir > 0 ? price >= t.target : price <= t.target;
+        const isReversal = dir !== 0 && dir !== t.dir;
+        const tfDuration = tfToMs(desk.tf);
+        const timeInTrade = Date.now() - (t.at || 0);
+        // Only exit on neutral (dir === 0) if at least 2 full bars elapsed in the trade
+        // Prevents premature signal exits on candle ticks right after entry!
+        const canExitOnNeutral = dir === 0 && timeInTrade >= tfDuration * 2;
+
         if (hitStop) {
           await closePaperTrade(desk, t.stop, t.trailed ? 'trail' : 'stop');
           tradeChanged = true;
         } else if (hitTarget) {
           await closePaperTrade(desk, t.target, 'target');
           tradeChanged = true;
-        } else if (dir !== t.dir) {
+        } else if (isReversal) {
+          await closePaperTrade(desk, price, 'reverse_signal');
+          tradeChanged = true;
+        } else if (canExitOnNeutral) {
           await closePaperTrade(desk, price, 'signal');
           tradeChanged = true;
         } else {
@@ -848,12 +878,39 @@ export async function tickLive() {
           desk.openTrade.markPct = +pct.toFixed(3);
         }
       } else if (dir !== 0 && s.autopilot) {
-        const stopDist = stopMult * a;
+        // Cooldown check: prevent immediate re-entry after taking a loss
+        if (desk.cooldownUntil && Date.now() < desk.cooldownUntil) {
+          continue;
+        }
+
+        // Institutional Trend Regime Filter:
+        // Filter out counter-trend trades that enter directly into adverse macro momentum
+        const closes = candles.map((c) => c.c);
+        const emaFast = ema(closes, 50);
+        const emaSlow = ema(closes, Math.min(200, Math.floor(closes.length * 0.75)));
+        const ef = emaFast[emaFast.length - 1];
+        const es = emaSlow[emaSlow.length - 1];
+        const isReversion = desk.strategyId === 'rsi_reversion' || desk.strategyId === 'mean_reversion_z';
+
+        if (!isReversion && ef != null && es != null) {
+          // If price is below EMA50 and EMA50 is below EMA200 -> clear downtrend, skip counter-trend long
+          if (dir > 0 && price < ef && ef < es) continue;
+          // If price is above EMA50 and EMA50 is above EMA200 -> clear uptrend, skip counter-trend short
+          if (dir < 0 && price > ef && ef > es) continue;
+        }
+
+        // Strict Positive Expectancy: Enforce minimum Risk:Reward of at least 1.8 to 2.2
+        const rawStopMult = Number(desk.params.atrStop) || 2;
+        const rr = Math.max(1.8, Number(desk.params.rr) || 2.2);
+
+        // Stop Distance Cap: Prevent massive single-trade losses (max 3.2% for intraday, 4.5% for swing)
+        const maxStopDist = price * (desk.kind === 'swing' ? 0.045 : 0.032);
+        const stopDist = Math.min(rawStopMult * a, maxStopDist);
+
         const capitalUsdt = Math.min(s.capital || 100000, pf.cash);
-        // Per-desk risk wins: a promoted nostro bot trades at its hardened size, not
-        // the portfolio-wide default that helped the book evaporate.
-        const riskAmount = capitalUsdt * Number(desk.riskPerTrade || s.riskPerTrade || 0.015);
-        const stopDistance = Math.abs(price - (dir > 0 ? price - stopDist : price + stopDist));
+        // Per-desk risk wins: a promoted nostro bot trades at its hardened size
+        const riskAmount = capitalUsdt * Math.min(0.015, Number(desk.riskPerTrade || s.riskPerTrade || 0.015));
+        const stopDistance = Math.abs(stopDist);
         const quantity = stopDistance > 0 ? riskAmount / stopDistance : 0;
 
         let binanceOrderId = null;

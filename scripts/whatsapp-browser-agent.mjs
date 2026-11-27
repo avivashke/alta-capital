@@ -16,6 +16,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { detectSystemBrowsers } from './x-browser-agent.mjs';
+import { detectVipAuthor } from '../src/whatsapp_agent.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATA_DIR = path.join(ROOT, 'data');
@@ -518,18 +519,23 @@ export function analyzeWhatsAppMessages(rawMessages = [], groupName = '') {
     }));
 
     const effectiveSymbols = symbols.length ? symbols : ['MACRO'];
-    const recencyWeight = 0.6 + 0.8 * ((i + 1) / Math.max(1, total)); // newer messages carry higher weight
+    const vip = detectVipAuthor(msg.author, msg.text);
+    const recencyWeight = (0.6 + 0.8 * ((i + 1) / Math.max(1, total))) * (vip.isVip ? (vip.weightMultiplier || 4.5) : 1.0);
 
     const insight = {
       id: msg.id,
       index: msg.index,
-      author: msg.author,
+      author: vip.isVip ? `${msg.author} (${vip.vipName === 'yigal' ? '👑 יגאל' : '👑 שמחה'})` : msg.author,
+      rawAuthor: msg.author,
+      authorIsVip: vip.isVip,
+      vipName: vip.vipName,
+      authorityMultiplier: vip.weightMultiplier || 1.0,
       timestampRaw: msg.timestampRaw,
       symbols: effectiveSymbols,
       categories: categories.length ? categories : ['macro_news'],
       bias: sent.bias,
       score: sent.score,
-      levels,
+      levels: levels.map((l) => ({ ...l, vipAuthor: vip.isVip })),
       dates,
       gannDegrees: degrees,
       summary: buildCompactSummary(msg, effectiveSymbols, categories, levels, dates, degrees),

@@ -49,18 +49,19 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "Checking / creating Cloudflare D1 database 'alta-db'..."
-          CREATE_OUT=$(npx wrangler d1 create alta-db 2>&1 || true)
-          echo "$CREATE_OUT"
-          UUID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -n 1)
-
-          if [ -z "$UUID" ]; then
-            INFO_OUT=$(npx wrangler d1 info alta-db 2>&1 || true)
-            echo "$INFO_OUT"
-            UUID=$(echo "$INFO_OUT" | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -n 1)
+          echo "Checking Cloudflare D1 databases..."
+          UUID=$(npx wrangler d1 list --json 2>/dev/null | jq -r '.[] | select(.name=="alta-db") | .uuid' 2>/dev/null || true)
+          if [ -z "$UUID" ] || [ "$UUID" = "null" ]; then
+            echo "alta-db not found in account list, attempting creation..."
+            CREATE_OUT=$(npx wrangler d1 create alta-db 2>&1 || true)
+            echo "$CREATE_OUT"
+            UUID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -n 1)
+          fi
+          if [ -z "$UUID" ] || [ "$UUID" = "null" ]; then
+            UUID=$(npx wrangler d1 list --json 2>/dev/null | jq -r '.[] | select(.name=="alta-db") | .uuid' 2>/dev/null || true)
           fi
 
-          if [ -n "$UUID" ]; then
+          if [ -n "$UUID" ] && [ "$UUID" != "null" ]; then
             echo "Successfully retrieved D1 database ID: $UUID"
             sed -i "s/database_id = .*/database_id = \"$UUID\"/" wrangler.toml
             echo "Initializing D1 schema..."

@@ -638,7 +638,35 @@ export function executeNostroPayoutWithdrawal(botId, state = store.state) {
   nostro.payoutHistory.unshift(record);
   if (nostro.payoutHistory.length > 50) nostro.payoutHistory = nostro.payoutHistory.slice(0, 50);
 
-  // Reflect the withdrawal in the overall paper portfolio (total desk)
+  // Transfer into Vault / Side Fund (קופה צדדית / כספת רווחים מובטחת מחוץ לסיכוני השוק)
+  state.vault = state.vault || { balance: 0, totalWithdrawn: 0, lastWithdrawalAt: null, withdrawals: [] };
+  const prevVaultBalance = Number(state.vault.balance) || 0;
+  const newVaultBalance = Math.round((prevVaultBalance + audit.withdrawableUsd) * 100) / 100;
+  const newTotalWithdrawn = Math.round(((Number(state.vault.totalWithdrawn) || 0) + audit.withdrawableUsd) * 100) / 100;
+
+  state.vault.balance = newVaultBalance;
+  state.vault.totalWithdrawn = newTotalWithdrawn;
+  state.vault.lastWithdrawalAt = Date.now();
+  state.vault.withdrawals = state.vault.withdrawals || [];
+  state.vault.withdrawals.unshift({
+    id: payoutId,
+    at: Date.now(),
+    date: new Date().toISOString().slice(0, 10),
+    amount: audit.withdrawableUsd,
+    source: 'nostro_payout',
+    botId: bot.id,
+    botName: bot.name,
+    readyFirms: audit.readyFirms,
+    vaultBalanceAfter: newVaultBalance,
+    note: 'הועבר לקופה צדדית מאושרת — רווח ממומש ומובטח מחוץ לסיכון השוק',
+  });
+  if (state.vault.withdrawals.length > 100) state.vault.withdrawals = state.vault.withdrawals.slice(0, 100);
+
+  // Update bot metrics
+  bot.lastPayoutAt = Date.now();
+  bot.totalWithdrawnToVault = Math.round(((Number(bot.totalWithdrawnToVault) || 0) + audit.withdrawableUsd) * 100) / 100;
+
+  // Also reflect the payout in the paper portfolio deposit log
   try {
     const pf = createPaperPortfolio(store.state.settings || {});
     if (store.state.paperPortfolio && typeof store.state.paperPortfolio === 'object') {
@@ -646,22 +674,20 @@ export function executeNostroPayoutWithdrawal(botId, state = store.state) {
     }
     const dep = pf.deposit(
       audit.withdrawableUsd,
-      `משיכת נוסטרו מהבוט ${bot.name} (${bot.symbol}) · חלוקת רווח ${audit.profitSplitPct}% · חברות: ${audit.readyFirms.join(', ')}`,
+      `משיכת נוסטרו מהבוט ${bot.name} (${bot.symbol}) · חלוקת רווח ${audit.profitSplitPct}% · הועבר לקופה צדדית`,
       'nostro_payout'
     );
     store.state.paperPortfolio = pf.toJSON();
-    if (dep && dep.success) {
-      store.log('ok', 'תיק כולל · הפקדת משיכת נוסטרו', `נוסף לתיק הכולל $${audit.withdrawableUsd.toLocaleString('en-US')} ממשיכת נוסטרו ${bot.name}`);
-    }
   } catch (err) {
     console.warn('[nostro] Failed to reflect payout in paper portfolio:', err.message);
   }
 
-  store.log('ok', 'משיכת נוסטרו', `בוצעה משיכת רווח בסך $${audit.withdrawableUsd.toLocaleString('en-US')} עבור ${bot.name} (${audit.readyFirms.join(', ')})`);
+  store.log('ok', 'כספת · קופה צדדית',
+    `💸 בוצעה משיכה של $${audit.withdrawableUsd.toLocaleString('en-US')} עבור ${bot.name} — הכסף הועבר בהצלחה לקופה צדדית מובטחת (יתרת קופה צדדית: $${newVaultBalance.toLocaleString('en-US')})`);
   store.save(true);
   store.emit();
   scheduleDatabasePush(1000);
-  return { ok: true, payout: record };
+  return { ok: true, payout: record, vault: state.vault };
 }
 
 // --- Live Nostro Prop-Firm Paper Trading Room (Real Market Data) -----------

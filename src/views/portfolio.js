@@ -116,10 +116,11 @@ export function renderPortfolio(root, ui) {
       ),
     ),
 
-    h('div', { class: 'grid cols-4', style: { marginBottom: '14px' } },
+    h('div', { class: 'grid cols-5', style: { marginBottom: '14px' } },
       kpi('הון מנוהל', money(report.equity), report.returnPct, allEquity.map((e) => e.v), report.returnPct >= 0 ? 'green' : 'red'),
       kpi('מזומן פנוי', money(report.cash), null, null),
       kpi('רווח נטו (אחרי עמלות ומס)', money(report.netPnL), report.returnPct, null, report.netPnL >= 0 ? 'green' : 'red'),
+      kpi('קופה צדדית (יתרה מוגנת)', money(state.vault?.balance || 0), null, null, (state.vault?.balance || 0) > 0 ? 'green' : undefined),
       kpi('עמלות + מס', money((report.totalFees || 0) + (report.totalTax || 0)), null, null),
     ),
 
@@ -180,6 +181,44 @@ export function renderPortfolio(root, ui) {
           h('div', { class: 'tiny muted', text: 'העסקאות יופיעו כאן ויישמרו אוטומטית בין כל המכשירים.' }),
         ),
       ),
+    ),
+
+    // Protected Side-Fund (קופה צדדית / כספת רווחים מובטחת)
+    h('div', {
+      class: 'card',
+      style: {
+        marginTop: '14px',
+        borderColor: 'rgba(16, 185, 129, 0.45)',
+        background: 'linear-gradient(180deg, rgba(6, 38, 25, 0.95), rgba(9, 14, 24, 0.96))',
+      },
+    },
+      h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+        h('div', {},
+          h('h2', { text: '🏦 קופה צדדית — כספת רווחים מובטחת (Protected Vault)' }),
+          h('div', { class: 'card-sub', text: 'כל משיכת רווחים מתיקי הנוסטרו והבוטים נשמרת ומוגנת כאן מחוץ לסיכוני השוק ומסונכרנת לכל המכשירים.' }),
+        ),
+        tag('🛡️ מוגן מסיכוני שוק', 'live'),
+      ),
+      h('div', { class: 'grid cols-3', style: { gap: '10px', marginBottom: '8px' } },
+        h('div', { class: 'metric' }, h('span', { text: 'יתרה זמינה בקופה צדדית' }), h('b', { class: 'green mono', style: { fontSize: '18px' }, text: money(state.vault?.balance || 0) })),
+        h('div', { class: 'metric' }, h('span', { text: 'סך הכל נמשך בהיסטוריה' }), h('b', { class: 'green mono', style: { fontSize: '18px' }, text: money(state.vault?.totalWithdrawn || 0) })),
+        h('div', { class: 'metric' }, h('span', { text: 'משיכה אחרונה' }), h('b', { class: 'small mono', text: state.vault?.lastWithdrawalAt ? timeAgo(state.vault.lastWithdrawalAt) : 'טרם בוצעה משיכה' })),
+      ),
+      state.vault?.withdrawals?.length
+        ? h('div', { style: { marginTop: '8px' } },
+            h('div', { class: 'tiny muted', style: { fontWeight: '700', marginBottom: '4px' }, text: `העברות אחרונות לקופה הצדדית (${state.vault.withdrawals.length}):` }),
+            h('div', { class: 'stack', style: { gap: '4px', maxHeight: '110px', overflowY: 'auto' } },
+              state.vault.withdrawals.slice(0, 5).map((w) => h('div', {
+                class: 'row between',
+                style: { background: 'rgba(255,255,255,0.03)', padding: '5px 8px', borderRadius: '4px', fontSize: '11px', borderLeft: '3px solid #10b981' },
+              },
+                h('span', { class: 'mono green', style: { fontWeight: '700' }, text: `+$${Number(w.amount).toLocaleString('en-US')}` }),
+                h('span', { text: `${w.botName || 'בוט נוסטרו'} · ${w.date || ''} · [${w.id}]` }),
+                tag('נשמר בקופה צדדית', 'live'),
+              )),
+            ),
+          )
+        : null,
     ),
 
     h('div', { class: 'card', style: { marginTop: '14px' } },

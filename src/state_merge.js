@@ -378,6 +378,29 @@ export function mergeFirmStates(base, incoming, { forceReset = false, bumpRevisi
   if (xRes) shell.xResearch = xRes;
   const waGann = pickFresherRicher(base.whatsappGann, incoming.whatsappGann, (w) => (w.scannedAt || 0) / 1e9 + (w.insights?.length || 0));
   if (waGann) shell.whatsappGann = waGann;
+
+  // Monotonic Vault merge (קופה צדדית / כספת רווחים שנמשכו)
+  if (base.vault || incoming.vault) {
+    const bv = base.vault || { balance: 0, totalWithdrawn: 0, withdrawals: [] };
+    const iv = incoming.vault || { balance: 0, totalWithdrawn: 0, withdrawals: [] };
+    const wMap = new Map();
+    for (const w of [...(bv.withdrawals || []), ...(iv.withdrawals || [])]) {
+      if (w?.id && !wMap.has(w.id)) wMap.set(w.id, clone(w));
+    }
+    const mergedWithdrawals = [...wMap.values()].sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100);
+    const totalWithdrawn = Math.max(
+      Number(bv.totalWithdrawn) || 0,
+      Number(iv.totalWithdrawn) || 0,
+      mergedWithdrawals.reduce((s, w) => s + (Number(w.amount) || 0), 0)
+    );
+    shell.vault = {
+      balance: Math.max(Number(bv.balance) || 0, Number(iv.balance) || 0, totalWithdrawn),
+      totalWithdrawn,
+      lastWithdrawalAt: Math.max(toTs(bv.lastWithdrawalAt), toTs(iv.lastWithdrawalAt)) || null,
+      withdrawals: mergedWithdrawals,
+    };
+  }
+
   const ytScout = pickFresherRicher(base.youtubeScout, incoming.youtubeScout, (y) => (y.scannedAt || 0) / 1e9 + (y.videos?.length || 0) + (y.blueprints?.length || 0) * 2);
   if (ytScout) shell.youtubeScout = ytScout;
   const scout = pickFresherRicher(base.githubScout, incoming.githubScout, (g) => (g.repos?.length || 0));
