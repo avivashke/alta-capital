@@ -271,16 +271,13 @@ export async function runAiDirector({ useFallback = false } = {}) {
   let reply;
   let used = null;
   try {
-    // The committee thinks on the local Colibri brain whenever it is available, even
-    // when a cloud key exists: it is slower, but the reasoning stays on our machine and
-    // the cloud is only the fallback. Its decision then drives the next optimization
-    // cycle (strategy family + parameter ranges), so the team optimizes on that brain.
-    const onColibri = colibriConfigured(state) || !hasCloudKey();
+    // Prioritize high-performance online web LLMs (Gemini, Groq, Claude) ahead of local Ollama/Colibri
     used = await chatDetailed({
       system: SYSTEM,
-      messages: [{ role: 'user', content: onColibri ? buildColibriPlanPrompt(state) : buildPrompt(state) }],
-      maxTokens: onColibri ? 320 : 900,
-      preferColibri: onColibri,
+      messages: [{ role: 'user', content: buildPrompt(state) }],
+      maxTokens: 900,
+      preferWeb: true,
+      preferColibri: false,
     });
     reply = used.text;
   } catch (err) {

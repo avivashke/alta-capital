@@ -4,9 +4,17 @@
 
 import { h, mount, tag, openModal, toast } from '../ui.js';
 import { getCandles, quotes, ASSET_CATALOG } from '../market.js';
+import { store } from '../store.js';
 import { TVChartEngine } from './engine.js';
-import { applyGannEighthsToChart, buildSwingMarkers, applySwingMarkersToSeries } from './gann_primitives.js';
-import { DrawingManager } from './drawings.js';
+import {
+  applyGannEighthsToChart,
+  buildSwingMarkers,
+  applySwingMarkersToSeries,
+  renderGannFanOnSvg,
+  renderDualFansOnSvg,
+  renderGannBoxOnSvg,
+} from './gann_primitives.js';
+import { DrawingManager, DRAWING_NAMES } from './drawings.js';
 import { bidiText, formatPrice, formatPercent, I18N } from './i18n.js';
 import { getSavedTemplates, saveTemplate, defaultTemplates } from './templates.js';
 import { canAccessFeature } from './entitlements.js';
@@ -16,25 +24,33 @@ export function createChartWorkspace({
   tf = '1h',
   analysis = null,
   candles = [],
+  gannConfig = null,
+  onGannConfigChange = null,
   onSymbolChange = null,
   onTfChange = null,
   onAiExplain = null,
   compact = false,
 } = {}) {
+  const currentGannCfg = gannConfig || store.state.gannConfig || {};
+
   const state = {
     symbol,
     tf,
     chartType: 'candles',
     candles: candles || [],
     analysis,
+    gannConfig: currentGannCfg,
     loading: false,
     overlaysHidden: false,
     rightDrawerOpen: false,
-    activeDrawerTab: 'layers', // 'layers' | 'indicators' | 'ai'
+    activeDrawerTab: 'layers', // 'layers' | 'indicators' | 'drawings'
     swingStrengthThreshold: 0,
     layers: {
-      gannEighths: true,
-      swings: true,
+      gannFan: currentGannCfg.showFanOnChart !== false,
+      dualFans: !!currentGannCfg.showDualFans,
+      gannBox: !!currentGannCfg.showBoxOnChart,
+      gannEighths: currentGannCfg.showEighthsOnChart !== false,
+      swings: currentGannCfg.showSubTrendSignals !== false,
       volume: true,
       ema20: false,
       ema50: false,
@@ -53,6 +69,7 @@ export function createChartWorkspace({
   let chartContainer = null;
   let overlaySvg = null;
   let swingMarkerPrimitive = null;
+  let overlayPopover = null;
 
   const root = h('div', {
     class: 'tv-workspace-root',
@@ -193,7 +210,7 @@ export function createChartWorkspace({
       class: 'btn btn-sm btn-ghost',
       style: { fontSize: '12px' },
       onclick: () => toggleRightDrawer('layers'),
-      title: 'נהל שכבות ואינדיקטורים פעילים',
+      title: 'נהל שכבות, אינדיקטורים וציורים פעילים',
     }, '📑 שכבות'),
 
     h('button', {
@@ -201,13 +218,7 @@ export function createChartWorkspace({
       style: { fontSize: '12px' },
       onclick: () => {
         state.overlaysHidden = !state.overlaysHidden;
-        applyGannEighthsToChart(tvEngine, state.analysis?.jenkins?.eighths || [], { visible: !state.overlaysHidden });
-        if (state.overlaysHidden) {
-          applySwingMarkersToSeries(tvEngine?.mainSeries, []);
-        } else if (state.analysis?.subTrendSignals) {
-          const markers = buildSwingMarkers(state.analysis.subTrendSignals, { threshold: state.swingStrengthThreshold });
-          swingMarkerPrimitive = applySwingMarkersToSeries(tvEngine?.mainSeries, markers, swingMarkerPrimitive);
-        }
+        syncGannOverlays();
         toast(state.overlaysHidden ? 'גרף נקי (כל השכבות הוסתרו)' : 'שכבות גאן הוצגו מחדש', 'ok');
       },
     }, '👁 הסתר/הצג שכבות'),
@@ -274,7 +285,7 @@ export function createChartWorkspace({
   });
 
   const tools = [
-    { id: null, icon: '⤹', label: 'בחירה / תנועה (Select/Pan)' },
+    { id: null, icon: '⤹', label: 'בחירה / מחיקה נקודתית (Select & Delete)' },
     { id: 'trendline', icon: '╱', label: 'קו מגמה (Trendline)' },
     { id: 'ray', icon: '↗', label: 'קרן (Ray)' },
     { id: 'horizontal', icon: '―', label: 'קו אופקי (Horizontal Line)' },
@@ -409,11 +420,163 @@ export function createChartWorkspace({
 
   workspaceBody.appendChild(chartContainer);
 
-  // Right-Side Slide-out Drawer (Layers, Indicators, AI Forecast)
+  // Floating Popover for Interactive Point-Deletion of Gann Overlays
+  function showOverlayPopover(info) {
+    hideOverlayPopover();
+    const pop = document.createElement('div');
+    pop.className = 'tv-overlay-action-popover';
+    pop.style.position = 'absolute';
+    pop.style.zIndex = '26';
+    pop.style.display = 'flex';
+    pop.style.alignItems = 'center';
+    pop.style.gap = '8px';
+    pop.style.background = 'rgba(15, 23, 42, 0.96)';
+    pop.style.border = '1px solid rgba(56, 189, 248, 0.5)';
+    pop.style.borderRadius = '8px';
+    pop.style.padding = '6px 12px';
+    pop.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.7)';
+    pop.style.fontSize = '12px';
+    pop.style.color = '#e2e8f0';
+    pop.style.direction = 'rtl';
+    pop.style.pointerEvents = 'auto';
+
+    let titleText = 'שכבת גאן';
+    let hideKey = null;
+    let hideAction = null;
+
+    if (info.type === 'gann_fan') {
+      titleText = info.ray ? `🪭 מניפת גאן · זווית ${info.ray.id} (${info.ray.degLabel})` : '🪭 עוגן מניפת גאן 9 זוויות';
+      hideKey = 'showFanOnChart';
+      hideAction = () => {
+        state.layers.gannFan = false;
+        if (onGannConfigChange) onGannConfigChange({ showFanOnChart: false });
+        syncGannOverlays();
+        toast('מניפת גאן הוסרה מהגרף', 'ok');
+      };
+    } else if (info.type === 'dual_fans') {
+      titleText = `📐 מניפות רב-ציריות (Dual Fans ${info.side === 'bullish' ? 'עולה' : 'יורדת'})`;
+      hideKey = 'showDualFans';
+      hideAction = () => {
+        state.layers.dualFans = false;
+        if (onGannConfigChange) onGannConfigChange({ showDualFans: false });
+        syncGannOverlays();
+        toast('מניפות רב-ציריות הוסרו מהגרף', 'ok');
+      };
+    } else if (info.type === 'gann_box') {
+      titleText = `▦ תיבת גאן (${info.gannBox?.rangeModeLabel || 'ריבוע מחיר וזמן'})`;
+      hideKey = 'showBoxOnChart';
+      hideAction = () => {
+        state.layers.gannBox = false;
+        if (onGannConfigChange) onGannConfigChange({ showBoxOnChart: false });
+        syncGannOverlays();
+        toast('תיבת גאן הוסרה מהגרף', 'ok');
+      };
+    }
+
+    const titleEl = document.createElement('strong');
+    titleEl.style.color = '#38bdf8';
+    titleEl.textContent = titleText;
+    pop.appendChild(titleEl);
+
+    // Delete / Hide Button
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-danger';
+    delBtn.style.padding = '2px 8px';
+    delBtn.style.fontSize = '11px';
+    delBtn.style.background = '#dc2626';
+    delBtn.style.color = '#ffffff';
+    delBtn.style.border = 'none';
+    delBtn.style.borderRadius = '5px';
+    delBtn.style.cursor = 'pointer';
+    delBtn.textContent = '🗑️ הסתר/מחק פריט זה';
+    delBtn.title = 'הסר שכבה זו נקודתית מהגרף';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (hideAction) hideAction();
+      hideOverlayPopover();
+    };
+    pop.appendChild(delBtn);
+
+    // Close Button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn btn-sm btn-ghost';
+    closeBtn.style.padding = '2px 6px';
+    closeBtn.style.fontSize = '11px';
+    closeBtn.textContent = '✕';
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      hideOverlayPopover();
+    };
+    pop.appendChild(closeBtn);
+
+    // Position popover near click or top-center
+    pop.style.top = '50px';
+    pop.style.left = '50%';
+    pop.style.transform = 'translateX(-50%)';
+
+    chartContainer.appendChild(pop);
+    overlayPopover = pop;
+  }
+
+  function hideOverlayPopover() {
+    if (overlayPopover) {
+      overlayPopover.remove();
+      overlayPopover = null;
+    }
+  }
+
+  // Master Synchronizer for All Gann Overlays onto Lightweight Charts
+  function syncGannOverlays() {
+    if (!tvEngine?.chart || !tvEngine?.mainSeries) return;
+
+    if (state.overlaysHidden) {
+      applyGannEighthsToChart(tvEngine, [], { visible: false });
+      renderGannFanOnSvg(tvEngine, overlaySvg, null, [], { visible: false });
+      renderDualFansOnSvg(tvEngine, overlaySvg, null, [], { visible: false });
+      renderGannBoxOnSvg(tvEngine, overlaySvg, null, [], { visible: false });
+      applySwingMarkersToSeries(tvEngine.mainSeries, []);
+      return;
+    }
+
+    // 1. Gann Eighths (0/8 to 8/8) Price Lines
+    applyGannEighthsToChart(tvEngine, state.analysis?.jenkins?.eighths || [], {
+      visible: state.layers.gannEighths,
+    });
+
+    // 2. Full 9-Angle Gann Fan (8x1 down to 1x8)
+    renderGannFanOnSvg(tvEngine, overlaySvg, state.analysis?.gannFan, state.candles, {
+      visible: state.layers.gannFan,
+      onSelect: (info) => showOverlayPopover(info),
+    });
+
+    // 3. Multi-Pivot Dual Fans (Bullish Low + Bearish High)
+    renderDualFansOnSvg(tvEngine, overlaySvg, state.analysis?.multiAngles, state.candles, {
+      visible: state.layers.dualFans,
+      onSelect: (info) => showOverlayPopover(info),
+    });
+
+    // 4. W.D. Gann Box (Square of Price and Time)
+    renderGannBoxOnSvg(tvEngine, overlaySvg, state.analysis?.gannBox, state.candles, {
+      visible: state.layers.gannBox,
+      onSelect: (info) => showOverlayPopover(info),
+    });
+
+    // 5. Swing Signal Markers (ST / SB)
+    if (state.layers.swings && state.analysis?.subTrendSignals) {
+      const markers = buildSwingMarkers(state.analysis.subTrendSignals, {
+        threshold: state.swingStrengthThreshold,
+      });
+      swingMarkerPrimitive = applySwingMarkersToSeries(tvEngine.mainSeries, markers, swingMarkerPrimitive);
+    } else {
+      applySwingMarkersToSeries(tvEngine.mainSeries, []);
+    }
+  }
+
+  // Right-Side Slide-out Drawer (Layers, Indicators, Drawings Management)
   const rightDrawer = h('div', {
     class: 'tv-right-drawer',
     style: {
-      width: '280px',
+      width: '290px',
       background: 'rgba(15, 23, 42, 0.98)',
       borderRight: '1px solid rgba(255, 255, 255, 0.08)',
       display: 'none',
@@ -449,43 +612,133 @@ export function createChartWorkspace({
     );
     rightDrawer.appendChild(head);
 
-    // Proprietary Overlays section
+    // Proprietary Overlays section with point-deletion trash buttons
     const propSection = h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
       h('div', { class: 'small muted', style: { fontWeight: '700' }, text: 'שכבות גאן וניתוח ייחודי' }),
-      createLayerRow('שמיניות גאן (1/8 ... 8/8)', state.layers.gannEighths, (val) => {
+
+      createLayerRowWithDelete('🪭 מניפת גאן (9 זוויות)', state.layers.gannFan, (val) => {
+        state.layers.gannFan = val;
+        if (onGannConfigChange) onGannConfigChange({ showFanOnChart: val });
+        syncGannOverlays();
+      }, () => {
+        state.layers.gannFan = false;
+        if (onGannConfigChange) onGannConfigChange({ showFanOnChart: false });
+        syncGannOverlays();
+        renderDrawerContent();
+        toast('מניפת גאן נמחקה מהתצוגה', 'ok');
+      }),
+
+      createLayerRowWithDelete('📐 מניפות רב-ציריות (Dual Fans)', state.layers.dualFans, (val) => {
+        state.layers.dualFans = val;
+        if (onGannConfigChange) onGannConfigChange({ showDualFans: val });
+        syncGannOverlays();
+      }, () => {
+        state.layers.dualFans = false;
+        if (onGannConfigChange) onGannConfigChange({ showDualFans: false });
+        syncGannOverlays();
+        renderDrawerContent();
+        toast('מניפות רב-ציריות נמחקו מהתצוגה', 'ok');
+      }),
+
+      createLayerRowWithDelete('▦ תיבת גאן (Gann Box)', state.layers.gannBox, (val) => {
+        state.layers.gannBox = val;
+        if (onGannConfigChange) onGannConfigChange({ showBoxOnChart: val });
+        syncGannOverlays();
+      }, () => {
+        state.layers.gannBox = false;
+        if (onGannConfigChange) onGannConfigChange({ showBoxOnChart: false });
+        syncGannOverlays();
+        renderDrawerContent();
+        toast('תיבת גאן נמחקה מהתצוגה', 'ok');
+      }),
+
+      createLayerRowWithDelete('⅛ שמיניות גאן (1/8 ... 8/8)', state.layers.gannEighths, (val) => {
         state.layers.gannEighths = val;
-        applyGannEighthsToChart(tvEngine, state.analysis?.jenkins?.eighths || [], { visible: val });
+        if (onGannConfigChange) onGannConfigChange({ showEighthsOnChart: val });
+        syncGannOverlays();
+      }, () => {
+        state.layers.gannEighths = false;
+        if (onGannConfigChange) onGannConfigChange({ showEighthsOnChart: false });
+        syncGannOverlays();
+        renderDrawerContent();
+        toast('שמיניות גאן נמחקו מהתצוגה', 'ok');
       }),
-      createLayerRow('איתותי סווינג (ST / SB)', state.layers.swings, (val) => {
+
+      createLayerRowWithDelete('▼▲ איתותי סווינג (ST / SB)', state.layers.swings, (val) => {
         state.layers.swings = val;
-        if (val && state.analysis?.subTrendSignals) {
-          const markers = buildSwingMarkers(state.analysis.subTrendSignals, { threshold: state.swingStrengthThreshold });
-          swingMarkerPrimitive = applySwingMarkersToSeries(tvEngine?.mainSeries, markers, swingMarkerPrimitive);
-        } else {
-          applySwingMarkersToSeries(tvEngine?.mainSeries, []);
-        }
+        if (onGannConfigChange) onGannConfigChange({ showSubTrendSignals: val });
+        syncGannOverlays();
+      }, () => {
+        state.layers.swings = false;
+        if (onGannConfigChange) onGannConfigChange({ showSubTrendSignals: false });
+        syncGannOverlays();
+        renderDrawerContent();
+        toast('איתותי סווינג נמחקו מהתצוגה', 'ok');
       }),
-      // Swing strength slider
-      h('div', { style: { padding: '4px 0', fontSize: '11px', color: '#94a3b8' } },
-        h('span', { text: `סף סינון סווינג (חוזק: ${state.swingStrengthThreshold})` }),
-        h('input', {
-          type: 'range',
-          min: '0',
-          max: '4',
-          step: '1',
-          value: String(state.swingStrengthThreshold),
-          style: { width: '100%', marginTop: '4px' },
-          oninput: (e) => {
-            state.swingStrengthThreshold = Number(e.target.value);
-            if (state.layers.swings && state.analysis?.subTrendSignals) {
-              const markers = buildSwingMarkers(state.analysis.subTrendSignals, { threshold: state.swingStrengthThreshold });
-              swingMarkerPrimitive = applySwingMarkersToSeries(tvEngine?.mainSeries, markers, swingMarkerPrimitive);
-            }
-          },
-        }),
-      ),
     );
     rightDrawer.appendChild(propSection);
+
+    // Active User Drawings Section (Individual Point-Deletion list)
+    const drawingsList = drawingManager?.drawings || [];
+    const drawSection = h('div', {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+        borderTop: '1px solid rgba(255,255,255,0.08)',
+        paddingTop: '10px',
+      },
+    },
+      h('div', { class: 'row between', style: { alignItems: 'center' } },
+        h('span', { class: 'small muted', style: { fontWeight: '700' }, text: `ציורים ואלמנטים אישיים (${drawingsList.length})` }),
+        drawingsList.length
+          ? h('button', {
+              class: 'btn btn-ghost btn-sm',
+              style: { color: '#f87171', padding: '1px 6px', fontSize: '10px' },
+              onclick: () => {
+                drawingManager.clearAll();
+                renderDrawerContent();
+              },
+            }, 'מחק הכל')
+          : null,
+      ),
+      drawingsList.length
+        ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' } },
+            ...drawingsList.map((d) =>
+              h('div', {
+                style: {
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '4px 8px',
+                  background: drawingManager.selectedDrawing?.id === d.id ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                  border: drawingManager.selectedDrawing?.id === d.id ? '1px solid #38bdf8' : '1px solid transparent',
+                  borderRadius: '5px',
+                  fontSize: '11.5px',
+                  cursor: 'pointer',
+                },
+                onclick: () => {
+                  drawingManager.selectDrawing(d.id);
+                  renderDrawerContent();
+                },
+              },
+                h('span', { text: DRAWING_NAMES[d.type] || d.type }),
+                h('button', {
+                  class: 'btn btn-ghost btn-sm',
+                  style: { color: '#f87171', padding: '1px 5px', fontSize: '11px' },
+                  title: 'מחק פריט זה נקודתית',
+                  onclick: (e) => {
+                    e.stopPropagation();
+                    drawingManager.deleteDrawing(d.id);
+                    renderDrawerContent();
+                  },
+                }, '🗑'),
+              )
+            )
+          )
+        : h('div', { class: 'tiny muted', text: 'לא נוספו ציורים אישיים. השתמש בסרגל הכלים משמאל.' }),
+    );
+    rightDrawer.appendChild(drawSection);
 
     // Technical Indicators section
     const indSection = h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' } },
@@ -518,6 +771,39 @@ export function createChartWorkspace({
         checked: active,
         onchange: (e) => onToggle(e.target.checked),
       }),
+    );
+    return row;
+  }
+
+  function createLayerRowWithDelete(label, active, onToggle, onDelete) {
+    const row = h('div', {
+      style: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '5px 8px',
+        background: 'rgba(255, 255, 255, 0.03)',
+        borderRadius: '6px',
+        fontSize: '12px',
+      },
+    },
+      h('span', { text: label }),
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        h('input', {
+          type: 'checkbox',
+          checked: active,
+          onchange: (e) => onToggle(e.target.checked),
+        }),
+        h('button', {
+          class: 'btn btn-ghost btn-sm',
+          style: { color: '#f87171', padding: '1px 5px', fontSize: '11px' },
+          title: 'הסר/מחק שכבה זו',
+          onclick: (e) => {
+            e.stopPropagation();
+            onDelete();
+          },
+        }, '🗑'),
+      ),
     );
     return row;
   }
@@ -642,22 +928,29 @@ export function createChartWorkspace({
         },
       });
 
-      drawingManager = new DrawingManager(overlaySvg, tvEngine, { symbol: state.symbol, tf: state.tf });
+      drawingManager = new DrawingManager(overlaySvg, tvEngine, {
+        symbol: state.symbol,
+        tf: state.tf,
+        onDrawingsChange: () => {
+          if (state.rightDrawerOpen) renderDrawerContent();
+        },
+      });
 
       if (state.candles?.length) {
         tvEngine.setData(state.candles);
         tvEngine.fitContent();
       }
 
-      // Sync Gann Eighths & Swing Markers
-      if (state.analysis) {
-        if (state.analysis.jenkins?.eighths) {
-          applyGannEighthsToChart(tvEngine, state.analysis.jenkins.eighths, { visible: true });
-        }
-        if (state.analysis.subTrendSignals) {
-          const markers = buildSwingMarkers(state.analysis.subTrendSignals, { threshold: state.swingStrengthThreshold });
-          swingMarkerPrimitive = applySwingMarkersToSeries(tvEngine.mainSeries, markers, swingMarkerPrimitive);
-        }
+      // Sync All Gann Overlays
+      syncGannOverlays();
+
+      // Listen to Pan and Zoom to smoothly reposition SVG Gann overlays
+      if (tvEngine.chart?.timeScale()) {
+        try {
+          tvEngine.chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+            syncGannOverlays();
+          });
+        } catch {}
       }
     } catch (err) {
       console.warn('[createChartWorkspace] TV Engine init error:', err.message);
@@ -666,21 +959,26 @@ export function createChartWorkspace({
 
   return {
     element: root,
-    updateData: (newCandles, newAnalysis) => {
+    symbol: state.symbol,
+    tf: state.tf,
+    updateData: (newCandles, newAnalysis, newGannCfg = null) => {
       state.candles = newCandles;
       state.analysis = newAnalysis;
+      if (newGannCfg) {
+        state.gannConfig = newGannCfg;
+        state.layers.gannFan = newGannCfg.showFanOnChart !== false;
+        state.layers.dualFans = !!newGannCfg.showDualFans;
+        state.layers.gannBox = !!newGannCfg.showBoxOnChart;
+        state.layers.gannEighths = newGannCfg.showEighthsOnChart !== false;
+        state.layers.swings = newGannCfg.showSubTrendSignals !== false;
+      }
       if (tvEngine) {
         tvEngine.setData(newCandles);
-        if (newAnalysis?.jenkins?.eighths) {
-          applyGannEighthsToChart(tvEngine, newAnalysis.jenkins.eighths, { visible: !state.overlaysHidden });
-        }
-        if (newAnalysis?.subTrendSignals) {
-          const markers = buildSwingMarkers(newAnalysis.subTrendSignals, { threshold: state.swingStrengthThreshold });
-          swingMarkerPrimitive = applySwingMarkersToSeries(tvEngine.mainSeries, markers, swingMarkerPrimitive);
-        }
+        syncGannOverlays();
       }
     },
     destroy: () => {
+      hideOverlayPopover();
       if (tvEngine) tvEngine.destroy();
     },
   };

@@ -268,8 +268,9 @@ export async function runYonatanYouTubeScout({ customQueries = null, force = tru
             content: blueprints.slice(0, 10).map((b) => `- [${b.creator}] "${b.videoTitle}" -> מנוע ${b.strategyId} על ${b.symbol} (${b.tf})`).join('\n'),
           }],
           maxTokens: 420,
+          preferWeb: true,
         });
-        if (res?.text) aiDigest = { model: res.model || 'AI', text: res.text, at: Date.now() };
+        if (res?.text) aiDigest = { model: res.provider || res.model || 'Gemini', text: res.text, at: Date.now() };
       } catch { /* keep without AI */ }
     }
 

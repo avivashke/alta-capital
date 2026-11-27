@@ -3,6 +3,7 @@
 import { store } from '../store.js';
 import { h, mount, pct, num, tag, timeAgo, notice, openModal } from '../ui.js';
 import { describeParams } from '../strategies.js';
+import { openFreeAiConnectModal } from '../page_context.js';
 import {
   STRATEGY_GUIDES,
   EDUCATIONAL_PROMPTS,
@@ -221,7 +222,12 @@ export function renderEducationalChatWidget(ui, { compact = false } = {}) {
     try {
       const history = messages.filter((m) => m !== pendingMsg && !m.pending);
       const reply = await askEducationalTutor(text, history);
-      pendingMsg.content = reply;
+      if (typeof reply === 'object' && reply.text) {
+        pendingMsg.content = reply.text;
+        pendingMsg.provider = reply.provider;
+      } else {
+        pendingMsg.content = String(reply);
+      }
     } catch (err) {
       pendingMsg.content = buildLocalEducationalReply(text, store.state);
     } finally {
@@ -286,7 +292,10 @@ export function renderEducationalChatWidget(ui, { compact = false } = {}) {
     ...messages.map((m) => h('div', { class: 'msg ' + (m.role === 'ai' ? 'ai' : 'me') },
       h('div', { style: { maxWidth: '92%' } },
         h('div', { class: 'bubble' }, formatMessage(m.content)),
-        h('div', { class: 'meta', text: `${m.role === 'ai' ? '🎓 מנטור האסטרטגיות' : 'אתה'} · ${m.pending ? 'מנתח...' : timeAgo(m.at)}` }),
+        h('div', { class: 'meta', style: { display: 'flex', gap: '6px', alignItems: 'center' } }, [
+          h('span', { text: `${m.role === 'ai' ? '🎓 מנטור האסטרטגיות' : 'אתה'} · ${m.pending ? 'מנתח...' : timeAgo(m.at)}` }),
+          m.provider ? tag(m.provider === 'מדריך מקומי' ? 'מדריך מקומי' : `סופק ע"י ${m.provider}`, m.provider === 'מדריך מקומי' ? 'dry' : 'live') : null,
+        ]),
       ),
     )),
   );
@@ -299,7 +308,12 @@ export function renderEducationalChatWidget(ui, { compact = false } = {}) {
         h('h2', { text: '🎓 צ׳אט חינוכי — לימוד האסטרטגיות המוצלחות בחדר המסחר' }),
         h('div', { class: 'card-sub', text: 'לחץ על "הסבר מורחב למתחילים (AI)" בכל אסטרטגיה כדי לקבל הסבר פשוט עם מושגים ודוגמאות, או שאל כל שאלה בצ׳אט' }),
       ),
-      h('div', { class: 'row', style: { gap: '6px' } },
+      h('div', { class: 'row wrap', style: { gap: '6px', alignItems: 'center' } },
+        h('button', {
+          class: 'btn btn-sm btn-ghost',
+          style: { fontSize: '11.5px', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.35)' },
+          onclick: () => openFreeAiConnectModal(ui),
+        }, '⚡ חבר חשבונות AI (Gemini, Groq, Claude)'),
         tag('10 משפחות אסטרטגיה', 'live'),
         h('button', {
           class: 'btn btn-sm btn-ghost',

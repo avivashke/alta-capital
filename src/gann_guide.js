@@ -525,12 +525,13 @@ export function renderGannExecutiveForecastCard(a, cfg, symbol, state) {
             ].join('\n'),
           }],
           maxTokens: 480,
+          preferWeb: true,
         });
         aiBriefBox.style.display = 'block';
         aiBriefBox.className = 'notice ok';
         aiBriefBox.style.whiteSpace = 'pre-wrap';
         aiBriefBox.style.lineHeight = '1.6';
-        aiBriefBox.textContent = `🤖 תמצות תחזית AI (${res.model || 'Local/Cloud AI'}):\n\n${res.text}`;
+        aiBriefBox.textContent = `🤖 תמצות תחזית AI (${res.provider || res.model || 'Gemini'}):\n\n${res.text}`;
         aiBriefBtn.textContent = '✓ תמצות AI מוכן';
       } catch (err) {
         aiBriefBox.style.display = 'block';
@@ -651,12 +652,13 @@ export function openGannExplainModal(topicId, a, cfg, symbol) {
             ].join('\n\n'),
           }],
           maxTokens: 550,
+          preferWeb: true,
         });
         aiBox.style.display = 'block';
         aiBox.className = 'notice ok';
         aiBox.style.whiteSpace = 'pre-wrap';
         aiBox.style.lineHeight = '1.6';
-        aiBox.textContent = `🤖 הסבר AI פשוט (${res.model || 'AI'}):\n\n${res.text}`;
+        aiBox.textContent = `🤖 הסבר AI פשוט (${res.provider || res.model || 'Gemini'}):\n\n${res.text}`;
         aiBtn.textContent = '✓ הסבר AI נוצר';
       } catch (err) {
         aiBox.style.display = 'block';

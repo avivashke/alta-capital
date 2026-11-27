@@ -27,12 +27,14 @@ import { renderWhatsAppGannCard } from '../whatsapp_gann_ui.js';
 import { renderYonatanYouTubeScoutCard } from '../youtube_scout_ui.js';
 import { calculateJenkinsAnalysis, jenkinsSquareRootTargets, jenkinsMasterTimeCycles } from '../jenkins.js';
 import { createChartWorkspace } from '../chart_workspace/workspace.js';
+import { openFreeAiConnectModal } from '../page_context.js';
 
 let gannViewState = {
   symbol: 'BTCUSDT',
   customSymbol: '',
   tf: '1d',
   chartMode: 'tv', // 'tv' (TradingView grade workspace) | 'classic' (SVG map)
+  chartWorkspace: null,
   manualPrice: '',
   manualDate: '',
   calcTab: 'fan', // 'fan' | 'msj_grid' | 'msj_deg' | 'jenkins' | 'eighths' | 'hex'
@@ -55,6 +57,7 @@ let gannViewState = {
   multiScanResults: null,
   aiLoading: false,
   aiAdvice: null,
+  aiProvider: 'Gemini',
   libQuery: '',
   libKind: 'all',
   libLoading: false,
@@ -121,8 +124,10 @@ async function askAiForGannProposal(a, ui) {
       system: 'אתה חוקר גאן בכיר המייעץ למשתמש על בסיס Gannzilla Pro v8.3, MSJ_GannSQ9 (מייקל ג׳נקינס), מניפת גאן ו-W.D. Gann Trading Tools. השב בעברית מקצועית וברורה.',
       messages: [{ role: 'user', content: prompt }],
       maxTokens: 700,
+      preferWeb: true,
     });
     gannViewState.aiAdvice = res.text;
+    gannViewState.aiProvider = res.provider || res.model || 'Gemini';
   } catch (err) {
     gannViewState.aiAdvice = null;
     toast('AI בענן לא זמין כרגע — מוצגות הצעות העבודה האוטומטיות למטה.', 'info');
@@ -202,6 +207,9 @@ function selectGannAsset(rawSymbol, ui, { keepManual = false } = {}) {
   gannViewState.symbol = sym;
   gannViewState.aiAdvice = null;
   gannViewState.selectedMsjCell = null;
+  if (changed) {
+    gannViewState.chartWorkspace = null;
+  }
   if (changed && !keepManual) {
     gannViewState.manualPrice = '';
     gannViewState.manualDate = '';
@@ -2287,25 +2295,40 @@ export function renderGann(root, ui) {
             boxBars: Number(cfg.boxBars) || 0,
             onPivotAction: (pivot, action) => applyPivotAction(pivot, action, ui),
           })
-        : createChartWorkspace({
-            symbol: gannViewState.symbol,
-            tf: gannViewState.tf,
-            analysis: a,
-            candles: gannViewState.candles,
-            onSymbolChange: (newSym) => {
-              gannViewState.symbol = newSym;
-              gannViewState.key = null;
-              loadGannData(ui, { force: true });
-            },
-            onTfChange: (newTf) => {
-              gannViewState.tf = newTf;
-              gannViewState.key = null;
-              loadGannData(ui, { force: true });
-            },
-            onAiExplain: (sym, analysisData) => {
-              askAiForGannProposal(analysisData || a, ui);
-            },
-          }).element,
+        : (() => {
+            if (
+              gannViewState.chartWorkspace &&
+              gannViewState.chartWorkspace.symbol === gannViewState.symbol &&
+              gannViewState.chartWorkspace.tf === gannViewState.tf
+            ) {
+              gannViewState.chartWorkspace.updateData(gannViewState.candles, a, cfg);
+              return gannViewState.chartWorkspace.element;
+            }
+            gannViewState.chartWorkspace = createChartWorkspace({
+              symbol: gannViewState.symbol,
+              tf: gannViewState.tf,
+              analysis: a,
+              candles: gannViewState.candles,
+              gannConfig: cfg,
+              onGannConfigChange: (patch) => updateGannzillaConfig(patch, ui, { reloadAnalysis: true }),
+              onSymbolChange: (newSym) => {
+                gannViewState.chartWorkspace = null;
+                gannViewState.symbol = newSym;
+                gannViewState.key = null;
+                loadGannData(ui, { force: true });
+              },
+              onTfChange: (newTf) => {
+                gannViewState.chartWorkspace = null;
+                gannViewState.tf = newTf;
+                gannViewState.key = null;
+                loadGannData(ui, { force: true });
+              },
+              onAiExplain: (sym, analysisData) => {
+                askAiForGannProposal(analysisData || a, ui);
+              },
+            });
+            return gannViewState.chartWorkspace.element;
+          })(),
       a.gannFan?.ruleOfAllAngles
         ? h('div', { class: 'small muted', style: { marginTop: '8px' }, text: a.gannFan.ruleOfAllAngles })
         : null,
@@ -2887,7 +2910,12 @@ export function renderGann(root, ui) {
           h('h2', { text: `🤖 הצעות AI לעבודה ומחקר חכם (${gannViewState.symbol})` }),
           h('div', { class: 'card-sub', text: 'סינתזה אוטומטית של Square of 9, הקסגון, זווית 1x1 ולוחות השנה של Gannzilla להמלצת פעולה' }),
         ),
-        h('div', { class: 'row wrap', style: { gap: '6px' } },
+        h('div', { class: 'row wrap', style: { gap: '6px', alignItems: 'center' } },
+          h('button', {
+            class: 'btn btn-sm btn-ghost',
+            style: { fontSize: '11.5px', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.35)' },
+            onclick: () => openFreeAiConnectModal(ui),
+          }, '⚡ חבר חשבונות AI'),
           gannExplainButton('ai_proposals', a, cfg, gannViewState.symbol),
           h('button', {
             class: 'btn btn-sm btn-primary',
@@ -2903,7 +2931,13 @@ export function renderGann(root, ui) {
         )),
       ),
       gannViewState.aiAdvice
-        ? h('div', { class: 'notice ok', style: { whiteSpace: 'pre-wrap', lineHeight: '1.6' }, text: gannViewState.aiAdvice })
+        ? h('div', { class: 'card', style: { borderColor: 'rgba(56, 189, 248, 0.45)', background: 'rgba(10, 18, 30, 0.95)' } },
+            h('div', { class: 'row between', style: { marginBottom: '8px' } },
+              h('strong', { style: { color: '#38bdf8' }, text: '✨ הצעת עבודה מעמיקה מ-AI' }),
+              tag(`סופק ע"י ${gannViewState.aiProvider || 'Gemini'}`, 'live'),
+            ),
+            h('div', { class: 'notice ok', style: { whiteSpace: 'pre-wrap', lineHeight: '1.6' }, text: gannViewState.aiAdvice }),
+          )
         : null,
     ),
   );

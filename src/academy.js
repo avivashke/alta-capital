@@ -343,14 +343,15 @@ ${JSON.stringify(topSummary, null, 2)}
         { role: 'user', content: question },
       ],
       maxTokens: 1100,
+      preferWeb: true,
     });
     if (res?.text && res.text.trim().length > 40) {
-      return res.text.trim();
+      return { text: res.text.trim(), provider: res.provider || res.model || 'Gemini', isAi: true };
     }
   } catch {
     // Fall back cleanly to our rich built-in educational tutor
   }
-  return localLesson;
+  return { text: localLesson, provider: 'מדריך מקומי', isAi: false };
 }
 
 // --- Beginner-Friendly Glossary & Expanded AI Strategy Explanations ---------
@@ -591,6 +592,7 @@ ${JSON.stringify({
       system,
       messages: [{ role: 'user', content: userPrompt }],
       maxTokens: 1100,
+      preferWeb: true,
     });
     if (res?.text && res.text.trim().length > 40) {
       return { text: res.text.trim(), aiPowered: true, model: res.model || 'AI' };
