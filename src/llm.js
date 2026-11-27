@@ -59,7 +59,7 @@ function historyOf(messages) {
   }));
 }
 
-export function buildRequest(entry, { system, messages, maxTokens = 1200, temperature = 0.4 } = {}) {
+export function buildRequest(entry, { system, messages, maxTokens = 1200, temperature = 0.4, image = null } = {}) {
   const base = (entry.baseUrl || '').replace(/\/+$/, '').replace('{account_id}', entry.accountId || '');
   if (!base) throw new LlmError('לא הוגדרה כתובת API');
   if (!entry.model) throw new LlmError('לא הוגדר שם מודל');
@@ -68,6 +68,16 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
   const isProxyChat = /\/chat$/i.test(base) || /\/openai$/i.test(base) || entry.provider === 'gateway' || entry.provider === 'pollinations';
 
   if (shape === 'anthropic') {
+    const userMessages = history.filter((m) => m.role !== 'system');
+    if (image && userMessages.length > 0) {
+      const lastUser = userMessages[userMessages.length - 1];
+      const b64Data = image.startsWith('data:') ? image.split(',')[1] : image;
+      const mimeType = image.startsWith('data:') ? image.split(';')[0].split(':')[1] : 'image/png';
+      lastUser.content = [
+        { type: 'image', source: { type: 'base64', media_type: mimeType, data: b64Data } },
+        { type: 'text', text: typeof lastUser.content === 'string' ? lastUser.content : JSON.stringify(lastUser.content) },
+      ];
+    }
     return {
       url: base + '/messages',
       init: {
@@ -83,7 +93,7 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
           max_tokens: maxTokens,
           temperature,
           system,
-          messages: history.filter((m) => m.role !== 'system'),
+          messages: userMessages,
         }),
       },
     };
@@ -91,6 +101,21 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
 
   if (shape === 'gemini') {
     const url = `${base}/models/${encodeURIComponent(entry.model)}:generateContent?key=${encodeURIComponent(entry.key)}`;
+    const contents = history.map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
+    if (image && contents.length > 0) {
+      const lastUser = contents[contents.length - 1];
+      const b64Data = image.startsWith('data:') ? image.split(',')[1] : image;
+      const mimeType = image.startsWith('data:') ? image.split(';')[0].split(':')[1] : 'image/png';
+      lastUser.parts.unshift({
+        inline_data: {
+          mime_type: mimeType,
+          data: b64Data,
+        },
+      });
+    }
     return {
       url,
       init: {
@@ -98,7 +123,7 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
-          contents: history.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+          contents,
           generationConfig: { temperature, maxOutputTokens: maxTokens },
         }),
       },
@@ -106,9 +131,20 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
   }
 
   if (!entry.key && entry.provider !== 'ollama' && entry.provider !== 'pollinations' && !isProxyChat) throw new LlmError('חסר מפתח API');
-  // Pollinations and Worker proxies already expose the full chat endpoint; appending
-  // /chat/completions to them produced a 404 that looked like a dead provider.
   const chatUrl = /\/chat(\/completions)?$|\/openai$/i.test(base) ? base : (base + '/chat/completions');
+
+  const reqMessages = [{ role: 'system', content: system }, ...history];
+  if (image && reqMessages.length > 1) {
+    const lastMsg = reqMessages[reqMessages.length - 1];
+    if (lastMsg.role === 'user') {
+      const imageUrl = image.startsWith('data:') ? image : `data:image/png;base64,${image}`;
+      lastMsg.content = [
+        { type: 'text', text: typeof lastMsg.content === 'string' ? lastMsg.content : '' },
+        { type: 'image_url', image_url: { url: imageUrl } },
+      ];
+    }
+  }
+
   return {
     url: chatUrl,
     init: {
@@ -121,10 +157,7 @@ export function buildRequest(entry, { system, messages, maxTokens = 1200, temper
         model: entry.model,
         temperature,
         max_tokens: maxTokens,
-        messages: [{ role: 'system', content: system }, ...history],
-        // Nemotron spends the whole max_tokens budget on reasoning and then returns
-        // content:null, so callers saw a thinking trace or nothing. Turning thinking
-        // off gives the direct answer in the same budget.
+        messages: reqMessages,
         ...(/nemotron/i.test(entry.model) ? { chat_template_kwargs: { enable_thinking: false } } : {}),
       }),
     },
@@ -508,11 +541,19 @@ async function callLocalBaseServerAi({ system, messages, maxTokens = 1200, tempe
   throw lastErr || new LlmError('Local AI not reachable', 0);
 }
 
-export async function chatDetailed({ system, messages, maxTokens = 1200, preferColibri = false }) {
+export async function chatDetailed({
+  system,
+  messages,
+  maxTokens = 1200,
+  preferColibri = false,
+  preferWeb = true,
+  image = null,
+}) {
   const state = store.state;
   const temperature = Number(state.settings?.llm?.temperature ?? 0.4);
   const list = candidates(state);
-  // Pick at most ONE fast local model (prefer 3B qwen2.5/llama3 via Base Server proxy to avoid VRAM swapping)
+
+  // Separate local models from cloud/web models
   const localAll = list.filter((e) => e.provider === 'ollama' || /\/api\/local-ai|127\.0\.0\.1:11434|localhost:11434|127\.0\.0\.1:8000|localhost:8000/i.test(e.baseUrl || ''));
   const localFast = localAll.find((e) => !isColibriEntry(e) && /\/api\/local-ai/i.test(e.baseUrl || '') && /qwen2\.5:3b/i.test(e.model || ''))
     || localAll.find((e) => !isColibriEntry(e) && /qwen2\.5:3b/i.test(e.model || ''))
@@ -520,27 +561,59 @@ export async function chatDetailed({ system, messages, maxTokens = 1200, preferC
     || localAll.find((e) => !isColibriEntry(e));
   const cloudRest = list.filter((e) => !localAll.includes(e));
   const colibriEntry = localAll.find((e) => e !== localFast && isColibriEntry(e));
-  // Colibri is slow but always there: it is the brain of last resort behind the cloud,
-  // or the first brain when there is no cloud key at all / this call asks for it.
-  const promptChars = String(system || '').length
-    + (Array.isArray(messages) ? messages.reduce((n, m) => n + String(m?.content || '').length, 0) : 0);
-  const colibriFirst = !!colibriEntry
-    && promptChars <= COLIBRI_PROMPT_CHAR_LIMIT
-    && (preferColibri || state.settings?.llm?.preferColibri !== false);
-  // "Colibri first" must mean Colibri, not the 3B sidecar: the team's thinking is
-  // meant to happen on the big local brain, and only then degrade to fast local/cloud.
-  const queue = colibriFirst
-    ? [...(colibriEntry ? [colibriEntry] : []), ...(localFast ? [localFast] : []), ...cloudRest.slice(0, 6)]
-    : [...(localFast ? [localFast] : []), ...cloudRest.slice(0, 6), ...(colibriEntry ? [colibriEntry] : [])];
-  // Keyless web/proxy entries are always in the queue, even when the pool is full.
-  for (const entry of freeZeroKeyEntries()) {
-    if (!queue.some((q) => q.provider === entry.provider && q.model === entry.model)) queue.push(entry);
+
+  const freeZero = freeZeroKeyEntries();
+
+  // Prioritize online web models (Gemini, Groq, OpenRouter, Claude, Grok) with generous free tokens & personal user keys
+  let queue = [];
+  if (preferWeb) {
+    queue = [
+      ...cloudRest,
+      ...freeZero,
+      ...(localFast ? [localFast] : []),
+      ...(colibriEntry ? [colibriEntry] : []),
+    ];
+  } else if (preferColibri && colibriEntry) {
+    queue = [
+      colibriEntry,
+      ...(localFast ? [localFast] : []),
+      ...cloudRest,
+      ...freeZero,
+    ];
+  } else {
+    queue = [
+      ...cloudRest,
+      ...freeZero,
+      ...(localFast ? [localFast] : []),
+      ...(colibriEntry ? [colibriEntry] : []),
+    ];
+  }
+
+  // Deduplicate queue
+  const seenQueue = new Set();
+  const dedupedQueue = [];
+  for (const entry of queue) {
+    const k = `${entry.provider}|${entry.model}|${entry.baseUrl}`;
+    if (!seenQueue.has(k)) {
+      seenQueue.add(k);
+      dedupedQueue.push(entry);
+    }
   }
 
   const attempts = [];
-  for (const entry of queue) {
+  for (const entry of dedupedQueue) {
     try {
-      const text = await callEntry(entry, { system, messages, maxTokens, temperature });
+      let text = null;
+      try {
+        text = await callEntry(entry, { system, messages, maxTokens, temperature, image });
+      } catch (callErr) {
+        // If model failed on vision/image, retry that model with text only
+        if (image && (/vision|image|unsupported|not supported|400/i.test(callErr?.message || ''))) {
+          text = await callEntry(entry, { system, messages, maxTokens, temperature, image: null });
+        } else {
+          throw callErr;
+        }
+      }
       if (entry.id !== 'legacy' && entry.id !== 'webllm') markUsed(state, entry);
       store.save();
       return {
@@ -560,23 +633,23 @@ export async function chatDetailed({ system, messages, maxTokens = 1200, preferC
     }
   }
 
-  // Fallback 0: Direct Local Base Server AI (Ollama / Intel Arc GPU) even if pool entries were in cooldown
-  if (typeof window !== 'undefined') {
-    try {
-      const localRes = await callLocalBaseServerAi({ system, messages, maxTokens, temperature });
-      return { ...localRes, attempts };
-    } catch (err) {
-      attempts.push({ provider: 'Local Ollama (Base Server)', model: 'auto', error: err.message, status: err.status || 0 });
-    }
-  }
-
-  // Fallback 1: server-side Cloudflare / Netlify Env AI (/api/llm env_chat, e.g. Workers AI, NVIDIA, Groq)
+  // Fallback 1: server-side Cloudflare / Netlify Env AI (/api/llm env_chat)
   if (typeof window !== 'undefined') {
     try {
       const envRes = await callServerEnvChat({ system, messages, maxTokens, temperature });
       return { ...envRes, attempts };
     } catch (err) {
       attempts.push({ provider: 'Server Env / Cloudflare AI', model: 'env_chat', error: err.message, status: err.status || 0 });
+    }
+  }
+
+  // Fallback 2: Direct Local Base Server AI (Ollama / Intel Arc GPU)
+  if (typeof window !== 'undefined') {
+    try {
+      const localRes = await callLocalBaseServerAi({ system, messages, maxTokens, temperature });
+      return { ...localRes, attempts };
+    } catch (err) {
+      attempts.push({ provider: 'Local Ollama (Base Server)', model: 'auto', error: err.message, status: err.status || 0 });
     }
   }
 

@@ -6,6 +6,7 @@ import { NAV } from './config.js';
 import { store } from './store.js';
 import { chatDetailed } from './llm.js';
 import { toast } from './ui.js';
+import { captureActiveViewImage, buildComprehensivePageContext, openFreeAiConnectModal } from './page_context.js';
 
 const chatState = {
   open: false,
@@ -174,26 +175,29 @@ export function mountPageChat(ui) {
     renderMessages();
 
     const route = ui.route || 'overview';
-    const ctx = getPageContextSummary(route);
+    const ctxText = buildComprehensivePageContext(route);
+    const image = captureActiveViewImage();
     const system = [
       'אתה יועץ המסחר והמחקר האישי של המשתמש במערכת Alta Capital.',
       'השב בעברית ברורה, תמציתית ומדויקת (עד 6-8 שורות).',
       'הסבר למשתמש מה הוא רואה בעמוד הנוכחי, מה המשמעות של המספרים/גרפים, ואיך לקבל החלטה מושכלת.',
-      `הקשר חי מתוך העמוד הנוכחי:\n${ctx.summary}`,
+      `קונטקסט חי ומקיף מתוך העמוד הנוכחי:\n${ctxText}`,
     ].join('\n\n');
 
     try {
       const res = await chatDetailed({
         system,
         messages: chatState.messages.slice(-6),
-        maxTokens: 380,
+        maxTokens: 420,
+        preferWeb: true,
+        image,
       });
-      const via = res.label || res.model ? `\n\n— ${res.label || res.model}` : '';
+      const via = res.label || res.model ? `\n\n— ✨ סופק ע"י ${res.label || res.model}` : '';
       chatState.messages.push({ role: 'assistant', content: (res.text || 'לא התקבלה תשובה.') + via });
     } catch (err) {
       chatState.messages.push({
         role: 'assistant',
-        content: `${defaultPageIntro(route)}\n\n(הערה: חיבור ה-AI לא החזיר תשובה כרגע: ${err?.message || 'שגיאת חיבור'} — תוכל ללחוץ למטה על "✨ שאל ב-Gemini" או "📋 העתק לאנטיוגרוויטי" לשאילתה חכמה עם כל הקונטקסט.)`,
+        content: `${defaultPageIntro(route)}\n\n(הערה: פנייה למודלים נכשלה: ${err?.message || 'שגיאת חיבור'} — תוכל ללחוץ למטה על "⚡ חבר חשבון AI" כדי לחבר את חשבון ה-Gemini או Groq החינמי שלך.)`,
       });
     } finally {
       chatState.busy = false;
@@ -230,21 +234,28 @@ export function mountPageChat(ui) {
   const externalRow = document.createElement('div');
   externalRow.style.cssText = 'padding:5px 10px;border-top:1px solid #172338;display:flex;gap:6px;flex-wrap:wrap;background:#08101d;';
 
+  const connectAiBtn = document.createElement('button');
+  connectAiBtn.type = 'button';
+  connectAiBtn.className = 'btn btn-sm btn-primary';
+  connectAiBtn.style.cssText = 'font-size:11px;padding:3px 8px;background:linear-gradient(90deg,#38bdf8,#2563eb);border:none;color:#fff;width:100%;margin-bottom:4px;';
+  connectAiBtn.textContent = '⚡ חבר חשבונות AI (Gemini, Groq, Claude...)';
+  connectAiBtn.onclick = () => openFreeAiConnectModal(ui);
+
   const geminiBtn = document.createElement('button');
   geminiBtn.type = 'button';
   geminiBtn.className = 'btn btn-sm';
   geminiBtn.style.cssText = 'font-size:11px;padding:3px 8px;border-color:rgba(88,166,255,0.45);color:#93c5fd;flex:1;';
-  geminiBtn.textContent = '✨ שאל ב-Gemini (עם קונטקסט)';
+  geminiBtn.textContent = '✨ שאל ב-Gemini (קונטקסט)';
   geminiBtn.onclick = () => copySmartPrompt(true);
 
   const agyBtn = document.createElement('button');
   agyBtn.type = 'button';
   agyBtn.className = 'btn btn-sm btn-ghost';
   agyBtn.style.cssText = 'font-size:11px;padding:3px 8px;border:1px solid rgba(167,139,250,0.4);color:#c4b5fd;flex:1;';
-  agyBtn.textContent = '📋 העתק לאנטיוגרוויטי';
+  agyBtn.textContent = '📋 העתק שאילתה';
   agyBtn.onclick = () => copySmartPrompt(false);
 
-  externalRow.append(geminiBtn, agyBtn);
+  externalRow.append(connectAiBtn, geminiBtn, agyBtn);
 
   form.onsubmit = (e) => {
     e.preventDefault();

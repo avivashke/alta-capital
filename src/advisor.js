@@ -5,6 +5,7 @@ import { PLATFORMS } from './config.js';
 import { hasModelKey, chatDetailed, colibriConfigured } from './llm.js';
 import { store } from './store.js';
 import { marketState } from './market.js';
+import { buildComprehensivePageContext } from './page_context.js';
 
 export function buildDigest(state = store.state) {
   const s = state.settings;
@@ -162,22 +163,42 @@ export function openingMessage() {
   };
 }
 
-export async function askAdvisor(question, history = []) {
+export async function askAdvisor(question, history = [], { route = 'overview', image = null } = {}) {
   const digest = buildDigest();
-  const context = `מצב המערך כפי שהוא עכשיו (JSON):\n${JSON.stringify(digest, null, 2)}`;
+  const pageContext = buildComprehensivePageContext(route);
+  const context = `🖥️ נתוני המסך והעמוד הנוכחי (#${route}):\n${pageContext}\n\n📊 מצב המערך והשולחנות (JSON):\n${JSON.stringify(digest, null, 2)}`;
   const messages = [
     ...history.slice(-8).map((m) => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content })),
-    { role: 'user', content: `${context}\n\nשאלת המשתמש: ${question}` },
+    { role: 'user', content: `${context}\n\n❓ שאלת המשתמש:\n${question}` },
   ];
-  if (!hasModelKey()) return localAnswer(question, digest);
-  // The advisor is one of the team's thinking seats: Colibri answers when it exists.
-  const res = await chatDetailed({
-    system: SYSTEM,
-    messages,
-    maxTokens: 1400,
-    preferColibri: colibriConfigured(),
-  });
-  return res.text;
+
+  try {
+    // Send with highest priority to online models (Gemini, Groq, OpenRouter, Claude, Grok) with generous free tokens & vision!
+    const res = await chatDetailed({
+      system: SYSTEM,
+      messages,
+      maxTokens: 1400,
+      preferWeb: true,
+      preferColibri: false,
+      image,
+    });
+    return {
+      text: res.text,
+      label: res.label || res.model,
+      model: res.model,
+      provider: res.provider,
+    };
+  } catch (err) {
+    console.warn('[askAdvisor] online models failed, falling back to local advice:', err.message);
+    const text = localAnswer(question, digest);
+    return {
+      text,
+      label: 'מצב כללים מקומי (Fallback)',
+      model: 'deterministic-rules',
+      provider: 'local',
+      error: err.message,
+    };
+  }
 }
 
 export function localAnswer(question, digest = buildDigest()) {

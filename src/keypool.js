@@ -104,10 +104,33 @@ export function entryStatus(entry, now = Date.now()) {
   return 'ready';
 }
 
+export const PROVIDER_PRIORITY = {
+  gemini: 100,
+  groq: 95,
+  openrouter: 90,
+  anthropic: 85,
+  xai: 80,
+  cloudflare: 75,
+  mistral: 70,
+  deepseek: 65,
+  nvidia: 60,
+  together: 55,
+  openai: 50,
+  pollinations: 45,
+  'server-proxy': 40,
+  ollama: 10,
+  webllm: 5,
+};
+
 export function availableEntries(state, now = Date.now()) {
   return poolEntries(state)
     .filter((e) => entryStatus(e, now) === 'ready')
     .sort((a, b) => {
+      // Prioritize online models with generous free tokens & personal user keys
+      const pa = PROVIDER_PRIORITY[a.provider] || 50;
+      const pb = PROVIDER_PRIORITY[b.provider] || 50;
+      if (pa !== pb) return pb - pa;
+
       // least recently used first; ties broken by how much daily budget is left
       const la = a.lastUsedAt || 0;
       const lb = b.lastUsedAt || 0;
