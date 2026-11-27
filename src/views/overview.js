@@ -3,6 +3,7 @@ import { DISCLAIMER } from '../config.js';
 import { h, mount, kpi, pct, num, money, section, notice, empty, tag, timeAgo } from '../ui.js';
 import { deskCard, feedList, agentCard } from './shared.js';
 import { localAdvice } from '../advisor.js';
+import { lastAutoFor, autoActionsEnabled } from '../autopilot_actions.js';
 import { marketState } from '../market.js';
 import { tick, runDeskCycle, ensurePaperPortfolio, getPaperPortfolio } from '../firm.js';
 import { quotes } from '../market.js';
@@ -108,6 +109,7 @@ export function renderOverview(root, ui) {
             h('div', { class: 'grow' },
               h('div', { style: { fontWeight: 600 }, text: a.title }),
               h('div', { class: 'tiny muted', text: (a.detail || '').slice(0, 130) }),
+              autoActionsEnabled() ? h('div', { class: 'tiny', style: { marginTop: '4px', color: '#34d399' }, text: lastAutoFor(a.id) ? ('✅ בוצע אוטומטית · ' + lastAutoFor(a.id).result) : '🤖 מטופל אוטומטית על ידי האוטופיילוט' }) : null,
               a.action ? h('button', { class: 'btn-link', style: { marginTop: '4px' }, onclick: () => ui.go(a.action.route) }, a.action.label) : null,
             ),
           ))),

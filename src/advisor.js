@@ -78,6 +78,7 @@ export function localAdvice(state = store.state) {
 
   if (!hasModelKey()) {
     out.push({
+      id: 'key',
       title: 'חבר מפתח מודל ליועץ',
       detail: 'בלי מפתח, היועץ עובד במצב כללים מקומי. הוסף מפתח ב"הגדרות ומפתחות" וקבל ניתוח חופשי על מצב התיק.',
       action: { label: 'להגדרות', route: 'settings' },
@@ -85,6 +86,7 @@ export function localAdvice(state = store.state) {
   }
   if (stuck.length) {
     out.push({
+      id: 'stuck',
       title: 'הרץ מחזור כיול על השולחנות התקועים',
       detail: `${stuck.map((d) => d.short).join(', ')} עדיין לא עברו את שערי הקידום. כל מחזור מוסיף אופטימיזציה על נתוני out-of-sample.`,
       action: { label: 'למעבדה', route: 'lab' },
@@ -92,6 +94,7 @@ export function localAdvice(state = store.state) {
   }
   if (dry.length) {
     out.push({
+      id: 'dry',
       title: 'השלם dry-run לפני הרצה חיה',
       detail: `${dry.length} שולחנות בהרצה על יבש. צריך 3 מחזורים נקיים ומדדים חיוביים כדי לעבור לנייר חי.`,
       action: { label: 'לגרסאות', route: 'bots' },
@@ -99,6 +102,7 @@ export function localAdvice(state = store.state) {
   }
   if (live.length) {
     out.push({
+      id: 'livegap',
       title: 'פקח על פער בין בקטסט לנייר חי',
       detail: `בהרצה חיה: ${live.map((d) => `${d.short} (${(Number(d.livePnl) || 0).toFixed(2)}%)`).join(', ')}. פער שלילי מתמשך מעיד על overfitting — שקול להחזיר לכיול.`,
       action: { label: 'לשולחנות', route: 'desks' },
@@ -106,6 +110,7 @@ export function localAdvice(state = store.state) {
   }
   if (synthetic) {
     out.push({
+      id: 'synthetic',
       title: 'נתוני השוק הם הדגמה',
       detail: 'שליפת הנרות האמיתית נחסמה (CORS/geo). כל התוצאות מבוססות על סדרה סינתטית — אל תסיק מהן מסקנות על השוק.',
       action: { label: 'למחקר', route: 'research' },
@@ -113,6 +118,7 @@ export function localAdvice(state = store.state) {
   }
   if ((state.sentiment.newsScore ?? 0) < -0.3) {
     out.push({
+      id: 'sentiment',
       title: 'סנטימנט שלילי ברשתות',
       detail: 'הכותרות שנאספו נוטות לשלילי. הורד חשיפה או המתן לאישור מחיר לפני פתיחת פוזיציות חדשות.',
       action: { label: 'לסנטימנט', route: 'sentiment' },
@@ -121,6 +127,7 @@ export function localAdvice(state = store.state) {
   const fragile = desks.filter((d) => d.version && (d.assessment?.robustness ?? 100) < (s.minRobustness ?? 50));
   if (fragile.length) {
     out.push({
+      id: 'fragile',
       title: 'גרסאות עם חוסן סטטיסטי נמוך',
       detail: `${fragile.map((d) => `${d.short} (${d.assessment?.robustness ?? '—'}/100)`).join(', ')} — לא יקודמו להרצה חיה עד שהחוסן יעלה. שקול צמצום פרמטרים או החלפת משפחה.`,
       action: { label: 'למעבדה', route: 'lab' },
@@ -128,6 +135,7 @@ export function localAdvice(state = store.state) {
   }
   if (state.ideas.filter((i) => !i.tested).length > 3) {
     out.push({
+      id: 'ideas',
       title: 'יש רעיונות מחקר שלא נבדקו',
       detail: `${state.ideas.filter((i) => !i.tested).length} רעיונות מ-GitHub/רשתות ממתינים לבדיקה. שלח אותם לשולחן מתאים כדי להרחיב את מאגר האסטרטגיות.`,
       action: { label: 'למחקר', route: 'research' },
@@ -135,6 +143,7 @@ export function localAdvice(state = store.state) {
   }
   if (!out.length) {
     out.push({
+      id: 'stable',
       title: 'המערך יציב — המשך לצבור מחזורים',
       detail: 'כל השולחנות עברו את הספים או נמצאים בהרצה חיה. המשך לנטר את פער הבקטסט מול הנייר.',
       action: { label: 'לסקירה', route: 'overview' },

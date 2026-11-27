@@ -1,0 +1,33 @@
+# docker compose up -d --build                # app only (LAN: http://<pc-ip>:8181)
+# docker compose --profile tunnel up -d       # + public HTTPS address for your phone (Cloudflare quick tunnel)
+# docker compose logs tunnel                  # shows the https://....trycloudflare.com address
+services:
+  alta:
+    build: .
+    container_name: alta-capital
+    restart: unless-stopped
+    ports:
+      - "8181:8181"
+    environment:
+      DB_MODE: local
+      OLLAMA_URL: http://host.docker.internal:11434
+      COLIBRI_URL: http://host.docker.internal:8000
+      ENABLE_LOCAL_CRON: "true"
+      CRON_INTERVAL_MIN: "15"
+      # Required: remote visitors (phone/tunnel) must log in. Set it in .env.docker as ALTA_BASIC_AUTH=user:strong-password
+      ALTA_BASIC_AUTH: ${ALTA_BASIC_AUTH:?Set ALTA_BASIC_AUTH=user:password in .env.docker (use scripts/docker-up.ps1)}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data:/app/data
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: alta-tunnel
+    restart: unless-stopped
+    profiles: ["tunnel"]
+    depends_on:
+      - alta
+    # Quick tunnel = random address. For a permanent address use a named tunnel:
+    #   command: tunnel --no-autoupdate run   (+ environment: TUNNEL_TOKEN=...)
+    command: tunnel --no-autoupdate --url http://alta:8181

@@ -110,7 +110,7 @@ async function fetchJson(url, timeout = 9000) {
 
 async function fromBinance(symbol, tf, limit) {
   // Binance returns at most 1000 bars per call, so page backwards to reach years of history.
-  const target = Math.min(Math.max(Number(limit) || 0, 60), 6000);
+  const target = Math.min(Math.max(Number(limit) || 0, 60), 20000);
   const out = [];
   let endTime = Date.now();
   while (out.length < target) {

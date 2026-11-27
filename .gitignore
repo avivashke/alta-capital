@@ -22,3 +22,4 @@ data/whatsapp-agent-config.json
 data/whatsapp_gann.json
 *.tmp
 *.log
+.env.docker

@@ -10,6 +10,7 @@ import { runAiDirector } from '../ai.js';
 import { auditSystemTruth } from '../auditor.js';
 import { marketState } from '../market.js';
 import { renderEducationalChatWidget } from './academy.js';
+import { handleTeamCommand, runAutoActions, autoActionsEnabled, recentAutoActions } from '../autopilot_actions.js';
 import {
   ensureFirmMemory,
   analyzeDeskWithFreeAi,
@@ -974,6 +975,55 @@ function renderAiResearchCard(ui) {
           list('פעולות בעדיפות', latest.priorityActions, (x) => String(x))),
   );
 }
+// ---------- Team command center: the machine runs by itself, the owner steps in with plain text ----------
+const cmdUi = { draft: '', busy: false, thread: [] };
+
+async function sendTeamCommand(ui) {
+  const text = (cmdUi.draft || '').trim();
+  if (!text || cmdUi.busy) return;
+  cmdUi.draft = '';
+  cmdUi.busy = true;
+  cmdUi.thread.push({ role: 'user', text });
+  ui.rerender();
+  try {
+    const res = await handleTeamCommand(text);
+    cmdUi.thread.push({ role: 'team', text: res.reply || (res.ok ? 'בוצע.' : 'לא הצלחתי לבצע.') });
+  } catch (err) {
+    cmdUi.thread.push({ role: 'team', text: `⚠️ שגיאה: ${err.message}` });
+  } finally {
+    cmdUi.busy = false;
+    cmdUi.thread = cmdUi.thread.slice(-12);
+    ui.rerender();
+  }
+}
+
+function renderTeamCommandCard(ui) {
+  const enabled = autoActionsEnabled();
+  const recent = recentAutoActions(6);
+  const bubble = (m) => h('div', {
+    style: { margin: '5px 0', padding: '8px 10px', borderRadius: '10px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', lineHeight: '1.55', fontSize: '13px',
+      background: m.role === 'user' ? 'rgba(59, 130, 246, 0.16)' : 'rgba(15, 29, 48, 0.92)' },
+  }, h('div', { class: 'tiny muted', text: m.role === 'user' ? 'אתה' : 'הצוות' }), m.text);
+  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: enabled ? 'rgba(46, 204, 113, 0.5)' : 'rgba(224, 182, 74, 0.5)' } },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: '🎛️ מרכז פיקוד הצוות — האוטופיילוט רץ לבד, ואתה מתערב בטקסט' }),
+        h('div', { class: 'card-sub', text: 'הפעולות המומלצות מתבצעות אוטומטית. כתוב לצוות חופשי, למשל: "הרץ כיול על 1h" · "סיכון 1%" · "עצור אוטומציה" · או כל הנחיה ("התמקד בקריפטו").' })),
+      tag(enabled ? '🤖 אוטופיילוט פעיל' : '⏸ אוטופיילוט כבוי', enabled ? 'live' : 'opt')),
+    recent.length ? h('div', { style: { marginBottom: '8px' } },
+      h('strong', { class: 'small', text: 'פעולות אחרונות שבוצעו לבד:' }),
+      h('ul', { class: 'list-clean' }, ...recent.map((x) => h('li', { class: 'tiny', style: { overflowWrap: 'anywhere' }, text: `${timeAgo(x.at)} · ${x.title}: ${x.result}` })))) : null,
+    ...cmdUi.thread.map(bubble),
+    h('div', { class: 'row', style: { gap: '8px', marginTop: '8px' } },
+      h('input', {
+        class: 'input', style: { flex: '1' }, placeholder: 'כתוב הוראה לצוות…', value: cmdUi.draft,
+        oninput: (e) => { cmdUi.draft = e.target.value; },
+        onkeydown: (e) => { if (e.key === 'Enter') sendTeamCommand(ui); },
+      }),
+      h('button', { class: 'btn btn-sm btn-primary', disabled: cmdUi.busy, onclick: () => sendTeamCommand(ui) }, cmdUi.busy ? '⏳' : 'שלח'),
+      h('button', { class: 'btn btn-sm', onclick: () => runAutoActions({ force: true }).then(() => ui.rerender()) }, '▶ הרץ פעולות מומלצות עכשיו')),
+  );
+}
 export function renderAgents(root, ui) {
   const state = store.state;
   const agents = state.agents || [];
@@ -1048,6 +1098,7 @@ export function renderAgents(root, ui) {
   ));
 
   mount(root, renderTruthAuditorCard(state, ui));
+  mount(root, renderTeamCommandCard(ui));
   mount(root, renderAiResearchCard(ui));
 
   mount(root, renderAiTeamLearningLab(state, ui));

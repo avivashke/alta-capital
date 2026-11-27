@@ -1,0 +1,12 @@
+node_modules
+.git
+.env
+.env.*
+!.env.example
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/backups
+data/x-browser-profile
+data/whatsapp-browser-profile
+*.log

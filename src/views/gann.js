@@ -2040,8 +2040,14 @@ export function renderGann(root, ui) {
     type: 'text',
     placeholder: 'כל סימול אחר (למשל JPM, COIN, LINKUSDT)',
     style: { width: '215px' },
+    list: 'gann-symbols-dl',
+    autocomplete: 'off',
     value: gannViewState.customSymbol,
     oninput: (e) => { gannViewState.customSymbol = e.target.value.trim().toUpperCase(); },
+    onchange: (e) => {
+      const val = e.target.value.trim().toUpperCase();
+      if (val && ASSET_CATALOG.some((x) => x.symbol.toUpperCase() === val)) { gannViewState.customSymbol = val; selectGannAsset(val, ui); }
+    },
     onkeydown: (e) => {
       if (e.key === 'Enter') {
         const val = e.target.value.trim().toUpperCase();
@@ -2055,6 +2061,8 @@ export function renderGann(root, ui) {
     step: 'any',
     placeholder: 'מחיר עוגן ידני (אופציונלי)',
     style: { width: '175px' },
+    list: 'gann-anchor-prices-dl',
+    autocomplete: 'off',
     value: gannViewState.manualPrice,
     oninput: (e) => { gannViewState.manualPrice = e.target.value; },
   });
@@ -2066,10 +2074,65 @@ export function renderGann(root, ui) {
     oninput: (e) => { gannViewState.manualDate = e.target.value; },
   });
 
+  // Dropdown helpers: pick any catalog symbol, key price level or recent pivot instead of typing
+  const symbolsDatalist = h('datalist', { id: 'gann-symbols-dl' }, ASSET_CATALOG.map((x) => h('option', { value: x.symbol }, x.label)));
+  const recentPivots = [...(a?.pivots || [])].sort((p, q) => q.t - p.t).slice(0, 14);
+  const levelOpts = [
+    ['מחיר נוכחי', a?.currentPrice],
+    ['שיא טווח', a?.swingHigh],
+    ['שפל טווח', a?.swingLow],
+    ['אמצע טווח 50%', a?.swingHigh && a?.swingLow ? (a.swingHigh + a.swingLow) / 2 : null],
+  ].filter(([, v]) => Number.isFinite(Number(v)) && Number(v) > 0);
+  const priceDatalist = h('datalist', { id: 'gann-anchor-prices-dl' }, [
+    ...levelOpts.map(([l, v]) => h('option', { value: String(+fmtPriceSmart(v)) }, l)),
+    ...recentPivots.map((p) => h('option', { value: String(+fmtPriceSmart(p.price)) }, `${p.type === 'low' ? 'שפל' : 'שיא'} ${new Date(p.t).toISOString().slice(0, 10)}`)),
+  ]);
+  const anchorSelect = h('select', {
+    class: 'input',
+    style: { width: '215px' },
+    title: 'בחירת עוגן מנקודות המפנה האחרונות של הנכס',
+    onchange: (e) => {
+      const v = e.target.value;
+      if (!v) return;
+      const [price, date] = v.split('|');
+      gannViewState.manualPrice = price;
+      gannViewState.manualDate = date;
+      gannViewState.key = null;
+      loadGannData(ui);
+    },
+  },
+    h('option', { value: '' }, '📍 בחר עוגן מהרשימה…'),
+    ...recentPivots.map((p) => {
+      const date = new Date(p.t).toISOString().slice(0, 10);
+      return h('option', { value: `${+fmtPriceSmart(p.price)}|${date}` }, `${p.type === 'low' ? 'שפל' : 'שיא'} ${fmtPriceSmart(p.price)} · ${date}`);
+    }),
+  );
+  const symbolPick = h('select', {
+    class: 'input',
+    style: { width: '190px' },
+    title: 'בחירת נכס מהרשימה',
+    onchange: (e) => { const v = e.target.value; if (v) { gannViewState.customSymbol = v; selectGannAsset(v, ui); } },
+  },
+    h('option', { value: '' }, '📋 בחר נכס מהרשימה…'),
+    ...ASSET_CATALOG.map((x) => h('option', { value: x.symbol, selected: x.symbol === gannViewState.symbol }, `${x.label} (${x.symbol})`)),
+  );
+  const pricePick = h('select', {
+    class: 'input',
+    style: { width: '190px' },
+    title: 'בחירת מחיר עוגן מרמות מפתח ומנקודות מפנה',
+    onchange: (e) => { if (e.target.value) { gannViewState.manualPrice = e.target.value; manualPriceEl.value = e.target.value; } },
+  },
+    h('option', { value: '' }, '💲 בחר מחיר עוגן…'),
+    ...levelOpts.map(([l, v]) => h('option', { value: String(+fmtPriceSmart(v)) }, `${l} · ${fmtPriceSmart(v)}`)),
+    ...recentPivots.map((p) => h('option', { value: String(+fmtPriceSmart(p.price)) }, `${p.type === 'low' ? 'שפל' : 'שיא'} ${fmtPriceSmart(p.price)} · ${new Date(p.t).toISOString().slice(0, 10)}`)),
+  );
   mount(root,
     h('div', { class: 'card', style: { marginTop: '12px', padding: '12px 14px' } },
       h('div', { class: 'row', style: { gap: '10px', flexWrap: 'wrap', alignItems: 'center' } },
         h('span', { class: 'small muted', text: '🎯 התאמה והזנת נכס/עוגן:' }),
+        symbolsDatalist,
+        priceDatalist,
+        symbolPick,
         customInputEl,
         h('button', {
           class: 'btn btn-sm btn-primary',
@@ -2080,6 +2143,8 @@ export function renderGann(root, ui) {
             selectGannAsset(val, ui);
           },
         }, 'טען נכס מותאם'),
+        anchorSelect,
+        pricePick,
         manualPriceEl,
         manualDateEl,
         h('button', {

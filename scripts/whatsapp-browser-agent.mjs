@@ -697,7 +697,7 @@ export function sanitizeWhatsAppReportForSync(report) {
 // Interactive QR Login & Single-Group Read-Only Scanner
 // ---------------------------------------------------------------------------
 
-export async function launchWhatsAppLogin({ timeoutMs = 240_000 } = {}) {
+export async function launchWhatsAppLogin({ timeoutMs = 240_000, holdOpenMs = 45_000 } = {}) {
   const pw = await loadPlaywright();
   if (!pw) {
     return { ok: false, error: 'Playwright אינו מותקן. הרץ: npm run setup:x-agent:win (הוא מתקין playwright-core שמשמש גם לוואטסאפ).' };
@@ -763,6 +763,18 @@ export async function launchWhatsAppLogin({ timeoutMs = 240_000 } = {}) {
       loggedInAt: new Date().toISOString(),
       discoveredGroups: groups.length ? groups : cfg.discoveredGroups,
     });
+    // Keep the window visible for a moment so the user can see the connection (it used to flash and close in ~8s)
+    try {
+      await page.bringToFront().catch(() => {});
+      await page.evaluate((n) => {
+        const b = document.createElement('div');
+        b.textContent = '✓ Alta Capital מחובר ל-WhatsApp Web — החלון ייסגר אוטומטית בעוד ' + Math.round(n / 1000) + ' שניות (אפשר לסגור ידנית)';
+        b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#0f766e;color:#fff;padding:10px;text-align:center;font:600 14px sans-serif;direction:rtl';
+        document.body.appendChild(b);
+      }, holdOpenMs).catch(() => {});
+      const holdUntil = Date.now() + holdOpenMs;
+      while (Date.now() < holdUntil && !page.isClosed()) await sleep(1000);
+    } catch { /* ignore */ }
     return {
       ok: true,
       loggedIn: true,

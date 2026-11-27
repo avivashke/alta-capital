@@ -100,6 +100,7 @@ export function buildPrompt(state = store.state) {
 ${JSON.stringify({
     capital: state.settings.capital,
     riskPerTrade: state.settings.riskPerTrade,
+    userDirectives: (state.teamDirectives || []).slice(-5).map((x) => x.text),
     thresholds: {
       promotionDeltaPct: state.settings.promotionDelta,
       minRobustness: state.settings.minRobustness,

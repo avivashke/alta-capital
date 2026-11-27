@@ -3,6 +3,7 @@
 import { store } from './store.js';
 import { NAV } from './config.js';
 import { ensureDeskFields, startMarketFeed, tick, catchUp, rehydratePaperPortfolio } from './firm.js';
+import { runAutoActions } from './autopilot_actions.js';
 import { marketState, onQuotes, quotes } from './market.js';
 import { openingMessage } from './advisor.js';
 import { syncFromCloud, applyMagicSyncFromHash } from './remote.js';
@@ -365,6 +366,10 @@ function boot() {
       tick({ reason: cloudMode ? 'local-nudge' : 'auto' }).catch((err) => console.warn('[autopilot]', err));
     }
   }, 1000);
+
+  // The recommended actions run by themselves (checked every minute, executed at most every 4 minutes)
+  setInterval(() => { if (cloudReady) runAutoActions().catch((err) => console.warn('[auto-actions]', err)); }, 60000);
+  setTimeout(() => { if (cloudReady) runAutoActions({ force: true }).catch(() => {}); }, 25000);
 
   // Periodic cross-device sync every 20s so phone/PC/Base Server stay aligned
   setInterval(() => {

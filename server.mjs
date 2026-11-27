@@ -11,6 +11,7 @@
 //    even if the cloud is temporarily unreachable, then reconciles automatically when back online.
 
 import http from 'node:http';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -47,7 +48,17 @@ loadEnvFile('.env');
 loadEnvFile('.env.local');
 
 const { handleDbRequest, readDbFile, writeDbFile, getSupaEnv } = await import('./netlify/functions/db.mjs');
-const { runFirmCronJob } = await import('./netlify/functions/firm-cron.mjs');
+const { runFirmCronJob: runFirmCronJobInline } = await import('./netlify/functions/firm-cron.mjs');
+const { runFirmCronInWorker } = await import('./cron_worker.mjs');
+// Heavy cycles run off the main thread; fall back to inline only if the worker cannot start.
+async function runFirmCronJob(opts) {
+  try {
+    return await runFirmCronInWorker(opts);
+  } catch (err) {
+    console.warn('[Base Server] cron worker failed, running inline:', err.message);
+    return runFirmCronJobInline(opts);
+  }
+}
 const { startResearchWorker, getResearchNotes, runResearchPass } = await import('./ai_research.mjs');
 const { handleMarketRequest } = await import('./netlify/functions/market.mjs');
 const { mergeFirmStates, remoteHasMoreOrNewerData } = await import('./src/state_merge.js');
@@ -493,7 +504,28 @@ function buildHealthPayload() {
   };
 }
 
+// Optional site-wide login for remote access (phone over a tunnel / Docker). Loopback stays open.
+const BASIC_AUTH = (process.env.ALTA_BASIC_AUTH || '').trim();
+function isLoopbackReq(req) {
+  const addr = req.socket?.remoteAddress || '';
+  return addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1';
+}
+function basicAuthOk(req) {
+  if (!BASIC_AUTH || isLoopbackReq(req)) return true;
+  const auth = req.headers.authorization || '';
+  if (auth.startsWith('Basic ')) {
+    const given = Buffer.from(auth.slice(6), 'base64');
+    const want = Buffer.from(BASIC_AUTH);
+    if (given.length === want.length && crypto.timingSafeEqual(given, want)) return true;
+  }
+  return auth === `Bearer ${BASE_SERVER_TOKEN}` && !!BASE_SERVER_TOKEN;
+}
 const server = http.createServer(async (req, res) => {
+  if (!basicAuthOk(req)) {
+    res.writeHead(401, { 'WWW-Authenticate': 'Basic realm=\"Alta Capital\", charset=\"UTF-8\"', 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Authentication required');
+    return;
+  }
   const urlObj = new URL(req.url || '/', `http://localhost:${PORT}`);
   const pathname = decodeURIComponent(urlObj.pathname);
 

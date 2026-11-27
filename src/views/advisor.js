@@ -1,6 +1,7 @@
 import { mount } from '../ui.js';
 import { store } from '../store.js';
 import { askAdvisor, localAdvice, openingMessage, quickPrompts } from '../advisor.js';
+import { lastAutoFor, autoActionsEnabled } from '../autopilot_actions.js';
 import { hasModelKey } from '../llm.js';
 import { h, section, notice, toast, timeAgo, tag, empty } from '../ui.js';
 import { captureActiveViewImage, openFreeAiConnectModal } from '../page_context.js';
@@ -122,6 +123,7 @@ export function renderAdvisor(root, ui) {
         h('div', { class: 'grow' },
           h('div', { class: 'who' }, h('b', { text: a.title })),
           h('div', { class: 'small muted', text: a.detail }),
+          autoActionsEnabled() ? h('div', { class: 'tiny', style: { marginTop: '6px', color: '#34d399' }, text: lastAutoFor(a.id) ? ('✅ בוצע אוטומטית · ' + lastAutoFor(a.id).result) : '🤖 מטופל אוטומטית על ידי האוטופיילוט' }) : null,
           a.action ? h('button', { class: 'btn-link', style: { marginTop: '6px' }, onclick: () => ui.go(a.action.route) }, a.action.label) : null,
         ),
       ))),
