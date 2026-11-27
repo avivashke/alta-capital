@@ -1,6 +1,7 @@
 // Strategy families. Each returns a "desired position" series: 1 long, -1 short, 0 flat.
 
 import * as ind from './indicators.js';
+import { quantVolatilitySignal } from './quant_volatility_stack.js';
 
 const int = (min, max) => ({ type: 'int', min, max });
 const flt = (min, max, step = 0.1) => ({ type: 'float', min, max, step });
@@ -391,6 +392,38 @@ export const STRATEGIES = {
       return out;
     },
   },
+
+  quant_volatility_stack: {
+    label: 'סטאק תנודתיות כמותי (Quant Volatility Stack · HAR + Student-t)',
+    blurb: 'מודל חיזוי תנודתיות HAR-RV רב-אופקי (1, 5, 15 נרות) ותמחור הסתברותי Student-t רחב-זנבות להפקת יתרון סטטיסטי (Edge) כיווני מובהק.',
+    warmup: 25,
+    space: {
+      lookback: int(8, 25),
+      minEdgePct: flt(2.5, 7.5, 0.5),
+      nu: int(3, 8),
+      tauMultiplier: flt(0.8, 2.0, 0.2),
+      atrStop: flt(1.2, 3.2),
+      rr: flt(1.5, 3.8),
+    },
+    positions(candles, p) {
+      const out = new Array(candles.length).fill(0);
+      const lookback = Math.max(5, Math.round(p.lookback || 14));
+      const minEdge = (p.minEdgePct || 4.5) / 100;
+      const nu = Math.max(3, Math.round(p.nu || 5));
+      const tauMultiplier = Number(p.tauMultiplier) || 1.2;
+      let state = 0;
+
+      for (let i = 20; i < candles.length; i++) {
+        const slice = candles.slice(Math.max(0, i - 40), i + 1);
+        const sig = quantVolatilitySignal(slice, { lookback, minEdge, nu, tauMultiplier });
+        if (sig.dir === 1) state = 1;
+        else if (sig.dir === -1) state = -1;
+        else if (state !== 0 && (!sig.edge || !sig.edge.hasEdge)) state = 0;
+        out[i] = state;
+      }
+      return out;
+    },
+  },
 };
 
 export const STRATEGY_IDS = Object.keys(STRATEGIES);
@@ -416,7 +449,7 @@ export function describeParams(id, params) {
   const s = STRATEGIES[id];
   return Object.entries(params)
     .map(([k, v]) => {
-      const label = { fast: 'מהיר', slow: 'איטי', atrStop: 'סטופ ATR', rr: 'יעד R:R', period: 'תקופה', oversold: 'קניית יתר', overbought: 'מכירת יתר', threshold: 'סף %', trendFilter: 'פילטר מגמה', filter: 'פילטר', signal: 'סיגנל', lookback: 'מבט לאחור', stepDiv: 'חלוקת צעד גאן', cycle: 'מחזור זמן', mom: 'מומנטום', emaFast: 'EMA מהיר', emaSlow: 'EMA איטי', mult: 'מכפיל', adxPeriod: 'תקופת ADX', adxMin: 'ADX מינ׳', z: 'Z-score', emaP: 'תקופת EMA', atrP: 'תקופת ATR', erP: 'תקופת ER', erMin: 'ER מינ׳' }[k] || k;
+      const label = { fast: 'מהיר', slow: 'איטי', atrStop: 'סטופ ATR', rr: 'יעד R:R', period: 'תקופה', oversold: 'קניית יתר', overbought: 'מכירת יתר', threshold: 'סף %', trendFilter: 'פילטר מגמה', filter: 'פילטר', signal: 'סיגנל', lookback: 'מבט לאחור', stepDiv: 'חלוקת צעד גאן', cycle: 'מחזור זמן', mom: 'מומנטום', emaFast: 'EMA מהיר', emaSlow: 'EMA איטי', mult: 'מכפיל', adxPeriod: 'תקופת ADX', adxMin: 'ADX מינ׳', z: 'Z-score', emaP: 'תקופת EMA', atrP: 'תקופת ATR', erP: 'תקופת ER', erMin: 'ER מינ׳', minEdgePct: 'יתרון מינ׳ %', nu: 'דרגות חופש ν', tauMultiplier: 'מכפיל פקיעה τ' }[k] || k;
       return `${label}=${typeof v === 'boolean' ? (v ? 'כן' : 'לא') : v}`;
     })
     .join(' · ') || (s ? 'ברירת מחדל' : '—');

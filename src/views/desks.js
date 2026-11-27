@@ -1,7 +1,7 @@
 import { store } from '../store.js';
 import { h, pct, num, money, section, statusTag, chart, tag, notice, empty } from '../ui.js';
 import { metricsTable, gateList, strategyName, universeTable } from './shared.js';
-import { runDeskCycle, resetDesk, setDeskStatus, getPaperPortfolio, ensurePaperPortfolio } from '../firm.js';
+import { runDeskCycle, resetDesk, setDeskStatus, getPaperPortfolio, ensurePaperPortfolio, replaceLosingDeskWithNostroWinner } from '../firm.js';
 import { quotes } from '../market.js';
 
 function mount(root, ...children) {
@@ -62,6 +62,7 @@ export function renderDesks(root, ui) {
             tag(desk.symbol),
             tag(`${desk.tf} candles`),
             desk.version ? tag(desk.version, 'green') : null,
+            desk.upgradedFromNostro ? tag(`⚡ מוסמך נוסטרו: ${desk.upgradedFromNostro.botName}`, 'live') : null,
             desk.marketRegime?.label ? tag(`🌡 ${desk.marketRegime.label}`, 'opt') : null,
             desk.lastAudit
               ? tag(
@@ -125,6 +126,15 @@ export function renderDesks(root, ui) {
             desk.status === 'live'
               ? h('button', { class: 'btn btn-sm', onclick: () => act(() => setDeskStatus(desk.id, 'dry-run'), 'dry') }, 'חזור ליבש')
               : null,
+            h('button', {
+              class: 'btn btn-sm btn-outline',
+              style: { borderColor: '#10b981', color: '#34d399', fontWeight: '700' },
+              onclick: () => act(() => {
+                const res = replaceLosingDeskWithNostroWinner(desk.id);
+                if (!res.ok) alert(res.error || 'שגיאה בשדרוג');
+              }, 'nostro_upgrade'),
+              title: 'החלף שולחן זה באסטרטגיה ופרמטרים של בוט נוסטרו מוכח שעבר מבחנים',
+            }, '⚡ שדרג מנוסטרו מנצח'),
             h('button', { class: 'btn btn-sm btn-ghost', onclick: () => { ui.setDesk(desk.id); ui.go('lab'); } }, 'מעבדה'),
             h('button', { class: 'btn btn-sm btn-danger', onclick: () => act(() => resetDesk(desk.id), 'reset') }, 'אפס'),
           ),

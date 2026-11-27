@@ -97,6 +97,15 @@ export const STRATEGY_GUIDES = {
     mathAndParams: 'פרמטרים: emaP (14-40), atrP (10-20), mult (1.0-3.0), erP (8-20), erMin (0.2-0.6).',
     prosAndCons: 'יתרון: מדד ה-Efficiency Ratio מונע כניסה לפריצות רועשות ומתמקד בתנועות מוסדיות חלקות.',
   },
+  quant_volatility_stack: {
+    id: 'quant_volatility_stack',
+    title: 'סטאק תנודתיות כמותי (Quant Volatility Stack · HAR-RV + Student-t)',
+    category: 'מודלים כמותיים ותמחור הסתברותי',
+    bestFor: 'שווקי Up/Down וקריפטו קצרי-טווח (5m, 15m, 1h)',
+    howItWorks: 'שלב 1: מודל Corsi HAR-RV מעריך את השונות הממומשת הצפויה (Realized Variance) על בסיס 3 חלונות זמן: ln(v_tau) = b0 + b1 ln(RV1) + b5 ln(RV5) + b15 ln(RV15). שלב 2: תמחור Student-t עב-זנבות מעריך את ההסתברות המדויקת של סגירה מעל או מתחת לרמת הייחוס (K) באופק הזמן tau. שלב 3: כניסה לפוזיציה מתבצעת אך ורק כאשר ההסתברות החזויה מציגה יתרון סטטיסטי (Edge) מובהק מעבר לעלות העסקה והעמלות.',
+    mathAndParams: 'פרמטרים: lookback (חלון נרות להערכת רמת הייחוס), minEdgePct (סף Edge מינימלי באחוזים), nu (דרגות חופש ν של התפלגות Student-t), tauMultiplier (מכפיל אופק פקיעה), atrStop ו-rr.',
+    prosAndCons: 'יתרון: אינו מנחש כיוון אלא מתמחר מתמטית יתרון מובהק מול ספר הפקודות; אינו נכנס לעסקאות בהיעדר Edge חיובי. חיסרון: דורש משמעת פקיעה וסטופ הדוק.',
+  },
 };
 
 export function getTopDesks(state = store.state) {

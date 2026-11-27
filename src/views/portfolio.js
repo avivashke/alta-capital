@@ -221,6 +221,47 @@ export function renderPortfolio(root, ui) {
         : null,
     ),
 
+    // Dedicated Vault Trading Portfolio (תיק רווחי נוסטרו עצמאי)
+    (() => {
+      const vpfData = state.vaultPortfolio;
+      const vCash = Number(vpfData?.cash ?? state.vault?.balance ?? 0);
+      const vEquityHist = Array.isArray(vpfData?.equityHistory) ? vpfData.equityHistory : [];
+      const vCurrentEq = vEquityHist.length ? Number(vEquityHist[vEquityHist.length - 1].equity) || vCash : vCash;
+      const vTrades = Array.isArray(vpfData?.trades) ? vpfData.trades.filter((t) => t.side !== 'DEPOSIT') : [];
+      const vRealized = Number(vpfData?.realizedPnLAccumulated || 0);
+
+      return h('div', {
+        class: 'card',
+        style: {
+          marginTop: '14px',
+          borderColor: 'rgba(56, 189, 248, 0.45)',
+          background: 'linear-gradient(180deg, rgba(8, 30, 48, 0.95), rgba(9, 14, 24, 0.96))',
+        },
+      },
+        h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+          h('div', {},
+            h('h2', { text: '⚡ תיק מסחר עצמאי מרווחי נוסטרו (Vault Trading Portfolio)' }),
+            h('div', { class: 'card-sub', text: 'תיק ייעודי הניזון אך ורק מרווחי נוסטרו ממומשים ונסחר באותה משמעת מוסדית בנפרד מהתיק הכללי — ללא סיכון הון עצמי!' }),
+          ),
+          h('div', { class: 'row', style: { gap: '6px' } },
+            tag('ללא סיכון הון עצמי', 'live'),
+            tag(vTrades.length ? `${vTrades.length} עסקאות עצמאיות` : 'מוזן ממשיכות נוסטרו', 'opt'),
+          ),
+        ),
+        h('div', { class: 'grid cols-4', style: { gap: '10px', marginBottom: '8px' } },
+          h('div', { class: 'metric' }, h('span', { text: 'שווי תיק נוסטרו (Equity)' }), h('b', { class: 'green mono', style: { fontSize: '18px' }, text: money(vCurrentEq) })),
+          h('div', { class: 'metric' }, h('span', { text: 'מזומן זמין לפקודות' }), h('b', { class: 'mono', style: { fontSize: '18px' }, text: money(vCash) })),
+          h('div', { class: 'metric' }, h('span', { text: 'רווח מסחר ממומש' }), h('b', { class: 'mono ' + (vRealized >= 0 ? 'green' : 'red'), style: { fontSize: '18px' }, text: money(vRealized) })),
+          h('div', { class: 'metric' }, h('span', { text: 'עסקאות בתיק' }), h('b', { class: 'mono', style: { fontSize: '18px' }, text: `${vTrades.length}` })),
+        ),
+        vEquityHist.length > 2
+          ? h('div', { style: { height: '80px', marginTop: '6px' } },
+              chart(vEquityHist.map((h) => ({ v: h.equity, t: h.timestamp })), { height: 75, color: 'blue' })
+            )
+          : null,
+      );
+    })(),
+
     h('div', { class: 'card', style: { marginTop: '14px' } },
       h('div', { class: 'card-head' },
         h('div', {},

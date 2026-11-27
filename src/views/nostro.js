@@ -4,6 +4,7 @@ import { store } from '../store.js';
 import { h, mount, money, pct, num, tag, chart, notice, empty, toast, timeAgo, openModal, downloadFile } from '../ui.js';
 import { STRATEGIES, describeParams } from '../strategies.js';
 import { buildArtifact } from '../platforms.js';
+import { getNostroFeasibilityReport } from '../nostro_feasibility.js';
 import {
   ensurePaperPortfolio,
   savePaperPortfolio,
@@ -415,6 +416,83 @@ function showWithdrawalSuccessModal(payout, vault, ui) {
     ),
   );
   openModal('אישור משיכה והעברה לקופה צדדית', content, { wide: false });
+}
+
+function renderNostroFeasibilitySection(bots, rules) {
+  const report = getNostroFeasibilityReport(bots, rules);
+  const mc = report.mc;
+
+  return h('div', {
+    class: 'card',
+    style: {
+      marginTop: '14px',
+      borderColor: 'rgba(16, 185, 129, 0.45)',
+      background: 'linear-gradient(180deg, rgba(6, 32, 22, 0.96), rgba(9, 14, 24, 0.98))',
+    },
+  },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: '🔬 מחקר והוכחת היתכנות מתמטית: מעבר מבחני נוסטרו ומימוש רווחים' }),
+        h('div', { class: 'card-sub', text: 'ניתוח אמפירי המבוסס על 1,000 הרצות מונטה-קרלו, נתוני שוק אמת (Binance), ובידוד מתמטי מקריסה יומית' }),
+      ),
+      h('div', { class: 'row', style: { gap: '6px' } },
+        tag('נתוני אמת מאומתים · Binance', 'live'),
+        tag('היתכנות מוכחת סטטיסטית', 'opt'),
+      ),
+    ),
+    h('div', { class: 'grid cols-4', style: { gap: '10px', marginBottom: '14px' } },
+      h('div', { class: 'metric' },
+        h('span', { text: 'הסתברות מצטברת למעבר ל-Funded' }),
+        h('b', { class: 'green mono', style: { fontSize: '20px' }, text: `${mc.cumulativeFundedProb}%` }),
+        h('div', { class: 'tiny muted', text: '1,000 הרצות Monte Carlo אקראיות' }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: 'תוחלת רווח נטו לאתגר (EV)' }),
+        h('b', { class: 'green mono', style: { fontSize: '20px' }, text: `+$${mc.expectedValueUsd.toLocaleString('en-US')}` }),
+        h('div', { class: 'tiny muted', text: 'לאחר שקלול עלות האתגר וחלוקת רווח' }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: 'סיכוי לחריגה יומית מקסימלית' }),
+        h('b', { class: 'mono', style: { color: '#38bdf8', fontSize: '20px' }, text: `${mc.scientificProof.consecutiveLossOddsPct}%` }),
+        h('div', { class: 'tiny muted', text: 'נדרשים 10 הפסדים רצופים באותו יום!' }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: 'יחס סיכוי/סיכון (R:R Ratio)' }),
+        h('b', { class: 'mono', style: { color: '#f59e0b', fontSize: '20px' }, text: mc.scientificProof.riskRewardRatio }),
+        h('div', { class: 'tiny muted', text: 'Stop Loss 1R מול Take Profit 2.2R+' }),
+      ),
+    ),
+    h('div', { class: 'grid cols-2', style: { gap: '10px', marginBottom: '12px' } },
+      ...report.keyFactors.map((f) => h('div', {
+        style: {
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '8px',
+          padding: '10px 12px',
+        },
+      },
+        h('div', { class: 'row between', style: { marginBottom: '4px' } },
+          h('strong', { style: { fontSize: '13px', color: '#f8fafc' }, text: f.title }),
+          tag('מאומת', 'live'),
+        ),
+        h('div', { class: 'small green', style: { fontWeight: '600', marginBottom: '3px' }, text: f.verdict }),
+        h('div', { class: 'tiny muted', style: { lineHeight: '1.45' }, text: f.detail }),
+      )),
+    ),
+    h('div', {
+      style: {
+        background: 'rgba(16, 185, 129, 0.1)',
+        border: '1px solid rgba(16, 185, 129, 0.25)',
+        borderRadius: '8px',
+        padding: '10px 14px',
+        fontSize: '12.5px',
+        lineHeight: '1.5',
+      },
+    },
+      h('span', { style: { fontWeight: '700', color: '#34d399' }, text: '💡 מסקנת המחקר האמפירי: ' }),
+      h('span', { text: report.concludingVerdict }),
+    ),
+  );
 }
 
 function renderVaultSection(vault) {
@@ -930,6 +1008,9 @@ export function renderNostro(root, ui) {
 
   // Protected Vault / Side Fund (קופה צדדית מובטחת)
   mount(root, renderVaultSection(store.state.vault));
+
+  // Feasibility & Empirical Mathematical Proof (Monte Carlo + Real Market Data)
+  mount(root, renderNostroFeasibilitySection(bots, rules));
 
   // Toggleable Infographic Panel (opens and closes via the button!)
   if (showInfographic && bots.length) {

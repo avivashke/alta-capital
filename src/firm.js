@@ -112,6 +112,56 @@ export function getBinanceClient() {
   return binanceClient;
 }
 
+// מנוע תיק מסחר מרווחי נוסטרו (Vault Trading Portfolio) — תיק נפרד שמקבל הפקדות ממשיכות נוסטרו בלבד וסוחר עצמאית
+let vaultPortfolio = null;
+let vaultPortfolioRev = -1;
+
+export function rehydrateVaultPortfolio() {
+  const s = store.state.settings || {};
+  const initialVaultBalance = Math.max(0, Number(store.state.vault?.balance) || 0);
+  const pf = createPaperPortfolio({ ...s, initialBalance: initialVaultBalance });
+  if (store.state.vaultPortfolio && typeof store.state.vaultPortfolio === 'object') {
+    pf.fromJSON(store.state.vaultPortfolio);
+  } else {
+    pf.cash = initialVaultBalance;
+    pf.initialBalance = initialVaultBalance;
+    if (initialVaultBalance > 0) pf.activate({ reason: 'הקמת תיק עצמאי מרווחי נוסטרו' });
+  }
+  vaultPortfolio = pf;
+  vaultPortfolioRev = store._revision;
+  return vaultPortfolio;
+}
+
+export function ensureVaultPortfolio() {
+  if (!vaultPortfolio || vaultPortfolioRev !== store._revision) {
+    rehydrateVaultPortfolio();
+  }
+  return vaultPortfolio;
+}
+
+export function saveVaultPortfolio() {
+  const pf = ensureVaultPortfolio();
+  if (pf) {
+    store.state.vaultPortfolio = pf.toJSON();
+  }
+}
+
+export function getVaultPortfolio() {
+  return ensureVaultPortfolio();
+}
+
+export function stepVaultPortfolio(livePrices = {}) {
+  const vpf = ensureVaultPortfolio();
+  if (!vpf) return;
+  if (!vpf.isActive && vpf.cash > 0) {
+    vpf.activate({ reason: 'הפעלת תיק מסחר מרווחי נוסטרו' });
+  }
+  if (Object.keys(livePrices).length) {
+    vpf.recordEquitySnapshot(livePrices);
+    saveVaultPortfolio();
+  }
+}
+
 function isBacktestProfitableAfterFeesAndTax(metrics) {
   if (!metrics) return false;
   const s = store.state.settings;
@@ -993,6 +1043,7 @@ export async function tickLive() {
 
   if (Object.keys(livePrices).length) {
     pf.recordEquitySnapshot(livePrices);
+    stepVaultPortfolio(livePrices);
   }
   if (!store.state.paperPortfolio || tradeChanged || Object.keys(livePrices).length) {
     savePaperPortfolio();
@@ -1076,6 +1127,13 @@ export function enforceLiveRiskControls() {
       `${desk.label}: צינון הסתיים (${desk.pauseReason || 'הפסדים'}) — חזרה לכיול; יקודם חזרה רק אם יעבור בקטסט, OOS וביקורת אמת`);
   }
   if (released && !state.desks.some((d) => d.status === 'paused')) delete state.settings.emergencyStop;
+
+  // Autonomous Nostro Promotion:
+  // If any desk is paused or losing (livePnl <= -2%), check if there is an eligible Nostro winner to rescue and upgrade the desk!
+  for (const desk of state.desks.filter((d) => d.status === 'paused' || (d.status === 'live' && Number(d.livePnl) <= -2.0))) {
+    if (desk.upgradedFromNostro && now - (desk.upgradedFromNostro.at || 0) < 4 * 3600 * 1000) continue;
+    checkAndAutoPromoteNostroWinner(desk);
+  }
 
   if (paused.length || released) {
     store.save(true);
@@ -1169,6 +1227,76 @@ export async function promoteNostroWinnersToLive() {
     scheduleDatabasePush(800);
   }
   return { promoted, liveCount };
+}
+
+/**
+ * Replaces a losing desk with a proven Nostro bot that passed prop firm challenges.
+ * Upgrades strategy, risk controls, and parameters while resetting live PnL.
+ */
+export function replaceLosingDeskWithNostroWinner(deskId, nostroBotId = null) {
+  ensureDeskFields();
+  const state = store.state;
+  const desk = state.desks.find((d) => d.id === deskId);
+  if (!desk) return { ok: false, error: 'שולחן לא נמצא' };
+
+  const bots = state.nostro?.bots || [];
+  let candBot = null;
+  if (nostroBotId) {
+    candBot = bots.find((b) => b.id === nostroBotId);
+  } else {
+    const valid = bots.filter((b) => !b.isSynthetic && !b.breached && (b.readyFirms || []).length > 0);
+    valid.sort((a, b) => (b.metrics?.profitFactor || 0) - (a.metrics?.profitFactor || 0));
+    candBot = valid[0] || bots[0];
+  }
+
+  if (!candBot || !candBot.strategyId || !STRATEGIES[candBot.strategyId]) {
+    return { ok: false, error: 'לא נמצא בוט נוסטרו מוסמך מתאים' };
+  }
+
+  const prevStrategy = desk.strategyId;
+  const prevLabel = desk.label;
+  const risk = Math.min(0.01, Math.max(0.0025, Number(candBot.riskPerTrade) || 0.005));
+
+  desk.strategyId = candBot.strategyId;
+  desk.params = cloneParams(candBot.params);
+  desk.symbol = candBot.symbol || desk.symbol;
+  desk.tf = candBot.tf || desk.tf;
+  desk.label = `${desk.short} · ${candBot.name} [מוסמך נוסטרו]`;
+  desk.riskPerTrade = risk;
+  desk.status = 'live';
+  desk.liveSince = Date.now();
+  desk.pausedAt = null;
+  desk.pauseReason = null;
+  desk.livePnl = 0;
+  desk.livePeakPnl = 0;
+  desk.openTrade = null;
+  desk.upgradedFromNostro = {
+    at: Date.now(),
+    botId: candBot.id,
+    botName: candBot.name,
+    readyFirms: candBot.readyFirms || [],
+    prevStrategy,
+    reason: 'שדרוג שולחן הפסדי באסטרטגיה מנצחת שעברה מבחני נוסטרו',
+  };
+
+  const pf = ensurePaperPortfolio();
+  if (!pf.isActive) pf.activate({ reason: `שדרוג שולחן ${desk.label} מבוט נוסטרו מנצח` });
+
+  store.log('ok', 'אוריה · CIO',
+    `⚡ שולחן ${prevLabel} שודרג והוחלף בבוט הנוסטרו המנצח "${candBot.name}" (${candBot.strategyId} ב-${desk.symbol} ${desk.tf}). עבר ${candBot.readyFirms?.join('/') || 'פירמות נוסטרו'}, סיכון קשיח ${(risk * 100).toFixed(2)}% לעסקה!`);
+
+  store.save(true);
+  store.emit();
+  scheduleDatabasePush(1000);
+  return { ok: true, desk, bot: candBot };
+}
+
+export function checkAndAutoPromoteNostroWinner(desk) {
+  const state = store.state;
+  const bots = state.nostro?.bots || [];
+  const cand = bots.find((b) => !b.isSynthetic && !b.breached && (b.readyFirms || []).length > 0 && b.strategyId !== desk.strategyId);
+  if (!cand) return null;
+  return replaceLosingDeskWithNostroWinner(desk.id, cand.id);
 }
 
 export async function promoteDryRuns() {

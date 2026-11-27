@@ -25,6 +25,7 @@ import { chatDetailed } from '../llm.js';
 import { gannExplainButton, openGannMasterGuideModal, renderGannExecutiveForecastCard } from '../gann_guide.js';
 import { renderWhatsAppGannCard } from '../whatsapp_gann_ui.js';
 import { renderYonatanYouTubeScoutCard } from '../youtube_scout_ui.js';
+import { calculateJenkinsAnalysis, jenkinsSquareRootTargets, jenkinsMasterTimeCycles } from '../jenkins.js';
 
 let gannViewState = {
   symbol: 'BTCUSDT',
@@ -33,6 +34,9 @@ let gannViewState = {
   manualPrice: '',
   manualDate: '',
   calcTab: 'fan', // 'fan' | 'msj_grid' | 'msj_deg' | 'jenkins' | 'eighths' | 'hex'
+  jenkinsMode: 'long',
+  jenkinsAngleMult: 1.0,
+  jenkinsShowVerticals: true,
   radarTab: 'ladder', // 'ladder' | 'confluences' | 'roadmap'
   calendarTab: 'zodiac12', // 'zodiac12' | 'planetary' | 'squares' | 'seasonal'
   pctTab: 'circles', // 'circles' | 'musical' | 'lookback'
@@ -1668,6 +1672,187 @@ export function renderGannRealTimeRadarCard(a, cfg, ui) {
   );
 }
 
+function renderJenkinsFoundationSection(a, ui) {
+  const candles = gannViewState.candles || a?.candles || [];
+  const curP = Number(gannViewState.manualPrice) || a?.currentPrice || 100;
+
+  const jenkinsRes = calculateJenkinsAnalysis({
+    mode: gannViewState.jenkinsMode || 'long',
+    angleMultiplier: Number(gannViewState.jenkinsAngleMult) || 1.0,
+    candles,
+  });
+
+  const sqTargets = jenkinsSquareRootTargets(curP, { mode: gannViewState.jenkinsMode || 'both' });
+  const timeCycles = jenkinsMasterTimeCycles({
+    originPrice: curP,
+    originTime: candles.length ? candles[candles.length - 1].time || Date.now() : Date.now(),
+    barDurationMs: gannViewState.tf === '1w' ? 7 * 86400000 : gannViewState.tf === '1d' ? 86400000 : 3600000,
+  });
+
+  return h('div', { class: 'stack', style: { gap: '14px' } },
+    h('div', {
+      class: 'row wrap between',
+      style: { background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' },
+    },
+      h('div', { class: 'row wrap', style: { gap: '10px', alignItems: 'center' } },
+        h('label', { class: 'small muted', text: 'כיוון גלים (Mode):' }),
+        h('select', {
+          class: 'input',
+          style: { padding: '3px 8px', fontSize: '13px' },
+          onchange: (e) => { gannViewState.jenkinsMode = e.target.value; ui.rerender(); },
+        },
+          h('option', { value: 'long', selected: gannViewState.jenkinsMode !== 'short' }, 'לונג (עולה · Long)'),
+          h('option', { value: 'short', selected: gannViewState.jenkinsMode === 'short' }, 'שורט (יורד · Short)'),
+        ),
+        h('label', { class: 'small muted', text: 'מכפיל זווית 45°:' }),
+        h('select', {
+          class: 'input',
+          style: { padding: '3px 8px', fontSize: '13px' },
+          onchange: (e) => { gannViewState.jenkinsAngleMult = Number(e.target.value); ui.rerender(); },
+        },
+          [0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((m) =>
+            h('option', { value: m, selected: (gannViewState.jenkinsAngleMult || 1.0) === m }, `×${m} ${m === 1 ? '(גל A->B)' : ''}`),
+          ),
+        ),
+        h('label', { class: 'small muted', text: 'הצג צמתים אנכיים:' }),
+        h('input', {
+          type: 'checkbox',
+          checked: gannViewState.jenkinsShowVerticals !== false,
+          onchange: (e) => { gannViewState.jenkinsShowVerticals = e.target.checked; ui.rerender(); },
+        }),
+      ),
+      h('div', { class: 'row', style: { gap: '6px' } },
+        tag('Michael S. Jenkins', 'live'),
+        tag('The Past as Foundation of Future', 'opt'),
+      ),
+    ),
+
+    h('div', { class: 'grid cols-3', style: { gap: '10px' } },
+      h('div', { class: 'metric' },
+        h('span', { text: `נקודה A (${jenkinsRes.pointA.label || 'שפל גל 1'})` }),
+        h('b', { class: 'mono green', text: `${num(jenkinsRes.pointA.price, 2)}` }),
+        h('div', { class: 'tiny muted', text: `נר #${jenkinsRes.pointA.index ?? 0}` }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: `נקודה B (${jenkinsRes.pointB.label || 'שיא גל 1'})` }),
+        h('b', { class: 'mono red', text: `${num(jenkinsRes.pointB.price, 2)}` }),
+        h('div', { class: 'tiny muted', text: `נר #${jenkinsRes.pointB.index ?? 0}` }),
+      ),
+      h('div', { class: 'metric' },
+        h('span', { text: `נקודה C (${jenkinsRes.pointC.label || 'תיקון גל 2'})` }),
+        h('b', { class: 'mono green', text: `${num(jenkinsRes.pointC.price, 2)}` }),
+        h('div', { class: 'tiny muted', text: `נר #${jenkinsRes.pointC.index ?? 0}` }),
+      ),
+    ),
+
+    h('div', { class: 'card', style: { padding: '12px', background: 'rgba(0,0,0,0.2)' } },
+      h('h3', { style: { fontSize: '13px', marginBottom: '8px' }, text: '1. רמות קיצון אופקיות והרחבות הרמוניות (Horizontal Extremes)' }),
+      h('div', { class: 'table-wrap' },
+        h('table', {},
+          h('thead', {}, h('tr', {},
+            h('th', { text: 'רמה גיאומטרית' }),
+            h('th', { text: 'מחיר' }),
+            h('th', { text: 'סוג' }),
+            h('th', { text: 'מרחק מהמחיר הנוכחי' }),
+          )),
+          h('tbody', {},
+            jenkinsRes.horizontalLevels.map((lvl) => {
+              const diffPct = curP > 0 ? ((lvl.price - curP) / curP) * 100 : 0;
+              return h('tr', {},
+                h('td', { class: 'small', style: { color: lvl.color, fontWeight: '600' }, text: lvl.label }),
+                h('td', { class: 'mono', style: { color: lvl.color }, text: num(lvl.price, 2) }),
+                h('td', {}, tag(lvl.type === 'low' ? 'שפל מפתח' : lvl.type === 'high' ? 'שיא מפתח' : 'הרחבה הרמונית', lvl.type === 'low' ? 'live' : lvl.type === 'high' ? 'paused' : 'opt')),
+                h('td', { class: 'mono ' + (diffPct >= 0 ? 'green' : 'red'), text: pct(diffPct) }),
+              );
+            }),
+          ),
+        ),
+      ),
+    ),
+
+    h('div', { class: 'card', style: { padding: '12px', background: 'rgba(0,0,0,0.2)' } },
+      h('h3', { style: { fontSize: '13px', marginBottom: '8px' }, text: '2. צמתי מפגש זמן-מחיר אנכיים (Vertical Time-Price Intersections)' }),
+      h('div', { class: 'card-sub', style: { marginBottom: '8px' }, text: 'הנקודות שבהן הקווים האלכסוניים ב-45° חותכים את רמות השיא/שפל של העבר — חלונות תפנית זמן קריטיים!' }),
+      h('div', { class: 'table-wrap' },
+        h('table', {},
+          h('thead', {}, h('tr', {},
+            h('th', { text: 'מקור קרן אלכסונית' }),
+            h('th', { text: 'רמת קיצון נחתכת' }),
+            h('th', { text: 'מחיר הצומת' }),
+            h('th', { text: 'נר יעד (בר)' }),
+            h('th', { text: 'תאריך משוער' }),
+          )),
+          h('tbody', {},
+            jenkinsRes.verticalIntersections.slice(0, 8).map((inter) => h('tr', {},
+              h('td', { class: 'small mono', text: `קרן 45° מנקודה ${inter.originName}` }),
+              h('td', { class: 'small', text: inter.levelLabel }),
+              h('td', { class: 'mono gold', text: num(inter.price, 2) }),
+              h('td', { class: 'mono', text: `בר #${inter.barIndex}` }),
+              h('td', { class: 'mono green', text: inter.targetDateIso || inter.projectedDate || `+${inter.barsAhead} bars` }),
+            )),
+          ),
+        ),
+      ),
+    ),
+
+    h('div', { class: 'grid cols-2', style: { gap: '12px' } },
+      h('div', { class: 'card', style: { padding: '12px', background: 'rgba(0,0,0,0.2)' } },
+        h('div', { class: 'row between', style: { marginBottom: '6px' } },
+          h('h3', { style: { fontSize: '13px' }, text: '3. מחשבון שורש ריבועי (SquareRoots.exe)' }),
+          tag('P_target = (√P ± deg/360)²', 'opt'),
+        ),
+        h('div', { class: 'table-wrap' },
+          h('table', {},
+            h('thead', {}, h('tr', {},
+              h('th', { text: 'זווית הרמונית' }),
+              h('th', { text: 'מחיר מעלה (+)' }),
+              h('th', { text: 'מחיר מטה (-)' }),
+            )),
+            h('tbody', {},
+              sqTargets.upLevels.slice(0, 6).map((lvl, idx) => {
+                const dn = sqTargets.downLevels[idx];
+                return h('tr', {},
+                  h('td', { class: 'mono', text: `${lvl.degree}° (+${lvl.delta})` }),
+                  h('td', { class: 'mono green', text: num(lvl.price, 2) }),
+                  h('td', { class: 'mono red', text: dn ? num(dn.price, 2) : '—' }),
+                );
+              }),
+            ),
+          ),
+        ),
+      ),
+
+      h('div', { class: 'card', style: { padding: '12px', background: 'rgba(0,0,0,0.2)' } },
+        h('div', { class: 'row between', style: { marginBottom: '6px' } },
+          h('h3', { style: { fontSize: '13px' }, text: '4. מחשבון זמן מאסטר (MasterCalculator.exe)' }),
+          tag('ריבועים טבעיים n² ואיפוס מחיר-זמן', 'live'),
+        ),
+        h('div', { class: 'table-wrap' },
+          h('table', {},
+            h('thead', {}, h('tr', {},
+              h('th', { text: 'מחזור זמן גיאומטרי' }),
+              h('th', { text: 'נרות (Bars)' }),
+              h('th', { text: 'תאריך יעד' }),
+            )),
+            h('tbody', {}, [
+              ...timeCycles.naturalSquares.slice(0, 4).map((c) => h('tr', {},
+                h('td', { class: 'small', text: c.label }),
+                h('td', { class: 'mono', text: `+${c.bars}` }),
+                h('td', { class: 'mono green', text: c.dateIso }),
+              )),
+              ...timeCycles.priceSquareOuts.slice(0, 3).map((p) => h('tr', {},
+                h('td', { class: 'small', text: p.label }),
+                h('td', { class: 'mono', text: `+${p.bars}` }),
+                h('td', { class: 'mono gold', text: p.dateIso }),
+              )),
+            ]),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 export function renderGann(root, ui) {
   const key = `${gannViewState.symbol}|${gannViewState.tf}|${gannViewState.manualPrice}|${gannViewState.manualDate}`;
   if (gannViewState.key !== key && !gannViewState.loading) {
@@ -2218,7 +2403,7 @@ export function renderGann(root, ui) {
             ['box_square', '▦ גמישות ריבועים וטווח'],
             ['msj_grid', 'מטריצת MSJ_GannSQ9'],
             ['msj_deg', 'מעלות וזמני MSJ'],
-            ['jenkins', '√Price + ספירלה'],
+            ['jenkins', '🏛️ Michael Jenkins (העבר כיסוד העתיד)'],
             ['eighths', 'שמיניות (1/8–8/8)'],
             ['hex', 'הקסגון (60°)'],
           ].map(([id, lbl]) =>
@@ -2317,23 +2502,7 @@ export function renderGann(root, ui) {
                 ),
               )
               : gannViewState.calcTab === 'jenkins'
-                ? h('div', { class: 'table-wrap' },
-                  h('table', {},
-                    h('thead', {}, h('tr', {}, h('th', { text: 'נוסחת מייקל ג׳נקינס / ספירלה' }), h('th', { text: 'ימים' }), h('th', { text: 'תאריך יעד' }))),
-                    h('tbody', {}, [
-                      ...a.jenkins.jenkinsTimeCycles.map((c) => h('tr', {},
-                        h('td', { class: 'small', text: c.label }),
-                        h('td', { class: 'mono', text: `+${c.days}d` }),
-                        h('td', { class: 'mono green', text: c.projectedDate }),
-                      )),
-                      ...a.jenkins.spiralDates.slice(0, 3).map((s) => h('tr', {},
-                        h('td', { class: 'small', text: `ספירלה פנימה (${s.sqValue} × 30.437d)` }),
-                        h('td', { class: 'mono', text: `+${s.days}d` }),
-                        h('td', { class: 'mono gold', text: s.date }),
-                      )),
-                    ]),
-                  ),
-                )
+                ? renderJenkinsFoundationSection(a, ui)
                 : gannViewState.calcTab === 'eighths'
                   ? h('div', { class: 'table-wrap' },
                     h('table', {},

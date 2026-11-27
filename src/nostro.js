@@ -666,20 +666,24 @@ export function executeNostroPayoutWithdrawal(botId, state = store.state) {
   bot.lastPayoutAt = Date.now();
   bot.totalWithdrawnToVault = Math.round(((Number(bot.totalWithdrawnToVault) || 0) + audit.withdrawableUsd) * 100) / 100;
 
-  // Also reflect the payout in the paper portfolio deposit log
+  // Deposit directly into dedicated Vault Trading Portfolio (תיק רווחי נוסטרו מבודד)
   try {
-    const pf = createPaperPortfolio(store.state.settings || {});
-    if (store.state.paperPortfolio && typeof store.state.paperPortfolio === 'object') {
-      pf.fromJSON(store.state.paperPortfolio);
+    const vpf = createPaperPortfolio(store.state.settings || {});
+    if (store.state.vaultPortfolio && typeof store.state.vaultPortfolio === 'object') {
+      vpf.fromJSON(store.state.vaultPortfolio);
+    } else {
+      vpf.initialBalance = 0;
+      vpf.cash = 0;
     }
-    const dep = pf.deposit(
+    vpf.activate({ reason: 'הפקדת רווחי נוסטרו ממומשים מחשבון ממומן' });
+    vpf.deposit(
       audit.withdrawableUsd,
-      `משיכת נוסטרו מהבוט ${bot.name} (${bot.symbol}) · חלוקת רווח ${audit.profitSplitPct}% · הועבר לקופה צדדית`,
+      `משיכת רווח נוסטרו (${bot.name} · ${bot.symbol}) · חלוקת רווח ${audit.profitSplitPct}%`,
       'nostro_payout'
     );
-    store.state.paperPortfolio = pf.toJSON();
+    store.state.vaultPortfolio = vpf.toJSON();
   } catch (err) {
-    console.warn('[nostro] Failed to reflect payout in paper portfolio:', err.message);
+    console.warn('[nostro] Failed to deposit in vaultPortfolio:', err.message);
   }
 
   store.log('ok', 'כספת · קופה צדדית',
