@@ -1393,6 +1393,8 @@ export const DEFAULT_GANNZILLA_CONFIG = {
   boxDivisions: 'eighths', // 'eighths' | 'thirds' | 'both'
   boxDiagonals: true,
   showSubTrendSignals: true,
+  eighthsHigh: 0,
+  eighthsLow: 0,
   swingBarMode: 2,
   fanDirection: 'auto',
   fanScale: '',

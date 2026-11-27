@@ -48,6 +48,7 @@ loadEnvFile('.env.local');
 
 const { handleDbRequest, readDbFile, writeDbFile, getSupaEnv } = await import('./netlify/functions/db.mjs');
 const { runFirmCronJob } = await import('./netlify/functions/firm-cron.mjs');
+const { startResearchWorker, getResearchNotes, runResearchPass } = await import('./ai_research.mjs');
 const { handleMarketRequest } = await import('./netlify/functions/market.mjs');
 const { mergeFirmStates, remoteHasMoreOrNewerData } = await import('./src/state_merge.js');
 const {
@@ -502,6 +503,23 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pathname === '/api/ai-research') {
+    res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(getResearchNotes(Number(new URL(req.url, 'http://x').searchParams.get('limit')) || 10)));
+    return;
+  }
+
+  if (pathname === '/api/ai-research/run' && req.method === 'POST') {
+    if (!isAuthorized(req)) {
+      res.writeHead(401, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Unauthorized' }));
+      return;
+    }
+    const out = await runResearchPass();
+    res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(out));
+    return;
+  }
   if (pathname === '/api/health') {
     res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(buildHealthPayload()));
@@ -972,6 +990,7 @@ server.listen(PORT, HOST, () => {
     .catch(() => {});
 });
 
+startResearchWorker();
 // Keep the local-AI status fresh so /api/health always reflects Ollama / LM Studio reality
 probeLocalAiEngines({ force: true }).catch(() => {});
 setInterval(() => { probeLocalAiEngines({ force: true }).catch(() => {}); }, 30_000);

@@ -374,6 +374,102 @@ function applyPivotAction(pivot, action, ui) {
   toast(`שמיניות המחיר מסומנות על הגרף מ${typeLabel} ${fmtPriceSmart(pivot.price)}`, 'ok');
 }
 
+// ---------- Interactive pivot popover: click any pivot to stretch a fan / square / eighths ----------
+let pivotPopoverCleanup = null;
+function closePivotPopover() {
+  document.getElementById('gann-pivot-popover')?.remove();
+  if (pivotPopoverCleanup) { pivotPopoverCleanup(); pivotPopoverCleanup = null; }
+}
+
+function computePivotTargets(pivot, a) {
+  const unit = Number(a?.gannFan?.unitPerBar) || Number(a?.gannFan?.autoUnit) || 0;
+  const dir = pivot.type === 'low' ? 1 : -1;
+  const out = [];
+  const next = (a?.pivots || []).filter((p) => p.idx > pivot.idx && p.type !== pivot.type).sort((x, y) => x.idx - y.idx)[0];
+  if (next) {
+    out.push({ id: 'next', label: `עד ${next.type === 'low' ? 'השפל' : 'השיא'} הבא`, price: next.price, bars: Math.max(20, next.idx - pivot.idx), why: `הנקודה ההפוכה הקרובה (${new Date(next.t).toISOString().slice(0, 10)})` });
+  }
+  const sq = Math.sqrt(Math.max(pivot.price, 0));
+  for (const [deg, steps] of [[180, 1], [360, 2]]) {
+    const raw = dir > 0 ? Math.pow(sq + steps / 2, 2) : Math.pow(Math.max(0, sq - steps / 2), 2);
+    out.push({ id: `sq9_${deg}`, label: `יעד Sq9 ${dir > 0 ? '+' : '−'}${deg}°`, price: +raw.toFixed(4), bars: unit > 0 ? Math.round(Math.abs(raw - pivot.price) / unit) : 90, why: 'רמת ריבוע התשע (שורש המחיר ± חצי/שלם)' });
+  }
+  for (const n of [90, 144, 180, 360]) {
+    if (unit > 0) out.push({ id: `cyc_${n}`, label: `ריבוע ${n} נרות (1x1)`, price: +(pivot.price + dir * n * unit).toFixed(4), bars: n, why: `יעד על זווית 1x1 אחרי ${n} נרות` });
+  }
+  return out.map((t) => ({ ...t, bars: Math.max(20, Math.min(720, Math.round(t.bars || 90))) }));
+}
+
+function openPivotPopover(pivot, rect, ui, a) {
+  closePivotPopover();
+  const typeLabel = pivot.type === 'low' ? 'שפל' : 'שיא';
+  const date = new Date(pivot.t).toISOString().slice(0, 10);
+  const targets = computePivotTargets(pivot, a);
+  const sel = { price: targets[0]?.price ?? '', bars: targets[0]?.bars ?? 90, dir: 'auto', unit: '' };
+
+  const priceInput = h('input', { class: 'input', type: 'number', step: 'any', value: sel.price, style: { width: '100%' }, oninput: (e) => { sel.price = e.target.value; } });
+  const barsInput = h('input', { class: 'input', type: 'number', min: 20, max: 720, value: sel.bars, style: { width: '100%' }, oninput: (e) => { sel.bars = e.target.value; } });
+  const unitInput = h('input', { class: 'input', type: 'number', step: 'any', placeholder: `אוטו ${a?.gannFan?.autoUnit ?? ''}`, style: { width: '100%' }, oninput: (e) => { sel.unit = e.target.value; } });
+  const dirSelect = h('select', { class: 'input', style: { width: '100%' }, onchange: (e) => { sel.dir = e.target.value; } },
+    [['auto', `אוטומטי (${pivot.type === 'low' ? 'עולה ↑' : 'יורדת ↓'})`], ['up', 'עולה ↑'], ['down', 'יורדת ↓']].map(([v, l]) => h('option', { value: v }, l)));
+
+  const chips = targets.map((t) => h('button', {
+    class: 'btn btn-sm', style: { textAlign: 'start', justifyContent: 'flex-start', whiteSpace: 'normal', lineHeight: '1.3' }, title: t.why,
+    onclick: () => { sel.price = t.price; sel.bars = t.bars; priceInput.value = t.price; barsInput.value = t.bars; },
+  }, `${t.label} · ${fmtPriceSmart(t.price)} · ${t.bars} נרות`));
+
+  const act = (kind) => {
+    const price = Number(sel.price);
+    const bars = Math.max(20, Math.min(720, Math.round(Number(sel.bars) || 0)));
+    const patch = {};
+    if (kind === 'fan') {
+      Object.assign(patch, { showFanOnChart: true, fanDirection: sel.dir === 'auto' ? (pivot.type === 'low' ? 'up' : 'down') : sel.dir });
+      if (Number(sel.unit) > 0) patch.fanScale = String(Number(sel.unit));
+    } else if (kind === 'box') {
+      Object.assign(patch, price ? { showBoxOnChart: true, boxBars: bars, boxRangeMode: 'custom', boxCustomHigh: Math.max(price, pivot.price), boxCustomLow: Math.min(price, pivot.price) } : { showBoxOnChart: true, boxBars: bars });
+    } else {
+      Object.assign(patch, { showEighthsOnChart: true, eighthsHigh: price ? Math.max(price, pivot.price) : 0, eighthsLow: price ? Math.min(price, pivot.price) : 0 });
+    }
+    gannViewState.manualPrice = String(+fmtPriceSmart(pivot.price));
+    gannViewState.manualDate = date;
+    gannViewState.key = null;
+    updateGannzillaConfig(patch, ui, { reloadAnalysis: true });
+    toast(`${kind === 'fan' ? 'מניפה' : kind === 'box' ? 'ריבוע' : 'שמיניות'} מ${typeLabel} ${fmtPriceSmart(pivot.price)}${price && kind !== 'fan' ? ` עד ${fmtPriceSmart(price)}` : ''}`, 'ok');
+    closePivotPopover();
+  };
+  const field2 = (label, input) => h('label', { style: { display: 'block', fontSize: '11px', color: '#94a3b8' } }, label, input);
+
+  const pop = h('div', {
+    id: 'gann-pivot-popover',
+    style: { position: 'fixed', zIndex: 9999, width: 'min(340px, 94vw)', maxHeight: '80vh', overflowY: 'auto', padding: '12px', borderRadius: '12px', background: 'rgba(8, 15, 26, 0.98)', border: '1px solid rgba(56, 189, 248, 0.65)', boxShadow: '0 14px 40px rgba(0,0,0,.6)', direction: 'rtl' },
+  },
+    h('div', { class: 'row between', style: { marginBottom: '8px' } },
+      h('strong', { style: { color: '#e2e8f0', fontSize: '13px' }, text: `${typeLabel} ${fmtPriceSmart(pivot.price)} · ${date}` }),
+      h('button', { class: 'btn btn-ghost btn-sm', onclick: closePivotPopover }, '✕')),
+    h('div', { class: 'tiny muted', style: { marginBottom: '4px' }, text: 'הצעות ליעד (לחץ לבחירה):' }),
+    h('div', { style: { display: 'grid', gap: '4px', marginBottom: '10px' } }, ...chips),
+    h('div', { class: 'tiny muted', style: { marginBottom: '4px' }, text: 'או בחירה ידנית של טווח:' }),
+    h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '8px' } },
+      field2('מחיר יעד', priceInput), field2('טווח (נרות)', barsInput),
+      field2('כיוון מניפה', dirSelect), field2('יחידה/נר (1x1)', unitInput)),
+    h('div', { class: 'row wrap', style: { gap: '6px' } },
+      h('button', { class: 'btn btn-sm btn-primary', onclick: () => act('fan') }, '↗ מתח מניפה'),
+      h('button', { class: 'btn btn-sm', style: { borderColor: 'rgba(242,204,96,.6)', color: '#f2cc60' }, onclick: () => act('box') }, '▦ צייר ריבוע'),
+      h('button', { class: 'btn btn-sm', style: { borderColor: 'rgba(142,203,255,.6)', color: '#8ecbff' }, onclick: () => act('eighths') }, '⅛ שמיניות לטווח'),
+      h('button', { class: 'btn btn-ghost btn-sm', onclick: () => { updateGannzillaConfig({ boxRangeMode: 'swing', boxCustomHigh: '', boxCustomLow: '', eighthsHigh: 0, eighthsLow: 0, boxBars: 0 }, ui, { reloadAnalysis: true }); closePivotPopover(); } }, 'אפס טווחים')),
+  );
+  document.body.appendChild(pop);
+  const vw = window.innerWidth; const vh = window.innerHeight;
+  const pw = pop.offsetWidth || 340; const ph = pop.offsetHeight || 360;
+  let left = Math.min(Math.max(8, rect.left + rect.width / 2 - pw / 2), vw - pw - 8);
+  let top = rect.bottom + 8; if (top + ph > vh - 8) top = Math.max(8, rect.top - ph - 8);
+  pop.style.left = `${left}px`; pop.style.top = `${top}px`;
+  const onKey = (e) => { if (e.key === 'Escape') closePivotPopover(); };
+  const onDoc = (e) => { if (!pop.contains(e.target)) closePivotPopover(); };
+  document.addEventListener('keydown', onKey);
+  setTimeout(() => document.addEventListener('mousedown', onDoc), 0);
+  pivotPopoverCleanup = () => { document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onDoc); };
+}
 function renderSmartAutoFillCard(a, cfg, ui) {
   const sug = computeGannSmartSuggestions(gannViewState.candles, a, gannViewState.symbol, gannViewState.tf);
   if (!sug) return null;
@@ -574,8 +670,8 @@ function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG
   // Gann eighths (and thirds) of the visible range, so the price ladder is readable
   // on the chart itself instead of only in the calculation table.
   if (cfg.showEighthsOnChart !== false) {
-    const visHigh = Math.max(...highs);
-    const visLow = Math.min(...lows);
+    const visHigh = Number(cfg.eighthsHigh) > 0 ? Number(cfg.eighthsHigh) : Math.max(...highs);
+    const visLow = Number(cfg.eighthsLow) > 0 ? Number(cfg.eighthsLow) : Math.min(...lows);
     const visRange = visHigh - visLow || 1;
     const ladder = [
       [0, '0/8', true], [0.125, '1/8', false], [0.25, '2/8', true], [0.3333, '1/3', true],
@@ -588,7 +684,7 @@ function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG
       const y = yAt(price8);
       if (y < padT + 1 || y > padT + chartH - 1) continue;
       gEighths.appendChild(svgEl('line', {
-        x1: padL, x2: padL + chartW, y1: y, y2: y,
+        x1: padL, x2: width - 8, y1: y, y2: y,
         stroke: strong ? 'rgba(242, 204, 96, 0.55)' : 'rgba(115, 191, 255, 0.3)',
         'stroke-width': strong ? 1.1 : 0.8,
         'stroke-dasharray': strong ? '0' : '2,3',
@@ -857,7 +953,8 @@ function renderGannForecastSvg(candles, analysis, cfg = DEFAULT_GANNZILLA_CONFIG
     hit.addEventListener('click', (ev) => {
       ev.stopPropagation();
       ev.preventDefault();
-      handlers.onPivotAction?.(p, 'fan');
+      if (handlers.onPivotOpen) handlers.onPivotOpen(p, hit.getBoundingClientRect());
+      else handlers.onPivotAction?.(p, 'fan');
     });
     svg.appendChild(pivotGroup);
   }
@@ -2294,6 +2391,7 @@ export function renderGann(root, ui) {
         ? renderGannForecastSvg(gannViewState.candles, a, cfg, {
             boxBars: Number(cfg.boxBars) || 0,
             onPivotAction: (pivot, action) => applyPivotAction(pivot, action, ui),
+            onPivotOpen: (pivot, rect) => openPivotPopover(pivot, rect, ui, a),
           })
         : (() => {
             if (

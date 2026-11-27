@@ -929,6 +929,51 @@ function mount(root, ...children) {
   return root;
 }
 
+// ---------- AI Research Analyst (local Ollama compute working for the team) ----------
+const researchUi = { data: null, loading: false, fetchedAt: 0 };
+async function loadResearch(ui, { run = false } = {}) {
+  if (researchUi.loading) return;
+  researchUi.loading = true;
+  ui.rerender();
+  try {
+    if (run) await fetch('/api/ai-research/run', { method: 'POST' }).catch(() => {});
+    const r = await fetch('/api/ai-research?limit=5', { cache: 'no-store' });
+    researchUi.data = await r.json();
+    researchUi.fetchedAt = Date.now();
+  } catch (err) {
+    researchUi.data = { ok: false, reason: err.message, notes: [] };
+  } finally {
+    researchUi.loading = false;
+    ui.rerender();
+  }
+}
+
+function renderAiResearchCard(ui) {
+  if (!researchUi.data && !researchUi.loading) setTimeout(() => loadResearch(ui), 60);
+  else if (Date.now() - researchUi.fetchedAt > 120000 && !researchUi.loading) setTimeout(() => loadResearch(ui), 60);
+  const d = researchUi.data;
+  const latest = d?.notes?.[0];
+  const list = (title, arr, fmt) => (arr?.length ? h('div', { style: { marginTop: '8px' } },
+    h('strong', { class: 'small', text: title }),
+    h('ul', { class: 'list-clean' }, ...arr.map((x) => h('li', { class: 'small', style: { overflowWrap: 'anywhere' }, text: fmt(x) })))) : null);
+  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(56, 189, 248, 0.45)' } },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: '🧪 אנליסט מחקר AI — כוח המחשוב של Ollama עובד בשבילכם' }),
+        h('div', { class: 'card-sub', text: `מנתח את שולחנות המסחר והתיק כל ${d?.intervalMin || 10} דקות עם ${d?.model || 'המודל המקומי'} ומציע שיפורי רווחיות וסיכון. ללא עלות וללא מכסות.` })),
+      h('button', { class: 'btn btn-sm btn-primary', disabled: researchUi.loading, onclick: () => loadResearch(ui, { run: true }) }, researchUi.loading ? '⏳ מנתח…' : '⚡ הרץ ניתוח עכשיו')),
+    !d ? h('div', { class: 'small muted', text: 'טוען…' })
+      : !d.ok ? h('div', { class: 'small muted', text: `האנליסט לא פעיל: ${d.reason || 'שגיאה'}` })
+      : !latest ? h('div', { class: 'small muted', text: 'עדיין אין ניתוחים — הניתוח הראשון ירוץ תוך דקה מהפעלת השרת, או לחץ "הרץ ניתוח עכשיו".' })
+      : h('div', {},
+          h('div', { class: 'tiny muted', text: `עודכן ${timeAgo(Date.parse(latest.createdAt))} · ${latest.model}${d.lastRun?.error ? ` · ריצה אחרונה נכשלה: ${d.lastRun.error}` : ''}` }),
+          h('div', { class: 'small', style: { marginTop: '6px', lineHeight: '1.6', overflowWrap: 'anywhere' }, text: latest.summary }),
+          list('ממצאים', latest.findings, (x) => `${x.desk ? `[${x.desk}] ` : ''}${x.issue || ''}${x.suggestion ? ` ← ${x.suggestion}` : ''}`),
+          list('רעיונות לפרמטרים', latest.parameterIdeas, (x) => `${x.desk ? `[${x.desk}] ` : ''}${x.param || ''}: ${x.change || ''}${x.reason ? ` (${x.reason})` : ''}`),
+          list('דגלי סיכון', latest.riskFlags, (x) => String(x)),
+          list('פעולות בעדיפות', latest.priorityActions, (x) => String(x))),
+  );
+}
 export function renderAgents(root, ui) {
   const state = store.state;
   const agents = state.agents || [];
@@ -1003,6 +1048,7 @@ export function renderAgents(root, ui) {
   ));
 
   mount(root, renderTruthAuditorCard(state, ui));
+  mount(root, renderAiResearchCard(ui));
 
   mount(root, renderAiTeamLearningLab(state, ui));
 
