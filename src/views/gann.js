@@ -2421,6 +2421,7 @@ export function renderGann(root, ui) {
                 gannViewState.key = null;
                 loadGannData(ui, { force: true });
               },
+              onPivotClick: (pivot, rect, an) => openPivotPopover(pivot, rect, ui, an || a),
               onAiExplain: (sym, analysisData) => {
                 askAiForGannProposal(analysisData || a, ui);
               },

@@ -2218,7 +2218,11 @@ export function analyzeGannHistoryAndForecast(
   const hexLevels = buildHexagonVibrationTable(anchorPivot.price, currentPrice);
 
   // 3. Michael Jenkins & Sheet 1-5 Suite
-  const jenkins = buildJenkinsSuite(swingHigh, swingLow, anchorPivot.price, anchorPivot.t);
+  // A user-picked range (click a pivot -> target) re-scales the eighths / Jenkins ladder to that range
+  const customEHi = Number(gannzillaConfig?.eighthsHigh) || 0;
+  const customELo = Number(gannzillaConfig?.eighthsLow) || 0;
+  const useCustomRange = customEHi > 0 && customELo > 0 && customEHi > customELo;
+  const jenkins = buildJenkinsSuite(useCustomRange ? customEHi : swingHigh, useCustomRange ? customELo : swingLow, anchorPivot.price, anchorPivot.t);
 
   // 4. Gannzilla Calendars & Cosmogram Planetary Longitudes
   const gzCfg = { ...DEFAULT_GANNZILLA_CONFIG, ...(gannzillaConfig || {}) };

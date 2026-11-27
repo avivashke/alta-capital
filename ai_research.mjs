@@ -24,43 +24,71 @@ function ensureTable() {
   return d;
 }
 
+const r1 = (v) => (Number.isFinite(Number(v)) ? +Number(v).toFixed(2) : null);
+const toArr = (x) => {
+  if (Array.isArray(x)) return x.map((i) => (typeof i === 'string' ? i : JSON.stringify(i))).map((s) => s.trim()).filter(Boolean).slice(0, 5);
+  if (typeof x === 'string') return x.split(/\n|(?<=[.!?])\s+/).map((s) => s.trim()).filter((s) => s.length > 3).slice(0, 5);
+  return [];
+};
+
 export function buildResearchDigest(state) {
   const st = state || {};
-  const desks = (st.desks || []).slice(0, 12).map((d) => ({
+  const all = (st.desks || []).filter((d) => d && d.metrics);
+  const row = (d) => ({
     desk: d.id,
-    timeframe: d.tf,
-    strategy: d.strategyId || d.strategy || d.lockedStrategy || null,
-    version: d.version ?? null,
-    oosReturnPct: d.oosMetrics?.returnPct ?? null,
-    oosSharpe: d.oosMetrics?.sharpe ?? null,
-    maxDrawdownPct: d.oosMetrics?.maxDrawdownPct ?? d.oosMetrics?.maxDD ?? null,
-    robustness: d.assessment?.robustness ?? null,
-    verdict: d.assessment?.verdict ?? d.assessment?.label ?? null,
-  }));
+    symbol: d.symbol,
+    tf: d.tf,
+    strategy: d.aiPlan?.strategyId || d.strategyId || null,
+    status: d.status,
+    oosReturnPct: r1(d.metrics?.returnPct),
+    isReturnPct: r1(d.isMetrics?.returnPct),
+    maxDDPct: r1(d.metrics?.maxDrawdownPct),
+    sharpe: r1(d.metrics?.sharpe),
+    profitFactor: r1(d.metrics?.profitFactor),
+    winRatePct: r1(d.metrics?.winRate),
+    trades: d.metrics?.trades ?? null,
+    vetoed: !!d.lastAudit?.vetoed,
+    vetoReason: d.lastAudit?.vetoReasons?.[0] || null,
+  });
+  const ranked = [...all].sort((a, b) => (Number(b.metrics?.returnPct) || 0) - (Number(a.metrics?.returnPct) || 0));
+  const avg = (arr) => (arr.length ? r1(arr.reduce((s, v) => s + v, 0) / arr.length) : null);
+  const oos = all.map((d) => Number(d.metrics.returnPct)).filter(Number.isFinite);
+  const veto = all.filter((d) => d.lastAudit?.vetoed).length;
+  const byStrategy = {};
+  for (const d of all) {
+    const k = d.aiPlan?.strategyId || 'unknown';
+    (byStrategy[k] = byStrategy[k] || []).push(Number(d.metrics.returnPct) || 0);
+  }
+  const strategyAvg = Object.entries(byStrategy)
+    .map(([k, v]) => ({ strategy: k, desks: v.length, avgOosReturnPct: avg(v) }))
+    .sort((a, b) => b.avgOosReturnPct - a.avgOosReturnPct).slice(0, 8);
   const pf = st.paperPortfolio || {};
-  const trades = (pf.trades || []).slice(-30);
-  const wins = trades.filter((t) => Number(t.pnl ?? t.pnlPct ?? 0) > 0).length;
+  const eq = (pf.equityHistory || []).slice(-1)[0];
   return {
-    desks,
+    totals: { desks: all.length, vetoedByAuditor: veto, avgOosReturnPct: avg(oos), positiveOosDesks: oos.filter((v) => v > 0).length },
+    bestDesks: ranked.slice(0, 5).map(row),
+    worstDesks: ranked.slice(-4).map(row),
+    strategyAverages: strategyAvg,
     portfolio: {
       initialBalance: pf.initialBalance ?? null,
-      cash: pf.cash ?? null,
-      openPositions: Array.isArray(pf.positions) ? pf.positions.length : (pf.openPositions ?? null),
+      cash: r1(pf.cash),
+      openPositions: Array.isArray(pf.positions) ? pf.positions.length : null,
       totalTrades: pf.totalTradesCount ?? (pf.trades || []).length,
-      recentWinRatePct: trades.length ? +((wins / trades.length) * 100).toFixed(1) : null,
+      realizedPnl: r1(pf.realizedPnLAccumulated),
+      feesPaid: r1(pf.totalFeesAccumulated),
+      lastEquity: typeof eq === 'number' ? r1(eq) : (eq?.equity ?? eq?.value ?? null),
     },
-    stats: st.stats ? { cycles: st.stats.cycles, backtests: st.stats.backtests, deployments: st.stats.deployments } : null,
-    xBias: st.xResearch?.overallBias ?? null,
-    whatsappBias: st.whatsappGann?.overallBias ?? null,
+    bias: { x: st.xResearch?.overallBias ?? null, whatsapp: st.whatsappGann?.overallBias ?? null },
   };
 }
 
-const SYSTEM = 'אתה ראש מחקר כמותי בחברת מסחר אלגוריתמית. אתה מקבל תקציר ביצועים של שולחנות המסחר והתיק. '
-  + 'השתמש רק בנתונים שניתנו, אל תמציא מספרים. המטרה: לשפר רווחיות ולהקטין סיכון. '
-  + 'החזר JSON תקין בלבד, בעברית, במבנה: '
-  + '{"summary":"2-3 משפטים","findings":[{"desk":"","issue":"","suggestion":""}],'
-  + '"parameterIdeas":[{"desk":"","param":"","change":"","reason":""}],'
-  + '"riskFlags":["..."],"priorityActions":["..."]}. עד 5 פריטים בכל רשימה.';
+const SYSTEM = 'You are the head of quantitative research at an algorithmic trading firm. You receive precomputed facts about trading desks '
+  + '(out-of-sample vs in-sample returns, drawdown, auditor vetoes) and a paper portfolio. Use ONLY the given numbers; never invent data. '
+  + 'Goal: raise profitability and cut risk. Watch for overfitting (isReturnPct much higher than oosReturnPct), desks vetoed by the auditor, and strategy families that underperform. '
+  + 'Reply with valid JSON only, in English, short and concrete: '
+  + '{"summary":"2-3 sentences","findings":[{"desk":"id","issue":"...","suggestion":"..."}],'
+  + '"parameterIdeas":[{"desk":"id","param":"name","change":"e.g. atrStop 1.9->2.4","reason":"..."}],'
+  + '"riskFlags":["..."],"priorityActions":["..."]}. At most 4 items per list.';
 
 function parseJson(text) {
   if (!text) return null;
@@ -68,7 +96,6 @@ function parseJson(text) {
   if (!m) return null;
   try { return JSON.parse(m[0]); } catch { return null; }
 }
-
 async function askLocalModel(digest) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 180_000);
@@ -105,17 +132,17 @@ export async function runResearchPass() {
   const t0 = Date.now();
   try {
     const digest = buildResearchDigest(readDbFile().state);
-    if (!digest.desks.length) throw new Error('no desks yet');
+    if (!digest.totals.desks) throw new Error('no desks with metrics yet');
     const raw = await askLocalModel(digest);
     const parsed = parseJson(raw);
     if (!parsed) throw new Error('model returned non-JSON');
     const note = {
       summary: String(parsed.summary || '').slice(0, 900),
-      findings: (parsed.findings || []).slice(0, 5),
-      parameterIdeas: (parsed.parameterIdeas || []).slice(0, 5),
-      riskFlags: (parsed.riskFlags || []).slice(0, 5),
-      priorityActions: (parsed.priorityActions || []).slice(0, 5),
-      digestStats: { desks: digest.desks.length, ...digest.portfolio },
+      findings: (Array.isArray(parsed.findings) ? parsed.findings : []).filter((x) => x && typeof x === 'object').slice(0, 5),
+      parameterIdeas: (Array.isArray(parsed.parameterIdeas) ? parsed.parameterIdeas : []).filter((x) => x && typeof x === 'object').slice(0, 5),
+      riskFlags: toArr(parsed.riskFlags),
+      priorityActions: toArr(parsed.priorityActions),
+      digestStats: { ...digest.totals, ...digest.portfolio },
     };
     d.prepare('INSERT INTO ai_research (created_at, model, data) VALUES (?,?,?)')
       .run(new Date().toISOString(), MODEL(), JSON.stringify(note));

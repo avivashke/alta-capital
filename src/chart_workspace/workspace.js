@@ -29,6 +29,7 @@ export function createChartWorkspace({
   onSymbolChange = null,
   onTfChange = null,
   onAiExplain = null,
+  onPivotClick = null,
   compact = false,
 } = {}) {
   const currentGannCfg = gannConfig || store.state.gannConfig || {};
@@ -570,7 +571,34 @@ export function createChartWorkspace({
     } else {
       applySwingMarkersToSeries(tvEngine.mainSeries, []);
     }
-  }
+    // 6. Clickable pivot dots: click any swing pivot to open the "stretch fan / square / eighths" popover
+    if (onPivotClick && state.layers.pivots !== false) {
+      const NS = 'http://www.w3.org/2000/svg';
+      overlaySvg.querySelector('#tv-pivot-layer')?.remove();
+      const g = document.createElementNS(NS, 'g');
+      g.setAttribute('id', 'tv-pivot-layer');
+      const ts = tvEngine.chart.timeScale();
+      for (const p of state.analysis?.pivots || []) {
+        let t = p.t;
+        if (t > 1e11) t = Math.floor(t / 1000);
+        const x = ts.timeToCoordinate(t);
+        const y = tvEngine.mainSeries.priceToCoordinate(p.price);
+        if (x == null || y == null || !Number.isFinite(x) || !Number.isFinite(y)) continue;
+        const dot = document.createElementNS(NS, 'circle');
+        dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('r', 5);
+        dot.setAttribute('fill', p.type === 'low' ? '#2ecc71' : '#f05b5b');
+        dot.setAttribute('stroke', '#070c14'); dot.setAttribute('stroke-width', '1.4');
+        dot.style.pointerEvents = 'all'; dot.style.cursor = 'pointer';
+        const hit = document.createElementNS(NS, 'circle');
+        hit.setAttribute('cx', x); hit.setAttribute('cy', y); hit.setAttribute('r', 13);
+        hit.setAttribute('fill', 'transparent'); hit.style.pointerEvents = 'all'; hit.style.cursor = 'pointer';
+        const open = (ev) => { ev.stopPropagation(); ev.preventDefault(); onPivotClick(p, hit.getBoundingClientRect(), state.analysis); };
+        hit.addEventListener('click', open);
+        dot.addEventListener('click', open);
+        g.appendChild(dot); g.appendChild(hit);
+      }
+      overlaySvg.appendChild(g);
+    }  }
 
   // Right-Side Slide-out Drawer (Layers, Indicators, Drawings Management)
   const rightDrawer = h('div', {
