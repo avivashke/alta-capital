@@ -272,9 +272,11 @@ export async function runAiDirector({ useFallback = false } = {}) {
   let used = null;
   try {
     // Prioritize high-performance online web LLMs (Gemini, Groq, Claude) ahead of local Ollama/Colibri
+    const fullPrompt = buildPrompt(state);
+    const promptContent = fullPrompt.length > 12000 ? buildColibriPlanPrompt(state) : fullPrompt;
     used = await chatDetailed({
       system: SYSTEM,
-      messages: [{ role: 'user', content: buildPrompt(state) }],
+      messages: [{ role: 'user', content: promptContent }],
       maxTokens: 900,
       preferWeb: true,
       preferColibri: false,

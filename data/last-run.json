@@ -1,67 +1,37 @@
 {
- "at": "2026-11-27T14:53:34.140Z",
+ "at": "2026-11-27T18:26:25.586Z",
  "summary": [
-  {
-   "desk": "desk_spy",
-   "timeframe": "1d",
-   "ok": true,
-   "published": false,
-   "version": "v1.5",
-   "oos": 21.22,
-   "robustness": 90
-  },
-  {
-   "desk": "desk_aapl",
-   "timeframe": "1d",
-   "ok": true,
-   "published": false,
-   "version": "v1.5",
-   "oos": 15.49,
-   "robustness": 82
-  },
-  {
-   "desk": "yt_bot_silvia_rumer_structure_pullback_BTCUS",
-   "timeframe": "1d",
-   "ok": true,
-   "published": false,
-   "version": "v1.4",
-   "oos": 29.31,
-   "robustness": 84
-  },
   {
    "desk": "yt_bot_poc_point_of_control_structure_pullba",
    "timeframe": "1h",
    "ok": true,
    "published": false,
    "version": null,
-   "oos": 8.21,
-   "robustness": 44
-  },
-  {
-   "desk": "yt_bot_matt_schoeneberger_structure_pullback",
-   "timeframe": "1h",
-   "ok": true,
-   "published": false,
-   "version": null,
-   "oos": 6.03,
-   "robustness": 43
+   "oos": 2.84,
+   "robustness": 38
   }
  ],
  "stats": {
-  "cycles": 209,
-  "backtests": 48328,
-  "deployments": 69,
-  "scans": 252,
+  "cycles": 213,
+  "backtests": 49244,
+  "deployments": 70,
+  "scans": 284,
   "startedAt": 1794473380871
  },
  "runner": {
-  "cycles": 5,
+  "cycles": 1,
   "deep": false,
-  "durationMs": 66782,
-  "node": "v20.20.2"
+  "durationMs": 12834,
+  "node": "v22.23.5"
  },
  "ai": {
-  "ok": false,
-  "reason": "כל המודלים והפרוקסים בבריכה נכשלו · Cloudflare Workers AI: HTTP 404 · {\"result\":null,\"success\":false,\"errors\":[{\"code\":7003,\"message\":\"Could not route to /client/v4/accounts/ai/v1/chat/completions, perhaps your object identifier is invalid?\"}],\"messages\":[]} | Pollinations · openai-fast (חינם מהווב): HTTP 413 · {\"status\":413,\"success\":false,\"error\":{\"code\":\"PAYLOAD_TOO_LARGE\",\"message\":\"Prompt too long for the free Classic API: 16,000 characters max (about 4,000 tokens), counting messages and tools. Shorten it, or use long prompts and every model "
+  "source": "model",
+  "focusDesk": "yt_bot_poc_point_of_control_structure_pullba",
+  "strategyId": "ema_trend",
+  "rationale": "השולחן חלש במיוחד: OOS חיובי אך IS שלילי, PF נמוך וחוסן נמוך; מעבר למעקב מגמה פשוט מצמצם פרמטרים ומפחית תלות במבנה pullback.",
+  "provider": "pollinations",
+  "model": "openai-fast",
+  "accountId": null,
+  "fallbacks": []
  }
 }

@@ -10,6 +10,14 @@ import { runAiDirector } from '../ai.js';
 import { auditSystemTruth } from '../auditor.js';
 import { marketState } from '../market.js';
 import { renderEducationalChatWidget } from './academy.js';
+import {
+  ensureFirmMemory,
+  analyzeDeskWithFreeAi,
+  runFullTeamLearningCycle,
+  deleteAiLesson,
+  clearAllAiLessons
+} from '../ai_learning.js';
+import { openFreeAiConnectModal } from '../page_context.js';
 
 const PIPELINE = [
   ['סריקה', 'איסוף אסטרטגיות, קוד ומחקר מ-GitHub, חדשות ומקורות פתוחים'],
@@ -996,6 +1004,8 @@ export function renderAgents(root, ui) {
 
   mount(root, renderTruthAuditorCard(state, ui));
 
+  mount(root, renderAiTeamLearningLab(state, ui));
+
   mount(root, renderEducationalChatWidget(ui, { compact: false }));
 
   if (!sim.showProxyPanel) {
@@ -1070,4 +1080,220 @@ function renderTruthAuditorCard(state, ui) {
 
 function stat(label, value) {
   return h('div', { class: 'metric' }, h('span', { text: label }), h('b', { text: value }));
+}
+
+function renderAiTeamLearningLab(state, ui) {
+  ensureFirmMemory(state);
+  const lessons = state.aiLessons || [];
+  const metrics = state.aiLearningMetrics || {};
+  const desks = state.desks || [];
+
+  return h('div', { class: 'card', style: { marginTop: '14px', borderColor: 'rgba(56, 189, 248, 0.45)', background: 'linear-gradient(180deg, rgba(8, 18, 36, 0.95) 0%, rgba(10, 15, 26, 0.95) 100%)' } },
+    h('div', { class: 'card-head', style: { flexWrap: 'wrap', gap: '8px' } },
+      h('div', {},
+        h('h2', { text: '🧠 מעבדת למידת AI מתמשכת ומיטוב פרמטרים (Free AI Team Learning & Optimization Lab)' }),
+        h('div', { class: 'card-sub', text: 'מינוף מנועי AI חינמיים ברשת (Gemini, Groq, Claude) לאבחון מעמיק של שולחנות המסחר, זיקוק לקחים ארגוניים מתמשכים והזנת טווחי פרמטרים חדים לליה (Optimizer) ואיתי (Backtester).' }),
+      ),
+      h('div', { class: 'row wrap', style: { gap: '6px' } },
+        tag(`לקחים בזיכרון: ${lessons.length}`, 'live'),
+        tag(`מנוע פעיל: ${metrics.activeProvider || 'Gemini 2.5 Flash (Free Web)'}`, 'opt'),
+        h('button', {
+          class: 'btn btn-sm btn-ghost',
+          onclick: () => openFreeAiConnectModal(ui),
+        }, '⚡ חבר מנועי AI (חינם)'),
+        h('button', {
+          class: 'btn btn-sm btn-primary',
+          onclick: async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            btn.textContent = '⏳ מריץ למידה ומיטוב AI...';
+            try {
+              toast('הצוות מנתח את השולחנות ומחלץ לקחי אופטימיזציה באמצעות AI חינמי...', 'info');
+              const res = await runFullTeamLearningCycle(state, { maxDesks: 4 });
+              if (res.ok) {
+                toast(`הושלם בהצלחה! ${res.analyzedCount} שולחנות עברו אבחון והופקו לקחי פרמטרים (${res.activeProvider})`, 'ok');
+              } else {
+                toast(res.reason || 'לא בוצעה למידה', 'warn');
+              }
+              ui.rerender();
+            } catch (err) {
+              toast(`שגיאה בלמידת AI: ${err.message}`, 'bad');
+            } finally {
+              btn.disabled = false;
+              btn.textContent = '⚡ הרץ סבב למידה ומיטוב לכל השולחנות';
+            }
+          },
+        }, '⚡ הרץ סבב למידה ומיטוב לכל השולחנות'),
+        lessons.length > 0
+          ? h('button', {
+              class: 'btn btn-sm btn-ghost',
+              style: { color: '#f87171' },
+              onclick: () => {
+                if (confirm('האם לאפס את כל לקחי ה-AI המצטברים מזיכרון הפירמה?')) {
+                  clearAllAiLessons(state);
+                  toast('זיכרון ה-AI של הפירמה אופס', 'info');
+                  ui.rerender();
+                }
+              },
+            }, '🗑️ נקה מאגר לקחים')
+          : null,
+      ),
+    ),
+
+    // Active Desks Diagnostics Panel
+    h('div', { style: { marginTop: '12px' } },
+      h('div', { class: 'row between', style: { marginBottom: '8px' } },
+        h('strong', { style: { fontSize: '13px', color: '#93c5fd' }, text: '🔬 דיאגנוסטיקת שולחנות וטווחי פרמטרים מומלצים (Live Desk AI Diagnostics)' }),
+        h('span', { class: 'tiny muted', text: 'לחץ על שולחן כדי לאבחן מיידית ולהזריק אילוצים לאופטימייזר' }),
+      ),
+      h('div', { class: 'grid cols-2', style: { gap: '10px' } },
+        ...desks.slice(0, 6).map((desk) => {
+          const plan = desk.aiPlan;
+          const isVetoed = desk.lastAudit?.vetoed;
+          const oosRet = desk.oosMetrics?.returnPct ?? desk.bestReturn ?? null;
+          const badgeCls = isVetoed ? 'paused' : (oosRet != null && oosRet > 0 ? 'live' : 'dry');
+          return h('div', {
+            class: 'card',
+            style: {
+              padding: '10px 12px',
+              background: 'rgba(15, 23, 42, 0.75)',
+              border: isVetoed ? '1px solid rgba(248, 113, 113, 0.4)' : '1px solid rgba(56, 189, 248, 0.25)',
+            },
+          },
+            h('div', { class: 'row between', style: { marginBottom: '6px' } },
+              h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+                h('strong', { style: { color: '#f8fafc' }, text: desk.label }),
+                tag(`${desk.symbol} · ${desk.tf}`, 'dry'),
+              ),
+              h('div', { class: 'row', style: { gap: '6px' } },
+                tag(isVetoed ? '⛔ נפסל באמיר' : (oosRet != null ? `OOS: ${oosRet}%` : 'טרם כויל'), badgeCls),
+                h('button', {
+                  class: 'btn btn-xs btn-primary',
+                  onclick: async (e) => {
+                    const b = e.currentTarget;
+                    b.disabled = true;
+                    b.textContent = '⏳ מנתח...';
+                    try {
+                      const res = await analyzeDeskWithFreeAi(desk, state);
+                      if (res.ok) {
+                        toast(`שולחן ${desk.label} אובחן בהצלחה ע"י ${res.provider}!`, 'ok');
+                      } else {
+                        toast(`שגיאה באבחון: ${res.reason}`, 'bad');
+                      }
+                      ui.rerender();
+                    } finally {
+                      b.disabled = false;
+                      b.textContent = '🔬 אבחן עם AI';
+                    }
+                  },
+                }, '🔬 אבחן עם AI'),
+              ),
+            ),
+            plan
+              ? h('div', { style: { fontSize: '12px', lineHeight: '1.45', color: '#cbd5e1' } },
+                  h('div', { style: { color: '#38bdf8', marginBottom: '3px' } }, `💡 אבחנה: ${plan.rationale || '—'}`),
+                  plan.lessonLearned ? h('div', { style: { color: '#fbbf24', marginBottom: '4px' } }, `📌 לקח: ${plan.lessonLearned}`) : null,
+                  plan.paramBias && Object.keys(plan.paramBias).length
+                    ? h('div', { class: 'row wrap', style: { gap: '4px', marginTop: '4px' } },
+                        h('span', { class: 'tiny muted', text: 'טווחי פרמטרים שננעלו:' }),
+                        ...Object.entries(plan.paramBias).map(([k, [min, max]]) =>
+                          h('span', {
+                            style: {
+                              fontSize: '11px',
+                              background: 'rgba(56, 189, 248, 0.15)',
+                              border: '1px solid rgba(56, 189, 248, 0.35)',
+                              borderRadius: '4px',
+                              padding: '1px 5px',
+                              color: '#7dd3fc',
+                              fontFamily: 'monospace',
+                            },
+                            text: `${k}: [${min}, ${max}]`,
+                          })
+                        ),
+                      )
+                    : null,
+                  h('div', { class: 'tiny muted', style: { marginTop: '4px' }, text: `סופק ע"י ${plan.provider || 'AI'} · ${timeAgo(plan.at)}` }),
+                )
+              : h('div', { class: 'tiny muted', text: 'שולחן זה טרם נותח ע"י AI. לחץ על "אבחן עם AI" כדי לחלץ לקחים וטווחי פרמטרים ממוקדים.' })
+          );
+        }),
+      ),
+    ),
+
+    // Persistent Lessons Memory Table / List
+    h('div', { style: { marginTop: '14px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '12px' } },
+      h('div', { class: 'row between', style: { marginBottom: '8px' } },
+        h('strong', { style: { fontSize: '13px', color: '#34d399' }, text: `📚 מאגר הלקחים והזיכרון הארגוני של הפירמה (${lessons.length} לקחים פעילים)` }),
+        h('span', { class: 'tiny muted', text: 'לקחים אלו מוזרקים ישירות לאלגוריתם המיטוב ומונעים חזרה על טעויות' }),
+      ),
+      lessons.length === 0
+        ? h('div', {
+            style: {
+              padding: '14px',
+              textAlign: 'center',
+              color: '#94a3b8',
+              fontSize: '12.5px',
+              background: 'rgba(255, 255, 255, 0.02)',
+              borderRadius: '6px',
+            },
+            text: 'מאגר הלקחים עדיין ריק. ברגע שתריץ מחזור למידה או תאבחן שולחן, ה-AI יפיק לקחים קבועים וטווחי פרמטרים שיישמרו כאן.',
+          })
+        : h('div', { class: 'grid cols-1', style: { gap: '8px', maxHeight: '340px', overflowY: 'auto', paddingRight: '4px' } },
+            ...lessons.map((lesson) => h('div', {
+              class: 'card',
+              style: {
+                padding: '9px 12px',
+                background: 'rgba(8, 14, 24, 0.85)',
+                border: '1px solid rgba(52, 211, 153, 0.3)',
+              },
+            },
+              h('div', { class: 'row between', style: { marginBottom: '4px' } },
+                h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+                  h('strong', { style: { color: '#34d399', fontSize: '13px' }, text: lesson.deskLabel || lesson.symbol }),
+                  tag(`${lesson.symbol} · ${lesson.tf}`, 'dry'),
+                  tag(`ביטחון: ${lesson.confidenceScore}%`, 'live'),
+                  tag(lesson.provider || 'Gemini', 'opt'),
+                ),
+                h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+                  h('span', { class: 'tiny muted', text: timeAgo(lesson.at) }),
+                  h('button', {
+                    class: 'btn btn-xs btn-ghost',
+                    style: { color: '#f87171', padding: '2px 6px', fontSize: '11px' },
+                    title: 'מחק לקח זה מזיכרון הפירמה',
+                    onclick: () => {
+                      deleteAiLesson(lesson.id, state);
+                      toast('הלקח נמחק מהזיכרון הארגוני', 'ok');
+                      ui.rerender();
+                    },
+                  }, '🗑️ מחק לקח'),
+                ),
+              ),
+              h('div', { style: { fontSize: '12px', color: '#f1f5f9', marginBottom: '3px' } },
+                h('b', { style: { color: '#fbbf24' }, text: '📌 לקח ארגוני: ' }),
+                lesson.lessonLearned,
+              ),
+              lesson.diagnostic ? h('div', { class: 'tiny muted', style: { marginBottom: '3px' }, text: `אבחנה: ${lesson.diagnostic}` }) : null,
+              lesson.paramBias && Object.keys(lesson.paramBias).length
+                ? h('div', { class: 'row wrap', style: { gap: '4px', marginTop: '3px' } },
+                    h('span', { class: 'tiny muted', text: 'אילוצי פרמטרים מיושמים:' }),
+                    ...Object.entries(lesson.paramBias).map(([k, [min, max]]) =>
+                      h('span', {
+                        style: {
+                          fontSize: '10.5px',
+                          background: 'rgba(52, 211, 153, 0.15)',
+                          border: '1px solid rgba(52, 211, 153, 0.35)',
+                          borderRadius: '3px',
+                          padding: '1px 5px',
+                          color: '#6ee7b7',
+                          fontFamily: 'monospace',
+                        },
+                        text: `${k}: [${min}, ${max}]`,
+                      })
+                    ),
+                  )
+                : null,
+            )),
+          ),
+    ),
+  );
 }

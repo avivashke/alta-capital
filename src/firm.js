@@ -20,6 +20,7 @@ import { createBinanceClient } from './binance_testnet.js';
 import { createPaperPortfolio } from './paper_portfolio.js';
 import { recordVersionInDb, recordTradeInDb, recordCycleInDb, scheduleDatabasePush, pushStateToDatabase } from './db.js';
 import { runAiDirector } from './ai.js';
+import { getApplicableAiLessons, analyzeDeskWithFreeAi } from './ai_learning.js';
 
 // Deep history per timeframe (years back on 1d/1w, months on intraday) so the
 // backtest is not decided by a few weeks of one market regime.
@@ -362,18 +363,27 @@ export async function runDeskCycle(desk, opts = {}) {
     }
 
     const baseRounds = ROUNDS[desk.kind] || ROUNDS.intraday;
+    const aiLessonsData = getApplicableAiLessons(desk, state);
+    const combinedSpaceOverride = {
+      ...(aiLessonsData.paramBias || {}),
+      ...(aiPlan?.paramBias || {}),
+    };
+    const activeSpaceOverride = Object.keys(combinedSpaceOverride).length ? combinedSpaceOverride : null;
+
     setAgent('optimizer', {
       status: 'busy',
       task: `מיטוב למשטר "${regime.label}" · ${desk.label}`,
       progress: 12,
-      thinking: `מכיילת פרמטרים ל-${regime.label} (שיפוע ${regime.slopePct}% · תנודתיות ×${regime.volRatio})`,
+      thinking: aiLessonsData.latestLessonText
+        ? `מיישמת לקח AI מצטבר: "${aiLessonsData.latestLessonText}"`
+        : `מכיילת פרמטרים ל-${regime.label} (שיפוע ${regime.slopePct}% · תנודתיות ×${regime.volRatio})`,
     });
     const result = await optimize({
       candles,
       strategyId: desk.strategyId,
       cfg,
       seed: desk.params,
-      spaceOverride: aiPlan?.paramBias || null,
+      spaceOverride: activeSpaceOverride,
       regime,
       rounds: opts.deep ? baseRounds.rounds * 2 : baseRounds.rounds,
       climb: opts.deep ? baseRounds.climb * 2 : baseRounds.climb,
@@ -488,6 +498,10 @@ export async function runDeskCycle(desk, opts = {}) {
         speechType: 'speak',
       });
       store.log('warn', 'אמיר · ביקורת אמת', `${desk.label}: ${audit.summary}`);
+      // Continuous autonomous AI learning from auditor veto:
+      if (!opts.dryRun) {
+        analyzeDeskWithFreeAi(desk, state).catch(() => {});
+      }
     } else {
       setAgent('auditor', {
         status: 'busy',
