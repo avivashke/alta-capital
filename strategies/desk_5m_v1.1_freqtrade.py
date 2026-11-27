@@ -6,7 +6,7 @@
 # OOS: 0.42% · Sharpe 21.1
 # Params: {"period":12,"oversold":25,"overbought":80,"atrStop":1.5,"rr":1.6}
 # Target platform: Freqtrade
-# Generated: 2026-11-27T18:26:25.575Z
+# Generated: 2026-11-27T23:22:17.152Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:
