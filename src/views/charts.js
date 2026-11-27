@@ -9,6 +9,7 @@ import { mount, h, num, pct, notice, tag, openModal, closeModal, toast } from '.
 import { store } from '../store.js';
 import { marketState, getCandles, lastPrice, quotes, ASSET_CATALOG } from '../market.js';
 import { ema, sma, rsi, macd, donchian, bollinger, atr, supertrend, vwap, stochastic } from '../indicators.js';
+import { createChartWorkspace } from '../chart_workspace/workspace.js';
 
 const MAX_BARS = 180;
 const BAR_W = 11;
@@ -21,6 +22,7 @@ let chartState = {
   candles: null,
   symbol: 'BTCUSDT',
   tf: '1h',
+  engineMode: 'lw', // 'lw' (Lightweight Charts 60fps canvas) | 'classic'
   chartType: 'candles', // 'candles' | 'heikin' | 'line' | 'area'
   // Indicator Overlay Toggles
   indicators: {
@@ -1218,6 +1220,14 @@ export function renderCharts(root, ui) {
             onclick: () => clearDrawingsOnly(ui),
           }, '🗑️ נקה סימונים'),
           h('button', {
+            class: `btn btn-sm ${chartState.engineMode !== 'classic' ? 'btn-primary' : 'btn-ghost'}`,
+            onclick: () => { chartState.engineMode = 'lw'; ui.rerender(); },
+          }, '🕯️ מנוע TradingView Canvas (60fps)'),
+          h('button', {
+            class: `btn btn-sm ${chartState.engineMode === 'classic' ? 'btn-primary' : 'btn-ghost'}`,
+            onclick: () => { chartState.engineMode = 'classic'; ui.rerender(); },
+          }, '📈 תצוגת SVG מהירה'),
+          h('button', {
             class: 'btn btn-sm btn-primary',
             onclick: () => openIndicatorSelectorModal(ui),
           }, '📊 אינדיקטורים'),
@@ -1298,8 +1308,24 @@ export function renderCharts(root, ui) {
         h('span', { style: { color: '#64748b' }, text: '(העבר עכבר על הנרות לקריאת ערכים מדויקים / לחץ להוספת קו אופקי)' }),
       ),
 
-      // Main Chart Canvas SVG
-      safe(() => renderMainTradingViewSvg(candles, ui), h('div', { class: 'empty', text: 'שגיאה ברינדור הגרף' })),
+      // Main Chart Canvas (TradingView Lightweight Charts 60fps canvas or classic SVG)
+      chartState.engineMode !== 'classic'
+        ? createChartWorkspace({
+            symbol,
+            tf,
+            candles,
+            onSymbolChange: (newSym) => {
+              ui.customChartSymbol = newSym;
+              chartState = { ...chartState, key: null, loading: false, error: null, candles: null };
+              ui.rerender();
+            },
+            onTfChange: (newTf) => {
+              ui.customChartTf = newTf;
+              chartState = { ...chartState, key: null, loading: false, error: null, candles: null };
+              ui.rerender();
+            },
+          }).element
+        : safe(() => renderMainTradingViewSvg(candles, ui), h('div', { class: 'empty', text: 'שגיאה ברינדור הגרף' })),
     ),
 
     // Sub-Charts Section (Oscillators: RSI, MACD, Stochastic, ATR)

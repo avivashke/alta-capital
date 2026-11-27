@@ -1009,6 +1009,32 @@ export function renderNostro(root, ui) {
   // Protected Vault / Side Fund (קופה צדדית מובטחת)
   mount(root, renderVaultSection(store.state.vault));
 
+  // Invo Copy-Trading Mirror Desk integration card
+  mount(root, h('div', {
+    class: 'card',
+    style: {
+      marginTop: '16px',
+      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.85))',
+      border: '1px solid rgba(16, 185, 129, 0.25)',
+    },
+  },
+    h('div', { class: 'row between wrap', style: { gap: '10px', alignItems: 'center' } },
+      h('div', {},
+        h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
+          h('h2', { style: { margin: '0', fontSize: '16px' }, text: '👥 שולחן חיקוי סוחרי Invo (Invo Copy-Trading Desks)' }),
+          tag('אינטגרציית Invo פעילה', 'live'),
+        ),
+        h('div', { class: 'card-sub', text: 'חדרי מסחר אוטונומיים לחיקוי הסוחרים המצטיינים בפלטפורמת Invo (יגאל, שמחה וסוחרי נוסטרו מאומתים). הרווחים מועברים ישירות לקופת הנוסטרו.' }),
+      ),
+      h('div', { class: 'row', style: { gap: '8px' } },
+        h('button', {
+          class: 'btn btn-primary btn-sm',
+          onclick: () => ui.go('invo'),
+        }, '🚀 כניסה לחדרי המסחר של Invo'),
+      ),
+    ),
+  ));
+
   // Feasibility & Empirical Mathematical Proof (Monte Carlo + Real Market Data)
   mount(root, renderNostroFeasibilitySection(bots, rules));
 

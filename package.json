@@ -31,5 +31,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "lightweight-charts": "^5.3.0"
   }
 }

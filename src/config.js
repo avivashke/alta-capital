@@ -215,6 +215,7 @@ export const NAV = [
   { id: 'gann', label: 'מחקר וחיזויי גאן', icon: '◬' },
   { id: 'fundamentals', label: 'ניתוח פונדמנטלי', icon: '🏛' },
   { id: 'nostro', label: 'מבחני נוסטרו', icon: '🏆' },
+  { id: 'invo', label: 'חדרי מסחר וחיקוי Invo', icon: '👥' },
   { id: 'academy', label: 'צ׳אט חינוכי ואסטרטגיות', icon: '🎓' },
   { id: 'advisor', label: 'יועץ AI', icon: '✦' },
   { id: 'settings', label: 'הגדרות ומפתחות', icon: '⚙' },

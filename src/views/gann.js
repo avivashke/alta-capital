@@ -26,11 +26,13 @@ import { gannExplainButton, openGannMasterGuideModal, renderGannExecutiveForecas
 import { renderWhatsAppGannCard } from '../whatsapp_gann_ui.js';
 import { renderYonatanYouTubeScoutCard } from '../youtube_scout_ui.js';
 import { calculateJenkinsAnalysis, jenkinsSquareRootTargets, jenkinsMasterTimeCycles } from '../jenkins.js';
+import { createChartWorkspace } from '../chart_workspace/workspace.js';
 
 let gannViewState = {
   symbol: 'BTCUSDT',
   customSymbol: '',
   tf: '1d',
+  chartMode: 'tv', // 'tv' (TradingView grade workspace) | 'classic' (SVG map)
   manualPrice: '',
   manualDate: '',
   calcTab: 'fan', // 'fan' | 'msj_grid' | 'msj_deg' | 'jenkins' | 'eighths' | 'hex'
@@ -2128,7 +2130,15 @@ export function renderGann(root, ui) {
           h('h2', { text: `${gannViewState.symbol} · מפת חיזוי ומניפת גאן (${marketState.provider || 'חי'})` }),
           h('div', { class: 'card-sub', text: 'מניפת גאן 9 זוויות (8x1–1x8) · תיבת גאן · סווינג גאן · רמות Sq9 · ★ אירועים פונדמנטליסטיים שאומתו' }),
         ),
-        h('div', { class: 'row wrap', style: { gap: '6px' } },
+        h('div', { class: 'row wrap', style: { gap: '6px', alignItems: 'center' } },
+          h('button', {
+            class: `btn btn-sm ${gannViewState.chartMode !== 'classic' ? 'btn-primary' : 'btn-ghost'}`,
+            onclick: () => { gannViewState.chartMode = 'tv'; ui.rerender(); },
+          }, '🕯️ סביבת TradingView'),
+          h('button', {
+            class: `btn btn-sm ${gannViewState.chartMode === 'classic' ? 'btn-primary' : 'btn-ghost'}`,
+            onclick: () => { gannViewState.chartMode = 'classic'; ui.rerender(); },
+          }, '🗺️ מפה קלאסית'),
           gannExplainButton('fan_chart', a, cfg, gannViewState.symbol),
           tag(`עוגן: ${num(a.anchorPivot.price, 2)} (${a.anchorPivot.manual ? 'ידני' : a.anchorPivot.type === 'low' ? 'שפל' : 'שיא'})`, 'live'),
         ),
@@ -2272,10 +2282,30 @@ export function renderGann(root, ui) {
             h('span', { class: 'small', style: { color: '#e2e8f0' }, text: a.subTrendSignals.summary }),
           )
         : null,
-      renderGannForecastSvg(gannViewState.candles, a, cfg, {
-        boxBars: Number(cfg.boxBars) || 0,
-        onPivotAction: (pivot, action) => applyPivotAction(pivot, action, ui),
-      }),
+      gannViewState.chartMode === 'classic'
+        ? renderGannForecastSvg(gannViewState.candles, a, cfg, {
+            boxBars: Number(cfg.boxBars) || 0,
+            onPivotAction: (pivot, action) => applyPivotAction(pivot, action, ui),
+          })
+        : createChartWorkspace({
+            symbol: gannViewState.symbol,
+            tf: gannViewState.tf,
+            analysis: a,
+            candles: gannViewState.candles,
+            onSymbolChange: (newSym) => {
+              gannViewState.symbol = newSym;
+              gannViewState.key = null;
+              loadGannData(ui, { force: true });
+            },
+            onTfChange: (newTf) => {
+              gannViewState.tf = newTf;
+              gannViewState.key = null;
+              loadGannData(ui, { force: true });
+            },
+            onAiExplain: (sym, analysisData) => {
+              askAiForGannProposal(analysisData || a, ui);
+            },
+          }).element,
       a.gannFan?.ruleOfAllAngles
         ? h('div', { class: 'small muted', style: { marginTop: '8px' }, text: a.gannFan.ruleOfAllAngles })
         : null,

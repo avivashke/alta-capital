@@ -26,6 +26,7 @@ import { renderCharts } from './views/charts.js';
 import { renderGann } from './views/gann.js';
 import { renderFundamentals } from './views/fundamentals.js';
 import { renderNostro } from './views/nostro.js';
+import { renderInvo } from './views/invo.js';
 import { renderAcademy } from './views/academy.js';
 
 const VIEWS = {
@@ -41,6 +42,7 @@ const VIEWS = {
   gann: renderGann,
   fundamentals: renderFundamentals,
   nostro: renderNostro,
+  invo: renderInvo,
   settings: renderSettings,
   docs: renderDocs,
   portfolio: renderPortfolio,
@@ -48,7 +50,7 @@ const VIEWS = {
 };
 
 const STATIC_ROUTES = new Set([
-  'gann', 'academy', 'settings', 'docs', 'charts', 'fundamentals', 'nostro', 'advisor',
+  'gann', 'academy', 'settings', 'docs', 'charts', 'fundamentals', 'nostro', 'invo', 'advisor',
 ]);
 const BG_RENDER_MIN_MS = 4000;
 const BG_RENDER_AGENTS_MS = 10000;
