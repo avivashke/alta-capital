@@ -2,11 +2,11 @@
 # Alta Capital — auto-generated strategy artifact
 # Desk: תוך־יומי · 15 דקות · ETHUSDT · 15m
 # Version: v1.4 · Strategy family: rsi_reversion
-# Backtest: return 2.33% · PF 1.59 · DD 3.41% · trades 14
-# OOS: 0.78% · Sharpe 1.77
+# Backtest: return 1.93% · PF 1.41 · DD 3.41% · trades 15
+# OOS: 0.78% · Sharpe 1.47
 # Params: {"period":17,"oversold":18,"overbought":72,"atrStop":2.2,"rr":3}
 # Target platform: Freqtrade
-# Generated: 2026-11-26T22:56:13.662Z
+# Generated: 2026-11-27T04:55:37.296Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:
