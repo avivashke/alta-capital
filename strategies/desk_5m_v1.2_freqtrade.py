@@ -1,12 +1,12 @@
 # ============================================================
 # Alta Capital — auto-generated strategy artifact
 # Desk: תוך־יומי · 5 דקות · BTCUSDT · 5m
-# Version: v1.2 · Strategy family: breakout
-# Backtest: return 1.38% · PF 1.19 · DD 4.94% · trades 30
-# OOS: 4.36% · Sharpe 6.07
-# Params: {"period":19,"atrStop":1.6,"rr":2.7,"filter":true}
+# Version: v1.2 · Strategy family: rsi_reversion
+# Backtest: return 1.86% · PF 1.62 · DD 2.03% · trades 10
+# OOS: 0.77% · Sharpe 5.11
+# Params: {"period":14,"oversold":18,"overbought":84,"atrStop":1.9,"rr":1.6}
 # Target platform: Freqtrade
-# Generated: 2026-11-20T23:55:04.795Z
+# Generated: 2026-11-28T04:55:09.676Z
 # Research artifact only — no warranty, no live order routing.
 # ============================================================
 # Drop this file in freqtrade/user_data/strategies/ and run:
@@ -25,8 +25,8 @@ class Altadesk_5m(IStrategy):
     can_short = True
     startup_candle_count = 210
 
-    stoploss = -0.019
-    minimal_roi = {"0": 2.43, "240": 0.01, "720": 0}
+    stoploss = -0.023
+    minimal_roi = {"0": 1.44, "240": 0.01, "720": 0}
 
     trailing_stop = False
     process_only_new_candles = True
@@ -34,23 +34,23 @@ class Altadesk_5m(IStrategy):
     exit_profit_only = False
 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-        dataframe['dc_high'] = dataframe['high'].rolling(19).max()
-        dataframe['dc_low'] = dataframe['low'].rolling(19).min()
-        dataframe['dc_mid'] = (dataframe['dc_high'] + dataframe['dc_low']) / 2
+        dataframe['rsi'] = ta.RSI(dataframe, timeperiod=14)
         dataframe['atr'] = ta.ATR(dataframe, timeperiod=14)
         return dataframe
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         dataframe.loc[
             (
-        & (dataframe['close'] > dataframe['dc_high'].shift(1))
+        & (dataframe['rsi'] <= 18)
+        & (dataframe['rsi'].shift(1) > 18)
                 & (dataframe['volume'] > 0)
             ),
             'enter_long',
         ] = 1
         dataframe.loc[
             (
-        & (dataframe['close'] < dataframe['dc_low'].shift(1))
+        & (dataframe['rsi'] >= 84)
+        & (dataframe['rsi'].shift(1) < 84)
                 & (dataframe['volume'] > 0)
             ),
             'enter_short',
@@ -61,13 +61,15 @@ class Altadesk_5m(IStrategy):
         # Risk-managed exits: ATR stop + fixed R multiple handled by the engine.
         dataframe.loc[
             (
-        & (dataframe['close'] > dataframe['dc_high'].shift(1))
+        & (dataframe['rsi'] <= 18)
+        & (dataframe['rsi'].shift(1) > 18)
             ),
             'exit_short',
         ] = 1
         dataframe.loc[
             (
-        & (dataframe['close'] < dataframe['dc_low'].shift(1))
+        & (dataframe['rsi'] >= 84)
+        & (dataframe['rsi'].shift(1) < 84)
             ),
             'exit_long',
         ] = 1

@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-27T23:22:17.170Z",
+ "generatedAt": "2026-11-28T04:55:09.703Z",
  "firm": "Alta Capital (agent-run research desk)",
  "disclaimer": "Backtest and paper-trading research only. Not investment advice.",
  "settings": {
@@ -14,52 +14,57 @@
    "label": "תוך־יומי · 5 דקות",
    "timeframe": "5m",
    "symbol": "BTCUSDT",
-   "status": "optimizing",
-   "version": "v1.1",
+   "status": "dry-run",
+   "version": "v1.2",
    "strategyId": "rsi_reversion",
    "params": {
-    "period": 12,
-    "oversold": 25,
-    "overbought": 80,
-    "atrStop": 1.5,
+    "period": 14,
+    "oversold": 18,
+    "overbought": 84,
+    "atrStop": 1.9,
     "rr": 1.6
    },
    "metrics": {
-    "returnPct": 2.2,
-    "maxDrawdownPct": 0.52,
-    "sharpe": 21.1,
-    "profitFactor": 10.99,
-    "winRate": 71.4,
-    "trades": 7,
-    "avgR": 0.208,
-    "expectancy": 11.77,
-    "exposurePct": 8.4,
-    "bestTradePct": 1.125,
-    "worstTradePct": -0.155,
-    "finalEquity": 3832.39,
-    "curvePoints": 621,
-    "totalFees": 45.4576,
-    "barsInMarket": 52
+    "returnPct": 1.86,
+    "maxDrawdownPct": 2.03,
+    "sharpe": 5.11,
+    "profitFactor": 1.62,
+    "winRate": 60,
+    "trades": 10,
+    "avgR": 0.126,
+    "expectancy": 6.99,
+    "exposurePct": 5.4,
+    "bestTradePct": 1.455,
+    "worstTradePct": -1.278,
+    "finalEquity": 3819.9,
+    "curvePoints": 1900,
+    "totalFees": 64.3225,
+    "barsInMarket": 103
    },
    "oos": {
-    "returnPct": 0.42,
-    "maxDrawdownPct": 0.35,
-    "sharpe": 19.21,
-    "profitFactor": 7.67,
-    "winRate": 50,
-    "trades": 2,
-    "avgR": 0.142,
-    "expectancy": 7.94,
-    "exposurePct": 11.1,
-    "bestTradePct": 0.487,
-    "worstTradePct": -0.063,
-    "finalEquity": 3765.87,
-    "curvePoints": 217,
-    "totalFees": 12.8264,
-    "barsInMarket": 24
+    "returnPct": 0.77,
+    "maxDrawdownPct": 1.28,
+    "sharpe": 6.62,
+    "profitFactor": 1.84,
+    "winRate": 66.7,
+    "trades": 3,
+    "avgR": 0.175,
+    "expectancy": 9.69,
+    "exposurePct": 3.3,
+    "bestTradePct": 1.439,
+    "worstTradePct": -0.919,
+    "finalEquity": 3779.06,
+    "curvePoints": 600,
+    "totalFees": 19.5038,
+    "barsInMarket": 20
    },
-   "bestReturn": 0.42,
+   "bestReturn": 0.77,
    "versions": [
+    {
+     "version": "v1.2",
+     "at": 1795841703230,
+     "oos": 0.77
+    },
     {
      "version": "v1.1",
      "at": 1795733727331,
@@ -94,11 +99,6 @@
      "version": "v1.0",
      "at": 1795126415025,
      "oos": 2.41
-    },
-    {
-     "version": "v1.0",
-     "at": 1794550615882,
-     "oos": 5.77
     }
    ]
   },
@@ -823,38 +823,38 @@
     "rr": 2.5
    },
    "metrics": {
-    "returnPct": -12.36,
-    "maxDrawdownPct": 23.05,
-    "sharpe": -0.94,
-    "profitFactor": 0.87,
-    "winRate": 33.8,
-    "trades": 204,
-    "avgR": -0.038,
-    "expectancy": -1.21,
-    "exposurePct": 70.6,
-    "bestTradePct": 3.291,
-    "worstTradePct": -1.616,
-    "finalEquity": 1752.81,
+    "returnPct": -11.21,
+    "maxDrawdownPct": 22.39,
+    "sharpe": -0.83,
+    "profitFactor": 0.88,
+    "winRate": 34,
+    "trades": 203,
+    "avgR": -0.034,
+    "expectancy": -1.1,
+    "exposurePct": 70.5,
+    "bestTradePct": 3.334,
+    "worstTradePct": -1.638,
+    "finalEquity": 1775.77,
     "curvePoints": 3880,
-    "totalFees": 589.532,
-    "barsInMarket": 2740
+    "totalFees": 593.6236,
+    "barsInMarket": 2736
    },
    "oos": {
-    "returnPct": 3.4,
-    "maxDrawdownPct": 8.95,
-    "sharpe": 0.98,
-    "profitFactor": 1.11,
+    "returnPct": 3.84,
+    "maxDrawdownPct": 8.57,
+    "sharpe": 1.08,
+    "profitFactor": 1.12,
     "winRate": 37.1,
     "trades": 62,
-    "avgR": 0.042,
-    "expectancy": 1.1,
-    "exposurePct": 68.3,
-    "bestTradePct": 3.693,
-    "worstTradePct": -1.752,
-    "finalEquity": 2068.1,
+    "avgR": 0.046,
+    "expectancy": 1.24,
+    "exposurePct": 67.8,
+    "bestTradePct": 3.708,
+    "worstTradePct": -1.759,
+    "finalEquity": 2076.72,
     "curvePoints": 1200,
-    "totalFees": 187.3953,
-    "barsInMarket": 819
+    "totalFees": 188.2722,
+    "barsInMarket": 814
    },
    "versions": []
   },
@@ -866,46 +866,46 @@
    "status": "optimizing",
    "strategyId": "structure_pullback",
    "params": {
-    "fast": 17,
-    "slow": 73,
+    "fast": 16,
+    "slow": 66,
     "pullbackBars": 3,
-    "rsiMid": 54,
-    "atrStop": 2.2,
-    "rr": 2.4
+    "rsiMid": 46,
+    "atrStop": 1.7,
+    "rr": 2.3
    },
    "metrics": {
-    "returnPct": -10.08,
-    "maxDrawdownPct": 23.37,
-    "sharpe": -0.76,
-    "profitFactor": 0.88,
-    "winRate": 32.4,
-    "trades": 179,
-    "avgR": -0.034,
-    "expectancy": -1.13,
-    "exposurePct": 75.4,
-    "bestTradePct": 3.137,
-    "worstTradePct": -1.653,
-    "finalEquity": 1798.36,
+    "returnPct": -17.04,
+    "maxDrawdownPct": 31.02,
+    "sharpe": -1.31,
+    "profitFactor": 0.85,
+    "winRate": 30.5,
+    "trades": 282,
+    "avgR": -0.04,
+    "expectancy": -1.21,
+    "exposurePct": 74.8,
+    "bestTradePct": 3.246,
+    "worstTradePct": -1.651,
+    "finalEquity": 1659.21,
     "curvePoints": 3880,
-    "totalFees": 511.8071,
-    "barsInMarket": 2924
+    "totalFees": 803.4536,
+    "barsInMarket": 2903
    },
    "oos": {
-    "returnPct": 6.03,
-    "maxDrawdownPct": 9.17,
-    "sharpe": 1.66,
-    "profitFactor": 1.22,
-    "winRate": 38.9,
-    "trades": 54,
-    "avgR": 0.079,
-    "expectancy": 2.23,
-    "exposurePct": 72.6,
-    "bestTradePct": 3.617,
-    "worstTradePct": -1.743,
-    "finalEquity": 2120.52,
+    "returnPct": 6.45,
+    "maxDrawdownPct": 9.75,
+    "sharpe": 1.62,
+    "profitFactor": 1.16,
+    "winRate": 37.2,
+    "trades": 78,
+    "avgR": 0.06,
+    "expectancy": 1.65,
+    "exposurePct": 74.4,
+    "bestTradePct": 3.565,
+    "worstTradePct": -1.831,
+    "finalEquity": 2128.91,
     "curvePoints": 1200,
-    "totalFees": 160.9908,
-    "barsInMarket": 871
+    "totalFees": 248.9744,
+    "barsInMarket": 893
    },
    "versions": []
   }
@@ -1120,14 +1120,13 @@
   }
  ],
  "sentiment": {
-  "updatedAt": 1795821735910,
+  "updatedAt": 1795841708786,
   "source": "Alternative.me Fear & Greed",
   "fearGreed": {
-   "value": 12,
+   "value": 10,
    "label": "Extreme Fear",
-   "at": 1795737600000,
+   "at": 1795824000000,
    "history": [
-    13,
     10,
     10,
     12,
@@ -1140,70 +1139,87 @@
     11,
     13,
     11,
-    12
+    12,
+    10
    ]
   },
   "assets": {
    "BTCUSDT": {
-    "score": -0.54,
+    "score": -0.32,
     "bias": "דובי",
     "technical": -0.7,
-    "news": -0.03,
+    "news": 0.06,
     "drivers": [
      "Here’s what happened in crypto today",
      "Bitcoin whales pile into BTC despite shrinking profit cushion",
      "Could AI Break Bitcoin? Not Yet, Research Firm K33 Says"
     ],
-    "price": 59835.6
+    "price": 60000.1
    },
    "ETHUSDT": {
-    "score": -0.12,
-    "bias": "ניטרלי",
-    "technical": -0.7,
-    "news": 0.71,
-    "drivers": [
-     "Today's Crypto News: Bitcoin, Ether and Altcoin Insights - Investing News Network",
-     "What was Coinbase worth while Nasdaq was closed?"
-    ],
-    "price": 1658.81
-   },
-   "NVDA": {
-    "score": -0.23,
+    "score": -0.3,
     "bias": "דובי",
     "technical": -0.7,
-    "news": 0.34,
+    "news": 0.12,
+    "drivers": [],
+    "price": 1662.87
+   },
+   "NVDA": {
+    "score": -0.24,
+    "bias": "דובי",
+    "technical": -0.7,
+    "news": 0.32,
     "drivers": [
+     "I hate that Jensen Huang is back at Nvidia, but I love what it&#x2019;s done for my 401(k). Am I a hypocrite?",
      "These stocks soared the most during a wild week highlighted by Huang&#x2019;s return to Nvidia",
-     "Buyer beware? Nvidia's volatile swings expose risks of single-stock ETFs",
-     "Dow Jones Futures: Stock Market Makes Bullish Move, Tesla Leads 7 New Buys; Nvidia's Jensen Huang Heads To Capitol Hill"
+     "Buyer beware? Nvidia's volatile swings expose risks of single-stock ETFs"
     ],
-    "price": 149.55
+    "price": 149.6
    },
    "SPY": {
-    "score": -0.15,
+    "score": -0.02,
     "bias": "ניטרלי",
     "technical": 0,
-    "news": 0,
+    "news": 0.13,
     "drivers": [
      "These stocks soared the most during a wild week highlighted by Huang&#x2019;s return to Nvidia",
      "The S&P 500 is in a correction. Bear markets and recessions don't always follow",
-     "US Stocks rise in abbreviated Black Friday trading as AI concerns ease"
+     "Michael Burry still sees 2 stocks worth betting against"
     ],
-    "price": 728.27
+    "price": 728.26
    },
    "AAPL": {
-    "score": 0.31,
+    "score": 0.42,
     "bias": "שורי",
     "technical": 0.7,
-    "news": 0.29,
+    "news": 0.66,
     "drivers": [
      "OpenAI Turns the Tables on Apple With Its Own Trade-Secret Theft Claims",
+     "Apple Is Beating the Rest of the \"Magnificent Seven\" in 2026. Can It Do It Again in 2027?",
      "📺 OpenAI countersues Apple for stealing trade secrets"
     ],
-    "price": 358.43
+    "price": 358.75
    }
   },
   "headlines": [
+   {
+    "title": "I&#x2019;m in my 70s and buying a new BMW X1. Should I put my only son on the title?",
+    "url": "https://www.marketwatch.com/story/im-in-my-70s-and-buying-a-new-bmw-x1-should-i-put-my-only-son-on-the-title-25731040?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "&#x201c;Given my age, I never make a major new purchase without thinking about the future.&#x201d;",
+    "at": 1795824000000,
+    "score": 1
+   },
+   {
+    "title": "I hate that Jensen Huang is back at Nvidia, but I love what it&#x2019;s done for my 401(k). Am I a hypocrite?",
+    "url": "https://www.marketwatch.com/story/i-hate-that-jensen-huang-is-back-at-nvidia-but-i-love-what-its-done-for-my-401-k-am-i-a-hypocrite-f63c0303?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "Doing nothing and maintaining an even temperament is often the work of gods.",
+    "at": 1795822200000,
+    "score": 0
+   },
    {
     "title": "Clearing out my parents&#x2019; house was a legal nightmare. How can I downsize without putting my kids through the same ordeal?",
     "url": "https://www.marketwatch.com/story/clearing-out-my-parents-house-was-a-legal-nightmare-how-can-i-downsize-without-putting-my-children-through-the-same-ordeal-6537d804?mod=mw_rss_topstories",
@@ -1221,24 +1237,6 @@
     "body": "Nvidia&#x2019;s stock soared this week, but was still down nearly 28% for November and 21% for 2026.",
     "at": 1795810560000,
     "score": 1
-   },
-   {
-    "title": "Coming next year: Medicare Advantage plans without drug coverage for almost 640,000 people and fewer choices for the rest",
-    "url": "https://www.marketwatch.com/story/coming-next-year-medicare-advantage-plans-without-drug-coverage-for-almost-640-000-people-and-fewer-choices-for-the-rest-25242d69?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "Medicare Advantage is starting to lose its all-in-one benefit.",
-    "at": 1795809300000,
-    "score": 0
-   },
-   {
-    "title": "The warnings behind this week&#x2019;s stock-market rally",
-    "url": "https://www.marketwatch.com/story/the-warnings-behind-this-weeks-stock-market-rally-86e5319c?mod=mw_rss_topstories",
-    "source": "MarketWatch",
-    "channelKind": "news",
-    "body": "Also in Weekend Reads: Important tips for Medicare enrollment, how to spot online shopping scams and marital advice from The Moneyist.",
-    "at": 1795804800000,
-    "score": 0
    },
    {
     "title": "The S&P 500 is in a correction. Bear markets and recessions don't always follow",
@@ -1340,40 +1338,31 @@
     "score": 0
    },
    {
-    "title": "Dow Jones Futures: Stock Market Makes Bullish Move, Tesla Leads 7 New Buys; Nvidia's Jensen Huang Heads To Capitol Hill",
-    "url": "https://finance.yahoo.com/m/5b917298-e5b5-3d87-b1fa-f7cad345af64/dow-jones-futures%3A-stock.html?.tsrc=rss",
-    "source": "Yahoo Finance",
+    "title": "BNY Mellon Strategic Municipals declares $0.03 dividend",
+    "url": "https://seekingalpha.com/news/4677111-bny-mellon-strategic-municipals-declares-0_03-dividend?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
     "channelKind": "news",
-    "body": "In a wild, powerful market week, Tesla stock leads new buys. Nvidia's Jensen Huang is heading to Capitol Hill.",
-    "at": 1795809269000,
-    "score": 1.414213562373095
-   },
-   {
-    "title": "Should You Buy Nvidia Stock Before CEO Jensen Huang Testifies in Front of Congress on Dec. 1 and Dec. 3?",
-    "url": "https://www.fool.com/investing/2026/11/27/should-you-buy-nvidia-stock-before-ceo-jensen-huang-testifies-in-front-of-congress-on-dec-1-and-dec-3/?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "Huang is set to testify before Congress next week, both publicly and behind closed doors.",
-    "at": 1795808889000,
-    "score": 1
-   },
-   {
-    "title": "Sports Betting and the Way We Make Money",
-    "url": "https://www.fool.com/investing/2026/11/27/sports-betting-and-the-way-we-make-money/?.tsrc=rss",
-    "source": "Yahoo Finance",
-    "channelKind": "news",
-    "body": "The podcast takes a hard look at America’s booming sports-betting industry, revisiting the math behind the wagers and offering betting listeners an alternative: investing.",
-    "at": 1795808663000,
+    "body": "",
+    "at": 1795814867000,
     "score": 0
    },
    {
-    "title": "Stock Market Today: Indexes Log Best Thanksgiving Week In 18 Years",
-    "url": "https://finance.yahoo.com/m/86a4597f-ee47-3048-ae92-1a56fa4711e5/stock-market-today%3A-indexes.html?.tsrc=rss",
-    "source": "Yahoo Finance",
+    "title": "BNY Mellon strategic Municipal bond fund declares $0.03 dividend",
+    "url": "https://seekingalpha.com/news/4677110-bny-mellon-strategic-municipal-bond-fund-declares-0_03-dividend?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
     "channelKind": "news",
-    "body": "The Dow Jones index and the Nasdaq composite rose in Friday's post-Thanksgiving session. Anthropic, SpaceX and Tesla gain.",
-    "at": 1795806643000,
-    "score": 1
+    "body": "",
+    "at": 1795814672000,
+    "score": 0
+   },
+   {
+    "title": "SA Asks: What's the best-positioned chip stock right now?",
+    "url": "https://seekingalpha.com/news/4677107-sa-asks-whats-the-best-positioned-chip-stock-right-now?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
+    "source": "SeekingAlpha",
+    "channelKind": "news",
+    "body": "",
+    "at": 1795810551000,
+    "score": 0
    },
    {
     "title": "OpenAI Turns the Tables on Apple With Its Own Trade-Secret Theft Claims",
@@ -1403,30 +1392,39 @@
     "score": 0
    },
    {
-    "title": "BNY Mellon Strategic Municipals declares $0.03 dividend",
-    "url": "https://seekingalpha.com/news/4677111-bny-mellon-strategic-municipals-declares-0_03-dividend?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
-    "source": "SeekingAlpha",
+    "title": "Michael Burry still sees 2 stocks worth betting against",
+    "url": "https://www.thestreet.com/investing/michael-burry-palantir-metlife-puts?.tsrc=rss",
+    "source": "Yahoo Finance",
     "channelKind": "news",
-    "body": "",
-    "at": 1795814867000,
+    "body": "Burry has gone almost entirely long, saying volatility made puts too pricey. Not every holdout in his bearish book is a tech name.",
+    "at": 1795838820000,
     "score": 0
    },
    {
-    "title": "BNY Mellon strategic Municipal bond fund declares $0.03 dividend",
-    "url": "https://seekingalpha.com/news/4677110-bny-mellon-strategic-municipal-bond-fund-declares-0_03-dividend?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
-    "source": "SeekingAlpha",
+    "title": "Nvidia Stock Has Swung 5% or More in a Single Day 5 Times in November. Here's How Big a Position I Think Makes Sense.",
+    "url": "https://www.fool.com/investing/2026/11/27/nvidia-stock-has-swung-5-or-more-in-a-single-day-5-times-in-november-here-s-how-big-a-position-i-think-makes-sense/?.tsrc=rss",
+    "source": "Yahoo Finance",
     "channelKind": "news",
-    "body": "",
-    "at": 1795814672000,
-    "score": 0
+    "body": "The chip giant's profits more than doubled last quarter, but its stock shed over a quarter of its value in November.",
+    "at": 1795835582000,
+    "score": 1
    },
    {
-    "title": "SA Asks: What's the best-positioned chip stock right now?",
-    "url": "https://seekingalpha.com/news/4677107-sa-asks-whats-the-best-positioned-chip-stock-right-now?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news",
-    "source": "SeekingAlpha",
+    "title": "Apple Is Beating the Rest of the \"Magnificent Seven\" in 2026. Can It Do It Again in 2027?",
+    "url": "https://www.fool.com/investing/2026/11/27/apple-is-beating-the-rest-of-the-magnificent-seven-in-2026-can-it-do-it-again-in-2027/?.tsrc=rss",
+    "source": "Yahoo Finance",
     "channelKind": "news",
-    "body": "",
-    "at": 1795810551000,
+    "body": "Amazon, Alphabet, and Meta Platforms have pushed their free cash flow into the negative due to AI spending, while Apple has continued to generate cash.",
+    "at": 1795828750000,
+    "score": 1.414213562373095
+   },
+   {
+    "title": "Nvidia Stock Is Still Down 38% From Its Peak Despite Jensen Huang's Return. History Suggests a $10,000 Investment Today Will Be Worth This Much by Year-End 2027.",
+    "url": "https://www.fool.com/investing/2026/11/27/nvidia-stock-is-still-down-38-from-its-peak-despite-jensen-huang-s-return-history-suggests-a-usd10-000-investment-today-will-be-worth-this-much-by-year-end-2027/?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "Nvidia's accelerating earnings growth and historically cheap valuation could help investors double their money by the end of 2027.",
+    "at": 1795828280000,
     "score": 0
    },
    {
@@ -1457,57 +1455,75 @@
     "score": -1
    },
    {
-    "title": "Ask HN: Isn't it time we promote conversation rather than d*wnr*nking it?",
-    "url": "https://news.ycombinator.com/item?id=50671974",
+    "title": "AMD RT-MLAS Cuts Ray Tracing BVH Memory 92.3%",
+    "url": "https://shattered.io/amd-rt-mlas-vulkan-bvh-memory-92-percent-radeon-rx-9070-nov-26/",
     "source": "Hacker News",
     "channelKind": "hackernews",
-    "body": "HN Points: 4 · Comments: 4",
-    "at": 1795815854000,
+    "body": "HN Points: 2 · Comments: 1",
+    "at": 1795839631000,
     "score": 0
    },
    {
-    "title": "Ask HN: How to validate my idea/MVP?",
-    "url": "https://news.ycombinator.com/item?id=50671969",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795815819000,
-    "score": 0
-   },
-   {
-    "title": "AWS Challenger: Trainium3 Inference and Microarchitecture Deep Dive",
-    "url": "https://newsletter.semianalysis.com/p/trainium3-inferencex",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 1",
-    "at": 1795813333000,
-    "score": 0
-   },
-   {
-    "title": "Spitting in the Face of Glaude",
-    "url": "https://www.tracingwoodgrains.com/p/spitting-in-the-face-of-glaude",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 12 · Comments: 0",
-    "at": 1795811241000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: A free browser backgammon club, gnubg's net under the hood",
-    "url": "https://www.spawn.co/@ilkkah/the-velvet-point",
+    "title": "Trending Open-Source Software · Opensourcesoftware.ai",
+    "url": "https://opensourcesoftware.ai",
     "source": "Hacker News",
     "channelKind": "hackernews",
     "body": "HN Points: 1 · Comments: 0",
-    "at": 1795809332000,
+    "at": 1795837462000,
     "score": 0
    },
    {
-    "title": "US Stocks rise in abbreviated Black Friday trading as AI concerns ease",
-    "url": "https://www.upi.com/Top_News/US/2026/11/27/stocks-AI-thanksgiving/3631795799509/",
+    "title": "Llm.asm – Pure x86-64 Assembly for LLM Inference and Training",
+    "url": "https://github.com/alesha-pro/llm.asm",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 4 · Comments: 1",
+    "at": 1795837181000,
+    "score": 0
+   },
+   {
+    "title": "If you're doing Monte Carlo try Knuth LGC",
+    "url": "https://news.ycombinator.com/item?id=50674351",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795836904000,
+    "score": 0
+   },
+   {
+    "title": "Self-Hosting Is Rising and Linux Users Are Leading This Revolution",
+    "url": "https://itsfoss.com/opinion/self-hosting-rising/",
     "source": "Hacker News",
     "channelKind": "hackernews",
     "body": "HN Points: 2 · Comments: 0",
-    "at": 1795806226000,
+    "at": 1795835720000,
+    "score": 0
+   },
+   {
+    "title": "Turkish wedding party receives Nvidia RTX 5090, RAM, and CPU as wedding gifts",
+    "url": "https://www.tomshardware.com/pc-components/ddr5/turkish-wedding-party-receive-rtx-5090-ram-and-intel-cpu-wedding-gifts-a-turkish-tech-delight-for-the-ai-age",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 1",
+    "at": 1795835127000,
+    "score": 0
+   },
+   {
+    "title": "Ask HN: YC startup not paying for a take-home. What to do?",
+    "url": "https://news.ycombinator.com/item?id=50673800",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 8 · Comments: 5",
+    "at": 1795832588000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia Blackwell Tech Used at China Site Tied to Alice Huang",
+    "url": "https://www.bloomberg.com/news/articles/2026-11-27/nvidia-blackwell-chips-turn-up-at-china-site-tied-to-alice-huang",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 6 · Comments: 0",
+    "at": 1795823817000,
     "score": 0
    },
    {
@@ -1524,7 +1540,7 @@
     "url": "https://www.businessinsider.com/trump-us-equity-stake-nvidia-not-too-late-2026-11",
     "source": "Hacker News",
     "channelKind": "hackernews",
-    "body": "HN Points: 8 · Comments: 11",
+    "body": "HN Points: 10 · Comments: 11",
     "at": 1795801682000,
     "score": 0
    },
@@ -1542,26 +1558,8 @@
     "url": "https://www.pbs.org/newshour/nation/nvidia-ceos-comeback-fuels-debate-over-misogyny-and-impunity-for-the-rich-and-powerful",
     "source": "Hacker News",
     "channelKind": "hackernews",
-    "body": "HN Points: 17 · Comments: 24",
+    "body": "HN Points: 19 · Comments: 27",
     "at": 1795797786000,
-    "score": 0
-   },
-   {
-    "title": "Nvidia Credit Ratings May Be Cut by S&P",
-    "url": "https://bsky.app/profile/carlquintanilla.bsky.social/post/3n35zzde6ss2o",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 9 · Comments: 0",
-    "at": 1795795202000,
-    "score": 0
-   },
-   {
-    "title": "Nvidia Blackwell Chips Turn Up at China Site Tied to Alice Huang",
-    "url": "https://finance.yahoo.com/technology/articles/nvidia-blackwell-chips-turn-china-114546617.html",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 5 · Comments: 0",
-    "at": 1795789317000,
     "score": 0
    },
    {
@@ -1700,6 +1698,132 @@
     "score": 0.5773502691896258
    },
    {
+    "title": "Coming next year: Medicare Advantage plans without drug coverage for almost 640,000 people and fewer choices for the rest",
+    "url": "https://www.marketwatch.com/story/coming-next-year-medicare-advantage-plans-without-drug-coverage-for-almost-640-000-people-and-fewer-choices-for-the-rest-25242d69?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "Medicare Advantage is starting to lose its all-in-one benefit.",
+    "at": 1795809300000,
+    "score": 0
+   },
+   {
+    "title": "The warnings behind this week&#x2019;s stock-market rally",
+    "url": "https://www.marketwatch.com/story/the-warnings-behind-this-weeks-stock-market-rally-86e5319c?mod=mw_rss_topstories",
+    "source": "MarketWatch",
+    "channelKind": "news",
+    "body": "Also in Weekend Reads: Important tips for Medicare enrollment, how to spot online shopping scams and marital advice from The Moneyist.",
+    "at": 1795804800000,
+    "score": 0
+   },
+   {
+    "title": "Dow Jones Futures: Stock Market Makes Bullish Move, Tesla Leads 7 New Buys; Nvidia's Jensen Huang Heads To Capitol Hill",
+    "url": "https://finance.yahoo.com/m/5b917298-e5b5-3d87-b1fa-f7cad345af64/dow-jones-futures%3A-stock.html?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "In a wild, powerful market week, Tesla stock leads new buys. Nvidia's Jensen Huang is heading to Capitol Hill.",
+    "at": 1795809269000,
+    "score": 1.414213562373095
+   },
+   {
+    "title": "Should You Buy Nvidia Stock Before CEO Jensen Huang Testifies in Front of Congress on Dec. 1 and Dec. 3?",
+    "url": "https://www.fool.com/investing/2026/11/27/should-you-buy-nvidia-stock-before-ceo-jensen-huang-testifies-in-front-of-congress-on-dec-1-and-dec-3/?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "Huang is set to testify before Congress next week, both publicly and behind closed doors.",
+    "at": 1795808889000,
+    "score": 1
+   },
+   {
+    "title": "Sports Betting and the Way We Make Money",
+    "url": "https://www.fool.com/investing/2026/11/27/sports-betting-and-the-way-we-make-money/?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "The podcast takes a hard look at America’s booming sports-betting industry, revisiting the math behind the wagers and offering betting listeners an alternative: investing.",
+    "at": 1795808663000,
+    "score": 0
+   },
+   {
+    "title": "Stock Market Today: Indexes Log Best Thanksgiving Week In 18 Years",
+    "url": "https://finance.yahoo.com/m/86a4597f-ee47-3048-ae92-1a56fa4711e5/stock-market-today%3A-indexes.html?.tsrc=rss",
+    "source": "Yahoo Finance",
+    "channelKind": "news",
+    "body": "The Dow Jones index and the Nasdaq composite rose in Friday's post-Thanksgiving session. Anthropic, SpaceX and Tesla gain.",
+    "at": 1795806643000,
+    "score": 1
+   },
+   {
+    "title": "Ask HN: Isn't it time we promote conversation rather than d*wnr*nking it?",
+    "url": "https://news.ycombinator.com/item?id=50671974",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 4 · Comments: 4",
+    "at": 1795815854000,
+    "score": 0
+   },
+   {
+    "title": "Ask HN: How to validate my idea/MVP?",
+    "url": "https://news.ycombinator.com/item?id=50671969",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795815819000,
+    "score": 0
+   },
+   {
+    "title": "AWS Challenger: Trainium3 Inference and Microarchitecture Deep Dive",
+    "url": "https://newsletter.semianalysis.com/p/trainium3-inferencex",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 3 · Comments: 1",
+    "at": 1795813333000,
+    "score": 0
+   },
+   {
+    "title": "Spitting in the Face of Glaude",
+    "url": "https://www.tracingwoodgrains.com/p/spitting-in-the-face-of-glaude",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 12 · Comments: 0",
+    "at": 1795811241000,
+    "score": 0
+   },
+   {
+    "title": "Show HN: A free browser backgammon club, gnubg's net under the hood",
+    "url": "https://www.spawn.co/@ilkkah/the-velvet-point",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 1 · Comments: 0",
+    "at": 1795809332000,
+    "score": 0
+   },
+   {
+    "title": "US Stocks rise in abbreviated Black Friday trading as AI concerns ease",
+    "url": "https://www.upi.com/Top_News/US/2026/11/27/stocks-AI-thanksgiving/3631795799509/",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 2 · Comments: 0",
+    "at": 1795806226000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia Credit Ratings May Be Cut by S&P",
+    "url": "https://bsky.app/profile/carlquintanilla.bsky.social/post/3n35zzde6ss2o",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 9 · Comments: 0",
+    "at": 1795795202000,
+    "score": 0
+   },
+   {
+    "title": "Nvidia Blackwell Chips Turn Up at China Site Tied to Alice Huang",
+    "url": "https://finance.yahoo.com/technology/articles/nvidia-blackwell-chips-turn-china-114546617.html",
+    "source": "Hacker News",
+    "channelKind": "hackernews",
+    "body": "HN Points: 5 · Comments: 0",
+    "at": 1795789317000,
+    "score": 0
+   },
+   {
     "title": "12 days of sardines and Croc charms: Are Advent calendars getting out of control?",
     "url": "https://www.marketwatch.com/story/12-days-of-sardines-and-croc-charms-are-advent-calendars-getting-out-of-control-81f24548?mod=mw_rss_topstories",
     "source": "MarketWatch",
@@ -1797,144 +1921,18 @@
     "body": "Bitcoin Liquidity Tightens and Hawkish Fed Bets Weigh on Crypto &nbsp;&nbsp; StoneX",
     "at": 1795541488000,
     "score": 0
-   },
-   {
-    "title": "Today's Crypto News: Bitcoin, Ether and Altcoin Insights - Investing News Network",
-    "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE9PU3pBdGY0NWJMSWFUTFRDUGx3RklNQlNENWdlQjBiNG9meUo5andqSHFER0lkNlhEaFVwOXpLYWZseVJ1YVZsU2Q4RzBWT1RoeUhTM19YaFljM2ZHcm5yMHYxTlc?oc=5",
-    "source": "Google News",
-    "channelKind": "news",
-    "body": "Today's Crypto News: Bitcoin, Ether and Altcoin Insights &nbsp;&nbsp; Investing News Network",
-    "at": 1795640700000,
-    "score": 0
-   },
-   {
-    "title": "Bill to lock up U.S. government bitcoin for 20 years advances to full House - CoinDesk",
-    "url": "https://news.google.com/rss/articles/CBMi3AFBVV95cUxPaDBVUUgxQjlSVjEyWmxPcFctNmluc0FSUmVfVk5SZS1NUnp3OEFpMzJ4WG1YaGJuSjlMUmVNR0lPSlZqWTNSNndPVmQydVd3S19CZjZ0SDVldXlmZzRHOUJZc3h1SF9nTF9JdUdTOGlfWWhieEZpR2pQakZVcElZbm9WdURrVkw3Z093NHNuVmlBVjBBbFFsU1hIU1NLaUZFWldYdmVvZ0t3V1N0OC1xajBHakp0bl9naTR4dHEtaXBHMTJROWFmT0hTc1p1VklZa3hXVmRFSjA5MmlY?oc=5",
-    "source": "Google News",
-    "channelKind": "news",
-    "body": "Bill to lock up U.S. government bitcoin for 20 years advances to full House &nbsp;&nbsp; CoinDesk",
-    "at": 1795668360000,
-    "score": 0
-   },
-   {
-    "title": "Bitcoin price drops below $59K as Anthropic joins tech stock rebound",
-    "url": "https://cointelegraph.com/markets/bitcoin-price-below-59k-anthropic-tech-stock-rebound?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "Bitcoin price volatility returned at the Wall Street open as BTC/USD dropped to local lows of $58,700 while stocks and gold headed higher.",
-    "at": 1795798131000,
-    "score": -1
-   },
-   {
-    "title": "What was Coinbase worth while Nasdaq was closed?",
-    "url": "https://cointelegraph.com/news/what-was-coinbase-worth-while-nasdaq-was-closed?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "A Thanksgiving buyer paid 106.24 USDC per Coinbase share. Whether that looked like a holiday rally depended on when you’d last checked the stock.",
-    "at": 1795790454000,
-    "score": 1.414213562373095
-   },
-   {
-    "title": "Binance to launch tokenized IPO program after regulatory approval: Yi He",
-    "url": "https://cointelegraph.com/news/binance-ipo-program-regulatory-approval-yi-he?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_partner_inbound",
-    "source": "Cointelegraph",
-    "channelKind": "news",
-    "body": "Binance is hiring for equity capital markets roles, including an analyst to develop tokenized equity products and assess prospective issuers.",
-    "at": 1795787040000,
-    "score": 1.414213562373095
-   },
-   {
-    "title": "ShrinkLoop – Local MLX proxy and RLVR/GRPO trainer for verifiable LLM tasks",
-    "url": "https://shrinkloop.com/demo",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795801040000,
-    "score": 0
-   },
-   {
-    "title": "Financial Advisors and Retirees' Risk-Taking [pdf]",
-    "url": "https://www.nber.org/system/files/working_papers/w35990/w35990.pdf",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795800518000,
-    "score": 0
-   },
-   {
-    "title": "In 75 LLM trading papers, half deduct no trading costs",
-    "url": "https://blog.aperiodic.io/p/quant-reads-weekly-1-llm-trading-costs",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 1 · Comments: 0",
-    "at": 1795800379000,
-    "score": 0
-   },
-   {
-    "title": "Taking Email Back",
-    "url": "https://www.linux-magazine.com/Online/Features/Taking-Email-Back",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 0",
-    "at": 1795800043000,
-    "score": 0
-   },
-   {
-    "title": "Firefox Taking Away Ability to Disable Nova Theme",
-    "url": "https://connect.mozilla.org/t5/discussions/firefox-s-new-design-your-feedback-and-what-s-changing-in/td-p/147462",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 3 · Comments: 1",
-    "at": 1795797824000,
-    "score": 0
-   },
-   {
-    "title": "Show HN: SoundEtch, an open source podcast/media editor for the desktop browser",
-    "url": "https://soundetch.org",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795797421000,
-    "score": 0
-   },
-   {
-    "title": "Denny's brings back plaque celebrating Nvidia chief Jensen Huang",
-    "url": "https://www.politico.com/news/2026/11/26/dennys-brings-back-plaque-celebrating-jensen-huang-in-san-jose-restaurant",
-    "source": "Hacker News",
-    "channelKind": "hackernews",
-    "body": "HN Points: 2 · Comments: 0",
-    "at": 1795786653000,
-    "score": 0
-   },
-   {
-    "title": "📺 Zelenskyy Says Congress Should Pressure Russia if Trump Talks Fail",
-    "url": "https://www.youtube.com/shorts/9nFsAeOpDho",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "Volodymyr Zelenskyy says he’ll ask the new Democrat-controlled Congress to pile pressure on Russia if President Trump fails to secure a peace deal by year-end. Alex Morgan has the key takeaways from the Ukrainian president’s exclusive interview with Bloomberg ",
-    "at": 1795802893000,
-    "score": 0
-   },
-   {
-    "title": "📺 European Gas Surges as Cold Snap Threatens Tight Winter Supplies",
-    "url": "https://www.youtube.com/shorts/SFfHEgWb8zM",
-    "source": "YouTube · Bloomberg Television",
-    "channelKind": "youtube",
-    "body": "European natural gas prices jumped as a sharply colder weather outlook intensified concerns over Europe’s winter supplies, already under pressure from export disruptions linked to the US-Iran war. Joe Wertz reports.&#13; --------&#13; More on Bloomberg Televis",
-    "at": 1795802857000,
-    "score": 1.414213562373095
    }
   ],
   "trending": [
    {
-    "name": "Pudgy Penguins",
-    "symbol": "PENGU",
-    "rank": 128
+    "name": "Bittensor",
+    "symbol": "TAO",
+    "rank": 37
    },
    {
-    "name": "Zylo Ecosystem",
-    "symbol": "ZYLO",
-    "rank": 720
+    "name": "Portal",
+    "symbol": "PORTAL",
+    "rank": 890
    },
    {
     "name": "Bitcoin",
@@ -1942,14 +1940,9 @@
     "rank": 1
    },
    {
-    "name": "Portal",
-    "symbol": "PORTAL",
-    "rank": 499
-   },
-   {
-    "name": "Monero",
-    "symbol": "XMR",
-    "rank": 14
+    "name": "Venice Token",
+    "symbol": "VVV",
+    "rank": 57
    },
    {
     "name": "Hyperliquid",
@@ -1957,24 +1950,29 @@
     "rank": 10
    },
    {
-    "name": "Sky",
-    "symbol": "SKY",
-    "rank": 61
+    "name": "World Liberty Financial",
+    "symbol": "WLFI",
+    "rank": 75
    },
    {
-    "name": "Solana",
-    "symbol": "SOL",
-    "rank": 7
+    "name": "NEAR Protocol",
+    "symbol": "NEAR",
+    "rank": 23
    },
    {
-    "name": "Pearl",
-    "symbol": "PEARL",
-    "rank": 84
+    "name": "Chainlink",
+    "symbol": "LINK",
+    "rank": 16
    },
    {
-    "name": "XRP",
-    "symbol": "XRP",
-    "rank": 6
+    "name": "Bonk",
+    "symbol": "BONK",
+    "rank": 156
+   },
+   {
+    "name": "Pump.fun",
+    "symbol": "PUMP",
+    "rank": 72
    }
   ],
   "newsScore": 0.12,
@@ -2343,7 +2341,7 @@
     "score": 0
    }
   ],
-  "youtubeUpdatedAt": 1795821734136
+  "youtubeUpdatedAt": 1795841706877
  },
  "lessons": [
   "יוטיוב גאן (Wd Gann Trader): דיוק רמות תמיכה/התנגדות Sq9 (45°/90°/180°) עם שבירת סווינג וסטופ מובנה — \"Gann Cosmogram Nifty analysis using Jupiter-Jupiter Opposition\"",
